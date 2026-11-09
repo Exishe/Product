@@ -27,6 +27,7 @@ export default defineConfig([
     "playwright-report/**",
     "test-results/**",
     ".superpowers/**",
+    ".claude/**",
   ]),
   {
     // UI text comes from messages/{hy,ru,en}.json only.
