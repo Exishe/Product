@@ -494,5 +494,55 @@
       "earlier": "Earlier orders",
       "placedAt": "Sent at {time}"
     }
+  },
+  "telegram": {
+    "title": "Telegram alerts",
+    "intro": "By default only exceptions arrive: late orders, a screen offline, a cancellation after serving and the day summary. You can turn on an alert for every new order below.",
+    "botNotReady": "The Telegram bot isn't ready yet. Meanwhile you can turn on notifications on this phone.",
+    "connectTitle": "New chat",
+    "connectHint": "You'll get a one-time link. Open it in Telegram and press Start.",
+    "connect": "Connect Telegram",
+    "openChat": "Open in Telegram",
+    "openGroup": "Add to a group",
+    "linkHint": "The link works once, for 30 minutes.",
+    "commandHint": "Send this line to the Pativ bot. It works once, for 30 minutes.",
+    "chats": "Connected chats",
+    "noChats": "No chats connected yet.",
+    "kindTelegram": "Telegram",
+    "kindPush": "Phone notifications",
+    "pushChannel": "My phones",
+    "eventsLegend": "What to send",
+    "events": {
+      "order_placed": "Every new order",
+      "order_overdue": "Late order (over 20 minutes)",
+      "station_offline": "Kitchen screen offline",
+      "order_comped": "Cancelled after serving",
+      "day_summary": "Day summary"
+    },
+    "language": "Language",
+    "languages": {
+      "hy": "Հայերեն",
+      "ru": "Русский",
+      "en": "English"
+    },
+    "save": "Save",
+    "sendTest": "Send a test",
+    "disconnect": "Disconnect",
+    "saved": "Saved.",
+    "testQueued": "The test alert will arrive in a few seconds.",
+    "rateLimited": "Too often. Try again in a minute.",
+    "error": "That didn't work. Please try again."
+  },
+  "push": {
+    "title": "Notifications on this phone",
+    "hint": "No Telegram? The same alerts can come through your phone's browser.",
+    "turnOn": "Turn on for this phone",
+    "turnOff": "Turn off for this phone",
+    "on": "On for this phone.",
+    "unsupported": "This browser can't receive notifications.",
+    "install": "On an iPhone, first add the admin to the Home Screen (Share → Add to Home Screen), then open it from there.",
+    "unconfigured": "Phone notifications aren't available yet.",
+    "denied": "Notifications are blocked in the browser settings.",
+    "error": "Couldn't turn them on. Please try again."
   }
 }

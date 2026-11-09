@@ -41,6 +41,14 @@ describe("parseServerEnv", () => {
     expect(parsed).not.toHaveProperty("SUPABASE_SECRET_KEY");
   });
 
+  it("takes the bot username with or without @ and rejects a malformed VAPID key", () => {
+    const base = { APP_BASE_URL: "http://localhost:3000" };
+    expect(parseServerEnv({ ...base, TELEGRAM_BOT_USERNAME: "@PativBot" }).TELEGRAM_BOT_USERNAME).toBe("PativBot");
+    expect(parseServerEnv(base).VAPID_PRIVATE_KEY).toBeUndefined();
+    expect(() => parseServerEnv({ ...base, VAPID_PRIVATE_KEY: "not a key" })).toThrow();
+    expect(() => parseServerEnv({ ...base, VAPID_SUBJECT: "http://insecure.example" })).toThrow();
+  });
+
   it("reads the Gemini model list in order", () => {
     const env = parseServerEnv({ APP_BASE_URL: "http://localhost:3000", GEMINI_MODELS: "a, b ,c" });
     expect(env.GEMINI_MODELS).toEqual(["a", "b", "c"]);
