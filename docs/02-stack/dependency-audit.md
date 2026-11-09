@@ -59,7 +59,7 @@ No package is licensed under GPL or AGPL. The non-permissive licenses present, a
 | `sentry` (CLI) | FSL-1.1-Apache-2.0 | Build-time tool for uploading source maps. The Functional Source License restricts offering a competing product, which we don't; each release becomes Apache-2.0 after two years. |
 | `caniuse-lite` | CC-BY-4.0 | Browser-support data; attribution is carried in the package. |
 
-Every package has to keep passing this check. CI runs a license allowlist step (Phase 6) that fails on any license outside: MIT, ISC, BSD-2/3, 0BSD, Apache-2.0, BlueOak-1.0.0, CC0-1.0, Unlicense, CC-BY-4.0 (data only), MPL-2.0 and LGPL-3.0 (unmodified dependencies only), FSL-1.1-Apache-2.0 (build tools only).
+Every package has to keep passing this check. CI runs a license allowlist step (Phase 6) that fails on any license outside: MIT, ISC, BSD-2/3, 0BSD, Apache-2.0, BlueOak-1.0.0, CC0-1.0, Unlicense, CC-BY-4.0 (data only), MPL-2.0 and LGPL-3.0 (unmodified dependencies only), FSL-1.1-Apache-2.0 (build tools only), Python-2.0 (`argparse` under ESLint; added in Phase 6).
 
 ## Reference projects
 
