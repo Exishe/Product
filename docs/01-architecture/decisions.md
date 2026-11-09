@@ -233,3 +233,31 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Status: Proposed
 - Decision: npm with a committed `package-lock.json` and exact versions in `package.json`. Upgrades arrive as pull requests that must pass CI and the license allowlist.
 - Rejected: pnpm (fine, but the supply-chain auditor we use doesn't read its lockfile).
+
+---
+
+## Phase 4 decisions
+
+### ADR-033: Operational safeguards found by walking through a Friday evening
+
+- Status: Proposed, 2026-11-09
+- Decision: Add to Stage 1:
+  1. Possible duplicates: a QR order with the same dishes as another order from the same table within 3 minutes, from a different guest session, waits for the waiter instead of going straight to the kitchen.
+  2. "Kitchen busy": a switch with an expected wait (20/30/45 min) shown to guests, which turns off by itself after an hour.
+  3. Device heartbeat: an alert to the owner when a kitchen or bar screen is offline for 2 minutes during opening hours.
+  4. Stale-table guard: a new guest joining a table whose orders are all served and whose bill was requested (or idle for 45 minutes) makes the waiter close the old bill first.
+  5. Test orders: an `is_test` flag that keeps onboarding and training orders out of sales reports.
+- Rejected: blocking all second orders from a table (punishes real second rounds); estimating wait times automatically (not enough data in Stage 1; the cook knows better).
+- Consequences: Schema additions in the Stage 1 migrations are:
+  - `locations.kitchen_busy_until` and `locations.expected_wait_minutes`;
+  - `members.last_seen_at`;
+  - `orders.is_test`;
+  - a `possible_duplicate_of` reference on orders.
+  `day-in-the-life.md` has the scenarios behind each one.
+
+### ADR-034: Frankfurt confirmed by measurement
+
+- Status: Accepted, 2026-11-09
+- Context: ADR-019 chose Frankfurt before latency from Armenia was measured.
+- Evidence: Globalping probes on five Armenian networks, TCP connect to AWS S3 endpoints: median 59 ms to Frankfurt (`eu-central-1`), 82 ms to Dublin (`eu-west-1`). Details in `docs/04-operations/costs.md`.
+- Decision: Keep Supabase in `eu-central-1` and Vercel functions in `fra1`. The new `restaurant-os-dev` project is created there too.
