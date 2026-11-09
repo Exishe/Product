@@ -76,3 +76,39 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+  migrate:
+    name: Apply migrations to restaurant-os-dev
+    # Only from the development branch, only after the SQL tests pass, and only
+    # once the owner has added the SUPABASE_ACCESS_TOKEN repository secret.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/new-session-qjsyvc'
+    needs: [sql, checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: migrate-dev
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      HAS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+      SUPABASE_YES: "1"
+    steps:
+      - if: env.HAS_TOKEN != 'true'
+        run: echo "::notice::SUPABASE_ACCESS_TOKEN is not set; migrations were not applied."
+      - if: env.HAS_TOKEN == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: env.HAS_TOKEN == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - if: env.HAS_TOKEN == 'true'
+        run: npm ci
+      - if: env.HAS_TOKEN == 'true'
+        name: Show what will be applied
+        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --dry-run
+      - if: env.HAS_TOKEN == 'true'
+        name: Apply
+        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --yes
