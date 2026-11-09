@@ -8,7 +8,11 @@ const goodPublic = {
 
 describe("parsePublicEnv", () => {
   it("rejects a missing Supabase URL", () => {
-    expect(() => parsePublicEnv({ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: goodPublic.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY })).toThrow();
+    expect(() =>
+      parsePublicEnv({
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: goodPublic.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      }),
+    ).toThrow();
   });
 
   it("rejects a URL that is not a URL", () => {
@@ -30,7 +34,18 @@ describe("parseServerEnv", () => {
   });
 
   it("has no field for a Supabase secret key (ADR-038)", () => {
-    const parsed = parseServerEnv({ APP_BASE_URL: "http://localhost:3000", SUPABASE_SECRET_KEY: "sb_secret_x" });
+    const parsed = parseServerEnv({
+      APP_BASE_URL: "http://localhost:3000",
+      SUPABASE_SECRET_KEY: "sb_secret_x",
+    });
     expect(parsed).not.toHaveProperty("SUPABASE_SECRET_KEY");
+  });
+
+  it("reads the Gemini model list in order", () => {
+    const env = parseServerEnv({ APP_BASE_URL: "http://localhost:3000", GEMINI_MODELS: "a, b ,c" });
+    expect(env.GEMINI_MODELS).toEqual(["a", "b", "c"]);
+    expect(parseServerEnv({ APP_BASE_URL: "http://localhost:3000" }).GEMINI_MODELS[0]).toBe(
+      "gemini-flash-latest",
+    );
   });
 });

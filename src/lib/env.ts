@@ -10,8 +10,20 @@ const publicSchema = z.object({
 
 const serverSchema = z.object({
   APP_BASE_URL: z.url(),
-  AI_PROVIDER: z.enum(["gemini", "claude"]).default("gemini"),
+  // "fake" returns a fixed menu, for browser tests of the import flow.
+  AI_PROVIDER: z.enum(["gemini", "claude", "fake"]).default("gemini"),
   GEMINI_API_KEY: z.string().min(1).optional(),
+  // Tried in order: the free tier allows 20 requests a day per model.
+  GEMINI_MODELS: z
+    .string()
+    .default("gemini-flash-latest,gemini-3-flash-preview,gemini-3.1-flash-lite")
+    .transform((list) =>
+      list
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.string()).min(1)),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
 

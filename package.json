@@ -17,9 +17,12 @@
     "test:sql": "bash scripts/test-sql.sh",
     "check": "npm run lint && npm run typecheck && npm run test",
     "db:types:api": "node scripts/gen-api-types.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:ai-live": "LIVE_AI=1 NODE_USE_ENV_PROXY=1 vitest run src/features/menu-import/live.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
+    "@google/genai": "3.0.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.119.0",
     "class-variance-authority": "0.7.1",

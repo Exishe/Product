@@ -325,3 +325,16 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Rejected: every order by default (noise); no per-order option at all (some owners want it in the first week).
 - Consequences: Migration `alerts_exceptions_default` changes the column default. The pitch, the onboarding test and the Friday walkthrough say so.
 
+
+### ADR-041: Gemini model list for menu import
+
+- Status: Accepted, 2026-11-09
+- Context: Building the menu reader (Task 9.1) showed three things about the Gemini free tier. Each model allows 20 requests a day per project. Older models (gemini-2.5-flash) are closed to new users. And a response schema with length and count limits (`maxLength`, `maxItems`, `minimum`…) is refused with HTTP 400.
+- Decision:
+  - `GEMINI_MODELS` is a list, tried in order: `gemini-flash-latest`, `gemini-3-flash-preview`, `gemini-3.1-flash-lite`. When a model's daily quota is used up or the model is gone, the reader moves to the next one. One import (all pages of a menu) is one request.
+  - The adapter calls the `v1beta` API, where structured output and the newest models are.
+  - The schema sent to the provider keeps the structure only; Zod checks the limits on the reply.
+  - Briefly overloaded servers (500/502/503/504) get two retries, after 2 and 6 seconds.
+- Measured on the two sample menus in `tests/fixtures/menus/` (rendered, not photographed): `gemini-3-flash-preview` read every dish and price, left a price range empty, found the sizes of a drink and skipped the address and Wi-Fi line; about 1,600 input and 800–1,300 output tokens per page. `gemini-3.1-flash-lite` also passed, with plainer translations ("Pork barbecue" for խորոված).
+- Rejected: one fixed model (an import fails for everyone after 20 a day); a paid tier (free-only rule).
+- Consequences: About 60 imports a day across all cafés while the list holds, plenty for the pilot (imports happen once per café, then on menu changes). The real check is still 15–20 photographed Yerevan menus from the field visits (`gaps.md`). The free tier may use prompts to improve Google's products; the import screen says so.
