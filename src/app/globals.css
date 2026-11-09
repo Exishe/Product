@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Design tokens, direction A "Tarragon and apricot" (docs/03-design/design-direction.md).
+   Copied from design/tokens.css. Fonts come from next/font variables set in the layout. */
+@theme {
+  --color-matsoni: #fbfcf8;
+  --color-white: #ffffff;
+  --color-ink: #13241b;
+  --color-muted: #4a5b51;
+  --color-tarragon: #1d6a43;
+  --color-tarragon-tint: #e2eee6;
+  --color-apricot: #f2a23a;
+  --color-apricot-deep: #c9780f;
+  --color-pomegranate: #b0213a;
+  --color-pom-tint: #f8e3e6;
+  --color-mist: #e8ece6;
+  --color-line: #c9d2c8;
+  --color-line-strong: #7c8b81;
+  --color-basalt: #0e1612;
+  --color-basalt-2: #18231d;
+  --color-basalt-3: #24322a;
+  --color-slip: #f6f8f2;
+  --color-apricot-on-dark: #f7b45a;
+  --color-pom-on-dark: #ff6b7e;
+  --color-tarragon-on-dark: #5cc48e;
+  --color-slip-dim: #b9c4bc;
+
+  --font-display: var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
+  --font-ui: var(--font-google-sans), system-ui, sans-serif;
+
+  --text-display-38: 2.375rem;
+  --text-kds-number: 4rem;
+  --text-kds-item: 1.625rem;
+
+  --radius-chip: 6px;
+  --radius-input: 6px;
+  --radius-sheet: 12px;
+  --radius-bottom-sheet: 20px;
+  --radius-slip: 2px;
+
+  --shadow-float: 0 8px 24px rgb(19 36 27 / 0.16), 0 1px 3px rgb(19 36 27 / 0.12);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+    background: var(--color-matsoni);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Elements toggled with the hidden attribute stay hidden even when a class sets display. */
+  [hidden] {
+    display: none !important;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-tarragon);
+    outline-offset: 2px;
+  }
+}
+
+@utility display-face {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
