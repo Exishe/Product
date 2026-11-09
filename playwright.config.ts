@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
+// Local secrets for tests (demo owner password); absent in CI, where those tests skip.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // no .env.local
+}
+
 // The cloud session ships its own Chromium; CI installs browsers for 1.65.
 const chromiumPath = process.env.PW_CHROMIUM_PATH;
 const port = Number(process.env.E2E_PORT ?? 3100);

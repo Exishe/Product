@@ -14,7 +14,7 @@ const CYRILLIC: Record<string, string> = {
   ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
 };
 
-function transliterate(word: string): string {
+export function transliterate(word: string): string {
   let out = "";
   for (let i = 0; i < word.length; i++) {
     const ch = word[i] as string;

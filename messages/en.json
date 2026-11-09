@@ -6,5 +6,106 @@
   "common": {
     "notFound": "This page doesn't exist.",
     "backHome": "Home"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "pending": "Checking…",
+      "error": "Wrong email or password.",
+      "noAccount": "No account?",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Sign up",
+      "name": "Your name",
+      "email": "Email",
+      "password": "Password (at least 8 characters)",
+      "submit": "Sign up",
+      "pending": "Signing up…",
+      "error": "Couldn't sign up. There may already be an account with this email.",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    }
+  },
+  "admin": {
+    "home": {
+      "welcome": "Welcome, {name}"
+    }
+  },
+  "forbidden": {
+    "title": "You don't have access to this page."
+  },
+  "onboarding": {
+    "title": "Create your café",
+    "cafeName": "Café name",
+    "slug": "Page address",
+    "slugHint": "Latin letters, digits and hyphens only",
+    "submit": "Create",
+    "pending": "Creating…",
+    "slugTaken": "This address is taken. Try another.",
+    "error": "Couldn't create it. Try again."
+  },
+  "staff": {
+    "title": "Staff and devices",
+    "people": "People",
+    "devices": "Devices",
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "waiter": "Waiter",
+      "kitchen": "Kitchen",
+      "cashier": "Cashier"
+    },
+    "pairTitle": "Connect a device",
+    "pairRole": "What it's for",
+    "pairKitchen": "Kitchen screen",
+    "pairWaiter": "Waiter tablet",
+    "pairLabel": "Device name",
+    "pairSubmit": "Get a code",
+    "pairCode": "On the device, open {url} and enter this code. It works for 10 minutes.",
+    "inviteTitle": "Invite someone",
+    "inviteManager": "Manager",
+    "inviteWaiter": "Waiter",
+    "inviteSubmit": "Get a link",
+    "inviteLink": "Send this link to the person. It works once, for 7 days.",
+    "revoke": "Disconnect",
+    "inactive": "Disconnected",
+    "lastSeen": "Last seen {time}",
+    "neverSeen": "Not connected yet",
+    "error": "That didn't work. Try again."
+  },
+  "pair": {
+    "title": "Connect this device",
+    "code": "Six-digit code",
+    "submit": "Connect",
+    "pending": "Connecting…",
+    "disconnected": "This device was disconnected. Enter a new code to connect it again.",
+    "errors": {
+      "invalid_pairing_code": "The code is wrong or has expired.",
+      "rate_limited": "Too many tries. Try again in 10 minutes.",
+      "anonymous_session_required": "This device is signed in to a personal account. Sign out first.",
+      "failed": "Couldn't connect. Try again."
+    }
+  },
+  "invite": {
+    "title": "Join the team",
+    "name": "Your name",
+    "submit": "Join",
+    "signInFirst": "To join, sign in or sign up first.",
+    "errors": {
+      "invitation_invalid": "This invitation no longer works.",
+      "already_member": "You're already on this team.",
+      "invitation_email_mismatch": "This invitation was sent to a different email.",
+      "failed": "Couldn't join. Try again."
+    }
+  },
+  "kitchen": {
+    "title": "Kitchen"
+  },
+  "waiter": {
+    "title": "Tables"
   }
 }

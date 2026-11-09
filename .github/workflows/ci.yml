@@ -59,6 +59,12 @@ jobs:
     name: Browser tests (phone, tablet, desktop)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      # Public by design (the publishable key only works under RLS). Tests that
+      # sign in as the demo owner skip here until a secret password is added.
+      NEXT_PUBLIC_SUPABASE_URL: https://mhuxfmdehkgpjunxgptc.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_2EI1Ww6HGoh0Y5mpXBV0ig_CnvXcxKX
+      APP_BASE_URL: http://localhost:3100
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
