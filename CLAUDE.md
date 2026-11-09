@@ -1,6 +1,6 @@
 # Restaurant OS — working rules
 
-Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, kitchen display, owner admin). The full brief is `docs/brief.md`. Phase docs are in `docs/00-research` … `docs/06-build`.
+Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, kitchen display, owner admin). Customer-facing name: Pativ («Պատիվ», ADR-039); "Restaurant OS" is the internal project name. The full brief is `docs/brief.md`. Phase docs are in `docs/00-research` … `docs/06-build`.
 
 ## Owner's standing instructions
 
@@ -11,10 +11,11 @@ Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, 
 - **Gates.** Work in the brief's phases and stop at each gate until the owner replies "go".
 - **Production.** Vercel preview deploys only. Production only when the owner explicitly says so.
 - **Ask only for real decisions** (pricing, brand name, which bank, money, anything irreversible). Make sensible calls otherwise and record them in `docs/01-architecture/decisions.md`.
+- At Gate 5 (9 Nov 2026) the owner delegated the open decisions ("do all with your decisions"): pricing and the name were decided that way, and Phase 6 started. Spending money still needs the owner.
 
 ## Do not touch
 
-- The Supabase project "Exishe's Project" (ref `yvhbmwlbffyuowxjcafy`) belongs to another product. Never run migrations, SQL or seeds against it. Restaurant OS uses its own project.
+- The Supabase project "Exishe's Project" (ref `yvhbmwlbffyuowxjcafy`) belongs to another product. Never run migrations, SQL or seeds against it. Restaurant OS uses its own project, `restaurant-os-dev` (ref `mhuxfmdehkgpjunxgptc`, Frankfurt, free plan).
 - No code from AGPL or unlicensed repositories (see `docs/00-research/reference-analysis.md`). Reference clones live in `/tmp/refs/`, never in this repo.
 - Never commit secrets. `.env.local` locally, `.env.example` in git.
 
@@ -23,6 +24,7 @@ Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, 
 - Plan before code. Verify before saying something is done: run it, test it in a real browser (Playwright), check the console.
 - Bugs: reproduce first, find the root cause, fix only what's broken, keep the existing style.
 - Business rules live in Postgres functions; clients read through RLS. Every migration follows the checklist in `docs/02-stack/dev-workflow.md`.
+- The app never holds the Supabase secret key (ADR-038). Privileged steps are `SECURITY DEFINER` functions that check the caller; secrets the database needs live in Supabase Vault.
 - Code, comments and docs in English. UI text only through `messages/{hy,ru,en}.json`. Armenian text follows the `hy-writer` skill (reformed spelling, ։ ՝ ՞ « »), `lang="hy"`.
 - Use cheaper subagents (Sonnet, Haiku) for mechanical work: scanning, searching, boilerplate, running tests.
 - At the end of each phase, list the skills used.
@@ -30,4 +32,5 @@ Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, 
 ## Cloud-session notes
 
 - Docker starts but can't pull images here, so `supabase start` doesn't work in cloud sessions. Use the dev cloud project and the plain-Postgres harness in `docs/01-architecture/sql/`.
+- The Supabase MCP asks the owner to confirm destructive SQL (`DELETE`, `DROP`, …) and times out after 60 s if they don't answer. Keep ad-hoc queries read-only and put schema changes in migrations.
 - Develop on the branch named in the session instructions; commit and push there.

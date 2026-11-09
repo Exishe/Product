@@ -9,7 +9,7 @@ Short version: every café's data is separated by Postgres Row Level Security, e
 - Shared schema, one database. Every tenant row carries `restaurant_id`. We rejected a schema per tenant and a database per tenant (see `decisions.md`, ADR-002).
 - Three layers keep tenants apart:
   1. RLS policies on every table in `public` (68 of 68), built on helper functions that resolve the caller's memberships once per query.
-  2. Composite foreign keys `(restaurant_id, parent_id)`, so even the service role can't write a row that points at another tenant's data.
+  2. Composite foreign keys `(restaurant_id, parent_id)`, so even a bug in a `SECURITY DEFINER` function can't write a row that points at another tenant's data.
   3. No client writes to operational tables: orders, tickets, bills and sessions change only through functions that assert the caller's role at that location.
 
 ## Roles
@@ -35,9 +35,9 @@ A member can be limited to some locations (`members.all_locations = false` plus 
 ## Accounts
 
 - Owners and managers sign in with email (password or magic link) through Supabase Auth. TOTP MFA is offered and recommended for owners.
-- Waiter tablets and kitchen screens are devices. The owner creates a pairing in the admin panel (role, location, label) and gets a 6-digit code valid for 10 minutes, stored hashed and usable once. On the device, `/pair` takes the code. The server then creates an auth user for the device (random credentials nobody sees), a `members` row with `kind = 'device'`, and a long-lived session. Stage 2 adds personal staff accounts with PIN switching on shared tablets, for per-waiter stats.
-- Guests are Supabase anonymous users (`is_anonymous = true` in the JWT). They never see a sign-in screen.
-- Revoking access works immediately. RLS helpers check `members.is_active` on every query, so deactivating a member or device cuts data access at once, even while its JWT is still valid. The server also signs the user out of all sessions to kill the refresh token.
+- Waiter tablets and kitchen screens are devices. The owner creates a pairing in the admin panel (role, location, label) and gets a 6-digit code valid for 10 minutes, stored hashed and usable once. On the device, `/pair` signs in anonymously and calls `api.redeem_device_pairing(code)`, which turns that anonymous user into a `members` row with `kind = 'device'` (ADR-038). The session is long-lived; nobody ever sees credentials. Stage 2 adds personal staff accounts with PIN switching on shared tablets, for per-waiter stats.
+- Guests are Supabase anonymous users (`is_anonymous = true` in the JWT). They never see a sign-in screen. Devices are anonymous users too, but they are members; guests are not.
+- Revoking access works immediately. RLS helpers check `members.is_active` on every query, so deactivating a member or device cuts data access at once, even while its JWT is still valid. The same function deletes the user's refresh tokens, so the device can't renew its session.
 
 ## How RLS is built
 
@@ -49,7 +49,7 @@ Helper functions live in the `private` schema, which PostgREST doesn't expose. T
 | `private.my_location_ids(roles)` | Locations the caller may work at, respecting `all_locations` |
 | `private.my_guest_session_ids()` | The caller's guest sessions |
 | `private.is_platform_admin()` | Whether the caller is in `platform_admins` |
-| `private.is_real_user()` | Signed in and not anonymous; every staff helper requires it |
+| `private.is_real_user()` | Signed in and not anonymous, or an active device member; every staff helper requires it |
 
 Policies call them inside a sub-select, for example `using (location_id in (select private.my_location_ids()))`, so Postgres evaluates the helper once per statement instead of once per row (Supabase's RLS performance guidance). Child tables like `order_items` use `exists (select 1 from orders o where o.id = order_id)`; RLS on `orders` applies inside, so "visible if the parent is visible" holds by construction.
 
@@ -58,7 +58,7 @@ Rules we follow, several of them from mistakes the smoke test caught:
 - RLS is enabled on every table in `public`. A Stage 2–4 table with no policy yet means no client access, not open access.
 - Guests are anonymous users with the `authenticated` role, so every staff check goes through `private.is_real_user()`. A guest can never match a staff policy, even by accident. We never use `auth.role()`.
 - Clients get `SELECT` on everything (RLS filters rows) and `INSERT/UPDATE/DELETE` only on menu, floor, stop-list and notification-channel tables. `restaurants` and `locations` get column-level `UPDATE` grants only for safe columns: an owner can't change `status` or `published_menu_version_id` from the browser.
-- `SECURITY DEFINER` functions live in `api` (callable by signed-in users) or `private` (server and policies only). Each one starts by asserting the caller's role at the row's location.
+- `SECURITY DEFINER` functions live in `api` (callable by signed-in users, guests included) or `private` (internal: other functions and policies only). Each one starts by asserting the caller's role at the row's location.
 - **Postgres grants `EXECUTE` on every new function to `PUBLIC`, and Supabase adds grants for `anon` and `authenticated` in `public`.** Per-schema default privileges can't remove the global `PUBLIC` grant. The smoke test caught a guest calling a server-only function because of exactly this. So every migration that creates functions ends with an explicit `revoke execute … from public, anon, authenticated`, followed by named grants.
 - Views get `security_invoker = true`. We have none yet.
 - `user_metadata` is never used for authorization. Roles come from `members`, not from the JWT.
@@ -78,21 +78,21 @@ Each table's QR code points to `https://<domain>/t/<token>`. The token is 34 byt
 | 4 | `qr_version` of the table |
 | 12 | HMAC-SHA256 over the fields above, truncated to 96 bits |
 
-- The signing keys live only on the server (`QR_SIGNING_KEYS`, a map from key id to key). New prints use the current key id. To rotate a key, we add a new one, reprint at our own pace and retire the old key later.
+- The signing keys live in Supabase Vault as `qr_key_<kid>`, generated inside the database, and only `private.sign_table_token` and `private.verify_table_token` read them (ADR-038). New prints use the current key id. To rotate a key, we add a new one, reprint at our own pace and retire the old key later.
 - To kill one table's printed QR code (stolen sticker, abuse), the owner presses "Reprint QR". That bumps `tables.qr_version`; old stickers stop working at once and existing guest sessions for that table can't order.
-- Verifying the token needs no database hit, so a bot spraying random URLs is rejected cheaply on the server.
+- The scan page rejects a malformed token (wrong length or alphabet) before any database call. A well-formed one costs one HMAC in Postgres, checked before any table lookup.
 - The URL is about 70 characters, which still fits a QR with high error correction and a café logo in the middle (qr-code-styling, Phase 3).
 
 ### The flow
 
-1. Scan. The server verifies the signature and stores the token in an HttpOnly cookie for the guest page. Invalid token → a friendly "ask your waiter" page.
+1. Scan. The page calls `api.resolve_table_token(token)`, which checks the signature and returns the location and table label. Invalid token → a friendly "ask your waiter" page. The token stays in the page; it's sent again with every guest write.
 2. Browse. The menu renders from `api.public_menu` (published snapshot plus today's sold-out items), cached per location. No session is needed to look.
-3. First action ("Order" or "Call waiter"). The browser solves an invisible Cloudflare Turnstile check and calls `signInAnonymously()`. The session persists in the browser, so a returning guest reuses it.
-4. Server action. It re-verifies the table token and verifies the guest's JWT (`getClaims`). Then it calls `private.join_table(user, table, qr_version, locale)`, which opens or joins the table session and returns a guest session valid for 4 hours. Finally it calls `private.place_guest_order(user, guest_session, idempotency_key, lines, note)`.
+3. First action ("Order" or "Call waiter"). The browser calls `signInAnonymously()`, with an invisible Turnstile token once CAPTCHA is switched on in Supabase Auth. The session persists in the browser, so a returning guest reuses it.
+4. The browser calls `api.guest_join_table(token, locale)`. It verifies the token, then runs `private.join_table` for `auth.uid()`, which opens or joins the table session and returns a guest session valid for 4 hours. Ordering is `api.guest_place_order(guest_session, idempotency_key, lines, note)`.
 5. Database. It checks that the session belongs to this user and is still valid, the QR version is current and ordering is enabled. It applies rate limits, prices every line from the published snapshot, applies the stop list, validates modifier groups, routes lines to stations and decides auto-accept or waiter acceptance.
 6. Status. The guest reads their own orders through RLS and listens on `guest:<guest_session>`.
 
-The server is trusted for exactly one thing: "this anonymous user is standing at this table", established by the QR signature. Everything else is checked in Postgres.
+Nothing outside Postgres is trusted. "This anonymous user is standing at this table" is established by the QR signature, and the database checks that signature itself.
 
 ### What this does not stop
 
@@ -110,8 +110,8 @@ Rotating codes on a screen and NFC would close the gap fully, but they cost hard
 | Where | What | Starting limit |
 |---|---|---|
 | Vercel Firewall | Requests per IP to `/t/*` (Hobby allows one rate-limit rule) | 120 per minute |
-| Server | Table token signature | Invalid tokens never reach the database |
-| Cloudflare Turnstile | Before anonymous sign-in | Invisible challenge |
+| Page and Postgres | Table token | Malformed tokens never reach the database; bad signatures are refused before any table lookup |
+| Cloudflare Turnstile, through Supabase Auth CAPTCHA | Before anonymous sign-in | Invisible challenge |
 | Supabase Auth | Anonymous sign-ins per IP | Default is 30 per hour. **Raise to about 300**: all guests on café Wi-Fi share one IP, so the default would lock out a busy evening |
 | Postgres | Joining a table, per guest | 20 per hour |
 | Postgres | Orders per guest session | 6 per 10 minutes |
@@ -120,8 +120,8 @@ Rotating codes on a screen and NFC would close the gap fully, but they cost hard
 | Postgres | Auto-accept ceiling | 100,000 AMD; above it the waiter confirms |
 | Postgres | "Call waiter" and "bill please" | One open request per table and kind (repeat taps collapse) |
 | Server | AI menu import | 20 imports per restaurant per day, 8 photos each, 10 MB per photo |
-| Server | Device pairing | 5 code attempts per IP per 10 minutes; codes live 10 minutes |
-| Telegram webhook | Origin check | `X-Telegram-Bot-Api-Secret-Token` header must match |
+| Postgres | Device pairing | 5 code attempts per session per 10 minutes; codes live 10 minutes |
+| Telegram webhook | Origin check | `X-Telegram-Bot-Api-Secret-Token` header must match the secret in Vault |
 
 The Postgres limits use a fixed-window counter in an unlogged table (`private.rate_limits`), cleaned nightly. It's cheap at our scale and needs no extra service. We'll add Redis only if the counters show up in slow-query logs.
 
@@ -135,7 +135,7 @@ The Postgres limits use a fixed-window counter in an unlogged table (`private.ra
 | Malicious image upload | Size limit and MIME allowlist (JPEG, PNG, WebP) set on the bucket. Photos are resized in the browser before upload and served through Supabase image transformation, never as raw user HTML or SVG. |
 | Prompt injection through a menu photo | Claude gets no tools during import. Output must match a strict JSON schema validated by Zod, and the owner reviews every item before anything is published. The worst case is a wrong draft, not an action. |
 | Stolen staff device | The owner deactivates the device in the admin panel. RLS denies immediately and sessions are revoked. |
-| Leaked service role key | It exists only in Vercel server env vars and is used in two modules. Rotating it is a documented runbook (Phase 4). |
+| Leaked Supabase secret key | The app doesn't use it (ADR-038), so it isn't in Vercel at all. It exists only in the Supabase dashboard and inside Supabase's own Edge Function runtime. |
 | Payment credentials (Stage 3) | Stored in Supabase Vault and referenced by id. Only server-side routes decrypt them. |
 | Cross-tenant link through a bug | Composite foreign keys make it impossible at the database level. |
 | Account takeover of an owner | MFA offered, email change requires confirmation, audit log of sensitive actions. |
@@ -144,14 +144,14 @@ The Postgres limits use a fixed-window counter in an unlogged table (`private.ra
 
 | Secret | Lives in | Used by |
 |---|---|---|
-| Supabase publishable key | Client env (`NEXT_PUBLIC_…`) | Browser |
-| Supabase service role key | Vercel server env | Guest-order module, background jobs |
-| `QR_SIGNING_KEYS` | Vercel server env | QR generation and checking |
-| Claude API key | Vercel server env | Menu import, translation |
-| Telegram bot token, webhook secret | Vercel server env | Notification worker, webhook |
-| Turnstile secret | Vercel server env | Anonymous sign-in check |
-| Job endpoint secret | Vercel env and Supabase Vault | pg_net → `/api/jobs/*` |
-| Payment provider credentials (S3) | Supabase Vault | Payment routes |
+| Supabase publishable key | Client env (`NEXT_PUBLIC_…`) | Browser and server |
+| QR signing keys `qr_key_<kid>` | Supabase Vault, generated in the database | `private.sign_table_token`, `private.verify_table_token` |
+| AI provider key (Gemini now, Claude later) | Vercel server env | Menu import, translation |
+| Telegram bot token | Supabase Vault, pasted once by the owner | pg_net delivery job, webhook registration |
+| Telegram webhook secret | Supabase Vault, generated in the database | `api.telegram_update` |
+| Turnstile secret | Supabase Auth settings | CAPTCHA on anonymous sign-in |
+| Payment provider credentials (S3) | Supabase Vault | Payment functions |
+| Supabase secret (service role) key | Not used by the app (ADR-038) | — |
 
 Nothing secret is committed. Local development uses `.env.local`, and the repo has `.env.example` (Phase 2).
 

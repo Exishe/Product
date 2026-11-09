@@ -52,7 +52,7 @@ Other free-tier limits we design around are in the hosting table at the end.
 | `idb` | 8.0.4 | IndexedDB wrapper for the staff outbox. |
 | `posthog-js` | 1.447.4 | Product analytics, loaded after hydration, EU host. |
 | `@sentry/nextjs` | 11.11.0 | Error tracking for browser and server. |
-| `server-only` | 0.0.1 | Build fails if a server module (service role, secrets) is imported into client code. |
+| `server-only` | 0.0.1 | Build fails if a server module (the AI key, server-side Supabase client) is imported into client code. |
 | Cloudflare Turnstile | — (script tag) | Invisible bot check before anonymous sign-in. Free. No npm package needed. |
 
 ## Development and tests

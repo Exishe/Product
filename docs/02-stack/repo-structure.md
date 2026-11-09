@@ -51,11 +51,11 @@ One Next.js app (ADR-001). The four surfaces are route groups inside it, and fea
 │   │   ├── ui/            shadcn source, restyled with our tokens
 │   │   └── …              shared composites (LocaleSwitcher, Money, OfflineBanner)
 │   └── lib/
-│       ├── supabase/      server.ts, browser.ts, admin.server.ts (service role), types.ts (generated)
+│       ├── supabase/      server.ts, browser.ts, types.ts (generated); no service-role client (ADR-038)
 │       ├── realtime/      useLocationChannel, useGuestChannel (one hook hides the transport)
 │       ├── offline/       outbox.ts (idb), replay.ts, sw-register.ts
 │       ├── format/        money.ts, date.ts, translit.ts, plural helpers
-│       ├── security/      table-token.server.ts, turnstile.server.ts, rate-limit helpers
+│       ├── security/      table-token.ts (format check only; signatures are checked in Postgres)
 │       └── env.ts         Zod-validated environment variables
 └── tests/
     ├── e2e/               Playwright: guest → kitchen → served, offline replay, i18n overflow
@@ -78,7 +78,7 @@ ESLint `no-restricted-imports` rules per folder enforce the "may import" column.
 ## Naming and conventions
 
 - Files and folders: `kebab-case`. React components: `PascalCase` exports. Hooks: `useThing`.
-- `*.server.ts` files start with `import 'server-only'`. Anything touching the service role key, QR signing keys, AI keys or the Telegram token lives in one.
+- `*.server.ts` files start with `import 'server-only'`. Anything touching the AI provider key lives in one. The Supabase secret key, QR keys and the Telegram token never reach the app (ADR-038).
 - Server Actions live in `features/<feature>/actions.ts`. Each one validates its input with Zod, checks the caller's session, then calls one `api.*` database function or one Supabase query. No business rules in actions beyond that; the rules are in Postgres (ADR-004).
 - Database names are `snake_case`; TypeScript is `camelCase`. Database types are generated (`supabase gen types`) into `src/lib/supabase/types.ts`, never hand-written.
 - UI text only through `useTranslations` / `getTranslations` with namespaced keys (`kitchen.ticket.void`). No literals in JSX.

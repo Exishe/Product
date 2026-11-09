@@ -287,4 +287,4 @@ Run as real roles (owner A, owner B, a waiter tablet, a kitchen screen, two anon
 - `audit_log` and `order_status_history` will need monthly partitioning or archiving at roughly 200 cafés. They're plain tables until then.
 - Generated TypeScript types (`supabase gen types`) replace hand-written row types.
 - Columns added by later phases: ADR-033 (operations), ADR-036 (plans: `subscriptions.canceled_at`, `cancel_reason`, `converted_at`, plan check in ordering functions) and ADR-037 (`kitchen_tickets.first_seen_at`, `metrics_daily`).
-- Functions designed but not yet written in SQL: service requests (create by guest through the server, acknowledge and resolve by staff), device pairing and invitations (server with service role, since they create auth users), applying a reviewed menu import, and the overdue-ticket and daily-summary jobs.
+- Functions designed but not yet written in SQL: service requests (create by guest, acknowledge and resolve by staff), device pairing and invitations (`api.redeem_device_pairing`, `api.accept_invitation`; no service role, ADR-038), applying a reviewed menu import, and the overdue-ticket and daily-summary jobs.

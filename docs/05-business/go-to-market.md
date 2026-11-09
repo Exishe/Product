@@ -107,10 +107,10 @@ At 50 paying cafés, infrastructure is about 41,000 ֏ a month, 5.5 % of revenue
 | Item | Owner | Status |
 |---|---|---|
 | Demo café «Դեմո սրճարան» on a preview deploy, with a working kitchen screen | Us | Phase 6 |
-| The one-page pitch in Armenian and Russian (`pitch-onepager.md`) | Us | Done in Phase 5, price filled in after Gate 5 |
-| Pricing card with the decided prices | Us | After Gate 5 |
+| The one-page pitch in Armenian and Russian (`pitch-onepager.md`) | Us | Done; the phone or Telegram contact is still a slot |
+| Pricing card with the decided prices | Us | Prices decided; card made in Phase 6 |
 | Field visit question sheet (above), printed | Owner | Ready |
-| Brand name and logo | Owner | Open: "Restaurant OS" is a placeholder |
+| Brand name and logo | Us | Name decided: Pativ («Պատիվ», ADR-039). Logo: a wordmark in Noto Serif Armenian, made in Phase 6 |
 | A web address for the landing page and the free sign-up | Owner | Open: a domain costs about $15 a year, so it waits for the free-only rule to change |
 
 ## Risks

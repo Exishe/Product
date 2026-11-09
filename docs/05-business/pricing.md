@@ -1,6 +1,6 @@
 # Pricing
 
-A proposal. Prices are the owner's decision (Gate 5); this file gives the options, a recommendation and the reasons. All prices are per location per month, in AMD. Competitor prices were checked on 9 Nov 2026; 1 USD = 360.43 AMD (Central Bank of Armenia, same day).
+Decided on 9 Nov 2026: the owner delegated the Gate 5 decisions, and the recommended option B was taken as it stands (see "Decisions" at the end). This file keeps the options and the reasons. All prices are per location per month, in AMD. Competitor prices were checked on 9 Nov 2026; 1 USD = 360.43 AMD (Central Bank of Armenia, same day).
 
 ## What cafés pay elsewhere
 
@@ -91,10 +91,12 @@ Whether prices include VAT depends on our company's tax regime; an accountant co
 - `subscriptions.price_amd` stores the price each café actually pays, so founding prices and annual prepayments need no special case.
 - Entitlements live in Postgres: when a location is on `menu`, or `past_due` for more than 7 days, the guest ordering functions refuse, staff screens show a "plan ended" notice, and the public menu keeps working.
 
-## Decisions for the owner
+## Decisions
 
-1. Plan structure: B (recommended), A or C.
-2. Service price: 15,000 ֏ (recommended), 10,000 or 20,000.
-3. Founding cafés: free pilot, then 10,000 ֏ for 12 months (recommended), or another offer.
+Taken on 9 Nov 2026 under the owner's delegation:
 
-Starting to charge also starts paid hosting, about 16,800 ֏ a month. That's a separate money decision under the free-only rule, and it comes when the first café agrees to pay, not now.
+1. Plan structure: B, a free Menu plan and a paid Service plan.
+2. Service price: 15,000 ֏ a month per location, or 150,000 ֏ a year paid upfront.
+3. Founding cafés: free during the pilot, then 10,000 ֏ a month locked for 12 months.
+
+Still open, and still the owner's: starting to charge also starts paid hosting, about 16,800 ֏ a month. That's a money decision under the free-only rule, and it comes when the first café agrees to pay, not now.

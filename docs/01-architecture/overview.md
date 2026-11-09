@@ -34,16 +34,16 @@ flowchart LR
 
   G & W & K & O & PA --> APP
   APP --> SRV
-  G & W & K & O -- "reads via RLS,<br/>staff writes via api.*" --> DB
+  G & W & K & O -- "reads via RLS,<br/>writes via api.*" --> DB
   G & W & K & O -- "WebSocket" --> RT
-  SRV -- "guest orders (service role, narrow)" --> DB
+  SRV -- "user JWT only" --> DB
   SRV --> AUTH
   SRV --> ST
   SRV -- "menu photo → JSON,<br/>translations" --> CL
   DB -- "realtime.send() in triggers" --> RT
-  CRON -- "POST /api/jobs/*" --> SRV
-  SRV -- "sendMessage" --> TG
+  CRON -- "sendMessage (pg_net)" --> TG
   TG -- "webhook /start code" --> SRV
+  SRV -- "api.telegram_update" --> DB
   SRV -. "Stage 3: init, verify, confirm" .-> PAY
   APP & SRV -.-> OBS
 ```
@@ -52,18 +52,18 @@ flowchart LR
 
 | Component | Runs on | Talks to | Notes |
 |---|---|---|---|
-| Guest app | Phone browser, no install | `api.public_menu` (anon), server actions, Realtime | Mobile-first, hy/ru/en. Menu is server-rendered from the published snapshot and cached per location. Sign-in is a silent anonymous session, created only when the guest orders or calls the waiter. |
+| Guest app | Phone browser, no install | `api.public_menu` (anon), `api.guest_*` with its anonymous session, Realtime | Mobile-first, hy/ru/en. Menu is server-rendered from the published snapshot and cached per location. Sign-in is a silent anonymous session, created only when the guest orders or calls the waiter. |
 | Waiter app | Tablet or phone, installable PWA | Supabase directly (RLS reads, `api.*` writes), Realtime | Table map, taking orders, accepting QR orders, marking served, closing the table. Offline outbox for safe actions (`realtime.md`). |
 | Kitchen display | Tablet or TV browser, PWA | Supabase directly, Realtime | One URL per station. Columns New / Cooking / Ready, big type, sound, screen wake lock. |
 | Owner admin | Laptop, tablet | Supabase directly, server actions | Menu editor, photo-to-menu import, publish, QR printing, staff and devices, sales dashboard, Telegram link. |
 | Platform admin | Laptop | Server actions with platform-admin checks | Restaurants, subscriptions, support. Read access through RLS (`private.is_platform_admin()`). |
-| Server actions / route handlers | Vercel functions (Node) | Supabase (user JWT, or service role in two narrow modules), Claude, Telegram | Hold every secret: service role key, QR signing keys, Claude key, Telegram token. |
+| Server actions / route handlers | Vercel functions (Node) | Supabase (always with the user's JWT), the AI provider, the Telegram webhook | Holds one secret, the AI provider key. No Supabase secret key (ADR-038). |
 | Postgres | Supabase | — | RLS on every table, business rules in `api.*` and `private.*` functions, triggers for history, derived status and Realtime messages. |
 | Realtime | Supabase | Clients over WebSocket | Database-originated Broadcast on private channels `loc:<location>` and `guest:<guest_session>`. Clients never send. |
 | Storage | Supabase | Admin uploads, guest menu images | `menu-images` public, `menu-imports` private; paths start with `restaurant_id` and storage policies check it. |
-| pg_cron + pg_net | Supabase | Our job endpoints | Every minute: deliver and retry Telegram messages, flag overdue tickets. Nightly: delete old anonymous users, rate-limit rows, expired pairings. |
+| pg_cron + pg_net | Supabase | Telegram Bot API | Every minute: deliver and retry Telegram messages, flag overdue tickets. Nightly: delete old anonymous users (not devices), rate-limit rows, expired pairings. |
 | Claude API | Anthropic | Called by server only | Vision extraction to strict JSON, then translation. Model choice and cost in Phase 2 and Phase 4. |
-| Telegram Bot API | Telegram | Webhook into our server | New-order and overdue alerts, daily summary, support chat. Webhook verified by secret-token header. |
+| Telegram Bot API | Telegram | pg_net (outgoing), our webhook route (incoming) | New-order and overdue alerts, daily summary. The webhook route passes updates to `api.telegram_update`, which checks the secret-token header against Vault. |
 | Payment providers | Banks | Server only (Stage 3) | Hosted payment page, server-side verification, reconciliation job. |
 
 ## Where the rules live
@@ -71,10 +71,10 @@ flowchart LR
 | Layer | Owns | Does not own |
 |---|---|---|
 | Browser | Rendering, local cart, offline outbox, formatting | Prices, permissions, state transitions |
-| Next.js server | Verifying the table QR signature, verifying the guest JWT, Turnstile check, calling Claude and Telegram, secrets | Business rules that the database can check |
-| Postgres | Who may read what (RLS), who may change what (`api.*` asserts), prices from the published menu, state machines, idempotency, limits, history | Network calls (except pg_net to our own endpoints) |
+| Next.js server | Rendering, calling the AI provider, passing Telegram webhooks to the database | Business rules, QR signatures, any Supabase secret |
+| Postgres | Who may read what (RLS), who may change what (`api.*` asserts), QR signatures (keys in Vault), prices from the published menu, state machines, idempotency, limits, history, outgoing Telegram calls (pg_net) | Calling the AI provider |
 
-The server uses the service role in exactly two places. One is the guest-order module: after verifying the QR signature and the guest's JWT, it calls `private.join_table` and `private.place_guest_order`. The other is background jobs (outbox delivery, cleanup, AI import writes). Everything else runs with the user's own JWT, so RLS applies.
+The server never uses the Supabase secret key (ADR-038). Every call it makes carries the user's own JWT, so RLS applies; guests and devices call `api.*` functions directly, and background jobs run inside Postgres.
 
 ## Main flows
 

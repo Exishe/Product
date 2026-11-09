@@ -86,18 +86,15 @@ Coffee and drinks route to the bar station, everything else to the kitchen. Two 
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | public | Project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | `sb_publishable_…` |
-| `SUPABASE_SECRET_KEY` | server | `sb_secret_…`; used only in `admin.server.ts` |
 | `APP_BASE_URL` | server | Used in QR codes and Telegram links |
-| `QR_SIGNING_KEYS` | server | JSON map of key id → base64 key |
-| `QR_SIGNING_KID` | server | Key id for new prints |
 | `AI_PROVIDER` | server | `gemini` while the free rule holds, `claude` later |
 | `GEMINI_API_KEY` | server | Free tier |
 | `ANTHROPIC_API_KEY` | server | Empty until paid is allowed |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | server | From BotFather; the secret is our own random value |
-| `JOBS_SECRET` | server and Supabase Vault | pg_net → `/api/jobs/*` |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | public / server | Cloudflare Turnstile |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public | Cloudflare Turnstile; the secret goes into Supabase Auth's CAPTCHA setting |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | public | EU host |
 | `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN` | public / CI only | The auth token is only for source-map upload in CI |
+
+Secrets that the database itself uses live in Supabase Vault, not in env vars (ADR-038): `qr_key_<kid>` and `telegram_webhook_secret` are generated inside the database; `telegram_bot_token` is pasted once by the owner in the dashboard (Project Settings → Vault).
 
 Secrets are never committed. `.env*.local` is in `.gitignore`, and a pre-commit secret scan (gitleaks in CI) backs that up.
 

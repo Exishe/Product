@@ -28,13 +28,13 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 ### ADR-004: Clients read through RLS, state changes go through Postgres functions
 
 - Status: Proposed
-- Decision: Browsers query tables directly for reads. Plain forms (menu, floor, settings) write directly under RLS. Orders, tickets, sessions, bills and payments change only through `api.*` functions, which assert the caller's role at that location, and `private.*` functions for guest flows called by our server. Clients have no `INSERT/UPDATE/DELETE` grants on those tables.
+- Decision: Browsers query tables directly for reads. Plain forms (menu, floor, settings) write directly under RLS. Orders, tickets, sessions, bills and payments change only through `api.*` functions, which assert the caller's role at that location (guest functions included since ADR-038). Clients have no `INSERT/UPDATE/DELETE` grants on those tables.
 - Rejected: all writes through Next.js server actions with the service role (RLS stops protecting writes, and one bug becomes a cross-tenant write); all writes as plain table updates under RLS (pricing, fan-out and transitions can't be expressed in policies).
 - Consequences: The rules are tested in SQL (`90-smoke-test.sql`, then pgTAP or Vitest in CI). `SECURITY DEFINER` functions follow strict rules: `search_path = ''`, an explicit role assert, an explicit `revoke … from public, anon, authenticated`.
 
 ### ADR-005: Guests are Supabase anonymous users; guest writes go through our server
 
-- Status: Proposed
+- Status: Accepted for anonymous guests; the server-and-service-role part is superseded by ADR-038
 - Decision: The guest's first action (order, call waiter) silently creates a Supabase anonymous session behind invisible Turnstile. Reads (their orders, their Realtime channel) use that JWT under RLS. Writes go through a server action that verifies the table QR and the JWT, then calls `private.join_table` and `private.place_guest_order` with the service role.
 - Rejected: no auth at all, with order status by unguessable URL and public channels (no RLS, and Realtime would need "public access" switched on project-wide); custom JWTs signed by us (fights Supabase's key management); guest sign-up (kills ordering).
 - Consequences: The anonymous sign-in limit must be raised from 30 to about 300 per hour per IP, because café guests share one IP. Anonymous users need a cleanup job. Stage 3 and 4 can upgrade a guest to a real customer with identity linking and keep their history.
@@ -276,7 +276,7 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 
 ### ADR-036: Two plans, enforced in Postgres
 
-- Status: Proposed, waiting for the owner's pricing decision at Gate 5
+- Status: Accepted, 2026-11-09. The owner delegated the Gate 5 decisions; prices are in `docs/05-business/pricing.md`
 - Decision: `subscriptions.plan` is `menu` (free: QR menu, photo import, stop list) or `service` (paid: ordering, staff screens, Telegram, dashboard). Guest ordering functions and staff screens check the location's plan and status in Postgres; a location on `menu`, or `past_due` for more than 7 days, keeps its public menu and loses ordering. Every location starts with 30 days of `service` as a free month. Owners can export their menu, orders and bills as CSV from the admin at any time.
 - Rejected: checking the plan only in the Next.js app (a direct RPC call would skip it); deleting data when a café stops paying.
 - Consequences: Phase 6 migrations add `subscriptions.canceled_at`, `cancel_reason` and `converted_at`, rename the seed's `standard` plan, and add the plan check to `private.place_guest_order` and the staff RPCs. CSV export is a Stage 1 admin feature.
@@ -287,3 +287,33 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Decision: Add `kitchen_tickets.first_seen_at`, set when a kitchen screen reports that it has drawn the ticket, so order-to-kitchen time is measured in production. A `metrics_daily` table (one row per location per business day) is filled by `pg_cron` at 05:30 Yerevan time and read by platform admins through security-definer functions. PostHog tracks four guest events and nothing personal.
 - Rejected: computing business metrics in PostHog (it would need order data and guest identifiers we don't want there); timing on the client clock (device clocks drift, R20).
 - Consequences: Definitions and targets are in `docs/05-business/metrics.md`.
+
+---
+
+## Phase 6 decisions
+
+### ADR-038: The app never holds the Supabase secret key
+
+- Status: Accepted, 2026-11-09
+- Context: The Phase 1 design gave the Next.js server the service-role key for guest orders, device pairing and background jobs. Two problems showed up when setting up the build. The tools this project is built with can read only a project's publishable keys, and secrets are never pasted into chat. And the service-role key is the one secret that bypasses every RLS policy (risk R14), so keeping it out of Vercel is safer anyway.
+- Decision: Everything that needed the key moves into the database.
+  1. Table QR tokens are signed and checked in Postgres (`private.sign_table_token`, `private.verify_table_token`) with HMAC-SHA256 keys stored in Supabase Vault as `qr_key_<kid>`. The keys are generated inside the database, so no person or tool ever sees them. The token format from ADR-006 doesn't change.
+  2. Guests call `api.guest_join_table` and `api.guest_place_order` directly with their anonymous session. Each function checks the token, the session and the limits itself; the existing `private.*` functions stay as the internal core.
+  3. A kitchen screen or waiter tablet signs in anonymously and redeems its pairing code with `api.redeem_device_pairing`. `private.is_real_user()` accepts an anonymous user only when it is an active device member, so guests still never match a staff policy. People join with `api.accept_invitation` after signing up.
+  4. Background work runs in Postgres. pg_cron schedules it and pg_net calls the Telegram Bot API directly, with the bot token in Vault. Telegram's webhook goes to a small Next.js route that passes the update and its secret header to `api.telegram_update`, which checks the secret against Vault.
+  5. Turnstile protects anonymous sign-in through Supabase Auth's own CAPTCHA setting instead of our server.
+- Rejected: asking the owner to paste the key into chat (secrets never go through chat); injecting the key through the development network proxy (it would make test requests run as the service role and hide RLS bugs); Supabase Edge Functions for guest writes (a second runtime for no gain). Edge Functions stay the escape hatch for Auth admin tasks, since Supabase gives them the key automatically.
+- Consequences:
+  - Vercel holds only the publishable key and the AI provider key. `SUPABASE_SECRET_KEY`, `QR_SIGNING_KEYS`, `TELEGRAM_*`, `JOBS_SECRET` and `TURNSTILE_SECRET_KEY` leave the env list.
+  - The plain-Postgres test harness stubs Vault and pg_net.
+  - Some settings exist only in the Supabase dashboard, so the owner does them once: turn on anonymous sign-ins; turn off email confirmation for the pilot (the free email service only reaches the project's own team); raise the anonymous sign-in limit to about 300 an hour; later, add Turnstile and paste the Telegram bot token into Vault.
+  - The cleanup job that deletes old anonymous users skips device members.
+
+### ADR-039: The product is called Pativ (Պատիվ)
+
+- Status: Accepted, 2026-11-09, chosen under the owner's delegation; easy to change
+- Context: "Restaurant OS" was a placeholder. The pitch and the guest-facing app need a real name.
+- Decision: Pativ, written «Պատիվ» in Armenian and «Патив» in Russian. «Պատիվ արեք» is what Armenians say when they set food in front of a guest, so the name is about hospitality without being a generic word like "menu" or "table". It's short, has no awkward meaning in Russian or English, and is easy to say in all three languages. Searches on 9 Nov 2026 found no Armenian business or app using it, and pativ.am was unregistered.
+- Rejected: Seghan («Սեղան», table: too generic, and "gh" is hard for foreign guests); Tarkhun (a well-known soft drink brand); Tsiran (used by many businesses).
+- Consequences: The UI reads the name from one message key (`brand.name`) and one constant, so a rename touches no logic. "Restaurant OS" stays as the internal project name in docs and code. Before spending money on the name (domain, printing, trademark), check the Armenian IP office register (aipa.am) and register pativ.am; both wait for the free-only rule to change.
+

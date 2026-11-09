@@ -2,15 +2,15 @@
 
 Two versions of the same page, Armenian and Russian, each written natively rather than translated. Printed on A4 for visits, or sent as a photo in a chat. Before printing:
 
-- the price follows the owner's Gate 5 decision (`pricing.md`; 15,000 ֏ is the proposal);
-- the phone number and Telegram handle replace the `[հաստատել]` / `[уточнить]` slots;
-- "Restaurant OS" stays until the owner picks the brand name.
+- the phone number and Telegram handle replace the `[հաստատել]` / `[уточнить]` slots.
+
+Prices follow `pricing.md` (decided 9 Nov 2026). The name is Pativ (ADR-039).
 
 ---
 
 ## Հայերեն
 
-# Restaurant OS
+# Պատիվ
 
 ### Պատվերը՝ հյուրի հեռախոսից անմիջապես խոհանոց
 
@@ -48,7 +48,7 @@ Two versions of the same page, Armenian and Russian, each written natively rathe
 
 ## Русский
 
-# Restaurant OS
+# Pativ
 
 ### Заказ с телефона гостя сразу на кухню
 

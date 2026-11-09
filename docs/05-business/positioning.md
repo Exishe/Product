@@ -29,7 +29,7 @@ One sentence, for owners:
 
 Positioning statement, for us:
 
-> For owners of independent cafés in Yerevan who run service on paper, Restaurant OS is the table ordering and kitchen system built in Armenian first, which goes live from a photo of the paper menu and keeps working when the café Wi-Fi doesn't.
+> For owners of independent cafés in Yerevan who run service on paper, Pativ is the table ordering and kitchen system built in Armenian first, which goes live from a photo of the paper menu and keeps working when the café Wi-Fi doesn't.
 
 ## What cafés use today, and why they'd switch
 
@@ -64,6 +64,8 @@ Where the others are honestly better: a full POS prints fiscal receipts and trac
 | Bonee System | Yerevan, founded 2018; multilingual menu by QR | Not published | Company profile on gust.com (search result only; the page refused access) |
 | OddMenu | Foreign self-service QR menus; its catalog lists 11 Armenian venues, including Han Restaurant, YANÉ and Shila | Not published for Armenia | [oddmenu.com](https://oddmenu.com/catalog/armenia) |
 | QR Menyu | Azerbaijan, not sold in Armenia; menu, ordering, waiter app, kitchen display, POS | Free to 50 dishes; $6.47 a month for everything | [qrmenyu.az](https://qrmenyu.az/en) |
+
+Next to these, Armenian reservation apps exist (MyTable.am, Rez | Rezerve.am, both on the App Store), and a travel guide lists Bonee as an app for scanning a restaurant's QR menu ([armeniadiscovery.com](https://armeniadiscovery.com/en/article/best-mobile-apps-for-traveling-in-armenia)). None of them does table ordering with a kitchen screen.
 
 We found no published survey of how many Yerevan cafés use QR menus, PDF menus or Instagram menus. That's the first thing the field visits count.
 
