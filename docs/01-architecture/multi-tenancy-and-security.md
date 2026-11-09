@@ -109,7 +109,7 @@ Rotating codes on a screen and NFC would close the gap fully, but they cost hard
 
 | Where | What | Starting limit |
 |---|---|---|
-| Vercel Firewall | Requests per IP to `/t/*` and server actions | 120 per minute (plan check in Phase 2) |
+| Vercel Firewall | Requests per IP to `/t/*` (Hobby allows one rate-limit rule) | 120 per minute |
 | Server | Table token signature | Invalid tokens never reach the database |
 | Cloudflare Turnstile | Before anonymous sign-in | Invisible challenge |
 | Supabase Auth | Anonymous sign-ins per IP | Default is 30 per hour. **Raise to about 300**: all guests on café Wi-Fi share one IP, so the default would lock out a busy evening |

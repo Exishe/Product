@@ -171,3 +171,65 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Decision: Guests subscribe to `guest:<session>` while an order is open. At about 15 live cafés we either lift the Pro plan's 500-connection cap (spend cap off, 10,000) or switch guests to 10-second polling.
 - Rejected: deciding now without real connection numbers.
 - Consequences: `costs.md` (Phase 4) prices both paths. The guest client hides the transport behind one hook, so switching is a small change.
+
+---
+
+## Phase 2 decisions
+
+### ADR-025: Free plans only until the owner says otherwise
+
+- Status: Accepted (owner instruction), 2026-11-09
+- Decision: Use only free plans and services. AI runs on the Gemini free tier, the database on Supabase Free, hosting on Vercel Hobby, monitoring on free tiers. Anything that needs money stops and goes to the owner.
+- Consequences:
+  - Vercel Hobby allows only personal or non-commercial use. It's fine for building and a free pilot, but paid hosting is needed before the first café pays.
+  - Supabase Free has no backups, so a nightly encrypted `pg_dump` runs in GitHub Actions. Projects pause after a week without activity, and 200 Realtime connections cap the pilot at roughly 8 busy cafés.
+  - Gemini's free tier may use prompts to improve Google's products. Menu photos are public information; owners are told at import.
+  - Vercel Hobby allows one firewall rate-limit rule. It goes on `/t/*`; everything else relies on the Postgres limits.
+  - Upgrade order when lifted: Supabase Pro → paid hosting → Claude → email domain.
+
+### ADR-026: The AI menu reader sits behind our own interface, on official SDKs
+
+- Status: Proposed
+- Decision: A `MenuReader` interface (`readMenu`, `translate`) with a Gemini adapter (`@google/genai`) and a Claude adapter (`@anthropic-ai/sdk`). Both return data validated by one Zod schema. `AI_PROVIDER` picks the adapter.
+- Rejected: Claude only (not free); the Vercel AI SDK (`ai` 7) as a provider abstraction (more surface than two calls need, and it hides provider-specific structured-output features).
+- Consequences: The Phase 6 test set (15–20 real menus) runs against Gemini now and against Claude once allowed, so the switch is measured, not assumed.
+
+### ADR-027: `uqr` plus our own SVG for table QR codes
+
+- Status: Proposed
+- Decision: Generate the QR matrix with `uqr` 0.1.3 (no dependencies) and render the branded SVG and A4 print sheets ourselves, using print CSS.
+- Rejected: `qr-code-styling` 1.9.2 (last release April 2025, browser-canvas oriented); a PDF library (the browser prints A4 well).
+- Consequences: We own about 100 lines of SVG drawing. QR codes must use high error correction when a logo covers the centre; tested by scanning printed sheets with real phones in Phase 6.
+
+### ADR-028: Charts with Recharts through shadcn, not Tremor
+
+- Status: Proposed
+- Decision: `recharts` 3.10.1 via shadcn's chart component, styled with our tokens.
+- Rejected: `@tremor/react` (last published January 2025; its successor is copy-paste code on Recharts anyway).
+
+### ADR-029: A hand-written service worker, no PWA library
+
+- Status: Proposed
+- Decision: `public/sw.js` with cache-first for hashed `/_next/static` files, network-first for staff pages with an offline fallback, plus `idb` for the outbox. The manifest comes from `app/manifest.ts`.
+- Rejected: `@serwist/next` (adds `@serwist/cli`; precaching every route isn't needed).
+- Consequences: Service-worker updates are versioned by hand; Playwright tests the offline path.
+
+### ADR-030: Restaurant OS gets its own Supabase project; the existing one is off limits
+
+- Status: Proposed
+- Decision: Create `restaurant-os-dev` (free, `eu-central-1`) in Phase 6 after the owner confirms. Production gets its own project when the free rule allows. The account's existing project "Exishe's Project" is never used.
+- Rejected: reusing the existing project (it holds another product's tables, and our migrations revoke default grants across `public`, which would break that product).
+- Consequences: It uses the second of the two free project slots.
+
+### ADR-031: TypeScript 6 and ESLint 9 until the ecosystem catches up
+
+- Status: Proposed
+- Decision: Pin `typescript` 6.0.3 and `eslint` 9.39.5.
+- Rejected: TypeScript 7.0.2 (outside `typescript-eslint`'s supported range `<6.1.0`); ESLint 10 (three plugins inside `eslint-config-next` 16.4.5 accept ESLint up to 9).
+- Consequences: Revisit when `typescript-eslint` and `eslint-config-next` release support. Dependabot will flag the upgrades.
+
+### ADR-032: npm and exact version pins
+
+- Status: Proposed
+- Decision: npm with a committed `package-lock.json` and exact versions in `package.json`. Upgrades arrive as pull requests that must pass CI and the license allowlist.
+- Rejected: pnpm (fine, but the supply-chain auditor we use doesn't read its lockfile).
