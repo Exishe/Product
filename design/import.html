@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menu import mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Noto+Serif+Armenian:wdth,wght@62.5..100,400..800&family=Noto+Serif:wdth,wght@62.5..100,400..800&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--mist); }
+  .adm { background: var(--matsoni); display: grid; grid-template-columns: 232px 1fr; }
+  .side { background: var(--white); border-right: 1px solid var(--line); padding: var(--s-6) var(--s-4); display: flex; flex-direction: column; gap: var(--s-6); }
+  .brand { font-weight: 700; color: var(--muted); font-size: var(--t-14); }
+  .cafe { font-size: var(--t-24); line-height: 1.1; }
+  .nav { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .nav a { display: block; padding: 10px var(--s-3); border-radius: var(--r-chip); color: var(--ink); text-decoration: none; font-weight: 600; }
+  .nav a[aria-current="page"] { background: var(--tarragon-tint); color: var(--tarragon); }
+  .nav .sub a { padding-left: var(--s-6); font-weight: 400; }
+
+  .adm > * { min-height: 0; }
+  .main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; height: 100%; }
+  .head { padding: var(--s-6) var(--s-8) var(--s-4); display: grid; gap: var(--s-4); }
+  .head h1 { margin: 0; font-size: var(--t-38); line-height: 1.05; }
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--s-6); counter-reset: s; }
+  .steps li { display: flex; align-items: center; gap: var(--s-2); color: var(--muted); counter-increment: s; }
+  .steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line-strong); font-weight: 700; font-size: var(--t-14); }
+  .steps .done { color: var(--tarragon); }
+  .steps .done::before { content: "✓"; background: var(--tarragon); border-color: var(--tarragon); color: var(--white); }
+  .steps .now { color: var(--ink); font-weight: 700; }
+  .steps .now::before { border-color: var(--ink); background: var(--ink); color: var(--matsoni); }
+  .notice { background: var(--mist); border-radius: var(--r-sheet); padding: var(--s-3) var(--s-4); display: grid; gap: 4px; }
+  .notice p { margin: 0; }
+  .notice small { color: var(--muted); }
+
+  .work { display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: var(--s-8); padding: 0 var(--s-8); min-height: 0; overflow: hidden; }
+  .photo-col { overflow: hidden; display: grid; align-content: start; gap: var(--s-2); padding: var(--s-2) 0; }
+  .caption { color: var(--muted); font-size: var(--t-14); }
+  /* the photographed paper menu */
+  .paper {
+    position: relative; background: #F4F4EF; border-radius: 3px; padding: var(--s-6) var(--s-6) var(--s-8);
+    transform: rotate(-1.4deg); box-shadow: 0 2px 0 #E2E2DA, 0 18px 30px rgba(19, 36, 27, 0.22);
+    font-family: var(--font-display); color: #2A2A2A; font-size: 1.05rem;
+  }
+  .paper h3 { font-size: 1.35rem; margin: var(--s-4) 0 var(--s-1); font-weight: 700; }
+  .paper h3:first-child { margin-top: 0; }
+  .pl { display: flex; justify-content: space-between; gap: var(--s-3); padding: 1px 6px; margin: 0 -6px; border-radius: 4px; outline: 2px solid transparent; transition: outline-color 120ms, background 120ms; }
+  .pl--hit { outline-color: var(--tarragon); background: rgba(29, 106, 67, 0.12); }
+  .smudge { filter: blur(1.4px); }
+  .paper__title { text-align: center; font-size: 1.6rem; font-weight: 700; margin-bottom: var(--s-2); }
+
+  .review { min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-2) var(--s-6) 0; display: grid; gap: var(--s-6); align-content: start; }
+  .cat { display: grid; gap: var(--s-2); }
+  .cat__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+  .cat__head h2 { margin: 0; font-size: var(--t-24); color: var(--tarragon); }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) 132px 148px; gap: var(--s-2) var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-sheet); background: var(--white); align-items: center; }
+  .row--flag { border-color: var(--apricot-deep); border-width: 2px; }
+  .row--ok { background: var(--matsoni); }
+  .row label { display: grid; gap: 2px; font-size: var(--t-12); color: var(--muted); font-weight: 600; }
+  .row input { min-height: 40px; padding: 0 var(--s-2); border: 1px solid var(--line-strong); border-radius: var(--r-input); background: var(--white); font-size: var(--t-16); color: var(--ink); width: 100%; min-width: 0; }
+  .row .hy { font-family: var(--font-display); font-stretch: 75%; font-size: var(--t-20); font-weight: 600; }
+  .price { position: relative; }
+  .price input { padding-right: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+  .price span { position: absolute; right: 9px; bottom: 9px; color: var(--muted); }
+  .trans { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+  .flag { grid-column: 1 / -1; justify-self: start; background: #FCE8C8; color: var(--ink); border-radius: var(--r-chip); padding: 2px 8px; font-size: var(--t-14); font-weight: 600; }
+  .ok { min-height: 44px; border-radius: var(--r-input); border: 1px solid var(--line-strong); background: var(--white); font-weight: 700; align-self: end; }
+  .ok[aria-pressed="true"] { background: var(--tarragon-tint); border-color: var(--tarragon); color: var(--tarragon); }
+  .catok { min-height: 40px; padding: 0 var(--s-3); border-radius: var(--r-input); border: 1px solid var(--line-strong); background: var(--white); font-weight: 600; }
+
+  .foot { display: flex; align-items: center; gap: var(--s-6); padding: var(--s-4) var(--s-8); background: var(--white); border-top: 1px solid var(--line); }
+  .prog { flex: 1; display: grid; gap: 6px; }
+  .bar { height: 8px; background: var(--mist); border-radius: var(--r-pill); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--tarragon); transition: width 200ms; }
+  .publish { min-height: 56px; padding: 0 var(--s-8); border: 0; border-radius: var(--r-sheet); background: var(--apricot); color: var(--ink); font-weight: 700; font-size: var(--t-16); }
+  .publish:disabled { background: var(--mist); color: var(--muted); }
+  .why { color: var(--muted); font-size: var(--t-14); }
+
+  .published { position: absolute; inset: 0; background: rgba(251, 252, 248, 0.96); display: grid; place-items: center; text-align: center; z-index: 5; }
+  .published h2 { font-size: var(--t-48); margin: 0 0 var(--s-2); }
+  .published p { color: var(--muted); margin: 0 0 var(--s-6); font-size: var(--t-20); }
+  .published .actions { display: flex; gap: var(--s-3); justify-content: center; }
+  .published a { display: inline-grid; place-items: center; min-height: 56px; padding: 0 var(--s-6); border-radius: var(--r-sheet); font-weight: 700; text-decoration: none; }
+  .published .a1 { background: var(--apricot); color: var(--ink); }
+  .published .a2 { border: 1px solid var(--line-strong); color: var(--ink); background: var(--white); }
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockups">
+  <a href="index.html">All mockups</a>
+  <span>Owner admin, 1440 × 900: reviewing a menu read from a photo</span>
+</nav>
+
+<div class="stage"><div class="stage__box"><div class="stage__screen adm">
+  <aside class="side">
+    <div><div class="brand">Restaurant OS</div><div class="display cafe">Դեմո սրճարան</div></div>
+    <ul class="nav">
+      <li><a href="#import" aria-current="false">Ճաշացանկ</a></li>
+      <li class="sub"><a href="#import" aria-current="page">Ներմուծում լուսանկարից</a></li>
+      <li><a href="#import">Սեղաններ և QR</a></li>
+      <li><a href="#import">Աշխատակիցներ և սարքեր</a></li>
+      <li><a href="#import">Վաճառքներ</a></li>
+      <li><a href="#import">Telegram</a></li>
+      <li><a href="#import">Կարգավորումներ</a></li>
+    </ul>
+  </aside>
+  <div class="main" style="position:relative">
+    <header class="head">
+      <h1 class="display">Ճաշացանկը լուսանկարից</h1>
+      <ol class="steps"><li class="done">Լուսանկար</li><li class="done">Ճանաչում</li><li class="now">Ստուգում</li><li>Հրապարակում</li></ol>
+      <div class="notice">
+        <p>Ռուսերեն և անգլերեն թարգմանությունները պատրաստվել են ավտոմատ։ Ստուգեք անուններն ու գները հրապարակելուց առաջ։</p>
+        <small>Լուսանկարը կարդացել է Google Gemini-ն։ Անվճար տարբերակում Google-ը կարող է լուսանկարներն օգտագործել իր ծառայությունները բարելավելու համար։</small>
+      </div>
+    </header>
+    <div class="work">
+      <div class="photo-col">
+        <span class="caption">menu-photo-1.jpg, 2 լուսանկարից առաջինը</span>
+        <div class="paper" id="paper" aria-label="Թղթե ճաշացանկի լուսանկար"></div>
+      </div>
+      <div class="review" id="review"></div>
+    </div>
+    <footer class="foot">
+      <div class="prog"><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
+      <span class="why" id="why"></span>
+      <button class="publish" type="button" id="publish">Հրապարակել ճաշացանկը</button>
+    </footer>
+    <div class="published" id="done" hidden>
+      <div>
+        <h2 class="display">Ճաշացանկը հրապարակված է</h2>
+        <p>Տարբերակ 1։ Հյուրերն արդեն տեսնում են այն QR կոդով։</p>
+        <div class="actions"><a class="a1" href="#import">Տպել QR կոդերը</a><a class="a2" href="guest.html">Բացել ճաշացանկը</a></div>
+      </div>
+    </div>
+  </div>
+</div></div></div>
+
+<script src="stage.js"></script>
+<script>
+initStage(1440, 900);
+const CATS = [
+  { id: "b", hy: "Նախաճաշ", items: [
+    { id: 1, hy: "Լոլիկով ձվածեղ", ru: "Яичница с помидорами", en: "Eggs with tomatoes", p: 1800, ok: true },
+    { id: 2, hy: "Ժենգյալով հաց", ru: "Женгялов хац", en: "Zhingyalov hats", p: 1500, ok: true },
+    { id: 3, hy: "Մածուն մեղրով", ru: "Мацун с мёдом", en: "Matsoni with honey", p: 1200 } ] },
+  { id: "h", hy: "Տաք ուտեստներ", items: [
+    { id: 4, hy: "Տոլմա", ru: "Толма", en: "Tolma", p: 3200, ok: true },
+    { id: 5, hy: "Խաշլամա", ru: "Хашлама", en: "Khashlama (lamb stew)", p: 3800, flag: "Ստուգեք գինը․ լուսանկարում հստակ չի երևում", smudgePrice: true } ] },
+  { id: "k", hy: "Խորոված", items: [
+    { id: 6, hy: "Խոզի չալաղաջ", ru: "Хоровац из свиной корейки", en: "Pork rib khorovats", p: 4200, ok: true },
+    { id: 7, hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats", p: 3300, ok: true },
+    { id: 8, hy: "Բանջարեղենի խորոված", ru: "Овощной хоровац", en: "Grilled vegetables", p: 2200, ok: true } ] },
+  { id: "s", hy: "Աղցաններ", items: [
+    { id: 9, hy: "Ամառային աղցան", ru: "Летний салат", en: "Summer salad", p: 1600, ok: true },
+    { id: 10, hy: "Ցեզար աղցան հավով", ru: "Цезарь с курицей", en: "Caesar salad with chicken", p: 3100 } ] },
+  { id: "d", hy: "Ըմպելիքներ", items: [
+    { id: 11, hy: "Հայկական սուրճ", ru: "Армянский кофе", en: "Armenian coffee", p: 700, ok: true },
+    { id: 12, hy: "Թարխուն", ru: "Тархун", en: "Tarragon lemonade", p: 1200, flag: "Ստուգեք անունը․ ձեռագիրը դժվար է կարդալ", smudgeName: true },
+    { id: 13, hy: "Թան", ru: "Тан", en: "Tan (yogurt drink)", p: 600, ok: true },
+    { id: 14, hy: "Ջերմուկ", ru: "Джермук", en: "Jermuk mineral water", p: 600 } ] },
+];
+const $ = s => document.querySelector(s);
+const NBSP = " ";
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const items = () => CATS.flatMap(c => c.items);
+
+function renderPaper() {
+  // What the café's paper menu says: Armenian only, prices without the dram sign.
+  $("#paper").innerHTML = `<div class="paper__title">Ճաշացանկ</div>` + CATS.map(c => `<h3>${c.hy}</h3>` +
+    c.items.map(i => `<div class="pl" data-line="${i.id}"><span class="${i.smudgeName ? "smudge" : ""}">${esc(i.hy)}</span>
+      <span class="${i.smudgePrice ? "smudge" : ""}">${i.p}</span></div>`).join("")).join("");
+}
+
+function renderReview() {
+  $("#review").innerHTML = CATS.map(c => {
+    const all = c.items.every(i => i.ok);
+    return `<section class="cat" aria-labelledby="c-${c.id}">
+      <div class="cat__head"><h2 class="display" id="c-${c.id}">${c.hy}</h2>
+        <button class="catok" type="button" data-cat="${c.id}" ${all ? "disabled" : ""}>${all ? "Բաժինը ստուգված է" : "Հաստատել ամբողջ բաժինը"}</button></div>
+      ${c.items.map(i => `<div class="row ${i.flag && !i.ok ? "row--flag" : ""} ${i.ok ? "row--ok" : ""}" data-row="${i.id}">
+        <label>Հայերեն<input class="hy" data-f="hy" data-id="${i.id}" value="${esc(i.hy)}" lang="hy"></label>
+        <label class="price">Գին<input data-f="p" data-id="${i.id}" inputmode="numeric" value="${i.p}"><span>֏</span></label>
+        <button class="ok" type="button" data-ok="${i.id}" aria-pressed="${!!i.ok}">${i.ok ? "Ստուգված" : "Ճիշտ է"}</button>
+        ${i.flag && !i.ok ? `<span class="flag">${esc(i.flag)}</span>` : ""}
+        <div class="trans"><label>Русский<input data-f="ru" data-id="${i.id}" value="${esc(i.ru)}" lang="ru"></label>
+          <label>English<input data-f="en" data-id="${i.id}" value="${esc(i.en)}" lang="en"></label></div>
+      </div>`).join("")}
+    </section>`;
+  }).join("");
+}
+
+function renderFoot() {
+  const all = items(), done = all.filter(i => i.ok).length, left = all.length - done;
+  $("#progText").textContent = `${all.length} ուտեստից ${done}-ը ստուգված է`;
+  $("#progBar").style.width = (done / all.length * 100) + "%";
+  $("#why").textContent = left ? `Մնաց ${left} ուտեստ` : "Ամեն ինչ ստուգված է";
+  $("#publish").disabled = left > 0;
+}
+
+function render() { renderReview(); renderFoot(); }
+
+function hit(id) {
+  document.querySelectorAll(".pl").forEach(el => el.classList.toggle("pl--hit", el.dataset.line == id));
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.ok) { const i = items().find(x => x.id == b.dataset.ok); i.ok = !i.ok; render(); hit(i.id); return; }
+  if (b.dataset.cat) { CATS.find(c => c.id === b.dataset.cat).items.forEach(i => i.ok = true); render(); return; }
+  if (b.id === "publish") { $("#done").hidden = false; return; }
+});
+document.addEventListener("focusin", e => { const r = e.target.closest("[data-row]"); if (r) hit(r.dataset.row); });
+document.addEventListener("mouseover", e => { const r = e.target.closest("[data-row]"); if (r) hit(r.dataset.row); });
+document.addEventListener("input", e => {
+  const el = e.target; if (!el.dataset.f) return;
+  const i = items().find(x => x.id == el.dataset.id);
+  i[el.dataset.f] = el.dataset.f === "p" ? Number(el.value.replace(/\D/g, "")) || 0 : el.value;
+});
+
+renderPaper();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guest menu mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Noto+Serif+Armenian:wdth,wght@62.5..100,400..800&family=Noto+Serif:wdth,wght@62.5..100,400..800&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--mist); }
+
+  .phone {
+    max-width: 430px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--matsoni);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* header */
+  .cafe { padding: var(--s-6) var(--s-4) var(--s-3); display: grid; gap: var(--s-2); }
+  .cafe__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); }
+  .cafe__name { font-size: var(--t-38); line-height: 1.05; margin: 0; text-wrap: balance; }
+  .cafe__meta { display: flex; gap: var(--s-2); align-items: center; color: var(--muted); font-size: var(--t-14); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 10px; border-radius: var(--r-pill);
+    background: var(--tarragon-tint); color: var(--tarragon);
+    font-size: var(--t-14); font-weight: 600;
+  }
+  .lang { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--r-chip); overflow: hidden; flex: none; }
+  .lang button {
+    border: 0; background: transparent; min-width: 48px; min-height: 40px; padding: 0 10px;
+    font-size: var(--t-14); font-weight: 600; color: var(--muted);
+  }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--matsoni); }
+
+  .search { padding: 0 var(--s-4) var(--s-3); }
+  .search input {
+    width: 100%; min-height: 48px; padding: 0 var(--s-4);
+    border: 1px solid var(--line-strong); border-radius: var(--r-input); background: var(--white);
+  }
+
+  /* category tabs */
+  .cats {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: var(--s-2); overflow-x: auto; scrollbar-width: none;
+    padding: var(--s-2) var(--s-4); background: var(--matsoni); border-bottom: 1px solid var(--line);
+  }
+  .cats::-webkit-scrollbar { display: none; }
+  .cats button {
+    flex: none; border: 0; background: transparent; min-height: 40px; padding: 0 var(--s-3);
+    border-radius: var(--r-chip); font-weight: 600; color: var(--muted); white-space: nowrap;
+  }
+  .cats button[aria-current="true"] { background: var(--tarragon); color: var(--white); }
+
+  /* menu */
+  main { flex: 1; padding: 0 var(--s-4) var(--s-8); }
+  .cat { padding-top: var(--s-6); scroll-margin-top: 64px; }
+  .cat h2 { font-size: var(--t-30); margin: 0 0 var(--s-2); color: var(--tarragon); }
+  .items { list-style: none; margin: 0; padding: 0; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s-3); padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .item__open { grid-column: 1 / -1; display: block; text-align: left; border: 0; background: none; padding: 0; }
+  .item__line { display: flex; align-items: baseline; gap: 6px; }
+  .item__name { font-size: var(--t-24); line-height: 1.15; }
+  .leader { flex: 1; min-width: 16px; border-bottom: 2px dotted var(--line-strong); transform: translateY(-0.3em); }
+  .item__price { font-weight: 600; white-space: nowrap; }
+  .item__desc { color: var(--muted); font-size: var(--t-14); margin: 2px 0 0; max-width: 34ch; }
+  .item__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); grid-column: 1 / -1; min-height: 48px; }
+  .item__facts { display: flex; gap: var(--s-2); color: var(--muted); font-size: var(--t-14); }
+  .tag { color: var(--tarragon); font-weight: 600; }
+  .add {
+    width: 48px; height: 48px; border-radius: var(--r-pill); border: 0;
+    background: var(--apricot); color: var(--ink); display: grid; place-items: center;
+  }
+  .add:active { background: var(--apricot-deep); }
+  .soldout { color: var(--pomegranate); font-weight: 600; font-size: var(--t-14); }
+  .item--out .item__name, .item--out .item__price { color: var(--muted); }
+  .empty { padding: var(--s-12) 0; color: var(--muted); text-align: center; }
+
+  /* cart bar */
+  .cartbar {
+    position: sticky; bottom: 0; z-index: 6;
+    padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--matsoni) 70%, transparent);
+  }
+  .cartbar button {
+    width: 100%; min-height: 56px; border: 0; border-radius: var(--r-sheet);
+    background: var(--apricot); color: var(--ink); box-shadow: var(--float);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 var(--s-4);
+    font-weight: 600;
+  }
+  .cartbar small { font-weight: 400; display: block; font-size: var(--t-14); }
+
+  /* sheet */
+  .sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet__backdrop { position: absolute; inset: 0; background: rgba(19, 36, 27, 0.45); border: 0; }
+  .sheet__panel {
+    position: relative; width: 100%; max-width: 430px; max-height: 88vh; overflow-y: auto;
+    background: var(--matsoni); border-radius: var(--r-bottom-sheet) var(--r-bottom-sheet) 0 0;
+    padding: var(--s-6) var(--s-4) calc(var(--s-4) + env(safe-area-inset-bottom, 0px));
+    animation: rise 220ms ease-out;
+  }
+  @keyframes rise { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+  .sheet h2 { font-size: var(--t-30); line-height: 1.1; margin: 0 0 var(--s-2); }
+  .group { border: 0; padding: 0; margin: var(--s-6) 0 0; }
+  .group legend { display: flex; width: 100%; justify-content: space-between; align-items: baseline; font-weight: 600; padding: 0; margin-bottom: var(--s-2); }
+  .group legend span { font-size: var(--t-14); font-weight: 400; color: var(--muted); }
+  .group legend .req { color: var(--pomegranate); font-weight: 600; }
+  .opt { display: flex; align-items: center; gap: var(--s-3); min-height: 48px; border-bottom: 1px solid var(--line); }
+  .opt input { width: 22px; height: 22px; accent-color: var(--tarragon); margin: 0; }
+  .opt span:first-of-type { flex: 1; }
+  .note { display: grid; gap: 6px; margin-top: var(--s-6); font-weight: 600; }
+  .note textarea {
+    min-height: 72px; padding: var(--s-3); border: 1px solid var(--line-strong);
+    border-radius: var(--r-input); background: var(--white); font-weight: 400; resize: vertical;
+  }
+  .sheet__foot { display: flex; gap: var(--s-3); margin-top: var(--s-6); }
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: var(--r-input); }
+  .stepper button { width: 48px; height: 48px; border: 0; background: none; font-size: var(--t-20); }
+  .stepper output { min-width: 28px; text-align: center; font-weight: 600; }
+  .primary {
+    flex: 1; min-height: 56px; border: 0; border-radius: var(--r-sheet);
+    background: var(--apricot); color: var(--ink); font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: 0 var(--s-4);
+  }
+  .primary:disabled { background: var(--mist); color: var(--muted); }
+  .primary--center { justify-content: center; }
+
+  /* cart + status views */
+  .view-head { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-4) 0 0; }
+  .back { min-width: 48px; min-height: 48px; border: 0; background: none; display: inline-flex; align-items: center; gap: 4px; color: var(--tarragon); font-weight: 600; padding: 0; }
+  .view-title { font-size: var(--t-38); margin: var(--s-2) 0 var(--s-1); line-height: 1.05; }
+  .lines { list-style: none; padding: 0; margin: var(--s-4) 0 0; }
+  .line { display: grid; grid-template-columns: 1fr auto; gap: 4px var(--s-3); padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .line__name { font-size: var(--t-20); }
+  .line__mods, .line__note { color: var(--muted); font-size: var(--t-14); grid-column: 1 / 2; }
+  .line__note::before { content: "“"; }
+  .line__note::after { content: "”"; }
+  .line__price { font-weight: 600; text-align: right; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; padding: var(--s-4) 0; font-size: var(--t-20); font-weight: 600; }
+  .hint { color: var(--muted); font-size: var(--t-14); margin: 0 0 var(--s-4); }
+
+  .tracker { list-style: none; padding: 0; margin: var(--s-6) 0; display: grid; gap: 0; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: var(--s-3); align-items: start; min-height: 52px; position: relative; }
+  .step::before {
+    content: ""; position: absolute; left: 13px; top: 28px; bottom: -4px; width: 2px; background: var(--line);
+  }
+  .step:last-child::before { display: none; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--matsoni); display: grid; place-items: center; z-index: 1; }
+  .step--done .dot { background: var(--tarragon); border-color: var(--tarragon); color: var(--white); }
+  .step--done::before { background: var(--tarragon); }
+  .step--now { padding-bottom: var(--s-3); }
+  .step--now .dot { border-color: var(--tarragon); box-shadow: 0 0 0 5px var(--tarragon-tint); }
+  .step__label { font-weight: 600; line-height: 28px; }
+  .step--todo .step__label { color: var(--muted); font-weight: 400; }
+  .step__note { color: var(--muted); font-size: var(--t-14); margin: 0; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+  .secondary {
+    min-height: 52px; border: 1px solid var(--line-strong); border-radius: var(--r-sheet);
+    background: var(--white); font-weight: 600; padding: 0 var(--s-3);
+  }
+  .linkbtn { border: 0; background: none; color: var(--tarragon); font-weight: 600; min-height: 48px; padding: 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    z-index: 30; max-width: 360px; width: calc(100% - 32px);
+    background: var(--ink); color: var(--matsoni); padding: var(--s-3) var(--s-4); border-radius: var(--r-sheet);
+    box-shadow: var(--float);
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockups">
+  <a href="index.html">All mockups</a>
+  <span>Guest phone: menu, order, live status</span>
+</nav>
+
+<div class="phone" id="app">
+  <header class="cafe">
+    <div class="cafe__row">
+      <h1 class="display cafe__name" id="cafeName"></h1>
+      <div class="lang" role="group" aria-label="Language" id="lang"></div>
+    </div>
+    <div class="cafe__meta"><span class="chip" id="tableChip"></span><span id="payHint"></span></div>
+  </header>
+  <div id="view"></div>
+</div>
+
+<div class="sheet" id="sheet" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<p class="sr-only" aria-live="polite" id="live"></p>
+
+<script>
+const T = {
+  hy: {
+    cafe: "Դեմո սրճարան", table: "Սեղան 5", pay: "Վճարում եք մատուցողին",
+    search: "Որոնել ճաշացանկում", soldOut: "Այսօր չկա", add: "Ավելացնել",
+    addTo: "Ավելացնել պատվերին", required: "Պարտադիր է", optional: "Ըստ ցանկության",
+    note: "Նշում խոհանոցի համար", notePh: "Օրինակ՝ առանց սոխի", viewOrder: "Դիտել պատվերը",
+    yourOrder: "Ձեր պատվերը", menu: "Ճաշացանկ", total: "Ընդամենը", send: "Ուղարկել խոհանոց",
+    sending: "Ուղարկվում է…", payNote: "Վճարում եք մատուցողին՝ կանխիկ կամ քարտով։",
+    order: "Պատվեր", callWaiter: "Կանչել մատուցողին", bill: "Խնդրել հաշիվը", more: "Պատվիրել ևս",
+    waiterTold: "Մատուցողը տեղեկացված է։", billTold: "Մատուցողը կբերի հաշիվը։",
+    noResults: "Այդպիսի ուտեստ չգտանք։ Փորձեք այլ բառ։", vegan: "բուսական",
+    steps: ["Ստացվել է", "Ընդունվել է", "Պատրաստվում է", "Պատրաստ է", "Մատուցված է"],
+    stepNotes: ["Պատվերը հասավ սրճարան։", "Մատուցողը տեսավ պատվերը։", "Խոհանոցն արդեն պատրաստում է։", "Պատրաստ է, մատուցողը բերում է։", "Բարի ախորժակ։"],
+    unitG: "գ", unitMl: "մլ", added: "Ավելացվեց",
+  },
+  ru: {
+    cafe: "Демо-кафе", table: "Стол 5", pay: "Оплата официанту",
+    search: "Поиск по меню", soldOut: "Сегодня нет", add: "Добавить",
+    addTo: "Добавить в заказ", required: "Обязательно", optional: "По желанию",
+    note: "Комментарий для кухни", notePh: "Например, без лука", viewOrder: "Посмотреть заказ",
+    yourOrder: "Ваш заказ", menu: "Меню", total: "Итого", send: "Отправить на кухню",
+    sending: "Отправляем…", payNote: "Оплата официанту наличными или картой.",
+    order: "Заказ", callWaiter: "Позвать официанта", bill: "Попросить счёт", more: "Заказать ещё",
+    waiterTold: "Официант уже знает.", billTold: "Официант принесёт счёт.",
+    noResults: "Такого блюда нет. Попробуйте другое слово.", vegan: "веган",
+    steps: ["Получен", "Принят", "Готовится", "Готов", "Подан"],
+    stepNotes: ["Заказ пришёл в кафе.", "Официант увидел заказ.", "Кухня уже готовит.", "Готово, официант уже несёт.", "Приятного аппетита."],
+    unitG: "г", unitMl: "мл", added: "Добавлено",
+  },
+  en: {
+    cafe: "Demo Café", table: "Table 5", pay: "Pay your waiter",
+    search: "Search the menu", soldOut: "Not today", add: "Add",
+    addTo: "Add to order", required: "Required", optional: "Optional",
+    note: "Note for the kitchen", notePh: "For example, no onion", viewOrder: "View order",
+    yourOrder: "Your order", menu: "Menu", total: "Total", send: "Send to the kitchen",
+    sending: "Sending…", payNote: "You pay the waiter, cash or card.",
+    order: "Order", callWaiter: "Call the waiter", bill: "Ask for the bill", more: "Order more",
+    waiterTold: "Your waiter has been told.", billTold: "Your waiter will bring the bill.",
+    noResults: "No dish matches that. Try another word.", vegan: "vegan",
+    steps: ["Received", "Accepted", "Cooking", "Ready", "Served"],
+    stepNotes: ["Your order reached the café.", "Your waiter has seen it.", "The kitchen is cooking it now.", "Ready. Your waiter is bringing it.", "Enjoy your meal."],
+    unitG: "g", unitMl: "ml", added: "Added",
+  },
+};
+
+const plural = {
+  hy: n => `${n} ուտեստ`,
+  ru: n => {
+    const m10 = n % 10, m100 = n % 100;
+    const w = m10 === 1 && m100 !== 11 ? "блюдо" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "блюда" : "блюд";
+    return `${n} ${w}`;
+  },
+  en: n => `${n} ${n === 1 ? "item" : "items"}`,
+};
+
+// Own money formatter: Chromium has no Armenian locale data (see i18n.md).
+const NBSP = " ";
+function money(n, lang) {
+  if (lang === "en") return "AMD" + NBSP + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP) + NBSP + "֏";
+}
+
+const SUGAR = { id: "sugar", min: 1, max: 1, name: { hy: "Շաքար", ru: "Сахар", en: "Sugar" }, mods: [
+  { id: "s0", d: 0, name: { hy: "Առանց շաքարի", ru: "Без сахара", en: "No sugar" } },
+  { id: "s1", d: 0, name: { hy: "Միջին", ru: "Средний", en: "Medium" } },
+  { id: "s2", d: 0, name: { hy: "Քաղցր", ru: "Сладкий", en: "Sweet" } },
+] };
+const SIZE = { id: "size", min: 1, max: 1, name: { hy: "Չափ", ru: "Объём", en: "Size" }, mods: [
+  { id: "z250", d: 0, name: { hy: "250 մլ", ru: "250 мл", en: "250 ml" } },
+  { id: "z350", d: 300, name: { hy: "350 մլ", ru: "350 мл", en: "350 ml" } },
+] };
+const MILK = { id: "milk", min: 0, max: 1, name: { hy: "Կաթ", ru: "Молоко", en: "Milk" }, mods: [
+  { id: "oat", d: 300, name: { hy: "Վարսակի կաթ", ru: "Овсяное молоко", en: "Oat milk" } },
+] };
+
+const MENU = [
+  { id: "breakfast", name: { hy: "Նախաճաշ", ru: "Завтраки", en: "Breakfast" }, items: [
+    { id: "eggs", price: 1800, g: 300, name: { hy: "Լոլիկով ձվածեղ", ru: "Яичница с помидорами", en: "Eggs with tomatoes" },
+      desc: { hy: "Երեք ձու, թարմ լոլիկ, կանաչի, տաք լավաշ", ru: "Три яйца, свежие помидоры, зелень, тёплый лаваш", en: "Three eggs, fresh tomatoes, herbs, warm lavash" } },
+    { id: "zhingyalov", price: 1500, g: 250, vegan: true, name: { hy: "Ժենգյալով հաց", ru: "Женгялов хац", en: "Zhingyalov hats" },
+      desc: { hy: "Լավաշ՝ լցոնված 12 տեսակ կանաչիով", ru: "Лаваш с начинкой из 12 видов зелени", en: "Flatbread filled with 12 kinds of herbs" } },
+    { id: "matsoni", price: 1200, g: 200, name: { hy: "Մածուն մեղրով և ընկույզով", ru: "Мацун с мёдом и орехами", en: "Matsoni with honey and walnuts" } },
+  ] },
+  { id: "hot", name: { hy: "Տաք ուտեստներ", ru: "Горячие блюда", en: "Hot dishes" }, items: [
+    { id: "tolma", price: 3200, g: 300, name: { hy: "Տոլմա", ru: "Толма", en: "Tolma" },
+      desc: { hy: "Տավարի միս խաղողի տերևի մեջ, սխտորով մածուն", ru: "Говядина в виноградных листьях, мацун с чесноком", en: "Beef wrapped in grape leaves, garlic matsoni" } },
+    { id: "trout", price: 5200, g: 350, out: true, name: { hy: "Տապակած իշխան", ru: "Жареный ишхан", en: "Pan-fried Sevan trout" },
+      desc: { hy: "Սևանի իշխան, լիմոն, թարխուն", ru: "Севанская форель, лимон, тархун", en: "Sevan trout, lemon, tarragon" } },
+  ] },
+  { id: "khorovats", name: { hy: "Խորոված", ru: "Хоровац", en: "Khorovats" }, items: [
+    { id: "pork", price: 4200, g: 300, name: { hy: "Խոզի չալաղաջ", ru: "Хоровац из свиной корейки", en: "Pork rib khorovats" },
+      desc: { hy: "Խոզի կողիկներ ածուխի վրա, սոխ, սումախ", ru: "Свиные рёбрышки на углях, лук, сумах", en: "Pork ribs over charcoal, onion, sumac" } },
+    { id: "chicken", price: 3300, g: 300, name: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" },
+      desc: { hy: "Հավի ազդր ածուխի վրա, լավաշ, կանաչի", ru: "Куриное бедро на углях, лаваш, зелень", en: "Chicken thigh over charcoal, lavash, herbs" } },
+    { id: "veg", price: 2200, g: 300, vegan: true, name: { hy: "Բանջարեղենի խորոված", ru: "Овощной хоровац", en: "Grilled vegetables" },
+      desc: { hy: "Սմբուկ, պղպեղ և լոլիկ ածուխի վրա", ru: "Баклажан, перец и помидоры на углях", en: "Aubergine, peppers and tomatoes over charcoal" } },
+  ] },
+  { id: "salads", name: { hy: "Աղցաններ", ru: "Салаты", en: "Salads" }, items: [
+    { id: "summer", price: 1600, g: 250, vegan: true, name: { hy: "Ամառային աղցան", ru: "Летний салат", en: "Summer salad" },
+      desc: { hy: "Լոլիկ, վարունգ, կանաչի, կարմիր սոխ", ru: "Помидоры, огурцы, зелень, красный лук", en: "Tomatoes, cucumbers, herbs, red onion" } },
+    { id: "caesar", price: 3100, g: 280, name: { hy: "Ցեզար աղցան հավով", ru: "Цезарь с курицей", en: "Caesar salad with chicken" } },
+  ] },
+  { id: "bakery", name: { hy: "Թխվածքներ", ru: "Выпечка", en: "Pastries" }, items: [
+    { id: "gata", price: 900, g: 150, name: { hy: "Գաթա", ru: "Гата", en: "Gata" },
+      desc: { hy: "Քաղցր խմորեղեն՝ կարագով խորիզով", ru: "Сладкая выпечка с масляной начинкой хориз", en: "Sweet pastry with a buttery khoriz filling" } },
+    { id: "lahmajo", price: 900, g: 200, name: { hy: "Լահմաջո", ru: "Ламаджо", en: "Lahmajo" },
+      desc: { hy: "Բարակ խմոր, աղացած միս, լոլիկ, կանաչի", ru: "Тонкое тесто, мясной фарш, помидоры, зелень", en: "Thin dough, minced meat, tomato, herbs" } },
+  ] },
+  { id: "coffee", name: { hy: "Սուրճ և թեյ", ru: "Кофе и чай", en: "Coffee and tea" }, items: [
+    { id: "armcoffee", price: 700, ml: 70, groups: [SUGAR], name: { hy: "Հայկական սուրճ", ru: "Армянский кофе", en: "Armenian coffee" },
+      desc: { hy: "Եփվում է ջեզվեով", ru: "Варим в джезве", en: "Brewed in a jezve" } },
+    { id: "cappuccino", price: 1300, groups: [SIZE, MILK], name: { hy: "Կապուչինո", ru: "Капучино", en: "Cappuccino" } },
+    { id: "thyme", price: 900, ml: 400, name: { hy: "Ուրցով թեյ", ru: "Чай с чабрецом", en: "Thyme tea" },
+      desc: { hy: "Լեռնային ուրց, մեղրը՝ առանձին", ru: "Горный чабрец, мёд отдельно", en: "Mountain thyme, honey on the side" } },
+  ] },
+  { id: "drinks", name: { hy: "Ըմպելիքներ", ru: "Напитки", en: "Drinks" }, items: [
+    { id: "tarkhun", price: 1200, ml: 400, name: { hy: "Տնական թարխուն", ru: "Домашний тархун", en: "House tarragon lemonade" },
+      desc: { hy: "Թարխուն, կիտրոն, գազավորված ջուր", ru: "Тархун, лимон, газированная вода", en: "Tarragon, lemon, sparkling water" } },
+    { id: "jermuk", price: 600, ml: 500, name: { hy: "«Ջերմուկ» հանքային ջուր", ru: "Минеральная вода «Джермук»", en: "Jermuk mineral water" } },
+    { id: "tan", price: 600, ml: 300, name: { hy: "Թան", ru: "Тан", en: "Tan" },
+      desc: { hy: "Մածուն, ջուր, անանուխ", ru: "Мацун, вода, мята", en: "Matsoni, water, mint" } },
+  ] },
+];
+const ITEMS = Object.fromEntries(MENU.flatMap(c => c.items.map(i => [i.id, i])));
+
+// Search skeleton: Armenian and Cyrillic mapped to one Latin form (i18n.md).
+const MAP = { "ու": "u", "և": "ev", "ա": "a", "բ": "b", "գ": "g", "դ": "d", "ե": "e", "զ": "z", "է": "e", "ը": "", "թ": "t", "ժ": "zh", "ի": "i", "լ": "l", "խ": "kh", "ծ": "ts", "կ": "k", "հ": "h", "ձ": "dz", "ղ": "gh", "ճ": "ch", "մ": "m", "յ": "y", "ն": "n", "շ": "sh", "ո": "o", "չ": "ch", "պ": "p", "ջ": "j", "ռ": "r", "ս": "s", "վ": "v", "տ": "t", "ր": "r", "ց": "ts", "փ": "p", "ք": "k", "օ": "o", "ֆ": "f",
+  "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya" };
+function skeleton(s) {
+  s = s.normalize("NFC").toLowerCase().replace(/ու/g, "u");
+  let out = "";
+  for (const ch of s) out += ch in MAP ? MAP[ch] : /[a-z0-9]/.test(ch) ? ch : "";
+  return out.replace(/y/g, "").replace(/(.)\1+/g, "$1");
+}
+const INDEX = Object.fromEntries(Object.values(ITEMS).map(i => [i.id, ["hy", "ru", "en"].map(l => skeleton(i.name[l])).join("|")]));
+
+const state = { lang: "hy", view: "menu", cart: [], query: "", sheet: null, order: null, sending: false };
+const $ = s => document.querySelector(s);
+const t = k => T[state.lang][k];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function portion(i) {
+  if (i.g) return `${i.g}${NBSP}${t("unitG")}`;
+  if (i.ml) return `${i.ml}${NBSP}${t("unitMl")}`;
+  return "";
+}
+function lineTotal(l) {
+  const it = ITEMS[l.itemId];
+  const mods = (it.groups || []).flatMap(g => g.mods).filter(m => l.mods.includes(m.id));
+  return (it.price + mods.reduce((s, m) => s + m.d, 0)) * l.qty;
+}
+const cartCount = () => state.cart.reduce((s, l) => s + l.qty, 0);
+const cartTotal = () => state.cart.reduce((s, l) => s + lineTotal(l), 0);
+
+const icons = {
+  plus: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  back: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  check: '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+function renderHeader() {
+  document.documentElement.lang = state.lang;
+  $("#cafeName").textContent = t("cafe");
+  $("#tableChip").textContent = t("table");
+  $("#payHint").textContent = t("pay");
+  $("#lang").innerHTML = [["hy", "Հայ"], ["ru", "Рус"], ["en", "Eng"]].map(([k, l]) =>
+    `<button type="button" data-lang="${k}" aria-pressed="${state.lang === k}" lang="${k}">${l}</button>`).join("");
+}
+
+function itemRow(i) {
+  const L = state.lang;
+  const simple = !(i.groups || []).some(g => g.min > 0);
+  const facts = [portion(i), i.vegan ? `<span class="tag">${t("vegan")}</span>` : ""].filter(Boolean).join("");
+  return `<li class="item ${i.out ? "item--out" : ""}">
+    <button class="item__open" type="button" data-open="${i.id}" ${i.out ? "disabled" : ""}>
+      <span class="item__line"><span class="item__name display">${esc(i.name[L])}</span><span class="leader" aria-hidden="true"></span><span class="item__price num">${money(i.price, L)}</span></span>
+      ${i.desc ? `<p class="item__desc">${esc(i.desc[L])}</p>` : ""}
+    </button>
+    <div class="item__foot">
+      <span class="item__facts">${facts}</span>
+      ${i.out ? `<span class="soldout">${t("soldOut")}</span>`
+        : `<button class="add" type="button" data-${simple ? "quick" : "open"}="${i.id}" aria-label="${t("add")}: ${esc(i.name[L])}">${icons.plus}</button>`}
+    </div>
+  </li>`;
+}
+
+function renderMenu() {
+  const L = state.lang;
+  const q = skeleton(state.query);
+  const cats = MENU.map(c => ({ ...c, items: q ? c.items.filter(i => INDEX[i.id].includes(q)) : c.items })).filter(c => c.items.length);
+  const count = cartCount();
+  $("#view").innerHTML = `
+    <div class="search"><label class="sr-only" for="q">${t("search")}</label>
+      <input id="q" type="search" placeholder="${t("search")}" value="${esc(state.query)}" autocomplete="off"></div>
+    <nav class="cats" aria-label="${t("menu")}">${cats.map((c, n) =>
+      `<button type="button" data-cat="${c.id}" aria-current="${n === 0}">${esc(c.name[L])}</button>`).join("")}</nav>
+    <main>${cats.length ? cats.map(c => `<section class="cat" id="cat-${c.id}" aria-labelledby="h-${c.id}">
+        <h2 class="display" id="h-${c.id}">${esc(c.name[L])}</h2>
+        <ul class="items">${c.items.map(itemRow).join("")}</ul></section>`).join("")
+      : `<p class="empty">${t("noResults")}</p>`}</main>
+    ${count ? `<div class="cartbar"><button type="button" data-go="cart">
+        <span>${t("viewOrder")}<small>${plural[L](count)}</small></span>
+        <span class="num">${money(cartTotal(), L)}</span></button></div>` : ""}`;
+  const input = $("#q");
+  input.addEventListener("input", e => {
+    state.query = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const again = $("#q");
+    again.focus();
+    again.setSelectionRange(pos, pos);
+  });
+}
+
+function renderCart() {
+  const L = state.lang;
+  $("#view").innerHTML = `<main>
+    <div class="view-head"><button class="back" type="button" data-go="menu">${icons.back}${t("menu")}</button></div>
+    <h2 class="display view-title">${t("yourOrder")}</h2>
+    <ul class="lines">${state.cart.map((l, n) => {
+      const it = ITEMS[l.itemId];
+      const mods = (it.groups || []).flatMap(g => g.mods).filter(m => l.mods.includes(m.id)).map(m => m.name[L]).join(", ");
+      return `<li class="line">
+        <span class="line__name display">${esc(it.name[L])}</span>
+        <span class="line__price num">${money(lineTotal(l), L)}</span>
+        ${mods ? `<span class="line__mods">${esc(mods)}</span>` : ""}
+        ${l.note ? `<span class="line__note">${esc(l.note)}</span>` : ""}
+        <span class="stepper" style="grid-column:1/2;justify-self:start">
+          <button type="button" data-dec="${n}" aria-label="−1">−</button><output class="num">${l.qty}</output>
+          <button type="button" data-inc="${n}" aria-label="+1">+</button></span>
+      </li>`; }).join("")}</ul>
+    <div class="total"><span>${t("total")}</span><span class="num">${money(cartTotal(), L)}</span></div>
+    <p class="hint">${t("payNote")}</p>
+    <button class="primary primary--center" type="button" data-send ${state.sending || !state.cart.length ? "disabled" : ""}>
+      ${state.sending ? t("sending") : t("send")}</button>
+  </main>`;
+}
+
+function renderStatus() {
+  const L = state.lang, o = state.order;
+  $("#view").innerHTML = `<main>
+    <h2 class="display view-title">${t("order")} ${o.number}</h2>
+    <p class="hint">${t("table")}</p>
+    <ol class="tracker">${T[L].steps.map((s, n) => {
+      const cls = n < o.step ? "step--done" : n === o.step ? "step--now step--done" : "step--todo";
+      return `<li class="step ${cls}" ${n === o.step ? 'aria-current="step"' : ""}>
+        <span class="dot">${n <= o.step ? icons.check : ""}</span>
+        <div><div class="step__label">${s}</div>${n === o.step ? `<p class="step__note">${T[L].stepNotes[n]}</p>` : ""}</div></li>`;
+    }).join("")}</ol>
+    <ul class="lines">${o.lines.map(l => `<li class="line"><span class="line__name display">${l.qty} × ${esc(ITEMS[l.itemId].name[L])}</span>
+      <span class="line__price num">${money(lineTotal(l), L)}</span></li>`).join("")}</ul>
+    <div class="total"><span>${t("total")}</span><span class="num">${money(o.total, L)}</span></div>
+    <div class="actions">
+      <button class="secondary" type="button" data-call="waiter">${t("callWaiter")}</button>
+      <button class="secondary" type="button" data-call="bill">${t("bill")}</button>
+    </div>
+    <p><button class="linkbtn" type="button" data-go="menu">${t("more")}</button></p>
+  </main>`;
+}
+
+function renderSheet() {
+  const sh = $("#sheet");
+  if (!state.sheet) { sh.hidden = true; sh.innerHTML = ""; return; }
+  const L = state.lang, s = state.sheet, it = ITEMS[s.itemId];
+  const groupsOk = (it.groups || []).every(g => {
+    const n = g.mods.filter(m => s.mods.includes(m.id)).length;
+    return n >= g.min && n <= g.max;
+  });
+  const price = lineTotal({ itemId: s.itemId, mods: s.mods, qty: s.qty });
+  sh.hidden = false;
+  sh.innerHTML = `<button class="sheet__backdrop" type="button" data-close aria-label="Close"></button>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <h2 class="display" id="sheetTitle">${esc(it.name[L])}</h2>
+      ${it.desc ? `<p class="item__desc">${esc(it.desc[L])}</p>` : ""}
+      <p class="item__facts">${portion(it)}</p>
+      ${(it.groups || []).map(g => `<fieldset class="group"><legend>${esc(g.name[L])}
+          <span class="${g.min ? "req" : ""}">${g.min ? t("required") : t("optional")}</span></legend>
+        ${g.mods.map(m => `<label class="opt"><input type="${g.max === 1 && g.min === 1 ? "radio" : "checkbox"}" name="${g.id}" value="${m.id}" ${s.mods.includes(m.id) ? "checked" : ""}>
+          <span>${esc(m.name[L])}</span><span class="num">${m.d ? "+" + money(m.d, L) : ""}</span></label>`).join("")}
+      </fieldset>`).join("")}
+      <label class="note" for="note">${t("note")}<textarea id="note" maxlength="200" placeholder="${t("notePh")}">${esc(s.note)}</textarea></label>
+      <div class="sheet__foot">
+        <span class="stepper"><button type="button" data-sq="-1" aria-label="−1">−</button><output class="num">${s.qty}</output><button type="button" data-sq="1" aria-label="+1">+</button></span>
+        <button class="primary" type="button" data-addsheet ${groupsOk ? "" : "disabled"}><span>${t("add")}</span><span class="num">${money(price, L)}</span></button>
+      </div>
+    </div>`;
+}
+
+function sheetValid(s) {
+  return (ITEMS[s.itemId].groups || []).every(g => {
+    const n = g.mods.filter(m => s.mods.includes(m.id)).length;
+    return n >= g.min && n <= g.max;
+  });
+}
+
+// Updates price, quantity and the button without re-rendering the sheet,
+// so the panel doesn't re-animate on every tap.
+function updateSheetFoot() {
+  const s = state.sheet;
+  const btn = document.querySelector("[data-addsheet]");
+  document.querySelector("#sheet output").textContent = s.qty;
+  btn.disabled = !sheetValid(s);
+  btn.querySelector(".num").textContent = money(lineTotal({ itemId: s.itemId, mods: s.mods, qty: s.qty }), state.lang);
+}
+
+function render() {
+  renderHeader();
+  if (state.view === "menu") renderMenu();
+  if (state.view === "cart") renderCart();
+  if (state.view === "status") renderStatus();
+  renderSheet();
+}
+
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => { el.hidden = true; }, 2400);
+}
+
+function addLine(itemId, mods, qty, note) {
+  const same = state.cart.find(l => l.itemId === itemId && l.note === note && l.mods.join() === mods.join());
+  if (same) same.qty += qty; else state.cart.push({ itemId, mods, qty, note });
+  toast(`${t("added")}: ${ITEMS[itemId].name[state.lang]}`);
+}
+
+function advanceOrder() {
+  const delays = [1500, 2500, 6000, 5000];
+  const tick = () => {
+    if (!state.order || state.order.step >= 4) return;
+    state.order.step++;
+    $("#live").textContent = T[state.lang].steps[state.order.step];
+    if (state.view === "status") render();
+    state.order.timer = setTimeout(tick, delays[state.order.step] || 0);
+  };
+  state.order.timer = setTimeout(tick, delays[0]);
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.lang) { state.lang = b.dataset.lang; render(); return; }
+  if (b.dataset.cat) { document.getElementById("cat-" + b.dataset.cat)?.scrollIntoView({ behavior: "smooth" }); return; }
+  if (b.dataset.quick) { addLine(b.dataset.quick, [], 1, ""); render(); return; }
+  if (b.dataset.open) {
+    const it = ITEMS[b.dataset.open];
+    state.sheet = { itemId: it.id, mods: (it.groups || []).filter(g => g.min).map(g => g.mods[0].id), qty: 1, note: "" };
+    render(); $("#sheet .sheet__panel h2")?.focus(); return;
+  }
+  if ("close" in b.dataset) { state.sheet = null; render(); return; }
+  if (b.dataset.sq) { state.sheet.qty = Math.max(1, Math.min(20, state.sheet.qty + Number(b.dataset.sq))); updateSheetFoot(); return; }
+  if ("addsheet" in b.dataset) {
+    state.sheet.note = $("#note").value.trim();
+    addLine(state.sheet.itemId, state.sheet.mods, state.sheet.qty, state.sheet.note);
+    state.sheet = null; render(); return;
+  }
+  if (b.dataset.go) { state.view = b.dataset.go; render(); window.scrollTo(0, 0); return; }
+  if (b.dataset.inc) { state.cart[b.dataset.inc].qty++; render(); return; }
+  if (b.dataset.dec) {
+    const l = state.cart[b.dataset.dec];
+    l.qty--; if (l.qty < 1) state.cart.splice(b.dataset.dec, 1);
+    if (!state.cart.length) state.view = "menu";
+    render(); return;
+  }
+  if ("send" in b.dataset) {
+    state.sending = true; render();
+    setTimeout(() => {
+      clearTimeout(state.order?.timer);
+      state.order = { number: 17, step: 0, lines: state.cart.map(l => ({ ...l })), total: cartTotal() };
+      state.cart = []; state.sending = false; state.view = "status";
+      render(); window.scrollTo(0, 0); advanceOrder();
+    }, 900);
+    return;
+  }
+  if (b.dataset.call) { toast(b.dataset.call === "bill" ? t("billTold") : t("waiterTold")); return; }
+});
+
+document.addEventListener("change", e => {
+  if (!state.sheet || !e.target.matches(".opt input")) return;
+  const it = ITEMS[state.sheet.itemId];
+  const g = it.groups.find(x => x.id === e.target.name);
+  const ids = g.mods.map(m => m.id);
+  let mods = state.sheet.mods.filter(id => !ids.includes(id));
+  const chosen = [...document.querySelectorAll(`.opt input[name="${g.id}"]:checked`)].map(i => i.value);
+  state.sheet.mods = mods.concat(chosen.slice(0, g.max));
+  updateSheetFoot();
+});
+
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.sheet) { state.sheet = null; render(); } });
+
+// Highlight the category tab for the section in view.
+window.addEventListener("scroll", () => {
+  if (state.view !== "menu") return;
+  const tabs = [...document.querySelectorAll(".cats button")];
+  let current = tabs[0]?.dataset.cat;
+  for (const tb of tabs) {
+    const sec = document.getElementById("cat-" + tb.dataset.cat);
+    if (sec && sec.getBoundingClientRect().top < 120) current = tb.dataset.cat;
+  }
+  tabs.forEach(tb => tb.setAttribute("aria-current", String(tb.dataset.cat === current)));
+}, { passive: true });
+
+render();
+</script>
+</body>
+</html>

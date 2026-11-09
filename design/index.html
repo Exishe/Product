@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Restaurant OS mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Noto+Serif+Armenian:wdth,wght@62.5..100,400..800&family=Noto+Serif:wdth,wght@62.5..100,400..800&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* Layout: one readable column; screens as a list of large links; tokens shown as real swatches. */
+  body { background: var(--matsoni); }
+  .wrap {
+    max-width: 960px; margin: 0 auto; padding-block: var(--s-8) var(--s-16);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid; gap: var(--s-12);
+  }
+  h1 { font-family: var(--font-display); font-stretch: 75%; font-weight: 600; font-size: clamp(2.4rem, 7vw, 3.6rem); line-height: 1; margin: 0; text-wrap: balance; }
+  .lede { max-width: 60ch; color: var(--muted); font-size: var(--t-20); margin: var(--s-3) 0 0; }
+  h2 { font-size: var(--t-24); margin: 0 0 var(--s-4); }
+  .screens { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--s-4); }
+  .screens a {
+    display: grid; gap: var(--s-2); padding: var(--s-6); text-decoration: none; color: var(--ink);
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--r-sheet); min-height: 100%;
+  }
+  .screens a:hover { border-color: var(--tarragon); }
+  .screens strong { font-family: var(--font-display); font-stretch: 75%; font-size: var(--t-30); line-height: 1.1; font-weight: 600; }
+  .screens span { color: var(--muted); }
+  .screens em { font-style: normal; font-size: var(--t-14); color: var(--tarragon); font-weight: 600; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-3); }
+  .sw { border: 1px solid var(--line); border-radius: var(--r-sheet); overflow: hidden; background: var(--white); }
+  .sw i { display: block; height: 64px; }
+  .sw div { padding: var(--s-2) var(--s-3); font-size: var(--t-14); }
+  .sw b { display: block; }
+  .sw code { color: var(--muted); }
+  .type { display: grid; gap: var(--s-3); }
+  .type p { margin: 0; }
+  .t-menu { font-family: var(--font-display); font-stretch: 75%; font-weight: 600; font-size: var(--t-30); line-height: 1.15; }
+  .t-ui { font-size: var(--t-20); }
+  .t-kds { font-weight: 700; font-size: var(--t-38); background: var(--basalt); color: var(--slip); padding: var(--s-3) var(--s-4); border-radius: var(--r-sheet); }
+  .dirs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: var(--s-4); }
+  .dir { border: 1px solid var(--line); border-radius: var(--r-sheet); padding: var(--s-4); background: var(--white); display: grid; gap: var(--s-2); align-content: start; }
+  .dir--pick { border: 2px solid var(--tarragon); }
+  .dir h3 { margin: 0; font-size: var(--t-20); }
+  .dir p { margin: 0; color: var(--muted); }
+  .chips { display: flex; gap: 6px; }
+  .chips i { width: 36px; height: 36px; border-radius: var(--r-chip); border: 1px solid var(--line); }
+  .note { color: var(--muted); font-size: var(--t-14); max-width: 60ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Four screens of a Yerevan café, clickable</h1>
+    <p class="lede">Design direction A, “Tarragon and apricot”. You can add dishes, send an order, start cooking, close a table and review a menu the AI read from a photo. The café and its data are fictional.</p>
+  </header>
+
+  <section aria-labelledby="h-screens">
+    <h2 id="h-screens">Screens</h2>
+    <ul class="screens">
+      <li><a href="guest.html"><em>Guest phone</em><strong>Menu, order and live status</strong>
+        <span>Switch Հայ, Рус, Eng. Search “khorovats” in any script. Send the order and watch it move to “Ready”.</span></a></li>
+      <li><a href="kitchen.html"><em>Kitchen tablet, 1280 × 800</em><strong>Kitchen board</strong>
+        <span>Paper-slip tickets readable from 2 metres. A new order arrives 6 seconds after you start the shift; a cancellation needs a tap.</span></a></li>
+      <li><a href="waiter.html"><em>Waiter tablet, 1180 × 820</em><strong>Floor and table</strong>
+        <span>Accept a QR order, mark food served, answer a call, close table 5 with cash, card or both.</span></a></li>
+      <li><a href="import.html"><em>Owner laptop, 1440 × 900</em><strong>Menu from a photo</strong>
+        <span>Check what the AI read from the paper menu. Publishing stays locked until every dish is checked.</span></a></li>
+    </ul>
+    <p class="note">Tablet and laptop screens shrink to fit a phone. Turn the phone sideways to see them bigger.</p>
+  </section>
+
+  <section aria-labelledby="h-colour">
+    <h2 id="h-colour">Colour</h2>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--matsoni)"></i><div><b>Matsoni</b><code>#FBFCF8</code> page</div></div>
+      <div class="sw"><i style="background:var(--ink)"></i><div><b>Ink</b><code>#13241B</code> text, 15.7:1</div></div>
+      <div class="sw"><i style="background:var(--tarragon)"></i><div><b>Tarragon</b><code>#1D6A43</code> brand, 6.4:1</div></div>
+      <div class="sw"><i style="background:var(--apricot)"></i><div><b>Apricot</b><code>#F2A23A</code> actions</div></div>
+      <div class="sw"><i style="background:var(--pomegranate)"></i><div><b>Pomegranate</b><code>#B0213A</code> problems</div></div>
+      <div class="sw"><i style="background:var(--basalt)"></i><div><b>Basalt</b><code>#0E1612</code> kitchen</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-type">
+    <h2 id="h-type">Type</h2>
+    <div class="type">
+      <p class="t-menu" lang="hy">Խոզի չալաղաջ, Տոլմա, Ժենգյալով հաց</p>
+      <p class="t-menu" lang="ru">Хоровац из свиной корейки, Толма</p>
+      <p class="t-ui">Google Sans for the interface: «Ուղարկել խոհանոց», «Отправить на кухню», “Send to the kitchen”. 1 500 ֏</p>
+      <p class="t-kds" lang="hy">Սեղան 12, 3 Հավի խորոված</p>
+    </div>
+    <p class="note">Noto Serif Armenian (condensed) for dish names, Noto Serif for Cyrillic, Google Sans for everything else. All OFL. Only 8 Google Fonts families include Armenian at all.</p>
+  </section>
+
+  <section aria-labelledby="h-dirs">
+    <h2 id="h-dirs">The three directions</h2>
+    <div class="dirs">
+      <div class="dir dir--pick"><h3>A. Tarragon and apricot</h3><div class="chips"><i style="background:#1D6A43"></i><i style="background:#F2A23A"></i><i style="background:#B0213A"></i><i style="background:#FBFCF8"></i></div>
+        <p>Colours from the table: tarragon, apricot, pomegranate. A menu that reads like a printed café menu. Recommended, and used in these mockups.</p></div>
+      <div class="dir"><h3>B. Basalt and brass</h3><div class="chips"><i style="background:#0E1612"></i><i style="background:#24322A"></i><i style="background:#B8925A"></i><i style="background:#F6F8F2"></i></div>
+        <p>Evening Yerevan, dark and warm. Good on a laptop at night, weak on a terrace at noon. Kept for the kitchen board only.</p></div>
+      <div class="dir"><h3>C. Vernissage</h3><div class="chips"><i style="background:#C2410C"></i><i style="background:#1D4ED8"></i><i style="background:#CA8A04"></i><i style="background:#166534"></i></div>
+        <p>Flat colour blocks and rug motifs from the Vernissage market. Memorable, tiring on a busy shift. Kept for empty states and onboarding art.</p></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

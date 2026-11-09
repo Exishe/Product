@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kitchen board mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Noto+Serif+Armenian:wdth,wght@62.5..100,400..800&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--mist); }
+  .kds {
+    background: var(--basalt); color: var(--slip);
+    display: grid; grid-template-rows: 64px 1fr; font-family: var(--font-ui);
+  }
+  .bar { display: flex; align-items: center; gap: var(--s-6); padding: 0 var(--s-6); border-bottom: 1px solid var(--basalt-3); }
+  .bar__station { font-size: var(--t-30); font-weight: 700; }
+  .bar__clock { font-size: var(--t-30); font-weight: 600; margin-left: auto; }
+  .conn {
+    display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: 0 var(--s-4);
+    border-radius: var(--r-pill); border: 1px solid var(--basalt-3); background: var(--basalt-2);
+    color: var(--slip); font-size: var(--t-16); font-weight: 600;
+  }
+  .conn__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--tarragon-on-dark); }
+  .conn--off { border-color: var(--pom-on-dark); }
+  .conn--off .conn__dot { background: var(--pom-on-dark); }
+
+  .board { display: grid; grid-template-columns: 1fr 1.5fr 0.8fr; gap: var(--s-4); padding: var(--s-4); min-height: 0; }
+  .col { background: var(--basalt-2); border-radius: var(--r-sheet); display: flex; flex-direction: column; min-height: 0; }
+  .col h2 { margin: 0; padding: var(--s-3) var(--s-4); font-size: var(--t-24); font-weight: 700; display: flex; justify-content: space-between; color: var(--slip-dim); }
+  .col h2 b { color: var(--slip); }
+  .col__list { flex: 1; overflow-y: auto; padding: 0 var(--s-3) var(--s-3); display: flex; flex-direction: column; gap: var(--s-3); scrollbar-color: var(--basalt-3) transparent; }
+  .col--ready .table b { font-size: var(--t-48); }
+  .col--ready .name { font-size: var(--t-20); }
+  .col--ready .qty { font-size: var(--t-20); line-height: 30px; }
+  .col--ready .ln { grid-template-columns: 36px 1fr; }
+  .col--ready .timer { font-size: var(--t-20); }
+
+  /* paper slip */
+  .slip {
+    position: relative; background: var(--slip); color: var(--ink); border-radius: var(--r-slip);
+    padding: var(--s-4) var(--s-4) var(--s-3); display: grid; gap: var(--s-2);
+    border-left: 8px solid transparent;
+  }
+  .slip::before { /* perforated top edge */
+    content: ""; position: absolute; left: 0; right: 0; top: -5px; height: 10px;
+    background: radial-gradient(circle at 6px 5px, var(--basalt-2) 3px, transparent 3.5px) 0 0 / 12px 10px repeat-x;
+  }
+  .slip--late { border-left-color: var(--apricot); }
+  .slip--very-late { border-left-color: var(--pomegranate); }
+  .slip--enter { animation: slidein 420ms cubic-bezier(.2,.8,.2,1); }
+  @keyframes slidein { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .slip__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-2); }
+  .table { display: grid; line-height: 1; }
+  .table small { font-size: var(--t-14); font-weight: 600; color: var(--muted); }
+  .table b { font-size: var(--t-64); font-weight: 700; letter-spacing: -0.01em; }
+  .meta { text-align: right; display: grid; gap: 4px; justify-items: end; }
+  .timer { font-size: var(--t-30); font-weight: 700; }
+  .age { font-size: var(--t-14); font-weight: 700; padding: 2px 8px; border-radius: var(--r-chip); }
+  .age--late { background: var(--apricot); color: var(--ink); }
+  .age--very-late { background: var(--pomegranate); color: var(--white); }
+  .src { font-size: var(--t-14); color: var(--muted); }
+  .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+  .ln { display: grid; grid-template-columns: 48px 1fr; gap: var(--s-3); align-items: baseline; }
+  .qty { font-size: var(--t-30); font-weight: 700; text-align: center; border: 2px solid var(--ink); border-radius: var(--r-chip); line-height: 40px; }
+  .name { font-size: 1.75rem; font-weight: 600; line-height: 1.15; }
+  .note { grid-column: 2; font-size: var(--t-20); background: #FCE8C8; border-radius: var(--r-chip); padding: 2px 8px; justify-self: start; font-weight: 600; }
+  .act {
+    min-height: 72px; border: 0; border-radius: var(--r-chip); font-size: var(--t-24); font-weight: 700; margin-top: var(--s-2);
+  }
+  .act--start { background: var(--apricot); color: var(--ink); }
+  .act--ready { background: var(--tarragon); color: var(--white); }
+  .act--ok { background: var(--pomegranate); color: var(--white); }
+  .wait { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); color: var(--muted); font-weight: 600; margin-top: var(--s-2); }
+  .undo { min-height: 56px; padding: 0 var(--s-4); border: 2px solid var(--ink); border-radius: var(--r-chip); background: transparent; font-weight: 700; font-size: var(--t-16); }
+
+  .slip--void { border-left-color: var(--pomegranate); outline: 3px solid var(--pom-on-dark); }
+  .void-head { display: flex; align-items: center; gap: var(--s-2); color: var(--pomegranate); font-weight: 700; font-size: var(--t-24); }
+  .slip--void .name { text-decoration: line-through; text-decoration-thickness: 3px; }
+
+  .empty { color: var(--slip-dim); padding: var(--s-6) var(--s-4); font-size: var(--t-20); }
+
+  .overlay {
+    position: absolute; inset: 0; z-index: 10; background: rgba(14, 22, 18, 0.92);
+    display: grid; place-items: center; text-align: center; color: var(--slip);
+  }
+  .overlay h2 { font-size: var(--t-48); margin: 0 0 var(--s-3); }
+  .overlay p { font-size: var(--t-20); color: var(--slip-dim); margin: 0 0 var(--s-8); }
+  .overlay button { min-height: 88px; padding: 0 var(--s-12); border: 0; border-radius: var(--r-sheet); background: var(--apricot); color: var(--ink); font-size: var(--t-30); font-weight: 700; }
+  .stage__screen { position: absolute; }
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockups">
+  <a href="index.html">All mockups</a>
+  <span>Kitchen tablet, 1280 × 800. Tap the connection label to simulate a Wi-Fi drop.</span>
+</nav>
+
+<div class="stage"><div class="stage__box"><div class="stage__screen kds" id="kds">
+  <header class="bar">
+    <span class="bar__station">Խոհանոց</span>
+    <button class="conn" type="button" id="conn"><span class="conn__dot" aria-hidden="true"></span><span id="connText">Առցանց</span></button>
+    <span class="bar__clock num" id="clock">20:41</span>
+  </header>
+  <div class="board">
+    <section class="col" aria-labelledby="h-new"><h2 id="h-new">Նոր <b class="num" id="c-new"></b></h2><div class="col__list" id="l-new"></div></section>
+    <section class="col col--cooking" aria-labelledby="h-cook"><h2 id="h-cook">Պատրաստվում է <b class="num" id="c-cooking"></b></h2><div class="col__list" id="l-cooking"></div></section>
+    <section class="col col--ready" aria-labelledby="h-ready"><h2 id="h-ready">Պատրաստ <b class="num" id="c-ready"></b></h2><div class="col__list" id="l-ready"></div></section>
+  </div>
+  <div class="overlay" id="overlay">
+    <div>
+      <h2>Բարի երեկո</h2>
+      <p>Հպեք, որ միանա նոր պատվերների ձայնը, և էկրանը չանջատվի։</p>
+      <button type="button" id="start">Սկսել հերթափոխը</button>
+    </div>
+  </div>
+</div></div></div>
+
+<script src="stage.js"></script>
+<script>
+initStage(1280, 800);
+const now = () => Date.now();
+const min = m => now() - m * 60000;
+// Tickets for the kitchen station only; drinks go to the bar screen.
+let tickets = [
+  { id: "t18", table: 3, order: 18, src: "QR", status: "new", at: min(1.2), lines: [[2, "Լոլիկով ձվածեղ"], [1, "Ժենգյալով հաց"]] },
+  { id: "t19", table: 7, order: 19, src: "Մատուցող", status: "new", at: min(0.3), lines: [[1, "Տոլմա", "Առանց սխտորի"], [1, "Ամառային աղցան"]] },
+  { id: "t17", table: 5, order: 17, src: "QR", status: "cooking", at: min(8.6), lines: [[1, "Խոզի չալաղաջ", "Լավ եփած"], [1, "Ամառային աղցան"]] },
+  { id: "t15", table: 12, order: 15, src: "Մատուցող", status: "cooking", at: min(13.1), lines: [[3, "Հավի խորոված"], [1, "Բանջարեղենի խորոված"]] },
+  { id: "t16", table: 1, order: 16, src: "QR", status: "cooking", at: min(5.2), lines: [[2, "Լահմաջո"]] },
+  { id: "t14", table: 9, order: 14, src: "QR", status: "ready", at: min(15.3), lines: [[1, "Տոլմա"], [2, "Գաթա"]] },
+  { id: "v15", table: 12, order: 15, src: "Մատուցող", status: "void", at: min(0.8), lines: [[1, "Հավի խորոված"]] },
+];
+const incoming = { id: "t20", table: 4, order: 20, src: "QR", status: "new", lines: [[1, "Հավի խորոված"], [1, "Ցեզար աղցան հավով", "Սոուսն առանձին"]] };
+
+let online = true, queued = 0, soundOn = false;
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, "0");
+// Whole minutes, so a ticket age is never mistaken for the clock in the top bar.
+const mmss = ms => { const m = Math.floor(Math.max(0, ms) / 60000); return m < 1 ? "հենց նոր" : `${m} ր`; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function lateness(t) {
+  const m = (now() - t.at) / 60000;
+  if (t.status === "ready" || t.status === "void") return "";
+  if (m >= 12) return "very-late";
+  if (m >= 8) return "late";
+  return "";
+}
+
+function slip(t, fresh) {
+  const late = lateness(t);
+  if (t.status === "void") {
+    return `<article class="slip slip--void ${fresh ? "slip--enter" : ""}" aria-label="Չեղարկում, սեղան ${t.table}">
+      <div class="void-head">Չեղարկվել է</div>
+      <div class="slip__head"><span class="table"><small>Սեղան</small><b>${t.table}</b></span>
+        <span class="meta"><span class="src">Պատվեր ${t.order}</span></span></div>
+      <ul class="lines">${t.lines.map(([q, n]) => `<li class="ln"><span class="qty num">${q}</span><span class="name">${esc(n)}</span></li>`).join("")}</ul>
+      <button class="act act--ok" type="button" data-ack="${t.id}">Հասկացա</button>
+    </article>`;
+  }
+  const lateLabel = late === "very-late" ? `<span class="age age--very-late">Ուշանում է</span>` : late === "late" ? `<span class="age age--late">Շտապել</span>` : "";
+  const action = t.status === "new" ? `<button class="act act--start" type="button" data-move="${t.id}" data-to="cooking">Սկսել</button>`
+    : t.status === "cooking" ? `<button class="act act--ready" type="button" data-move="${t.id}" data-to="ready">Պատրաստ է</button>`
+    : `<div class="wait"><span>Սպասում է մատուցողին</span><button class="undo" type="button" data-move="${t.id}" data-to="cooking">Վերադարձնել</button></div>`;
+  return `<article class="slip ${late ? "slip--" + late : ""} ${fresh ? "slip--enter" : ""}" aria-label="Սեղան ${t.table}">
+    <div class="slip__head">
+      <span class="table"><small>Սեղան</small><b>${t.table}</b></span>
+      <span class="meta"><span class="timer num" data-timer="${t.id}">${mmss(now() - t.at)}</span>${lateLabel}<span class="src">Պատվեր ${t.order}, ${esc(t.src)}</span></span>
+    </div>
+    <ul class="lines">${t.lines.map(([q, n, note]) => `<li class="ln"><span class="qty num">${q}</span><span class="name">${esc(n)}</span>${note ? `<span class="note">${esc(note)}</span>` : ""}</li>`).join("")}</ul>
+    ${action}
+  </article>`;
+}
+
+function render(freshId) {
+  const groups = { new: [], cooking: [], ready: [] };
+  for (const t of tickets) {
+    const col = t.status === "void" ? "new" : t.status;
+    groups[col].push(t);
+  }
+  groups.new.sort((a, b) => (a.status === "void" ? -1 : 0) - (b.status === "void" ? -1 : 0) || a.at - b.at);
+  groups.cooking.sort((a, b) => a.at - b.at);
+  groups.ready.sort((a, b) => a.at - b.at);
+  for (const [k, list] of Object.entries(groups)) {
+    $("#l-" + k).innerHTML = list.length ? list.map(t => slip(t, t.id === freshId)).join("") : `<p class="empty">Այստեղ դեռ ոչինչ չկա։</p>`;
+    $("#c-" + k).textContent = list.length;
+  }
+}
+
+function tick() {
+  const d = new Date();
+  $("#clock").textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  let restyle = false;
+  for (const t of tickets) {
+    const el = document.querySelector(`[data-timer="${t.id}"]`);
+    if (el) el.textContent = mmss(now() - t.at);
+    const late = lateness(t);
+    if (late !== t._late) { t._late = late; restyle = true; }
+  }
+  if (restyle) render();
+}
+
+function beep() {
+  if (!soundOn) return;
+  try {
+    const ctx = beep.ctx || (beep.ctx = new AudioContext());
+    [0, 0.18].forEach(off => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + off);
+      g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + off + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + off + 0.15);
+      o.start(ctx.currentTime + off); o.stop(ctx.currentTime + off + 0.16);
+    });
+  } catch (e) { /* audio is optional in the mockup */ }
+}
+
+function setConn() {
+  const c = $("#conn");
+  c.classList.toggle("conn--off", !online);
+  $("#connText").textContent = online ? "Առցանց" : queued ? `Կապ չկա, ${queued} գործողություն սպասում է` : "Կապ չկա";
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.id === "start") {
+    soundOn = true; $("#overlay").hidden = true;
+    navigator.wakeLock?.request("screen").catch(() => {});
+    setTimeout(() => { tickets.push({ ...incoming, at: now() }); render(incoming.id); beep(); }, 6000);
+    return;
+  }
+  if (b.id === "conn") {
+    online = !online;
+    if (online) queued = 0;
+    setConn(); return;
+  }
+  if (b.dataset.move) {
+    const t = tickets.find(x => x.id === b.dataset.move);
+    t.status = b.dataset.to;
+    if (!online) { queued++; setConn(); }
+    render(); return;
+  }
+  if (b.dataset.ack) {
+    tickets = tickets.filter(x => x.id !== b.dataset.ack);
+    if (!online) { queued++; setConn(); }
+    render(); return;
+  }
+});
+
+render();
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

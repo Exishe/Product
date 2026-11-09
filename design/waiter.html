@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Waiter tablet mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Noto+Serif+Armenian:wdth,wght@62.5..100,400..800&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--mist); }
+  .wt { background: var(--matsoni); display: grid; grid-template-columns: 1fr 420px; grid-template-rows: 64px 1fr; }
+  .top { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--s-4); padding: 0 var(--s-6); border-bottom: 1px solid var(--line); background: var(--white); }
+  .top__cafe { font-size: var(--t-24); margin-right: var(--s-4); }
+  .tabs { display: flex; gap: var(--s-2); }
+  .tabs button { min-height: 44px; padding: 0 var(--s-4); border: 0; border-radius: var(--r-chip); background: transparent; font-weight: 600; color: var(--muted); }
+  .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--matsoni); }
+  .top__need { margin-left: auto; font-weight: 600; color: var(--ink); }
+  .top__need b { background: var(--apricot); padding: 2px 10px; border-radius: var(--r-pill); }
+  .top__time { font-weight: 600; font-size: var(--t-20); }
+
+  .map { position: relative; padding: var(--s-6); display: grid; grid-template-rows: 1fr auto; gap: var(--s-4); min-height: 0; }
+  .floor { position: relative; border: 1px solid var(--line); border-radius: var(--r-sheet); background:
+    linear-gradient(var(--white), var(--white)) padding-box; }
+  .floor__label { position: absolute; left: var(--s-4); bottom: var(--s-3); color: var(--muted); font-size: var(--t-14); }
+  .tbl {
+    position: absolute; display: grid; place-content: center; text-align: center; gap: 2px;
+    border: 2px solid var(--line-strong); background: var(--white); color: var(--muted);
+    border-radius: var(--r-sheet); padding: var(--s-2);
+  }
+  .tbl--round { border-radius: 50%; }
+  .tbl b { font-size: var(--t-30); line-height: 1; color: var(--ink); font-weight: 700; }
+  .tbl span { font-size: var(--t-14); font-weight: 600; line-height: 1.2; }
+  .tbl[aria-pressed="true"] { outline: 4px solid var(--ink); outline-offset: 3px; }
+  .tbl--busy { background: var(--tarragon-tint); border-color: var(--tarragon); color: var(--tarragon); }
+  .tbl--new { background: var(--apricot); border-color: var(--apricot-deep); color: var(--ink); animation: nudge 900ms ease-out 1; }
+  .tbl--ready { background: var(--tarragon); border-color: var(--tarragon); color: var(--white); }
+  .tbl--ready b { color: var(--white); }
+  .tbl--call { background: var(--pom-tint); border-color: var(--pomegranate); border-width: 3px; color: var(--pomegranate); }
+  .tbl--bill { background: var(--ink); border-color: var(--ink); color: var(--matsoni); }
+  .tbl--bill b { color: var(--matsoni); }
+  @keyframes nudge { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); font-size: var(--t-14); color: var(--muted); list-style: none; margin: 0; padding: 0; }
+  .legend li { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--line-strong); background: var(--white); }
+
+  .panel { border-left: 1px solid var(--line); background: var(--white); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .panel__body > * { min-width: 0; }
+  .panel__body { flex: 1; overflow-y: auto; padding: var(--s-6); display: grid; gap: var(--s-4); align-content: start; }
+  .panel h2 { font-size: var(--t-38); margin: 0; line-height: 1; }
+  .sub { color: var(--muted); margin: 0; }
+  .alert { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-radius: var(--r-sheet); font-weight: 600; }
+  .alert--call { background: var(--pom-tint); color: var(--pomegranate); }
+  .alert--bill { background: var(--mist); color: var(--ink); }
+  .order { border: 1px solid var(--line); border-radius: var(--r-sheet); padding: var(--s-4); display: grid; gap: var(--s-3); }
+  .order--new { border: 2px solid var(--apricot-deep); }
+  .order__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); }
+  .order__head strong { font-size: var(--t-20); }
+  .chip { display: inline-flex; padding: 2px 10px; border-radius: var(--r-pill); font-size: var(--t-14); font-weight: 600; background: var(--mist); color: var(--muted); }
+  .chip--ready { background: var(--tarragon); color: var(--white); }
+  .chip--wait { background: var(--apricot); color: var(--ink); }
+  .chip--done { background: var(--tarragon-tint); color: var(--tarragon); }
+  .stations { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .items li { display: flex; justify-content: space-between; gap: var(--s-3); }
+  .items em { color: var(--muted); font-style: normal; font-size: var(--t-14); display: block; }
+  .row { display: flex; gap: var(--s-3); }
+  .btn { flex: 1; min-height: 56px; border-radius: var(--r-sheet); border: 0; font-weight: 700; font-size: var(--t-16); padding: 0 var(--s-4); }
+  .btn--primary { background: var(--apricot); color: var(--ink); }
+  .btn--go { background: var(--tarragon); color: var(--white); }
+  .btn--ink { background: var(--ink); color: var(--matsoni); }
+  .btn--quiet { background: var(--white); border: 1px solid var(--line-strong); color: var(--ink); }
+  .btn--danger { background: var(--white); border: 1px solid var(--pomegranate); color: var(--pomegranate); }
+  .btn:disabled { background: var(--mist); color: var(--muted); border-color: var(--mist); }
+  .panel__foot { border-top: 1px solid var(--line); padding: var(--s-4) var(--s-6); display: grid; gap: var(--s-3); }
+  .total { display: flex; justify-content: space-between; font-size: var(--t-24); font-weight: 700; }
+  .empty { color: var(--muted); }
+
+  .pay { display: grid; gap: var(--s-3); }
+  .pay h3 { margin: 0; font-size: var(--t-24); }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+  .seg button { min-height: 56px; border-radius: var(--r-sheet); border: 1px solid var(--line-strong); background: var(--white); font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--tarragon); border-color: var(--tarragon); color: var(--white); }
+  .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+  .split label { display: grid; gap: 4px; font-weight: 600; font-size: var(--t-14); }
+  .split input { width: 100%; min-width: 0; min-height: 52px; padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: var(--r-input); font-size: var(--t-20); }
+  .mismatch { color: var(--pomegranate); font-weight: 600; margin: 0; }
+
+  .toast { position: absolute; left: 50%; bottom: var(--s-6); transform: translateX(-50%); background: var(--ink); color: var(--matsoni); padding: var(--s-3) var(--s-6); border-radius: var(--r-sheet); box-shadow: var(--float); font-weight: 600; z-index: 5; }
+</style>
+</head>
+<body>
+<nav class="mock-nav" aria-label="Mockups">
+  <a href="index.html">All mockups</a>
+  <span>Waiter tablet, 1180 × 820. Turn a phone sideways for a bigger view.</span>
+</nav>
+
+<div class="stage"><div class="stage__box"><div class="stage__screen wt" id="wt">
+  <header class="top">
+    <span class="display top__cafe">Դեմո սրճարան</span>
+    <div class="tabs" role="group" aria-label="Տարածք" id="areas"></div>
+    <span class="top__need" id="need"></span>
+    <span class="top__time num" id="time"></span>
+  </header>
+  <section class="map" aria-label="Սեղանների քարտեզ">
+    <div class="floor" id="floor"></div>
+    <ul class="legend">
+      <li><span class="sw"></span>Ազատ</li>
+      <li><span class="sw" style="background:var(--tarragon-tint);border-color:var(--tarragon)"></span>Զբաղված</li>
+      <li><span class="sw" style="background:var(--apricot);border-color:var(--apricot-deep)"></span>Նոր պատվեր</li>
+      <li><span class="sw" style="background:var(--tarragon);border-color:var(--tarragon)"></span>Պատրաստ է</li>
+      <li><span class="sw" style="background:var(--pom-tint);border-color:var(--pomegranate)"></span>Կանչում են</li>
+      <li><span class="sw" style="background:var(--ink);border-color:var(--ink)"></span>Հաշիվ</li>
+    </ul>
+  </section>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div></div></div>
+
+<script src="stage.js"></script>
+<script>
+initStage(1180, 820);
+const NBSP = " ";
+const money = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP) + NBSP + "֏";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const $ = s => document.querySelector(s);
+
+// x, y, w, h in % of the floor; shape; minutes open.
+const TABLES = {
+  hall: [
+    { n: 1, x: 6, y: 8, w: 13, h: 18, open: 52, orders: [{ no: 13, src: "Մատուցող", st: { k: "served" }, items: [[2, "Կապուչինո", 1300], [1, "Գաթա", 900]] }] },
+    { n: 2, x: 26, y: 8, w: 13, h: 18 },
+    { n: 3, x: 46, y: 8, w: 13, h: 18, open: 6, orders: [{ no: 18, src: "QR", st: { k: "cooking" }, items: [[2, "Լոլիկով ձվածեղ", 1800], [1, "Ժենգյալով հաց", 1500]] }] },
+    { n: 4, x: 66, y: 8, w: 13, h: 18, open: 3, orders: [{ no: 20, src: "QR", st: { k: "new" }, items: [[1, "Հավի խորոված", 3300], [1, "Ցեզար աղցան հավով", 3100, "Սոուսն առանձին"]] }] },
+    { n: 5, x: 6, y: 40, w: 15, h: 22, round: true, open: 46, orders: [
+      { no: 17, src: "QR", st: { k: "ready", kitchen: "ready", bar: "served" }, items: [[1, "Խոզի չալաղաջ", 4200, "Լավ եփած"], [1, "Ամառային աղցան", 1600], [1, "Հայկական սուրճ", 700, "Քաղցր"]] },
+      { no: 22, src: "QR", st: { k: "placed" }, items: [[2, "Տնական թարխուն", 1200], [1, "Գաթա", 900]] }] },
+    { n: 6, x: 28, y: 40, w: 15, h: 22, round: true, call: 2, open: 31, orders: [{ no: 21, src: "QR", st: { k: "served" }, items: [[2, "Տոլմա", 3200]] }] },
+    { n: 7, x: 50, y: 40, w: 15, h: 22, round: true, open: 4, orders: [{ no: 19, src: "Մատուցող", st: { k: "new" }, items: [[1, "Տոլմա", 3200, "Առանց սխտորի"], [1, "Ամառային աղցան", 1600]] }] },
+    { n: 8, x: 72, y: 40, w: 15, h: 22, round: true },
+    { n: 9, x: 6, y: 72, w: 22, h: 18, bill: true, open: 64, orders: [{ no: 14, src: "QR", st: { k: "served" }, items: [[1, "Տոլմա", 3200], [2, "Գաթա", 900]] }] },
+    { n: 10, x: 34, y: 72, w: 22, h: 18 },
+    { n: 11, x: 62, y: 72, w: 13, h: 18 },
+    { n: 12, x: 80, y: 72, w: 13, h: 18, open: 25, orders: [{ no: 15, src: "Մատուցող", st: { k: "cooking", late: true }, items: [[2, "Հավի խորոված", 3300], [1, "Բանջարեղենի խորոված", 2200]] }] },
+  ],
+  terrace: [
+    { n: 21, x: 10, y: 15, w: 18, h: 26, round: true },
+    { n: 22, x: 40, y: 15, w: 18, h: 26, round: true, open: 12, orders: [{ no: 16, src: "QR", st: { k: "ready", kitchen: "ready" }, items: [[2, "Լահմաջո", 900]] }] },
+    { n: 23, x: 70, y: 15, w: 18, h: 26, round: true },
+    { n: 24, x: 25, y: 60, w: 50, h: 22 },
+  ],
+};
+const state = { area: "hall", sel: 5, paying: null };
+const all = () => [...TABLES.hall, ...TABLES.terrace];
+const T = n => all().find(t => t.n === n);
+
+function tableState(t) {
+  if (!t.orders || !t.orders.length) return "free";
+  if (t.call) return "call";
+  if (t.orders.some(o => o.st.k === "placed")) return "new";
+  if (t.orders.some(o => o.st.k === "ready")) return "ready";
+  if (t.bill) return "bill";
+  return "busy";
+}
+const LABEL = { free: "Ազատ", busy: "Զբաղված", new: "Նոր պատվեր", ready: "Պատրաստ է", call: "Կանչում են", bill: "Հաշիվ" };
+const total = t => (t.orders || []).flatMap(o => o.st.k === "rejected" ? [] : o.items).reduce((s, [q, , p]) => s + q * p, 0);
+
+function renderTop() {
+  const d = new Date();
+  $("#time").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  $("#areas").innerHTML = [["hall", "Դահլիճ"], ["terrace", "Պատշգամբ"]].map(([k, l]) =>
+    `<button type="button" data-area="${k}" aria-pressed="${state.area === k}">${l}</button>`).join("");
+  const need = all().filter(t => ["new", "ready", "call", "bill"].includes(tableState(t))).length;
+  $("#need").innerHTML = need ? `Սպասում են՝ <b class="num">${need}</b> սեղան` : "Բոլորը սպասարկված են";
+}
+
+function renderFloor() {
+  $("#floor").innerHTML = TABLES[state.area].map(t => {
+    const s = tableState(t);
+    const extra = s === "busy" || s === "bill" ? `<span class="num">${t.open} ր</span>` : "";
+    return `<button type="button" class="tbl tbl--${s} ${t.round ? "tbl--round" : ""}" data-t="${t.n}" aria-pressed="${state.sel === t.n}"
+      style="left:${t.x}%;top:${t.y}%;width:${t.w}%;height:${t.h}%" aria-label="Սեղան ${t.n}, ${LABEL[s]}">
+      <b class="num">${t.n}</b><span>${LABEL[s]}</span>${extra}</button>`;
+  }).join("") + `<span class="floor__label">${state.area === "hall" ? "Մուտք" : "Փողոցի կողմ"}</span>`;
+}
+
+function stationChips(o) {
+  if (o.st.k === "placed") return `<span class="chip chip--wait">Սպասում է հաստատման</span>`;
+  if (o.st.k === "new") return `<span class="chip">Խոհանոցում նոր է</span>`;
+  if (o.st.k === "cooking") return `<span class="chip ${o.st.late ? "chip--wait" : ""}">${o.st.late ? "Ուշանում է" : "Պատրաստվում է"}</span>`;
+  if (o.st.k === "served") return `<span class="chip chip--done">Մատուցված է</span>`;
+  if (o.st.k === "rejected") return `<span class="chip">Մերժված է</span>`;
+  const out = [];
+  if (o.st.kitchen) out.push(`<span class="chip chip--ready">Խոհանոց՝ պատրաստ է</span>`);
+  if (o.st.bar) out.push(`<span class="chip chip--done">Բար՝ մատուցված է</span>`);
+  return out.join("");
+}
+
+function orderCard(o) {
+  const act = o.st.k === "placed" ? `<div class="row"><button class="btn btn--primary" type="button" data-accept="${o.no}">Ընդունել</button><button class="btn btn--danger" type="button" data-reject="${o.no}">Մերժել</button></div>`
+    : o.st.k === "ready" ? `<button class="btn btn--go" type="button" data-served="${o.no}">Մատուցված է</button>` : "";
+  return `<article class="order ${o.st.k === "placed" ? "order--new" : ""}">
+    <div class="order__head"><strong>Պատվեր ${o.no}</strong><span class="chip">${esc(o.src)}</span></div>
+    <div class="stations">${stationChips(o)}</div>
+    <ul class="items">${o.items.map(([q, n, p, note]) => `<li><span>${q} × ${esc(n)}${note ? `<em>${esc(note)}</em>` : ""}</span><span class="num">${money(q * p)}</span></li>`).join("")}</ul>
+    ${act}
+  </article>`;
+}
+
+function renderPanel() {
+  const t = T(state.sel), s = tableState(t);
+  if (s === "free") {
+    $("#panel").innerHTML = `<div class="panel__body"><h2 class="display">Սեղան ${t.n}</h2><p class="sub">Ազատ է</p>
+      <p class="empty">Հյուրերը կարող են պատվիրել QR կոդով կամ դուք կարող եք բացել սեղանը։</p></div>
+      <div class="panel__foot"><button class="btn btn--primary" type="button" data-new>Ընդունել պատվեր</button></div>`;
+    return;
+  }
+  if (state.paying) {
+    const p = state.paying, sum = total(t);
+    const paid = p.mode === "cash" || p.mode === "card" ? sum : (Number(p.cash) || 0) + (Number(p.card) || 0);
+    $("#panel").innerHTML = `<div class="panel__body"><h2 class="display">Սեղան ${t.n}</h2>
+      <div class="pay"><h3>Ինչպե՞ս վճարեցին</h3>
+        <div class="seg" role="group" aria-label="Վճարման եղանակ">${[["cash", "Կանխիկ"], ["card", "Քարտով"], ["split", "Երկուսով"]].map(([k, l]) =>
+          `<button type="button" data-mode="${k}" aria-pressed="${p.mode === k}">${l}</button>`).join("")}</div>
+        ${p.mode === "split" ? `<div class="split"><label for="cash">Կանխիկ<input id="cash" inputmode="numeric" value="${p.cash}"></label>
+          <label for="card">Քարտով<input id="card" inputmode="numeric" value="${p.card}"></label></div>
+          ${paid !== sum ? `<p class="mismatch">Գումարը պետք է լինի ${money(sum)}, հիմա՝ ${money(paid)}</p>` : ""}` : ""}
+      </div></div>
+      <div class="panel__foot"><div class="total"><span>Ընդամենը</span><span class="num">${money(sum)}</span></div>
+        <div class="row"><button class="btn btn--quiet" type="button" data-cancelpay>Հետ</button>
+        <button class="btn btn--ink" type="button" data-confirm ${p.mode && paid === sum ? "" : "disabled"}>Հաստատել վճարումը</button></div></div>`;
+    return;
+  }
+  const alerts = s === "call" ? `<div class="alert alert--call"><span>Կանչել են ${t.call} րոպե առաջ</span><button class="btn btn--danger" style="flex:none" type="button" data-going>Գնում եմ</button></div>`
+    : t.bill ? `<div class="alert alert--bill"><span>Հաշիվ են խնդրում</span></div>` : "";
+  const pending = t.orders.some(o => o.st.k === "placed");
+  $("#panel").innerHTML = `<div class="panel__body"><h2 class="display">Սեղան ${t.n}</h2><p class="sub">Բաց է ${t.open} րոպե</p>
+      ${alerts}${t.orders.map(orderCard).join("")}</div>
+    <div class="panel__foot"><div class="total"><span>Ընդամենը</span><span class="num">${money(total(t))}</span></div>
+      <div class="row"><button class="btn btn--quiet" type="button" data-new>Ավելացնել պատվեր</button>
+      <button class="btn btn--ink" type="button" data-close ${pending ? "disabled" : ""}>Փակել սեղանը</button></div>
+      ${pending ? `<p class="sub">Նախ ընդունեք կամ մերժեք նոր պատվերը։</p>` : ""}</div>`;
+}
+
+function render() { renderTop(); renderFloor(); renderPanel(); }
+function toast(m) { const el = $("#toast"); el.textContent = m; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2400); }
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const t = T(state.sel);
+  if (b.dataset.area) { state.area = b.dataset.area; state.sel = TABLES[state.area][0].n; state.paying = null; render(); return; }
+  if (b.dataset.t) { state.sel = Number(b.dataset.t); state.paying = null; render(); return; }
+  if (b.dataset.accept) { t.orders.find(o => o.no == b.dataset.accept).st = { k: "new" }; toast(`Պատվեր ${b.dataset.accept}՝ ուղարկվեց խոհանոց։`); render(); return; }
+  if (b.dataset.reject) { t.orders.find(o => o.no == b.dataset.reject).st = { k: "rejected" }; toast(`Պատվեր ${b.dataset.reject}՝ մերժվեց։`); render(); return; }
+  if (b.dataset.served) { t.orders.find(o => o.no == b.dataset.served).st = { k: "served" }; render(); return; }
+  if ("going" in b.dataset) { t.call = 0; toast("Հյուրը կտեսնի, որ գալիս եք։"); render(); return; }
+  if ("new" in b.dataset) { toast("Order entry is not part of this mockup."); return; }
+  if ("close" in b.dataset) { state.paying = { mode: null, cash: "", card: "" }; renderPanel(); return; }
+  if (b.dataset.mode) { state.paying.mode = b.dataset.mode; if (b.dataset.mode === "split") { state.paying.cash = String(Math.round(total(t) / 2)); state.paying.card = String(total(t) - Math.round(total(t) / 2)); } renderPanel(); return; }
+  if ("cancelpay" in b.dataset) { state.paying = null; renderPanel(); return; }
+  if ("confirm" in b.dataset) { t.orders = []; t.bill = false; t.call = 0; state.paying = null; toast(`Սեղան ${t.n}՝ փակված է։`); render(); return; }
+});
+document.addEventListener("input", e => {
+  if (!state.paying || !["cash", "card"].includes(e.target.id)) return;
+  state.paying[e.target.id] = e.target.value.replace(/\D/g, "");
+  const pos = e.target.selectionStart, id = e.target.id;
+  renderPanel();
+  const el = document.getElementById(id); el.focus(); el.setSelectionRange(pos, pos);
+});
+render();
+</script>
+</body>
+</html>
