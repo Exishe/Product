@@ -61,6 +61,7 @@ If not: find out why before adding cafés. Ten unhappy cafés teach less than th
 
 - Offer: a free first month, then the standard price; the first 10 get the founding price.
 - The case study: one page in Armenian and Russian about the best pilot café, with real numbers (orders through QR per day, share of guests ordering in Russian or English, kitchen time) and the owner's own words. Photos of the kitchen screen in use. Published on our site and Instagram, printed on A4 for visits.
+- Nothing in their café changes for the demo: it runs on our demo café on a phone, and their own menu goes in only if they want to try. Owners fear switching systems "like moving apartments" (`docs/00-research/video-notes.md`, A5).
 - The demo is their own menu: photograph it during the visit, and in a few minutes show it on the owner's phone in three languages. Then place an order from a table and let the owner watch it reach the demo kitchen screen on a second phone. No slides.
 - Pace: about two new cafés a week. Each new café gets the same week-1 Friday visit.
 
@@ -76,6 +77,8 @@ If not: find out why before adding cafés. Ten unhappy cafés teach less than th
 | "What about the HDM?" | Nothing changes: keep your register and your receipts exactly as now. |
 | "My staff won't learn it." | The waiter app has four buttons. Setup includes two minutes with each waiter, and we're there on the first Friday. |
 | "What if you disappear?" | Your menu and sales history export to a spreadsheet from the admin at any time. |
+| "We tried software before. It was like moving house." | Nothing moves: the menu comes from a photo, your cash register and receipts stay, and if you stop, the menu stays online as a free QR menu. |
+| "Waiters will feel replaced." | They take fewer trips and cover more tables. Guests choose: order on the phone or call the waiter, and the waiter's order goes to the same screen. |
 
 ## Step 3: the next 50
 

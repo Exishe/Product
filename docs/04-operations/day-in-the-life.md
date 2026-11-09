@@ -23,7 +23,7 @@ Each incident links to its row in `reliability.md`. The **Design change** lines 
 
 - Table 5 (a couple, Armenian): one scans the QR, orders khorovats, a summer salad and Armenian coffee, sweet.
   - The kitchen screen beeps within a second or two, and the bar phone gets the coffee.
-  - The owner's Telegram shows «Նոր պատվեր՝ սեղան 5, 6 500 ֏».
+  - The owner switched on every-order alerts for the first week, so Telegram shows «Նոր պատվեր՝ սեղան 5, 6 500 ֏». By default only exceptions arrive (ADR-040).
 - Table 2 (no smartphone, an older couple): the waiter takes the order on the tablet's order pad. It reaches the kitchen the same way and is marked «Մատուցող».
 
 ### 19:05 Tourists

@@ -89,6 +89,15 @@ Telegram stays the alert channel because its bot API is free. Viber charges €1
 4. A cheap regional product (QR Menyu, about 2,330 ֏) shows what undifferentiated QR ordering costs. Our reasons to pay more have to be visible in the first meeting: the owner's own menu in good Armenian, Russian and English on their phone, set up by someone who walks in.
 5. Chains are taken. Independent cafés are where nothing is installed yet.
 
+## What owners say on camera
+
+From videos and interviews (`docs/00-research/video-notes.md`; quotes were rendered by Gemini from the audio and not checked against transcripts):
+
+- iiko sells control, not ordering. The chairman of the Armenian Restaurant Association praises its P&L and round-the-clock human support ([video](https://www.youtube.com/watch?v=U1l-QpXYwv8)). So our dashboard leads with average bill and best and weakest dishes, and support is a person on Telegram during service.
+- Owners want to be away and hear about real problems only; a speaker cites an average lifespan of 13 months for catering businesses in Armenia ([video](https://www.youtube.com/watch?v=cruLVUkTedU)). So alerts are exceptions by default (ADR-040) and the plan is month to month.
+- Waiters resist tools that look like replacement; a hybrid where the guest chooses phone or waiter works ([video](https://www.youtube.com/watch?v=ekg5IRRPELg)).
+- Yerevan has a language gap between staff and guests: Russian-speaking waiters, Armenian-speaking guests, tourists ([EVN Report](https://evnreport.com/lifestyle/russian-speaking-waitstaff-stir-debate/)). Each person's screen speaks their language, whatever the guest ordered in.
+
 ## What we say, and to whom
 
 | Person | What they care about | What we show |
@@ -96,6 +105,7 @@ Telegram stays the alert channel because its bot API is free. Viber charges €1
 | Owner | Knowing what's happening without being there; fewer mistakes; tourists who order more | The Telegram feed of a real evening; the menu in three languages made from their photo |
 | Manager or head waiter | Fewer runs, fewer arguments with the kitchen | The table map: who called, which food is ready |
 | Cook | Slips that can be read from the pass, in Armenian | The kitchen screen from 2 metres |
+| Waiter | Not being replaced; fewer trips; not needing the guest's language | The order pad and a tourist's English order arriving in the waiter's own language |
 
 ## What we don't claim
 

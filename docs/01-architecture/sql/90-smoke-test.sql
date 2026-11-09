@@ -102,7 +102,11 @@ select api.publish_menu(:'la') as v1 \gset
 select test.ok((select item_count from public.menu_versions where id = :'v1') = 2, 'menu v1 published with 2 items');
 
 insert into public.notification_channels (restaurant_id, telegram_chat_id, title)
-  values (:'ra', 111222333, 'Owner A');
+  values (:'ra', 111222333, 'Owner A') returning id as chan \gset
+select test.ok((select not ('order.placed' = any (events)) from public.notification_channels where id = :'chan'),
+  'a new Telegram channel gets exceptions only, not every order (ADR-040)');
+-- Owner A switches on every-order alerts, so the outbox path below is exercised.
+update public.notification_channels set events = events || '{order.placed}' where id = :'chan';
 
 -- ---------------------------------------------------------------------------
 -- Owner B: a second tenant that must see nothing of A

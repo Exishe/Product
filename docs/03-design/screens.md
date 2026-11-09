@@ -177,7 +177,7 @@ People (owner, managers, invited by email) and devices (kitchen screens, waiter 
 
 ### 13. Sales dashboard
 
-Today first: revenue, number of orders, average bill, and the hour-by-hour chart compared with the same weekday last week. Top dishes by count and revenue, orders by source (QR vs waiter), average time from order to ready per station, cancellations with reasons. A date range for past days. Numbers come from closed bills; open tables are shown separately as «Բաց սեղաններ».
+Today first, in the order owners ask for them (`docs/00-research/video-notes.md`, A1 and A2): average bill, revenue, number of orders, then the best and the weakest dishes. Then the hour-by-hour chart compared with the same weekday last week, top dishes by count and revenue, orders by source (QR vs waiter), average time from order to ready per station, cancellations with reasons. A date range for past days. Numbers come from closed bills; open tables are shown separately as «Բաց սեղաններ».
 
 | State | Behaviour |
 |---|---|
@@ -186,7 +186,7 @@ Today first: revenue, number of orders, average bill, and the hour-by-hour chart
 
 ### 14. Telegram
 
-«Միացնել Telegram» opens a link to the bot with a one-time code. Shows connected chats, which events each gets (new orders, late orders, end-of-day summary) and their language. A "send test" button.
+«Միացնել Telegram» opens a link to the bot with a one-time code. Shows connected chats, which events each gets and their language. By default only exceptions: late orders, a screen offline, a dish cancelled after serving, and the end-of-day summary; every new order is a switch, off by default (ADR-040). A "send test" button.
 
 ### 15. Settings
 

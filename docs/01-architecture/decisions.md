@@ -317,3 +317,11 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Rejected: Seghan («Սեղան», table: too generic, and "gh" is hard for foreign guests); Tarkhun (a well-known soft drink brand); Tsiran (used by many businesses).
 - Consequences: The UI reads the name from one message key (`brand.name`) and one constant, so a rename touches no logic. "Restaurant OS" stays as the internal project name in docs and code. Before spending money on the name (domain, printing, trademark), check the Armenian IP office register (aipa.am) and register pativ.am; both wait for the free-only rule to change.
 
+### ADR-040: Telegram alerts are exceptions by default
+
+- Status: Accepted, 2026-11-09
+- Context: The video research (`docs/00-research/video-notes.md`, A4) heard owners say they want to be away from the café and hear only when something needs them. A busy café sends 70 orders in an evening; a message for each one teaches the owner to mute the bot and miss the late ticket.
+- Decision: A new Telegram channel gets late tickets (`order.overdue`), a station screen offline (`station.offline`), a cancellation after serving (`order.comped`) and the day summary (`day.summary`). Every-order alerts (`order.placed`) are a switch in the Telegram settings, off by default.
+- Rejected: every order by default (noise); no per-order option at all (some owners want it in the first week).
+- Consequences: Migration `alerts_exceptions_default` changes the column default. The pitch, the onboarding test and the Friday walkthrough say so.
+

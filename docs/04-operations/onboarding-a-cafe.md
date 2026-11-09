@@ -91,16 +91,18 @@ Then on each kitchen and bar device:
 The owner scans table 3 and orders two items, one from the kitchen and one from the bar.
 
 - [ ] The kitchen slip appears within 2 seconds, and the bar slip on the bar screen.
-- [ ] The owner's Telegram shows the new order.
+- [ ] The order is marked «Փորձնական», so it stays out of the sales report.
 - [ ] Kitchen taps «Սկսել», then «Պատրաստ է»; the owner's phone shows the status moving.
 - [ ] The waiter marks it served and closes the table with «Կանխիկ».
-- [ ] The test order shows in today's sales. Delete it from the report with «Փորձնական պատվեր».
 
 Live.
 
 ## Before leaving (5 more minutes, outside the 30)
 
 - [ ] Show the waiters the tablet: accept, served, call, close table. Two minutes each is enough.
+- [ ] Dry run, 5 minutes: each waiter takes two test orders on the tablet and one guest order comes by QR; the kitchen moves them to ready; every table ends closed. All marked «Փորձնական».
+- [ ] Name one champion per shift, the person staff ask first. Usually the head waiter.
+- [ ] Scan two QR cards from a guest's seat with the lights as they are at 21:00. Dim corners are where QR ordering fails.
 - [ ] Set up the hotspot fallback: which phone, its hotspot name, and that the kitchen tablet knows it.
 - [ ] Put the paper fallback pack in the bar drawer.
 - [ ] Tell the owner how to reach support: the Telegram support chat (`support.md`).
@@ -110,8 +112,9 @@ Live.
 | When | What | Why |
 |---|---|---|
 | Same evening | Watch the first service from the platform admin; message the owner if orders stall | Catch problems before the owner does |
+| Next morning | Send the champion one short guide per role (waiter, kitchen, owner) in Armenian and Russian | Staff learn from one page, not from a manual |
 | Next day | Call the owner: what confused staff, what guests asked | Fix onboarding and copy |
-| Day 7 | Check activation: at least 50 orders, QR share, kitchen times | First-week activation metric (`docs/05-business/metrics.md`) |
+| Day 7 | Check activation (published menu, paired kitchen screen, 20 real orders on 3 different days), QR share, kitchen times | First-week activation metric (`docs/05-business/metrics.md`) |
 | Day 25 | Trial ending: talk about the subscription | Conversion |
 
 ## Troubleshooting

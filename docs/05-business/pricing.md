@@ -72,6 +72,7 @@ Small (up to 10 tables) 12,000 ֏, Standard 18,000 ֏.
 - Setup fee: none. In Yerevan we set up in person, free, for the first 50 cafés. The café prints its QR cards from the PDF the admin gives it; we don't resell stands.
 - Founding cafés (the first 10): Service is free during the pilot, then 10,000 ֏ a month locked for 12 months, in return for a weekly 15-minute call, honest feedback and permission to publish their numbers and a quote as a case study.
 - Several locations: each location pays its own price. Groups of five or more talk to us.
+- No lock-in: month to month, cancel any time. A café can also pause the Service plan for up to 3 months a year, for a slow season or repairs; the free menu keeps working and switching back needs no new setup. Owners in the research expect cafés to close or change hands often (`docs/00-research/video-notes.md`, A4), so a contract would scare them more than it protects us.
 
 ## Billing
 
