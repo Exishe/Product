@@ -134,7 +134,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
                   </span>
                   <span className="num">{t("kitchenAvg", { minutes: toMinutes(k.avg_seconds) })}</span>
                   <span
-                    className={`num text-sm ${k.over_limit > 0 ? "text-apricot-deep font-semibold" : "text-muted"}`}
+                    className={`num text-sm ${k.over_limit > 0 ? "text-pomegranate font-semibold" : "text-muted"}`}
                   >
                     {t("kitchenOver", { over: k.over_limit, tickets: k.tickets })}
                   </span>
@@ -257,11 +257,13 @@ function DishList({
         {dishes.map((d, i) => (
           <li key={i} className="border-line flex items-baseline gap-3 border-t py-2 first:border-0">
             <span className="num text-muted w-5 shrink-0 text-right">{i + 1}</span>
-            <span className="min-w-0 flex-1 font-semibold break-words" lang={dishNameLocale(d.name, locale)}>
-              {dishName(d.name, locale)}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-semibold break-words" lang={dishNameLocale(d.name, locale)}>
+                {dishName(d.name, locale)}
+              </span>
+              <span className="num text-muted text-sm">{t("sold", { count: d.qty })}</span>
             </span>
-            <span className="num text-muted shrink-0 text-sm">{t("sold", { count: d.qty })}</span>
-            <span className="num w-24 shrink-0 text-right">{formatAmd(d.revenue, locale)}</span>
+            <span className="num shrink-0 text-right">{formatAmd(d.revenue, locale)}</span>
           </li>
         ))}
       </ol>

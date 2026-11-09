@@ -208,17 +208,15 @@ language sql security definer set search_path = '' as $$
 $$;
 
 -- 05:30 Yerevan (01:30 UTC), after the business day (05:00 start) has closed.
--- Supabase preloads pg_cron; the plain-Postgres test harness does not, so the
--- schedule is skipped there.
+-- pg_cron on Supabase (created by 20261109200100_notification_delivery); the
+-- plain-Postgres harness stub only records the schedule.
 do $$
 begin
-  if exists (select 1 from pg_available_extensions where name = 'pg_cron')
-     and coalesce(current_setting('shared_preload_libraries', true), '') like '%pg_cron%' then
-    create extension if not exists pg_cron with schema pg_catalog;
-    perform cron.schedule('metrics-daily', '30 1 * * *',
+  if exists (select 1 from pg_namespace where nspname = 'cron') then
+    perform cron.schedule('pativ-metrics-daily', '30 1 * * *',
       $job$select private.compute_metrics_daily((now() at time zone 'Asia/Yerevan')::date - 1)$job$);
   else
-    raise notice 'pg_cron is not available: metrics-daily is not scheduled';
+    raise notice 'pg_cron is not available: pativ-metrics-daily is not scheduled';
   end if;
 end $$;
 

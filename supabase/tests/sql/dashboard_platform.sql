@@ -186,6 +186,8 @@ select test.ok((select accept_p90_s = 60 from public.metrics_daily where locatio
   'waiter acceptance wait (the QR order accepted after a minute)');
 select test.ok((select orders = 0 from public.metrics_daily where restaurant_id = :'rn'),
   'a café with no orders gets a row of zeros');
+select test.ok((select schedule = '30 1 * * *' and command like '%compute_metrics_daily%' from cron.job
+                where jobname = 'pativ-metrics-daily'), 'pg_cron recomputes yesterday at 05:30 Yerevan (01:30 UTC)');
 
 select test.act_as('a1000000-0000-0000-0000-000000000001');
 select test.ok((select count(*) from public.metrics_daily where location_id = :'lm') = 1, 'the owner reads their own daily metrics');
