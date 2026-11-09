@@ -114,7 +114,9 @@ The Free plan has no backups. `.github/workflows/db-backup.yml` runs nightly: `s
 
 ## Notes for Claude Code cloud sessions
 
-- Docker images can't be pulled (see the top of this file). Use the dev cloud project through the Supabase MCP tools or CLI, and the plain-Postgres harness for SQL tests. A throwaway Postgres 16 runs fine locally under the `postgres` user.
+- Docker images can't be pulled (see the top of this file). Use the dev cloud project through the Supabase MCP tools or CLI, and the plain-Postgres harness for SQL tests (`npm run test:sql`). A throwaway Postgres 16 runs fine locally under the `postgres` user.
+- Migrations reach `restaurant-os-dev` through the MCP `apply_migration`, file content verbatim, then the schema fingerprint query (function, column and policy hashes) is compared with the harness to catch any copying error. After applying, files are renamed to the versions `list_migrations` reports.
+- The seed takes the demo owner's password from `pativ.seed_owner_password` when set (`select set_config(...)` before the seed); the value lives only in `.env.local` as `E2E_OWNER_PASSWORD`, which the Playwright config loads.
 - Playwright 1.63 and Chromium come preinstalled. The project pins `@playwright/test` 1.65, so `playwright.config.ts` reads `PW_CHROMIUM_PATH` and, when set, launches `/opt/pw-browsers/chromium`. CI installs its own browsers.
 - Screenshots meant for the owner use `deviceScaleFactor: 2`; checks only Claude reads use 1.
 - The free rule and the other working rules live in `CLAUDE.md` at the repository root, so every new session follows them.

@@ -132,3 +132,8 @@ create table if not exists auth.refresh_tokens (
   session_id uuid,
   created_at timestamptz not null default now()
 );
+
+-- PostgREST's login role, so the migration exposing the api schema runs here too.
+do $$ begin
+  create role authenticator nologin noinherit;
+exception when duplicate_object then null; end $$;

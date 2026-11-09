@@ -33,7 +33,9 @@ begin
   -- and shown once; on the plain-Postgres test harness a bare row.
   if exists (select 1 from information_schema.columns
              where table_schema = 'auth' and table_name = 'users' and column_name = 'encrypted_password') then
-    v_password := translate(encode(extensions.gen_random_bytes(12), 'base64'), '+/', '-_');
+    -- A caller may pass the password (pativ.seed_owner_password) so tests can sign in.
+    v_password := coalesce(nullif(current_setting('pativ.seed_owner_password', true), ''),
+                           translate(encode(extensions.gen_random_bytes(12), 'base64'), '+/', '-_'));
     insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
                             raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
                             confirmation_token, email_change, email_change_token_new, recovery_token)
