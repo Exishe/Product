@@ -1,6 +1,6 @@
 # Gaps: what no reference does well, and where we can win in Armenia
 
-This file builds on `reference-analysis.md`. Each gap names the best reference we found, what is still missing, and what we do about it. Claims about the Armenian market that we have not verified yet are marked [verify in Phase 5].
+This file builds on `reference-analysis.md`. Each gap names the best reference we found, what is still missing, and what we do about it. Claims about the Armenian market were marked for checking in Phase 5; the answers are now in `docs/05-business/`.
 
 ## Quick view
 
@@ -51,7 +51,7 @@ Real Yerevan menus mix Armenian, Russian and English, use handwritten boards and
 
 None of the nine analysed repos sends Telegram alerts. URY uses Frappe's in-app notifications, and nodedr has none. (pronto, not analysed, has Telegram reminders for bookings.)
 
-Small café owners are often not on site. For them, a Telegram message per new order, a ping when an order waits too long in the kitchen and a short end-of-day summary are worth more than a dashboard they open once a week. The same bot can be the support channel (`support.md`, Phase 4). Whether owners prefer Telegram, Viber or WhatsApp is [verify in Phase 5]; we build Telegram first because the brief asks for it and grammY makes it cheap.
+Small café owners are often not on site. For them, a Telegram message per new order, a ping when an order waits too long in the kitchen and a short end-of-day summary are worth more than a dashboard they open once a week. The same bot can be the support channel (`support.md`, Phase 4). Whether owners prefer Telegram, Viber or WhatsApp was checked in Phase 5: in 2021–22, 80 % of Armenian internet users used Viber, 62 % WhatsApp and 22 % Telegram (`docs/05-business/positioning.md`). Telegram stays the alert channel because its bot API is free and Viber's isn't; owners without Telegram get web push (ADR-035). The field visits ask owners directly.
 
 ## 4. Real multi-tenancy and safe guest ordering
 
@@ -74,7 +74,7 @@ In Stage 1 guests pay the waiter, as today. The data model still includes `bills
 
 The references are either free but self-hosted (nodedr wants a LAN server or Docker; URY needs a full ERPNext install) or commercial products built for other markets. Toast, the product we're modelled on, lists the US, Canada, the UK, Ireland, Australia and New Zealand as its markets ([Toast Go 3 launch](https://pos.toasttab.com/news/toast-go-3-handheld-pos-global-launch), [Toast UK](https://pos.toasttab.com/uk/international-expansion)), not Armenia.
 
-Our wedge: a monthly fee in the 10,000–20,000 AMD range, guests use their own phones, and the café uses the tablets, old phones and thermal printer it already has. Which local QR-menu and POS products a Yerevan café already uses, and what they cost, is Phase 5 research [verify in Phase 5].
+Our wedge: a monthly fee in the 10,000–20,000 AMD range, guests use their own phones, and the café uses the tablets, old phones and thermal printer it already has. Phase 5 found iiko at 24,000–47,500 AMD per cash desk per month, local POS vendors without public prices, and free view-only QR menus; the details are in `docs/05-business/positioning.md` and `pricing.md`.
 
 ## 7. Smaller gaps we design for anyway
 

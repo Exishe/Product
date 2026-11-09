@@ -149,7 +149,7 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Status: Proposed
 - Decision: For Ameriabank vPOS (or ArCa EPG): the server calls InitPayment, the guest goes to the bank's hosted page, and the server checks the result with GetPaymentDetails. We never trust the redirect. A reconciliation job covers guests who never come back. Each location's credentials sit in Supabase Vault. Every attempt has a new integer OrderID (`payment_attempts`).
 - Rejected: trusting BackURL parameters (Ameria signs nothing and has no webhook); storing credentials in tables or env vars per tenant.
-- Consequences: Each café probably needs its own merchant contract. A platform or sub-merchant deal with one bank would simplify onboarding; that's a business question for Phase 5.
+- Consequences: Each café probably needs its own merchant contract. A platform or sub-merchant deal with one bank would simplify onboarding. Phase 5 left this for Stage 3: Stage 1 takes no guest payments, and cafés pay us by invoice (`docs/05-business/pricing.md`).
 
 ### ADR-022: Fiscal receipts (HDM) are out of scope until we have tax advice
 
@@ -261,3 +261,29 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Context: ADR-019 chose Frankfurt before latency from Armenia was measured.
 - Evidence: Globalping probes on five Armenian networks, TCP connect to AWS S3 endpoints: median 59 ms to Frankfurt (`eu-central-1`), 82 ms to Dublin (`eu-west-1`). Details in `docs/04-operations/costs.md`.
 - Decision: Keep Supabase in `eu-central-1` and Vercel functions in `fra1`. The new `restaurant-os-dev` project is created there too.
+
+---
+
+## Phase 5 decisions
+
+### ADR-035: Owner alerts go to Telegram, with web push as the fallback
+
+- Status: Accepted, 2026-11-09
+- Context: In 2021–22, 80 % of Armenian internet users used Viber, 62 % WhatsApp and 22 % Telegram (Caucasus Barometer, cited in `docs/05-business/positioning.md`). Many owners may not have Telegram.
+- Decision: Keep Telegram for alerts and the day summary. Owners who don't use Telegram turn on web push notifications in the admin, which sends the same alerts to their phone's browser. On iPhones this works once the admin is added to the home screen.
+- Rejected: a Viber bot (new bots cost €100 a month plus per-message fees, and need Viber's approval); WhatsApp Business messages (Meta charges per template message). Both break the free-only rule. SMS (paid per message).
+- Consequences: The notification outbox gets a `web_push` channel next to `telegram`. The web push library goes through the Phase 2 dependency and license check before it's added. The human support chat can be in any messenger; it isn't a bot.
+
+### ADR-036: Two plans, enforced in Postgres
+
+- Status: Proposed, waiting for the owner's pricing decision at Gate 5
+- Decision: `subscriptions.plan` is `menu` (free: QR menu, photo import, stop list) or `service` (paid: ordering, staff screens, Telegram, dashboard). Guest ordering functions and staff screens check the location's plan and status in Postgres; a location on `menu`, or `past_due` for more than 7 days, keeps its public menu and loses ordering. Every location starts with 30 days of `service` as a free month. Owners can export their menu, orders and bills as CSV from the admin at any time.
+- Rejected: checking the plan only in the Next.js app (a direct RPC call would skip it); deleting data when a café stops paying.
+- Consequences: Phase 6 migrations add `subscriptions.canceled_at`, `cancel_reason` and `converted_at`, rename the seed's `standard` plan, and add the plan check to `private.place_guest_order` and the staff RPCs. CSV export is a Stage 1 admin feature.
+
+### ADR-037: Business metrics come from Postgres; PostHog only for the guest funnel
+
+- Status: Accepted, 2026-11-09
+- Decision: Add `kitchen_tickets.first_seen_at`, set when a kitchen screen reports that it has drawn the ticket, so order-to-kitchen time is measured in production. A `metrics_daily` table (one row per location per business day) is filled by `pg_cron` at 05:30 Yerevan time and read by platform admins through security-definer functions. PostHog tracks four guest events and nothing personal.
+- Rejected: computing business metrics in PostHog (it would need order data and guest identifiers we don't want there); timing on the client clock (device clocks drift, R20).
+- Consequences: Definitions and targets are in `docs/05-business/metrics.md`.

@@ -14,7 +14,7 @@ Not included: our own time (sales, onboarding, support), the café's devices, QR
 | 50 | $114.15 = 41,143 AMD | 823 AMD | 5.5 % |
 | 200 | $470.34 = 169,526 AMD | 848 AMD | 5.7 % |
 
-- Fixed costs dominate early. About $45 a month (Supabase Pro + Vercel Pro) buys capacity for 20–30 cafés, so the first paying cafés don't cover it. Break-even on infrastructure is the third or fourth paying café.
+- Fixed costs dominate early. About $45 a month (Supabase Pro + Vercel Pro) buys capacity for 20–30 cafés, so one café at 10,000–15,000 AMD doesn't cover it. Two paying cafés do, at any price in the brief's range.
 - From 10 cafés, infrastructure is under 20 % of revenue even at the lowest price (10,000 AMD), and from 50 cafés it's around 5–8 %.
 - AI isn't a cost driver. Even on Claude's most capable model a full menu import costs about $0.43, once per café.
 
