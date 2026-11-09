@@ -99,4 +99,9 @@ select test.ok((select item_count from public.menu_versions where id = :'ev1') =
 
 reset role;
 select set_config('request.jwt.claims', '', false);
+
+-- Dish photos: small images only
+select test.ok((select file_size_limit = 2097152 and allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+  from storage.buckets where id = 'menu-images'), 'the dish-photo bucket takes images up to 2 MB');
+
 \echo 'MENU EDITOR TESTS PASSED'

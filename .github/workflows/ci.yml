@@ -57,6 +57,10 @@ jobs:
 
   e2e:
     name: Browser tests (phone, tablet, desktop)
+    # Runs after the cloud database is up to date (or when migrate is skipped,
+    # as on pull requests), never against a half-applied schema.
+    needs: [migrate]
+    if: ${{ !cancelled() && needs.migrate.result != 'failure' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -108,7 +112,7 @@ jobs:
         run: npm ci
       - if: env.HAS_TOKEN == 'true'
         name: Show what will be applied
-        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --dry-run
+        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --skip-vault --dry-run
       - if: env.HAS_TOKEN == 'true'
         name: Apply
-        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --yes
+        run: npx supabase db push --remote=mhuxfmdehkgpjunxgptc --skip-vault --yes

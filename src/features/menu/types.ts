@@ -16,8 +16,13 @@ export type EditorDish = {
 };
 export type EditorOption = { id: string; names: Names; priceDelta: number; isDefault: boolean };
 export type EditorGroup = { id: string; minSelect: number; maxSelect: number; names: Names; options: EditorOption[] };
+export type PublishState = { published: boolean; hasChanges: boolean; publishedAt: string | null };
+
 export type EditorData = {
   restaurantId: string;
+  locationId: string;
+  soldOut: string[];
+  publish: PublishState;
   categories: EditorCategory[];
   dishes: EditorDish[];
   groups: EditorGroup[];

@@ -289,3 +289,10 @@ grant execute on function
   api.ensure_menu(uuid), api.save_category(uuid, uuid, jsonb, uuid), api.save_item(uuid, jsonb),
   api.save_modifier_group(uuid, jsonb), api.reorder(uuid, text, uuid[]), api.delete_item(uuid)
 to authenticated;
+
+-- Dish photos are resized to WebP in the browser (about 600 px, well under
+-- 200 KB). The bucket refuses anything that skipped that step.
+update storage.buckets
+   set file_size_limit = 2 * 1024 * 1024,
+       allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+ where id = 'menu-images';

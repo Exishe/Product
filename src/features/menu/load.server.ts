@@ -15,31 +15,65 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
   const supabase = await createClient();
   await supabase.schema("api").rpc("ensure_menu", { p_restaurant_id: restaurantId });
 
-  const [cats, dishes, groups, areas] = await Promise.all([
+  const { data: location } = await supabase
+    .from("locations")
+    .select("id, published_menu_version_id")
+    .eq("restaurant_id", restaurantId)
+    .order("created_at")
+    .limit(1)
+    .single();
+  const locationId = location?.id as string;
+
+  const [cats, dishes, groups, areas, stops, version] = await Promise.all([
     supabase
       .from("categories")
-      .select("id, sort, prep_area_id, category_translations(locale, name)")
+      .select("id, sort, prep_area_id, updated_at, category_translations(locale, name)")
       .eq("restaurant_id", restaurantId)
       .order("sort"),
     supabase
       .from("items")
       .select(
-        "id, category_id, price, sort, prep_area_id, tags, image_path, item_translations(locale, name, description, source, reviewed_at), item_modifier_groups(group_id, sort)",
+        "id, category_id, price, sort, prep_area_id, tags, image_path, is_active, updated_at, item_translations(locale, name, description, source, reviewed_at, updated_at), item_modifier_groups(group_id, sort)",
       )
       .eq("restaurant_id", restaurantId)
       .order("sort"),
     supabase
       .from("modifier_groups")
       .select(
-        "id, min_select, max_select, modifier_group_translations(locale, name), modifiers(id, price_delta, is_default, is_active, sort, modifier_translations(locale, name))",
+        "id, min_select, max_select, updated_at, modifier_group_translations(locale, name), modifiers(id, price_delta, is_default, is_active, sort, modifier_translations(locale, name))",
       )
       .eq("restaurant_id", restaurantId)
       .order("created_at"),
     supabase.from("prep_areas").select("id, name").eq("restaurant_id", restaurantId).order("created_at"),
+    supabase.from("stop_list").select("item_id, until").eq("location_id", locationId),
+    location?.published_menu_version_id
+      ? supabase.from("menu_versions").select("published_at, item_count").eq("id", location.published_menu_version_id).single()
+      : Promise.resolve({ data: null }),
   ]);
+
+  // Unpublished: never published, something edited after publishing, or a dish
+  // removed (the active count no longer matches the snapshot).
+  const now = Date.now();
+  const publishedAt = version.data?.published_at ?? null;
+  const since = publishedAt ? Date.parse(publishedAt) : 0;
+  const editedSince = (rows: { updated_at: string }[] | null) => (rows ?? []).some((r) => Date.parse(r.updated_at) > since);
+  const activeCount = (dishes.data ?? []).filter((d) => d.is_active).length;
+  const publish = {
+    published: Boolean(publishedAt),
+    publishedAt,
+    hasChanges:
+      !publishedAt ||
+      editedSince(cats.data) ||
+      editedSince(dishes.data) ||
+      editedSince(groups.data) ||
+      activeCount !== version.data?.item_count,
+  };
 
   return {
     restaurantId,
+    locationId,
+    soldOut: (stops.data ?? []).filter((s) => !s.until || Date.parse(s.until) > now).map((s) => s.item_id),
+    publish,
     categories: (cats.data ?? []).map((c) => ({
       id: c.id,
       sort: c.sort,

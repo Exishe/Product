@@ -154,7 +154,21 @@
     "moveDown": "Move down",
     "close": "Close",
     "review": "Check",
-    "markReviewed": "I've checked the translation"
+    "markReviewed": "I've checked the translation",
+    "photo": "Photo",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "uploading": "Uploading…",
+    "photoFailed": "Couldn't upload. Try again.",
+    "soldOut": "Sold out today",
+    "unpublished": "There are unpublished changes.",
+    "neverPublished": "The menu isn't published yet.",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "published": "Published. Guests already see the new menu.",
+    "unreviewed": "Before publishing, check the translations of the dishes marked “Check”.",
+    "publishFailed": "Couldn't publish. Try again."
   },
   "optionGroups": {
     "title": "Options",
