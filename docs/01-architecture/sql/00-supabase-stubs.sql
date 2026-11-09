@@ -91,3 +91,44 @@ create or replace function storage.foldername(name text) returns text[]
 language sql immutable as $$
   select (string_to_array(name, '/'))[1 : array_length(string_to_array(name, '/'), 1) - 1]
 $$;
+
+-- vault ----------------------------------------------------------------------
+-- Stand-in for Supabase Vault (no encryption here). Only postgres and
+-- SECURITY DEFINER functions owned by it can read secrets.
+create schema if not exists vault;
+revoke all on schema vault from public;
+
+create table if not exists vault.secrets (
+  id uuid primary key default gen_random_uuid(),
+  name text unique,
+  description text not null default '',
+  secret text not null,
+  created_at timestamptz not null default now()
+);
+
+create or replace view vault.decrypted_secrets as
+  select id, name, description, secret, secret as decrypted_secret, created_at from vault.secrets;
+
+create or replace function vault.create_secret(
+  new_secret text, new_name text default null, new_description text default '', new_key_id uuid default null
+) returns uuid
+language sql security definer set search_path = '' as $$
+  insert into vault.secrets (secret, name, description) values (new_secret, new_name, new_description) returning id
+$$;
+
+-- auth sessions, so revoking a device can be tested ----------------------------
+create table if not exists auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  not_after timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists auth.refresh_tokens (
+  id bigint generated always as identity primary key,
+  user_id varchar(255),
+  token varchar(255),
+  revoked boolean,
+  session_id uuid,
+  created_at timestamptz not null default now()
+);
