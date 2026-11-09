@@ -97,9 +97,11 @@ The service worker caches the app shell, the last published menu snapshot and fo
 
 Telegram is a side channel, so a Telegram outage must never slow down an order. The order transaction only inserts rows into `notification_outbox` (`private.enqueue_order_notification`).
 
-1. A `pg_net` call fires after insert and pokes `POST /api/jobs/notify` with the job secret. Delivery normally takes a few seconds.
-2. The endpoint claims due rows (`for update skip locked`) and sends them with grammY in the channel's language. It marks each row `sent`, or `failed` with the next attempt time (backoff 30 s, 1 min, 2 min … up to 1 hour).
-3. `pg_cron` calls the same endpoint every minute to sweep anything missed. After 8 failed attempts a row becomes `dead` and shows up in the platform admin.
-4. Two more cron jobs feed the same outbox: overdue alerts (tickets cooking longer than the location's threshold, default 20 minutes; one alert per ticket via `dedupe_key`) and the end-of-day summary at closing time.
+Everything below runs in Postgres (ADR-038, ADR-044); the app holds neither the bot token nor a job secret.
 
-Linking a chat: the owner presses "Connect Telegram" in the admin panel and gets a `t.me/<bot>?start=<code>` link. The bot's webhook receives `/start <code>`, checks the hashed one-time code and creates the `notification_channels` row.
+1. `pg_cron` runs `private.run_notifications()` every 10 seconds. It first reads pg_net's answers for rows in flight (`private.collect_outbox_responses`), then claims due rows (`for update skip locked`), renders each text in the channel's language (`private.render_notification`) and sends it with `net.http_post` to the Bot API, token from Vault. Alerts normally arrive within 10–15 seconds.
+2. A 2xx answer marks the row `sent`. A failure retries after 1, 5 and 15 minutes; after 5 failed attempts the row is `dead` and shows up in the platform admin. "Bot was blocked" turns the chat off. No token in Vault: rows wait and nothing fails.
+3. `pg_cron` also runs `private.run_alert_checks()` every minute (late tickets over 20 minutes, one alert per order; kitchen screens without a heartbeat for 2 minutes while the café is serving) and `private.enqueue_day_summaries()` every 5 minutes (once the café has closed). A comp after serving is queued by a trigger on `order_items`.
+4. Web push rows (ADR-035) go the same way, except that pg_net posts the signed row id to `/api/push`, which encrypts and sends with the VAPID key and reports back.
+
+Linking a chat: the owner presses «Միացնել Telegram» on `/admin/telegram` and gets a `t.me/<bot>?start=<code>` link. Telegram posts `/start <code>` to `/api/telegram`, which passes it with the secret header to `api.telegram_update`. The function checks the secret against Vault and the hashed one-time code, creates the `notification_channels` row and returns the bot's reply as the webhook's answer. Registering the webhook is one SQL call once the token is in Vault: `select private.telegram_set_webhook('https://<app>/api/telegram')`.

@@ -28,7 +28,7 @@ Likelihood and impact are High, Medium or Low; the level follows the standard ma
 | R7 | Cancellation not noticed in the kitchen | M | M | Medium | Void ticket stays until acknowledged; struck-through lines; comps need a manager | Tested |
 | R8 | Two parties end up on one bill (table not closed) | M | M | Medium | Stale-table guard on new guest join; long-open tables highlighted | Designed |
 | R9 | Remote or prank orders from a photographed QR | L | M | Low | Large orders wait for the waiter; reject in one tap; reprint QR kills the old one | Tested (QR version), Designed (rest) |
-| R10 | Telegram messages delayed or lost | M | L | Low | Outbox with retries and dead letters; the app, not Telegram, is the source of truth | Designed |
+| R10 | Telegram messages delayed or lost | M | L | Low | Outbox with retries (1, 5, 15 min) and dead letters after 5 failures; web push as a second channel; the app, not Telegram, is the source of truth | Tested (harness), live test waits for the bot token |
 | R11 | AI misreads a price and it reaches guests | H | H | Critical before mitigation, Low after | Publishing blocked until every AI-written row is reviewed (enforced in Postgres); uncertain prices flagged | Tested |
 | R12 | AI provider down or free-tier limit hit | M | L | Low | Manual menu entry always available; drafts and photos kept; retry later | Designed |
 | R13 | Data loss | L | H | Medium | Nightly encrypted dump on Free (RB5); daily backups on Pro; restore drill | Open: drill in Phase 6 |
