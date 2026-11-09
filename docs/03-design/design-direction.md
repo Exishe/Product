@@ -4,10 +4,10 @@
 
 Four surfaces, four jobs:
 
-- **Guest phone.** Make a café's menu feel like that café's menu, readable in daylight on a terrace, in three languages, with ordering one thumb away.
-- **Waiter tablet.** Show the whole room at a glance and make the next action obvious.
-- **Kitchen screen.** Be readable from 2 metres with greasy hands and no time to look twice.
-- **Owner admin.** Make editing the menu and reviewing AI output feel safe and quick.
+- Guest phone. Make a café's menu feel like that café's menu, readable in daylight on a terrace, in three languages, with ordering one thumb away.
+- Waiter tablet. Show the whole room at a glance and make the next action obvious.
+- Kitchen screen. Be readable from 2 metres with greasy hands and no time to look twice.
+- Owner admin. Make editing the menu and reviewing AI output feel safe and quick.
 
 Two constraints narrow the choices before taste comes in. First, only 8 Google Fonts families include Armenian at all (`docs/01-architecture/i18n.md`), and only Google Sans covers Armenian, Cyrillic and Latin in one family. Second, the most common "AI-generated" look today is a cream background with a serif headline and a terracotta accent. Yerevan's pink tuff stone pulls straight towards it, so we deliberately go elsewhere.
 
@@ -70,7 +70,7 @@ The guest app is light-only in Stage 1; it's used in lit cafés and daylight. Th
 | UI, body, numbers | Google Sans | 400 and 600; 16/24 px body on phones, tabular figures for prices | One family covering Armenian, Cyrillic and Latin, so UI text never mixes fallback fonts mid-word. OFL. |
 | Kitchen board | Google Sans | 700 for table numbers (64 px), 600 for items (26 px), tabular timers | Plain, heavy, legible from 2 metres. No serif on the board. |
 
-Type scale (px, 1.25 ratio, rounded): 12 · 14 · 16 · 20 · 24 · 30 · 38 · 48 · 64. Line length stays under about 65 characters. Headings use `text-wrap: balance`. No all-caps labels: Armenian capitals are hard to scan, and all-caps Russian shouts.
+Type scale (px, 1.25 ratio, rounded): 12, 14, 16, 20, 24, 30, 38, 48, 64. Line length stays under about 65 characters. Headings use `text-wrap: balance`. No all-caps labels: Armenian capitals are hard to scan, and all-caps Russian shouts.
 
 ### Space, radius, touch
 
@@ -82,9 +82,9 @@ Type scale (px, 1.25 ratio, rounded): 12 · 14 · 16 · 20 · 24 · 30 · 38 · 
 ### Motion
 
 - One orchestrated moment per surface:
-  - **Guest:** the order button turns into the status tracker.
-  - **Kitchen:** a new ticket slides in from the left with a sound.
-  - **Waiter:** a table that needs attention pulses once, then stays marked.
+  - Guest: the order button turns into the status tracker.
+  - Kitchen: a new ticket slides in from the left with a sound.
+  - Waiter: a table that needs attention pulses once, then stays marked.
 - Everything else is instant. `prefers-reduced-motion` turns the moments into simple fades.
 
 ### Imagery
