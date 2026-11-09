@@ -114,6 +114,13 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    guest_service_request: {
+      Args: {
+        p_guest_session_id: string;
+        p_kind: Enums["service_request_kind"];
+      };
+      Returns: string;
+    };
     heartbeat: { Args: Record<string, never>; Returns: undefined };
     mark_tickets_seen: {
       Args: {

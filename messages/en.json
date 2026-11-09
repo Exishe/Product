@@ -343,5 +343,156 @@
     "sizeNumber": "Size {number}",
     "sizePrice": "Size {number}, price",
     "remove": "Remove"
+  },
+  "tables": {
+    "title": "Tables and QR codes",
+    "intro": "Each table has its own QR code. Guests scan it and order from their phone.",
+    "empty": "No tables yet. Add the first one.",
+    "label": "Number",
+    "seats": "Seats",
+    "area": "Area",
+    "noArea": "No area",
+    "add": "Add a table",
+    "adding": "Adding…",
+    "added": "Table {label} added.",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "reprint": "Reprint QR",
+    "reprintWarning": "This table's old QR code will stop working. You'll need to print and stick on the new one.",
+    "reprintConfirm": "Yes, reprint",
+    "reprinted": "The new QR code is ready and the old one no longer works. Print it and stick it on.",
+    "printOne": "Print",
+    "printAll": "Print all QR codes",
+    "tableName": "Table {label}",
+    "seatsCount": "{count, plural, one {# seat} other {# seats}}",
+    "labelTaken": "There's already a table with this number.",
+    "invalid": "Check the number and the seats.",
+    "error": "That didn't work. Try again.",
+    "print": {
+      "title": "QR cards",
+      "hint": "A4 sheets, 4 cards each. Cut along the dashed lines.",
+      "print": "Print",
+      "back": "Tables",
+      "empty": "Nothing to print yet. Add tables first.",
+      "notPublished": "The menu isn't published yet. Until it is, guests won't see a menu when they scan.",
+      "sheet": "Sheet {n}"
+    }
+  },
+  "qrCard": {
+    "table": "Table",
+    "scan": "Scan to order"
+  },
+  "guest": {
+    "language": {
+      "label": "Language",
+      "hy": "Հայ",
+      "ru": "Рус",
+      "en": "Eng"
+    },
+    "table": "Table {label}",
+    "payHint": "Pay your waiter",
+    "entry": {
+      "title": "This QR code no longer works.",
+      "body": "Ask your waiter for help."
+    },
+    "menu": {
+      "search": "Search the menu",
+      "categories": "Menu sections",
+      "noResults": "No dish matches that. Try another word.",
+      "soldOut": "Not today",
+      "add": "Add {name}",
+      "added": "Added: {name}",
+      "viewOrder": "View order",
+      "items": "{count, plural, one {# item} other {# items}}",
+      "orderingOff": "Right now your waiter takes the orders.",
+      "noTable": "To order from your phone, scan the QR code on your table.",
+      "badTable": "This QR code no longer works. Ask your waiter for help.",
+      "kitchenBusy": "The kitchen is busy right now. Your order will take about {minutes} minutes.",
+      "kitchenBusyNoTime": "The kitchen is busy right now, so your order may take longer.",
+      "notPublished": "The menu isn't published yet.",
+      "units": {
+        "g": "{amount} g",
+        "ml": "{amount} ml",
+        "pcs": "{amount} pcs"
+      },
+      "tags": {
+        "vegan": "vegan",
+        "spicy": "spicy",
+        "new": "new",
+        "popular": "popular"
+      }
+    },
+    "sheet": {
+      "required": "Required",
+      "optional": "Optional",
+      "upTo": "up to {max}",
+      "note": "Note for the kitchen",
+      "notePlaceholder": "For example, no onion",
+      "add": "Add",
+      "close": "Close",
+      "quantity": "Quantity",
+      "decrease": "Decrease quantity",
+      "increase": "Increase quantity"
+    },
+    "cart": {
+      "title": "Your order",
+      "back": "Menu",
+      "total": "Total",
+      "payNote": "You pay the waiter, cash or card.",
+      "send": "Send to the kitchen",
+      "sending": "Sending…",
+      "retry": "Try again",
+      "offline": "No connection. Your order is saved, and we'll send it when the connection is back.",
+      "soldOut": "A dish in your order has sold out today. Remove it and send again.",
+      "remove": "Remove {name}",
+      "decrease": "Decrease {name}",
+      "increase": "Increase {name}",
+      "rateLimited": "Too many orders in a short time. Please call your waiter.",
+      "menuChanged": "The menu has changed. Reload the page and check your order.",
+      "reload": "Reload",
+      "failed": "Couldn't send it. Try again or call your waiter."
+    },
+    "order": {
+      "title": "Order {number}",
+      "steps": {
+        "received": "Received",
+        "accepted": "Accepted",
+        "cooking": "Cooking",
+        "ready": "Ready",
+        "served": "Served",
+        "paid": "Paid"
+      },
+      "notes": {
+        "received": "Your order reached the café.",
+        "waiting": "Your waiter will confirm the order.",
+        "duplicate": "Someone at your table already ordered the same dishes. Your waiter will confirm.",
+        "accepted": "Accepted. The kitchen will start on it soon.",
+        "cooking": "The kitchen is cooking it now.",
+        "ready": "Ready. Your waiter is bringing it.",
+        "served": "Enjoy your meal.",
+        "paid": "Thank you."
+      },
+      "rejected": "Your waiter didn't confirm this order.",
+      "reason": "Reason: {reason}",
+      "cancelled": "This order was cancelled.",
+      "lineCancelled": "cancelled",
+      "callWaiter": "Call the waiter",
+      "askBill": "Ask for the bill",
+      "waiterTold": "Your waiter has been told.",
+      "billTold": "Your waiter will bring the bill.",
+      "requestFailed": "That didn't go through. Try again.",
+      "orderMore": "Order more",
+      "reconnecting": "Updating…",
+      "empty": "No orders yet.",
+      "emptyHint": "Choose dishes from the menu and send them to the kitchen.",
+      "toMenu": "Open the menu",
+      "tableClosed": "This table is closed. Scan the QR code again to order.",
+      "total": "Total",
+      "allRounds": "All rounds",
+      "earlier": "Earlier orders",
+      "placedAt": "Sent at {time}"
+    }
   }
 }
