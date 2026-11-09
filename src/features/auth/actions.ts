@@ -4,9 +4,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { STAFF_LOCALE_COOKIE } from "@/i18n/request";
+import { safeNext } from "@/lib/auth/safe-next";
 import { createClient } from "@/lib/supabase/server";
 
 export type SignInState = { error: "invalid" | null };
+
 
 const credentials = z.object({
   email: z.email(),
@@ -32,7 +34,7 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
     .maybeSingle();
   if (member) (await cookies()).set(STAFF_LOCALE_COOKIE, member.locale, { path: "/", sameSite: "lax", maxAge: 31536000 });
 
-  redirect("/admin");
+  redirect(safeNext(form.get("next"), "/admin"));
 }
 
 export type SignUpState = { error: "invalid" | "failed" | null };
@@ -59,6 +61,6 @@ export async function signUp(_prev: SignUpState, form: FormData): Promise<SignUp
   });
   // With email confirmation off (pilot), sign-up returns a session at once.
   if (error || !data.session) return { error: "failed" };
-  redirect("/admin/new");
+  redirect(safeNext(form.get("next"), "/admin/new"));
 }
 

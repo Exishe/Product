@@ -16,7 +16,8 @@
     "test:e2e": "playwright test --trace off",
     "test:sql": "bash scripts/test-sql.sh",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "db:types:api": "node scripts/gen-api-types.ts"
+    "db:types:api": "node scripts/gen-api-types.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

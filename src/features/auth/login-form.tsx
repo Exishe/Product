@@ -6,11 +6,12 @@ import { signIn, type SignInState } from "./actions";
 
 const initial: SignInState = { error: null };
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const t = useTranslations("auth.login");
   const [state, action, pending] = useActionState(signIn, initial);
   return (
     <form action={action} className="flex flex-col gap-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <label className="flex flex-col gap-1">
         <span className="text-sm font-semibold text-muted">{t("email")}</span>
         <input

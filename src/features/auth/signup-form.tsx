@@ -7,11 +7,12 @@ import { signUp, type SignUpState } from "./actions";
 const initial: SignUpState = { error: null };
 const field = "h-12 rounded-input border border-line-strong bg-white px-3";
 
-export function SignUpForm() {
+export function SignUpForm({ next }: { next?: string }) {
   const t = useTranslations("auth.signup");
   const [state, action, pending] = useActionState(signUp, initial);
   return (
     <form action={action} className="flex flex-col gap-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <label className="flex flex-col gap-1">
         <span className="text-sm font-semibold text-muted">{t("name")}</span>
         <input name="name" autoComplete="name" required maxLength={80} className={field} />
