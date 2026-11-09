@@ -60,6 +60,18 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    delete_item: {
+      Args: {
+        p_item_id: string;
+      };
+      Returns: undefined;
+    };
+    ensure_menu: {
+      Args: {
+        p_restaurant_id: string;
+      };
+      Returns: string;
+    };
     guest_join_table: {
       Args: {
         p_token: string;
@@ -119,6 +131,14 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    reorder: {
+      Args: {
+        p_restaurant_id: string;
+        p_kind: string;
+        p_ids: string[];
+      };
+      Returns: undefined;
+    };
     resolve_table_token: {
       Args: {
         p_token: string;
@@ -130,6 +150,29 @@ export type ApiSchema = {
         p_member_id: string;
       };
       Returns: undefined;
+    };
+    save_category: {
+      Args: {
+        p_restaurant_id: string;
+        p_category_id: string;
+        p_names: Json;
+        p_prep_area_id: string;
+      };
+      Returns: string;
+    };
+    save_item: {
+      Args: {
+        p_restaurant_id: string;
+        p_item: Json;
+      };
+      Returns: string;
+    };
+    save_modifier_group: {
+      Args: {
+        p_restaurant_id: string;
+        p_group: Json;
+      };
+      Returns: string;
     };
     set_ticket_status: {
       Args: {

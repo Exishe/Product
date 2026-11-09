@@ -107,5 +107,72 @@
   },
   "waiter": {
     "title": "Tables"
+  },
+  "menu": {
+    "title": "Menu",
+    "categories": "Sections",
+    "addCategory": "Add section",
+    "addDish": "Add dish",
+    "emptyTitle": "The menu is empty",
+    "emptyManual": "Fill in by hand",
+    "emptyHint": "Start with a first section, for example “Salads”.",
+    "emptyCategory": "No dishes in this section yet.",
+    "editCategory": "Edit section",
+    "newCategory": "New section",
+    "newDish": "New dish",
+    "name": {
+      "hy": "Name in Armenian",
+      "ru": "Name in Russian",
+      "en": "Name in English"
+    },
+    "description": {
+      "hy": "Description in Armenian",
+      "ru": "Description in Russian",
+      "en": "Description in English"
+    },
+    "languageMissing": "Not filled in",
+    "price": "Price, ֏",
+    "priceInvalid": "Enter the price in whole drams, for example 2,500.",
+    "nameRequired": "The Armenian name is required.",
+    "prepArea": "Prepared at",
+    "prepAreaDefault": "Same as section",
+    "optionGroups": "Options",
+    "manageOptions": "Manage options",
+    "tags": "Tags",
+    "tag": {
+      "popular": "Popular",
+      "new": "New",
+      "vegan": "Vegan",
+      "spicy": "Spicy"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveFailed": "Couldn't save. Try again.",
+    "delete": "Delete",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "close": "Close",
+    "review": "Check",
+    "markReviewed": "I've checked the translation"
+  },
+  "optionGroups": {
+    "title": "Options",
+    "hint": "Sizes, milk, extras. Create them once, then attach them to dishes.",
+    "add": "Add group",
+    "groupName": {
+      "hy": "Group name in Armenian",
+      "ru": "Group name in Russian",
+      "en": "Group name in English"
+    },
+    "required": "Guest picks one",
+    "optional": "Guest may skip",
+    "option": "Option",
+    "priceDelta": "Extra charge, ֏",
+    "isDefault": "Default",
+    "addOption": "Add option",
+    "removeOption": "Remove",
+    "empty": "No options yet.",
+    "back": "Menu"
   }
 }
