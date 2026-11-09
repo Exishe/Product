@@ -325,3 +325,18 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Rejected: every order by default (noise); no per-order option at all (some owners want it in the first week).
 - Consequences: Migration `alerts_exceptions_default` changes the column default. The pitch, the onboarding test and the Friday walkthrough say so.
 
+
+### ADR-041: Kitchen board calls made while building milestone 6
+
+- Status: Accepted, 2026-11-09 (sensible calls under the owner's delegation; easy to change)
+- Decisions:
+  1. **Server clock from our own route.** Ticket timers use `GET /api/time`, measured three times at load (shortest round trip wins) and again every 10 minutes, on reconnect and on wake (R20). Not an extra database function, so the board works on the schema as it is; Vercel and Postgres clocks are both NTP-synced, the tablet's is the one that drifts.
+  2. **Timers show whole minutes, recomputed every second.** As in the mockup («հենց նոր», «8 ր»): a mm:ss age can be mistaken for the wall clock from 2 m, and the colours still flip on the exact second (8 and 12 minutes, constants until a setting exists).
+  3. **What the board hides.** Ready food of a table that has already paid (waiters forget "served", R18, so the column would grow all evening); an order slip with nothing left to cook after cancellations (its red void slip tells the cook). A slip whose line was partly cancelled shows the new quantity with the old one struck through beside it.
+  4. **The screen's language is `locations.kitchen_locale`** (i18n.md), for the chrome as well as the dish names. Names fall back hy → ru → en and carry `lang` when they differ.
+  5. **No «Մատուցված է» on the kitchen board.** The mockup gives the Ready column «Վերադարձնել» only; serving is the waiter's tap (milestone 7).
+  6. **Outbox conflicts drop the rest of that ticket's queue.** After a `stale_status` answer, later queued taps on the same ticket were made on a wrong picture, so they go too; one «Արդեն փոխվել է» per ticket, then a refetch. Kitchen-busy and stop-list changes are not queued: they need a connection and say so.
+  7. **A disconnected device notices within one poll.** RLS makes a revoked device read nothing, which looks like a quiet kitchen; when the 10-second poll can no longer see its own location, the board shows «Այս սարքն անջատված է։». The heartbeat (60 s) and a refused tap say the same.
+  8. **Stop list entries last the business day:** `until` is the next `business_day_starts` in the location's time zone.
+  9. **The system's default station named "Kitchen" is shown as the localized «Խոհանոց»**; stations an owner named keep their name. Other stations of the location are links in the top bar, so a bar device paired to the default station can switch.
+  10. **`api.set_kitchen_busy` also broadcasts a `location` event** on `loc:<id>`, so the other screens of the location update at once.
