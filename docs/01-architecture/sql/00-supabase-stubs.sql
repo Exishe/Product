@@ -139,3 +139,69 @@ create table if not exists auth.refresh_tokens (
 do $$ begin
   create role authenticator nologin noinherit;
 exception when duplicate_object then null; end $$;
+
+-- pg_net ----------------------------------------------------------------------
+-- Stand-in for pg_net (not installed on the harness). Requests are only
+-- recorded in net._stub_requests; tests write the answers into
+-- net._http_response themselves, as pg_net's worker would after commit.
+-- Same signature and response columns as pg_net on Supabase.
+create schema if not exists net;
+revoke all on schema net from public;
+
+create table if not exists net._stub_requests (
+  id bigint generated always as identity primary key,
+  method text not null,
+  url text not null,
+  headers jsonb,
+  body jsonb,
+  timeout_milliseconds integer,
+  created timestamptz not null default now()
+);
+
+create table if not exists net._http_response (
+  id bigint,
+  status_code integer,
+  content_type text,
+  headers jsonb,
+  content text,
+  timed_out boolean,
+  error_msg text,
+  created timestamptz not null default now()
+);
+
+create or replace function net.http_post(
+  url text,
+  body jsonb default '{}'::jsonb,
+  params jsonb default '{}'::jsonb,
+  headers jsonb default '{"Content-Type": "application/json"}'::jsonb,
+  timeout_milliseconds integer default 5000
+) returns bigint
+language sql security definer set search_path = '' as $$
+  insert into net._stub_requests (method, url, headers, body, timeout_milliseconds)
+  values ('POST', url, headers, body, timeout_milliseconds) returning id
+$$;
+
+-- pg_cron ---------------------------------------------------------------------
+-- Stand-in for pg_cron: schedules are recorded, nothing runs by itself.
+create schema if not exists cron;
+revoke all on schema cron from public;
+
+create table if not exists cron.job (
+  jobid bigint generated always as identity primary key,
+  jobname text unique,
+  schedule text not null,
+  command text not null,
+  active boolean not null default true
+);
+
+create or replace function cron.schedule(job_name text, schedule text, command text) returns bigint
+language sql security definer set search_path = '' as $$
+  insert into cron.job (jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid
+$$;
+
+create or replace function cron.unschedule(job_name text) returns boolean
+language sql security definer set search_path = '' as $$
+  with d as (delete from cron.job where jobname = job_name returning 1) select exists (select 1 from d)
+$$;

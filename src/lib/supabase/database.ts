@@ -73,9 +73,21 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    create_telegram_link: {
+      Args: {
+        p_restaurant_id: string;
+      };
+      Returns: Json;
+    };
     delete_item: {
       Args: {
         p_item_id: string;
+      };
+      Returns: undefined;
+    };
+    delete_push_subscription: {
+      Args: {
+        p_endpoint: string;
       };
       Returns: undefined;
     };
@@ -151,6 +163,29 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    push_claim: {
+      Args: {
+        p_id: number;
+        p_attempt: number;
+        p_sig: string;
+      };
+      Returns: Json;
+    };
+    push_report: {
+      Args: {
+        p_id: number;
+        p_attempt: number;
+        p_sig: string;
+        p_results: Json;
+      };
+      Returns: undefined;
+    };
+    push_subscription_exists: {
+      Args: {
+        p_endpoint: string;
+      };
+      Returns: boolean;
+    };
     redeem_device_pairing: {
       Args: {
         p_code: string;
@@ -217,6 +252,22 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    save_push_subscription: {
+      Args: {
+        p_restaurant_id: string;
+        p_endpoint: string;
+        p_p256dh: string;
+        p_auth: string;
+        p_user_agent?: string;
+      };
+      Returns: string;
+    };
+    send_test_notification: {
+      Args: {
+        p_channel_id: string;
+      };
+      Returns: undefined;
+    };
     set_kitchen_busy: {
       Args: {
         p_location_id: string;
@@ -251,6 +302,28 @@ export type ApiSchema = {
         p_table_id: string;
       };
       Returns: string;
+    };
+    telegram_status: {
+      Args: {
+        p_restaurant_id: string;
+      };
+      Returns: Json;
+    };
+    telegram_update: {
+      Args: {
+        p_secret: string;
+        p_update: Json;
+      };
+      Returns: Json;
+    };
+    update_notification_channel: {
+      Args: {
+        p_channel_id: string;
+        p_events: string[];
+        p_locale: Enums["app_locale"];
+        p_is_active: boolean;
+      };
+      Returns: undefined;
     };
   };
   Enums: { [_ in never]: never };
