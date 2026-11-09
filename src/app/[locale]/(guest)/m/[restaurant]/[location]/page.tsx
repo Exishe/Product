@@ -65,7 +65,11 @@ export default async function GuestMenuPage({ params, searchParams }: { params: 
           hrefFor={hrefFor}
         />
         <GuestI18nProvider locale={locale} messages={messages}>
-          <GuestMenu menu={menu} table={table} />
+          <GuestMenu
+            menu={menu}
+            table={table}
+            orderHref={table.kind === "ok" ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}` : null}
+          />
         </GuestI18nProvider>
       </div>
     </div>

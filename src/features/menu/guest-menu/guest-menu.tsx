@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
+import { OrderSender } from "@/features/ordering/order-sender";
 import { formatAmd } from "@/lib/format/money";
 import { normalizeForSearch } from "@/lib/format/search";
 import { CartView } from "./cart-view";
@@ -25,12 +26,12 @@ const CART_HASH = "#cart";
 export function GuestMenu({
   menu,
   table,
-  renderSend,
+  orderHref,
 }: {
   menu: GuestMenuData;
   table: TableState;
-  /** The send area of the cart (Task 5.1); without it the cart is a list to show the waiter. */
-  renderSend?: (args: { lines: ReturnType<typeof cartSummary>; clear: () => void; setLocked: (locked: boolean) => void }) => ReactNode;
+  /** The order status page for this table. */
+  orderHref: string | null;
 }) {
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
@@ -40,6 +41,8 @@ export function GuestMenu({
   const [view, setView] = useState<"menu" | "cart">("menu");
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
   const [locked, setLocked] = useState(false);
+  // Dishes the database said sold out while sending (the menu was loaded earlier).
+  const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
   const canOrder = menu.ordering && table.kind === "ok";
 
@@ -49,10 +52,10 @@ export function GuestMenu({
       Object.fromEntries(
         Object.values(items).map((i) => [
           i.id,
-          { price: i.price, soldOut: i.soldOut, groups: i.groups.map((g) => ({ ...g, modifiers: g.modifiers.map((m) => ({ id: m.id, delta: m.delta })) })) },
+          { price: i.price, soldOut: i.soldOut || soldOutNow.includes(i.id), groups: i.groups.map((g) => ({ ...g, modifiers: g.modifiers.map((m) => ({ id: m.id, delta: m.delta })) })) },
         ]),
       ),
-    [items],
+    [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
 
@@ -94,6 +97,9 @@ export function GuestMenu({
     return () => clearTimeout(timer);
   }, [toast]);
 
+  const onSoldOut = useCallback((itemId: string) => setSoldOutNow((ids) => (ids.includes(itemId) ? ids : [...ids, itemId])), []);
+  const clearCart = useCallback(() => updateCart(() => []), [updateCart]);
+
   const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
@@ -117,7 +123,19 @@ export function GuestMenu({
         items={items}
         locked={locked}
         notice={orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)}
-        footer={canOrder && renderSend ? renderSend({ lines: summary, clear: () => updateCart(() => []), setLocked }) : null}
+        footer={
+          canOrder && table.kind === "ok" && orderHref ? (
+            <OrderSender
+              summary={summary}
+              locationId={menu.locationId}
+              table={table}
+              orderHref={orderHref}
+              onLocked={setLocked}
+              onSoldOut={onSoldOut}
+              onPlaced={clearCart}
+            />
+          ) : null
+        }
         onQuantity={(id, quantity) => {
           const next = setQuantity(lines, id, quantity);
           updateCart(() => next);
