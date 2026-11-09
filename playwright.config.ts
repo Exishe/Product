@@ -27,7 +27,10 @@ export default defineConfig({
       name: "phone",
       use: { browserName: "chromium", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
     },
-    { name: "tablet", use: { browserName: "chromium", viewport: { width: 820, height: 1180 }, hasTouch: true } },
+    {
+      name: "tablet",
+      use: { browserName: "chromium", viewport: { width: 820, height: 1180 }, hasTouch: true },
+    },
     { name: "desktop", use: { browserName: "chromium", viewport: { width: 1280, height: 800 } } },
   ],
   webServer: process.env.E2E_BASE_URL
@@ -37,5 +40,7 @@ export default defineConfig({
         url: `http://localhost:${port}/api/health`,
         reuseExistingServer: !process.env.CI,
         timeout: 300_000,
+        // The menu import reads a fixed menu instead of spending Gemini's free quota.
+        env: { AI_PROVIDER: "fake" },
       },
 });
