@@ -210,6 +210,13 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    set_kitchen_busy: {
+      Args: {
+        p_location_id: string;
+        p_minutes: number;
+      };
+      Returns: string;
+    };
     set_ticket_status: {
       Args: {
         p_ticket_id: string;

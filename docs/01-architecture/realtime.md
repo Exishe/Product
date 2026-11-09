@@ -12,7 +12,7 @@ We rejected Postgres Changes. Supabase's own docs say it "authorizes every event
 
 | Topic | Who may join | Events | Payload |
 |---|---|---|---|
-| `loc:<location_id>` | Active staff of that location (`private.my_location_ids()`) | `order`, `ticket`, `service_request`, `table` | Ids and statuses only, for example `{id, order_id, station_id, kind, status}` |
+| `loc:<location_id>` | Active staff of that location (`private.my_location_ids()`) | `order`, `ticket`, `service_request`, `table`, `location` | Ids and statuses only, for example `{id, order_id, station_id, kind, status}`; `location` carries the kitchen-busy state |
 | `guest:<guest_session_id>` | The anonymous user who owns that guest session | `order`, `service_request` | `{id, number, display_status}` |
 
 Access is decided by RLS policies on `realtime.messages` (Supabase Realtime Authorization), checked when a client joins. Clients have no insert policy, so nobody can broadcast fake orders to a kitchen. The smoke test checks that a guest can't join the staff channel and that another café's owner can't either.
@@ -26,7 +26,7 @@ Clients treat a message as "something changed here", not as the source of truth:
 1. On join (`SUBSCRIBED`), fetch the full current state: open tickets for this station, the floor map for the waiter, the guest's orders.
 2. On a message, patch the cached row from the payload for an instant update, then refetch that entity. TanStack Query invalidation, debounced by 300 ms so a burst becomes one request.
 3. On reconnect, refetch everything; never try to replay the gap. (Supabase now offers Broadcast replay, up to 25 messages within 72 hours, but a full refetch is simpler and already correct.)
-4. A safety poll every 15 s on the kitchen screen and waiter app, and every 10 s on a guest page with an order in progress. Each poll is one small indexed query, and it covers a dead socket the browser hasn't noticed.
+4. A safety poll every 10 s on the kitchen screen (15 s on the waiter app), and every 10 s on a guest page with an order in progress. Each poll is one small indexed query, and it covers a dead socket the browser hasn't noticed.
 
 ### The 2-second budget
 

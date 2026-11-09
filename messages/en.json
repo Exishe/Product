@@ -103,7 +103,83 @@
     }
   },
   "kitchen": {
-    "title": "Kitchen"
+    "title": "Kitchen",
+    "stations": "Screens",
+    "columns": {
+      "new": "New",
+      "cooking": "Cooking",
+      "ready": "Ready"
+    },
+    "empty": "Nothing here yet.",
+    "ticket": {
+      "table": "Table",
+      "tableLabel": "Table {table}",
+      "noTable": "Order",
+      "order": "Order {number}, {source}",
+      "source": {
+        "qr": "QR",
+        "waiter": "Waiter",
+        "kiosk": "Kiosk",
+        "online": "Online"
+      },
+      "justNow": "just now",
+      "minutes": "{minutes} min",
+      "hurry": "Hurry",
+      "late": "Late",
+      "start": "Start",
+      "ready": "Ready",
+      "waiting": "Waiting for the waiter",
+      "undo": "Send back",
+      "void": "Cancelled",
+      "voidLabel": "Cancellation, table {table}",
+      "voidOrder": "Order {number}",
+      "acknowledge": "Got it",
+      "pending": "Waiting for connection",
+      "was": "Was {quantity}"
+    },
+    "connection": {
+      "online": "Online",
+      "connecting": "Connecting…",
+      "offline": "No connection",
+      "offlineWaiting": "No connection, {count, plural, one {# action waiting} other {# actions waiting}}",
+      "lastSync": "Last data: {time}"
+    },
+    "shift": {
+      "morning": "Good morning",
+      "day": "Good afternoon",
+      "evening": "Good evening",
+      "hint": "Tap to turn on the new-order sound and keep the screen awake.",
+      "start": "Start shift",
+      "end": "End shift"
+    },
+    "conflict": "Already changed",
+    "actionFailed": "That didn't work. The screen has been refreshed.",
+    "revoked": {
+      "title": "This device has been disconnected.",
+      "body": "Ask the owner to connect it again.",
+      "action": "Enter a new code"
+    },
+    "busy": {
+      "button": "Kitchen busy",
+      "on": "Busy: {minutes} min",
+      "title": "The kitchen is busy",
+      "hint": "Guests will see the expected wait. It switches itself off after an hour.",
+      "minutes": "{minutes} minutes",
+      "until": "On until {time}",
+      "off": "Switch off",
+      "close": "Close",
+      "failed": "That didn't work. Check the connection and try again."
+    },
+    "stopList": {
+      "button": "Sold out",
+      "title": "Sold out today",
+      "hint": "Guests can't order the dishes marked here. The list clears in the morning.",
+      "available": "Available",
+      "soldOut": "Sold out",
+      "empty": "No dishes on the menu for this screen.",
+      "close": "Close",
+      "failed": "That didn't work. Check the connection and try again."
+    }
   },
   "waiter": {
     "title": "Tables"
