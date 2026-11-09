@@ -353,3 +353,15 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   8. **Stop list entries last the business day:** `until` is the next `business_day_starts` in the location's time zone.
   9. **The system's default station named "Kitchen" is shown as the localized «Խոհանոց»**; stations an owner named keep their name. Other stations of the location are links in the top bar, so a bar device paired to the default station can switch.
   10. **`api.set_kitchen_busy` also broadcasts a `location` event** on `loc:<id>`, so the other screens of the location update at once.
+
+### ADR-043: Guest menu and ordering calls made while building milestones 4–5
+
+- Status: Accepted, 2026-11-09
+- Decisions:
+  - **JavaScript budget.** The brief's "under 100 KB" for the guest menu can't be met on Next 16: the framework alone is about 148 KB. The menu route adds 9.2 KB of its own (145 KB in total). next-intl's client provider is gone from the guest layout, guest strings use a 1 KB formatter, and the Supabase client loads only when a guest sends an order. A test fails if the route's own code passes 25 KB.
+  - **QR entry is a route handler,** so a bad or old sticker gets a real HTTP 404 with a small self-contained page in hy, ru or en; a Next 16 page sends its 404 as an empty shell filled in by JavaScript.
+  - **Language switch** reloads the page, so `<html lang>` always matches.
+  - **Button wording** follows the guest mockup: «Ուղարկել խոհանոց», «Խնդրել հաշիվը».
+  - **Ordering off (Menu plan):** no add buttons and a calm notice; a cart that already has items explains that the waiter takes orders.
+  - **Possible duplicates:** the same dishes (same ids, same total quantities, options ignored) from another guest session or the waiter at the same table within 3 minutes wait for the waiter.
+- Consequences: Migrations `20261109190200_guest_possible_duplicates` and `20261109190300_guest_service_requests` (renumbered at merge so every version is unique).
