@@ -1,0 +1,10 @@
+{
+  "brand": {
+    "name": "Pativ",
+    "tagline": "Orders go from the guest's phone straight to the kitchen"
+  },
+  "common": {
+    "notFound": "This page doesn't exist.",
+    "backHome": "Home"
+  }
+}
