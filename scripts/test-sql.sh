@@ -34,6 +34,8 @@ else
   for f in "${migrations[@]}"; do run "$f"; done
 fi
 
+[ -f supabase/seed.sql ] && run supabase/seed.sql
+
 for f in docs/01-architecture/sql/90-smoke-test.sql supabase/tests/sql/*.sql; do
   run "$f"
 done
