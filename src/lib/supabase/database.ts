@@ -150,6 +150,16 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    platform_cafes: { Args: Record<string, never>; Returns: Json };
+    platform_problems: { Args: Record<string, never>; Returns: Json };
+    platform_set_plan: {
+      Args: {
+        p_location_id: string;
+        p_plan: string;
+        p_status: string;
+      };
+      Returns: undefined;
+    };
     public_menu: {
       Args: {
         p_restaurant_slug: string;
@@ -218,6 +228,14 @@ export type ApiSchema = {
         p_member_id: string;
       };
       Returns: undefined;
+    };
+    sales_dashboard: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: Json;
     };
     save_category: {
       Args: {
