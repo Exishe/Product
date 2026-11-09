@@ -217,6 +217,12 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    resolve_service_request: {
+      Args: {
+        p_request_id: string;
+      };
+      Returns: undefined;
+    };
     resolve_table_token: {
       Args: {
         p_token: string;
@@ -277,6 +283,12 @@ export type ApiSchema = {
         p_p256dh: string;
         p_auth: string;
         p_user_agent?: string;
+      };
+      Returns: string;
+    };
+    seat_waiting_guests: {
+      Args: {
+        p_table_session_id: string;
       };
       Returns: string;
     };

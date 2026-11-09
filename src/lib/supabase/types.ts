@@ -3391,7 +3391,7 @@ export type Database = {
       service_request_kind: "call_waiter" | "bring_bill"
       service_request_status: "open" | "acknowledged" | "resolved"
       subscription_status: "trialing" | "active" | "past_due" | "canceled"
-      table_session_status: "open" | "closed" | "void"
+      table_session_status: "open" | "closed" | "void" | "waiting"
       ticket_kind: "order" | "void"
       ticket_status: "new" | "cooking" | "ready" | "served" | "cancelled"
       translation_source: "owner" | "ai" | "import"
@@ -3559,7 +3559,7 @@ export const Constants = {
       service_request_kind: ["call_waiter", "bring_bill"],
       service_request_status: ["open", "acknowledged", "resolved"],
       subscription_status: ["trialing", "active", "past_due", "canceled"],
-      table_session_status: ["open", "closed", "void"],
+      table_session_status: ["open", "closed", "void", "waiting"],
       ticket_kind: ["order", "void"],
       ticket_status: ["new", "cooking", "ready", "served", "cancelled"],
       translation_source: ["owner", "ai", "import"],
