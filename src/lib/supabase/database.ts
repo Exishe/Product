@@ -26,6 +26,19 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    add_menu_import_images: {
+      Args: {
+        p_import_id: string;
+        p_paths: string[];
+      };
+      Returns: undefined;
+    };
+    apply_menu_import: {
+      Args: {
+        p_import_id: string;
+      };
+      Returns: number;
+    };
     cancel_order_item: {
       Args: {
         p_order_item_id: string;
@@ -66,11 +79,24 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    discard_menu_import: {
+      Args: {
+        p_import_id: string;
+      };
+      Returns: undefined;
+    };
     ensure_menu: {
       Args: {
         p_restaurant_id: string;
       };
       Returns: string;
+    };
+    fail_menu_import: {
+      Args: {
+        p_import_id: string;
+        p_error: string;
+      };
+      Returns: undefined;
     };
     guest_join_table: {
       Args: {
@@ -167,6 +193,16 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    save_menu_import_draft: {
+      Args: {
+        p_import_id: string;
+        p_draft: Json;
+        p_model?: string;
+        p_input_tokens?: number;
+        p_output_tokens?: number;
+      };
+      Returns: undefined;
+    };
     save_modifier_group: {
       Args: {
         p_restaurant_id: string;
@@ -187,6 +223,12 @@ export type ApiSchema = {
         p_table_session_id: string;
         p_payments: Json;
         p_idempotency_key: string;
+      };
+      Returns: string;
+    };
+    start_menu_import: {
+      Args: {
+        p_restaurant_id: string;
       };
       Returns: string;
     };

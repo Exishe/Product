@@ -117,7 +117,8 @@ begin
       raise exception using errcode = '42501', message = 'forbidden';
     end if;
   end if;
-  perform private.set_translations('category_translations', 'category_id', p_restaurant_id, v_cat, p_names, null, false);
+  -- The panel shows all three names, so saving it counts as reviewing them.
+  perform private.set_translations('category_translations', 'category_id', p_restaurant_id, v_cat, p_names, null, true);
   return v_cat;
 end $$;
 
@@ -172,6 +173,22 @@ begin
                                    p_item -> 'names', p_item -> 'descriptions',
                                    coalesce((p_item ->> 'mark_reviewed')::boolean, false));
 
+  -- A reviewed dish takes its own size options with it (they were read from the
+  -- same line of the menu), and a section counts as reviewed once all its dishes are.
+  if coalesce((p_item ->> 'mark_reviewed')::boolean, false) then
+    update public.modifier_translations t set reviewed_at = now(), updated_at = now()
+     where t.source = 'ai' and t.reviewed_at is null
+       and t.modifier_id in (select m.id from public.modifiers m
+                             join public.item_modifier_groups img on img.group_id = m.group_id
+                             where img.item_id = v_saved);
+    select i.category_id into v_cat from public.items i where i.id = v_saved;
+    if not exists (select 1 from public.item_translations t join public.items i on i.id = t.item_id
+                   where i.category_id = v_cat and t.source = 'ai' and t.reviewed_at is null) then
+      update public.category_translations set reviewed_at = now(), updated_at = now()
+       where category_id = v_cat and source = 'ai' and reviewed_at is null;
+    end if;
+  end if;
+
   if p_item ? 'modifier_group_ids' then
     if exists (select 1 from jsonb_array_elements_text(p_item -> 'modifier_group_ids') g(id)
                where not exists (select 1 from public.modifier_groups mg
@@ -220,7 +237,7 @@ begin
     end if;
   end if;
   perform private.set_translations('modifier_group_translations', 'group_id', p_restaurant_id, v_group,
-                                   p_group -> 'names', null, false);
+                                   p_group -> 'names', null, true);
 
   for v_opt, v_ord in select value, ordinality from jsonb_array_elements(coalesce(p_group -> 'options', '[]'::jsonb)) with ordinality loop
     perform private.require_hy_name(v_opt -> 'names');
@@ -244,7 +261,7 @@ begin
       end if;
     end if;
     perform private.set_translations('modifier_translations', 'modifier_id', p_restaurant_id, v_oid,
-                                     v_opt -> 'names', null, false);
+                                     v_opt -> 'names', null, true);
     v_keep := v_keep || v_oid;
   end loop;
   update public.modifiers set is_active = false where group_id = v_group and not (id = any (v_keep));

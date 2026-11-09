@@ -40,14 +40,18 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
     supabase
       .from("modifier_groups")
       .select(
-        "id, min_select, max_select, updated_at, modifier_group_translations(locale, name), modifiers(id, price_delta, is_default, is_active, sort, modifier_translations(locale, name))",
+        "id, min_select, max_select, updated_at, modifier_group_translations(locale, name), modifiers(id, price_delta, is_default, is_active, sort, modifier_translations(locale, name, source, reviewed_at))",
       )
       .eq("restaurant_id", restaurantId)
       .order("created_at"),
     supabase.from("prep_areas").select("id, name").eq("restaurant_id", restaurantId).order("created_at"),
     supabase.from("stop_list").select("item_id, until").eq("location_id", locationId),
     location?.published_menu_version_id
-      ? supabase.from("menu_versions").select("published_at, item_count").eq("id", location.published_menu_version_id).single()
+      ? supabase
+          .from("menu_versions")
+          .select("published_at, item_count")
+          .eq("id", location.published_menu_version_id)
+          .single()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -56,7 +60,8 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
   const now = Date.now();
   const publishedAt = version.data?.published_at ?? null;
   const since = publishedAt ? Date.parse(publishedAt) : 0;
-  const editedSince = (rows: { updated_at: string }[] | null) => (rows ?? []).some((r) => Date.parse(r.updated_at) > since);
+  const editedSince = (rows: { updated_at: string }[] | null) =>
+    (rows ?? []).some((r) => Date.parse(r.updated_at) > since);
   const activeCount = (dishes.data ?? []).filter((d) => d.is_active).length;
   const publish = {
     published: Boolean(publishedAt),
@@ -68,6 +73,15 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
       editedSince(groups.data) ||
       activeCount !== version.data?.item_count,
   };
+
+  // Groups with size options read from a photo that nobody has checked yet.
+  const groupsToReview = new Set(
+    (groups.data ?? [])
+      .filter((g) =>
+        g.modifiers.some((m) => m.modifier_translations.some((t) => t.source === "ai" && !t.reviewed_at)),
+      )
+      .map((g) => g.id),
+  );
 
   return {
     restaurantId,
@@ -90,7 +104,9 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
       imagePath: d.image_path,
       names: names(d.item_translations),
       descriptions: names(d.item_translations, "description"),
-      needsReview: d.item_translations.some((t) => t.source === "ai" && !t.reviewed_at),
+      needsReview:
+        d.item_translations.some((t) => t.source === "ai" && !t.reviewed_at) ||
+        d.item_modifier_groups.some((g) => groupsToReview.has(g.group_id)),
       modifierGroupIds: [...d.item_modifier_groups].sort((a, b) => a.sort - b.sort).map((g) => g.group_id),
     })),
     groups: (groups.data ?? []).map((g) => ({
@@ -101,7 +117,12 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
       options: g.modifiers
         .filter((m) => m.is_active)
         .sort((a, b) => a.sort - b.sort)
-        .map((m) => ({ id: m.id, names: names(m.modifier_translations), priceDelta: m.price_delta, isDefault: m.is_default })),
+        .map((m) => ({
+          id: m.id,
+          names: names(m.modifier_translations),
+          priceDelta: m.price_delta,
+          isDefault: m.is_default,
+        })),
     })),
     prepAreas: areas.data ?? [],
   };
