@@ -49,7 +49,7 @@ export type WaiterDevice = { storageState: Awaited<ReturnType<BrowserContext["st
 
 // A waiter tablet: the owner makes a pairing code, a fresh browser context
 // enters it at /pair and lands on /waiter.
-export async function pairWaiterDevice(browser: Browser, cafe: TestCafe): Promise<WaiterDevice> {
+export async function pairWaiterDevice(browser: Browser, cafe: TestCafe, baseURL: string | undefined): Promise<WaiterDevice> {
   const label = `E2E սրահ ${unique()}`;
   const { data: code, error } = await cafe.owner.schema("api").rpc("create_device_pairing", {
     p_location_id: cafe.locationId,
@@ -57,7 +57,7 @@ export async function pairWaiterDevice(browser: Browser, cafe: TestCafe): Promis
     p_label: label,
   });
   if (error) throw error;
-  const context = await browser.newContext();
+  const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
   await page.goto("/pair");
   await page.getByLabel("Վեցանիշ կոդը").fill(code);

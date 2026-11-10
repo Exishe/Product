@@ -27,7 +27,10 @@ type Migrations = { calls: boolean; guard: boolean };
 
 const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrations: Migrations }>({
   cafe: [async ({}, provide) => provide(await createWaiterCafe()), { scope: "worker" }],
-  device: [async ({ browser, cafe }, provide) => provide(await pairWaiterDevice(browser, cafe)), { scope: "worker" }],
+  device: [
+    async ({ browser, cafe }, provide, info) => provide(await pairWaiterDevice(browser, cafe, info.project.use.baseURL)),
+    { scope: "worker" },
+  ],
   migrations: [
     async ({ cafe }, provide) =>
       provide({
@@ -160,9 +163,12 @@ test.describe("waiter app", () => {
 
     await expect(tableButton(page, "4")).toHaveAttribute("data-state", "busy");
     await expect(panel(page).getByTestId("table-total")).toHaveText("7 100 ֏");
-    const { data } = await cafe.owner.from("orders").select("id, source, status, total").eq("table_id", cafe.tables["4"]?.id ?? "").single();
-    expect(data).toMatchObject({ source: "waiter", status: "accepted", total: 7100 });
-    expect(await tickets(cafe, data?.id ?? "")).toHaveLength(1);
+    const placed = async () =>
+      (await cafe.owner.from("orders").select("id, source, status, total").eq("table_id", cafe.tables["4"]?.id ?? "").maybeSingle()).data;
+    await expect.poll(placed).toMatchObject({ source: "waiter", status: "accepted", total: 7100 });
+    expect(await tickets(cafe, (await placed())?.id ?? "")).toHaveLength(1);
+    await expect(panel(page).getByTestId("unsent")).toHaveCount(0);
+    await expect(panel(page).getByTestId("order").first()).toContainText("Պատվեր ");
   });
 
   test("7.3 full loop: ordered, accepted, ready, served, settled by card, table free, the old guest can't order", async ({ page, cafe }, info) => {

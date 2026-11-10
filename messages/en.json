@@ -245,7 +245,7 @@
       "station": "{station}: {status}",
       "kitchen": "Kitchen",
       "duplicate": "May be a repeat",
-      "unsentMark": "Waiting for the connection",
+      "unsentMark": "Sending…",
       "accept": "Accept",
       "reject": "Reject",
       "serve": "Served",

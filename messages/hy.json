@@ -245,7 +245,7 @@
       "station": "{station}՝ {status}",
       "kitchen": "Խոհանոց",
       "duplicate": "Կարող է կրկնված լինել",
-      "unsentMark": "Սպասում է կապի",
+      "unsentMark": "Ուղարկվում է…",
       "accept": "Ընդունել",
       "reject": "Մերժել",
       "serve": "Մատուցված է",

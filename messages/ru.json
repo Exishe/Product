@@ -245,7 +245,7 @@
       "station": "{station}: {status}",
       "kitchen": "Кухня",
       "duplicate": "Возможно, повтор",
-      "unsentMark": "Ждёт связи",
+      "unsentMark": "Отправляется…",
       "accept": "Принять",
       "reject": "Отклонить",
       "serve": "Подано",
