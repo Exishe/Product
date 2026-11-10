@@ -1,4 +1,4 @@
--- Milestone 7, the waiter app (plan.md Tasks 7.1–7.3, ADR-045).
+-- Milestone 7, the waiter app (plan.md Tasks 7.1–7.3, ADR-046).
 --
 -- 1. api.resolve_service_request: one tap on «Գնում եմ» resolves a call.
 -- 2. The stale-table guard (ADR-033 (4), R8): a new guest joining a table

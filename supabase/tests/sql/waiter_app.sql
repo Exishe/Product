@@ -1,4 +1,4 @@
--- Waiter app (milestone 7, ADR-045): resolving calls, accepting, serving,
+-- Waiter app (milestone 7, ADR-046): resolving calls, accepting, serving,
 -- cancelling, closing the table and the stale-table guard. Runs after
 -- 90-smoke-test.sql and adr038.sql and reuses their test.* helpers.
 \set ON_ERROR_STOP 1
