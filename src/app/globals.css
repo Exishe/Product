@@ -109,3 +109,16 @@
     display: none;
   }
 }
+
+/* Waiter floor map: a table with a new order pulses once (design/waiter.html). */
+@keyframes nudge {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

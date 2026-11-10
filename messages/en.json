@@ -182,7 +182,161 @@
     }
   },
   "waiter": {
-    "title": "Tables"
+    "title": "Tables",
+    "floorMap": "Floor map",
+    "areas": "Areas",
+    "otherArea": "Other tables",
+    "need": "Waiting: {count, plural, one {# table} other {# tables}}",
+    "allServed": "Everyone is looked after",
+    "state": {
+      "free": "Free",
+      "busy": "Seated",
+      "new": "New order",
+      "ready": "Ready",
+      "call": "Calling",
+      "bill": "Bill"
+    },
+    "tableAria": "Table {label}, {state}",
+    "minutesShort": "{minutes} min",
+    "noTables": "No tables yet. Add them in the admin panel.",
+    "noTablesLink": "Open table settings",
+    "legend": "What the colours mean",
+    "panel": {
+      "table": "Table {label}",
+      "free": "Free",
+      "freeHint": "Guests can order with the QR code, or you can take the order.",
+      "openFor": "Open for {minutes} min",
+      "pick": "Pick a table on the map.",
+      "callAgo": "Called {minutes} min ago",
+      "callNow": "Calling right now",
+      "going": "On my way",
+      "billRequested": "Asking for the bill",
+      "total": "Total",
+      "addOrder": "Add an order",
+      "takeOrder": "Take an order",
+      "close": "Close the table",
+      "closeBlocked": "Accept or reject the new order first.",
+      "noOrders": "No orders yet."
+    },
+    "waiting": {
+      "title": "Table {label}: new guests?",
+      "body": "New guests are ordering, but the old bill is still open. Close the old bill first.",
+      "closeOld": "Close the old bill",
+      "sameParty": "Same guests",
+      "orders": "The new guests' orders",
+      "acceptAfter": "You can accept them once the old bill is closed."
+    },
+    "order": {
+      "title": "Order {number}",
+      "unsent": "New order",
+      "source": {
+        "qr": "QR",
+        "waiter": "Waiter",
+        "kiosk": "Kiosk",
+        "online": "Online"
+      },
+      "placed": "Waiting for you",
+      "new": "New in the kitchen",
+      "cooking": "Cooking",
+      "ready": "Ready",
+      "served": "Served",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "station": "{station}: {status}",
+      "kitchen": "Kitchen",
+      "duplicate": "May be a repeat",
+      "unsentMark": "Waiting for the connection",
+      "accept": "Accept",
+      "reject": "Reject",
+      "serve": "Served",
+      "serveAt": "Served: {station}",
+      "cancelledCount": "{count} cancelled",
+      "cancelLine": "Cancel {name}",
+      "note": "Note: {note}",
+      "reason": "Reason: {reason}",
+      "accepted": "Order {number} went to the kitchen.",
+      "rejectedToast": "Order {number} was rejected."
+    },
+    "reject": {
+      "title": "Why reject it?",
+      "reasons": {
+        "notHere": "Nobody at the table",
+        "duplicate": "Repeated order",
+        "soldOut": "Dish ran out",
+        "other": "Another reason"
+      },
+      "confirm": "Reject the order",
+      "back": "Back"
+    },
+    "cancel": {
+      "title": "Cancel a dish",
+      "quantity": "Quantity",
+      "less": "Fewer",
+      "more": "More",
+      "reason": "Reason",
+      "reasons": {
+        "changedMind": "Guest changed their mind",
+        "mistake": "Wrong order",
+        "soldOut": "Ran out",
+        "quality": "Guest unhappy"
+      },
+      "confirm": "Cancel it",
+      "back": "Back",
+      "managerOnly": "Only a manager can cancel food that was served. Ask a manager.",
+      "done": "Cancelled.",
+      "offline": "Cancelling needs a connection."
+    },
+    "pad": {
+      "title": "New order: table {label}",
+      "search": "Search the menu",
+      "categories": "Sections",
+      "empty": "Nothing found.",
+      "noMenu": "The menu isn't published yet.",
+      "soldOut": "Sold out",
+      "add": "Add {name}",
+      "less": "One fewer {name}",
+      "more": "One more {name}",
+      "options": "Choose",
+      "required": "required",
+      "addWithOptions": "Add",
+      "cart": "Order",
+      "cartEmpty": "Pick the dishes.",
+      "note": "Note for the kitchen",
+      "send": "Send to the kitchen",
+      "close": "Close",
+      "sent": "Table {label}: order sent.",
+      "queued": "No connection. The order will go out when it's back."
+    },
+    "settle": {
+      "title": "How did they pay?",
+      "oldBill": "The old bill",
+      "modes": "Payment method",
+      "cash": "Cash",
+      "card": "Card",
+      "split": "Both",
+      "mismatch": "The total must be {total}, now {paid}",
+      "confirm": "Confirm the payment",
+      "back": "Back",
+      "offline": "We'll record the payment when the connection is back.",
+      "closed": "Table {label} is closed.",
+      "failed": "That didn't work. Check the connection and try again."
+    },
+    "conflict": "Already changed",
+    "alreadyServed": "Already served",
+    "needsClosing": "Close the old bill first.",
+    "actionFailed": "That didn't work. The screen was refreshed.",
+    "connection": {
+      "online": "Online",
+      "connecting": "Connecting…",
+      "offline": "No connection",
+      "offlineWaiting": "No connection, {count} waiting",
+      "banner": "No connection. The map shows the last data from {time}. Taps will be sent when the connection is back."
+    },
+    "revoked": {
+      "title": "This device was disconnected.",
+      "body": "Ask the owner to connect it again.",
+      "action": "Enter a new code"
+    }
   },
   "menu": {
     "title": "Menu",
