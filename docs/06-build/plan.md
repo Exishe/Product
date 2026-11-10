@@ -56,6 +56,8 @@ The five situations most likely to hurt a real café that no feature test covers
 
 Everything else is done from this session.
 
+Status 10 Nov 2026: the GitHub secret `SUPABASE_ACCESS_TOKEN` is set and CI applied all 17 migrations; the Vercel project `pativ` is linked to the repository.
+
 ---
 
 ## Milestone 0: project skeleton
