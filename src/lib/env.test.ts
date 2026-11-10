@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parsePublicEnv, parseServerEnv } from "./env";
+import { parsePublicEnv } from "./env";
+import { parseServerEnv } from "./env.server";
 
 const goodPublic = {
   NEXT_PUBLIC_SUPABASE_URL: "https://mhuxfmdehkgpjunxgptc.supabase.co",

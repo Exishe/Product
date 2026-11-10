@@ -4,7 +4,7 @@ import { ChannelCard, type ChannelView } from "@/features/notifications/channel-
 import { PushSubscribe } from "@/features/notifications/push-subscribe";
 import { TelegramConnect } from "@/features/notifications/telegram-connect";
 import { requireMember } from "@/lib/auth/require-member";
-import { parseServerEnv } from "@/lib/env";
+import { parseServerEnv } from "@/lib/env.server";
 import { createClient } from "@/lib/supabase/server";
 
 // Screen 14 (screens.md): connect Telegram, choose alerts per chat, and phone

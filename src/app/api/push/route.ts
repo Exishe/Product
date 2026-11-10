@@ -1,6 +1,6 @@
 import { handlePush } from "@/features/notifications/push-handler";
 import { sendPush, type VapidKeys } from "@/features/notifications/web-push";
-import { parseServerEnv } from "@/lib/env";
+import { parseServerEnv } from "@/lib/env.server";
 import { createPublicClient } from "@/lib/supabase/public";
 
 // Sends one web_push outbox row. Called by pg_net with the row id signed by a

@@ -1,5 +1,5 @@
 import "server-only";
-import { parseServerEnv } from "@/lib/env";
+import { parseServerEnv } from "@/lib/env.server";
 import { claudeReader } from "./claude.server.ts";
 import { fakeReader } from "./fake.ts";
 import { geminiReader } from "./gemini.server.ts";

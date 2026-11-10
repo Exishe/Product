@@ -6,7 +6,7 @@ import { PrintButton } from "@/features/tables-qr/print-button";
 import { PrintSheets, type CardText, type QrCard } from "@/features/tables-qr/print-sheet";
 import { routing } from "@/i18n/routing";
 import { requireMember } from "@/lib/auth/require-member";
-import { parseServerEnv } from "@/lib/env";
+import { parseServerEnv } from "@/lib/env.server";
 import { createClient } from "@/lib/supabase/server";
 
 // A4 sheets of table cards. Every token is signed in the database for the
