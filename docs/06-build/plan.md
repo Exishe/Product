@@ -56,7 +56,7 @@ The five situations most likely to hurt a real café that no feature test covers
 
 Everything else is done from this session.
 
-Status 10 Nov 2026: the GitHub secret `SUPABASE_ACCESS_TOKEN` is set and CI applied all 17 migrations; the Vercel project `pativ` is linked to the repository.
+Status 10 Nov 2026: the GitHub secret `SUPABASE_ACCESS_TOKEN` is set and CI applied all 17 migrations; the Vercel project `pativ` is linked to the repository. Web push is configured for previews: VAPID keys in Vercel (preview), a Vercel automation-bypass secret, and `app_base_url` + `vercel_bypass_secret` in Supabase Vault (values never in git).
 
 ---
 
