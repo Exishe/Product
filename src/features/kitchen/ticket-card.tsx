@@ -73,7 +73,7 @@ function Head({ table, number, compact, meta }: { table: string | null; number: 
           data-testid="ticket-table"
           className={clsx(
             "num font-bold tracking-[-0.01em] [overflow-wrap:anywhere]",
-            compact || (table !== null && table.length > 4) ? "text-5xl leading-[1.05]" : "text-kds-number",
+            table !== null && table.length > 4 ? "text-4xl leading-[1.05]" : compact ? "text-5xl" : "text-kds-number",
           )}
         >
           {table ?? number}

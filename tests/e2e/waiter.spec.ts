@@ -59,7 +59,7 @@ test.describe("waiter app", () => {
     await page.goto("/waiter");
     await expect(page.locator("html")).toHaveAttribute("lang", "hy");
     await expect(tableButton(page, "1")).toHaveAttribute("data-state", "free");
-    await expect(tableButton(page, "1")).toHaveAccessibleName("Սեղան 1, Ազատ");
+    await expect(tableButton(page, "1")).toHaveAccessibleName("Սեղան 1 Ազատ");
 
     // Seated: a guest scanned the sticker.
     const guest = await seatGuest(cafe, "1");

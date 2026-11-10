@@ -65,7 +65,7 @@ test.describe("installable staff app", () => {
       await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest");
       const manifest = await (await page.request.get("/manifest.webmanifest")).json();
       expect(manifest).toMatchObject({ name: "Պատիվ", lang: "hy", start_url: "/pair?source=app", scope: "/", display: "standalone" });
-      const icons = manifest.icons as { sizes: string; type: string; purpose: string }[];
+      const icons = manifest.icons as { src: string; sizes: string; type: string; purpose: string }[];
       expect(icons).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ sizes: "192x192", type: "image/png" }),

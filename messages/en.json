@@ -198,7 +198,6 @@
       "bill": "Bill"
     },
     "tableName": "<hidden>Table </hidden>{label}",
-    "tableState": "<hidden>, </hidden>{state}",
     "minutesShort": "{minutes} min",
     "noTables": "No tables yet. Add them in the admin panel.",
     "noTablesLink": "Open table settings",

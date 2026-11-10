@@ -130,9 +130,7 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
       >
         {t.rich("tableName", { label: table.label, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
       </b>
-      <span className="text-sm leading-tight font-semibold">
-        {t.rich("tableState", { state, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
-      </span>
+      <span className="text-sm leading-tight font-semibold">{state}</span>
       {minutes !== null && <span className="num text-sm">{t("minutesShort", { minutes })}</span>}
     </button>
   );

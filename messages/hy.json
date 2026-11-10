@@ -198,7 +198,6 @@
       "bill": "Հաշիվ"
     },
     "tableName": "<hidden>Սեղան </hidden>{label}",
-    "tableState": "<hidden>, </hidden>{state}",
     "minutesShort": "{minutes} ր",
     "noTables": "Սեղաններ դեռ չկան։ Ավելացրեք դրանք կառավարման վահանակում։",
     "noTablesLink": "Բացել սեղանների կարգավորումները",
