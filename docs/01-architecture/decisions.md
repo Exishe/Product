@@ -412,3 +412,15 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   8. **Reject and cancel reasons are short choices**, stored as text in the waiter's language (the guest page shows `reject_reason` as written). A waiter who opens «Չեղարկել» on served food sees that a manager must do it instead of a form; the database checks the same.
   9. **No sound on the waiter tablet yet.** The colour pulse and the counter carry new orders; sound and web push for waiters come with milestone 8's push channel if cafés ask.
 - Consequences: Migration `20261109204500_waiter_app` (adds the enum value `waiting`, used only inside function bodies so it applies in one transaction). Its e2e tests (calls, the stale-table guard) skip until it and `20261109190300_guest_service_requests` are applied to the dev project.
+
+### ADR-047: Calls made in the security review (Task 11.2)
+
+- Status: Accepted, 2026-11-10 (sensible calls under the owner's delegation; details in `docs/06-build/security-review.md`)
+- Decisions:
+  1. **Web push only to the browsers' push services.** Endpoints must be https on `fcm.googleapis.com`, `android.googleapis.com`, `*.push.services.mozilla.com`, `*.push.apple.com` or `*.notify.windows.com`; the app, the server action and a table constraint all check it, and `/api/push` doesn't follow redirects. A new browser's push service means one line in each place. Rejected: resolving and blocking private IPs at send time (DNS rebinding makes that fragile, and nothing else is a legitimate endpoint).
+  2. **A static CSP, with `'unsafe-inline'` for scripts and styles.** A nonce-based policy would make every page dynamic, including the statically rendered guest menu. The static policy still allows scripts only from our origin and network calls only to us and the Supabase project. Revisit if a third-party script is ever added.
+  3. **`minimatch` advisory accepted rather than overridden.** The override planned in `dependency-audit.md` pulls in a package first published two weeks ago; the advisory is a denial of service through glob patterns only our ESLint config supplies.
+  4. **Storage paths on rows are constrained in the table**, not only in RPCs, because owners and managers can update menu rows directly through RLS.
+  5. **`members.pin_hash` is left out of the `select` grant**; Stage 2's PIN check goes in a SECURITY DEFINER function.
+  6. **The SQL harness reproduces Supabase's default grants in `public`**, and `supabase/tests/sql/rls_coverage.sql` sweeps every public table from the catalog for each role, so a new table is covered without writing a test for it.
+- Consequences: Migration `20261110100000_security_review` (constraints and a column grant; no new functions or tables), not yet applied to the dev project.

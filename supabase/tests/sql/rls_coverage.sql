@@ -311,6 +311,9 @@ select coalesce(string_agg(tbl, ', '), '') as bad from test.rc_rows(:'ra') where
               'prep_areas', 'push_subscriptions', 'subscriptions', 'telegram_link_codes') \gset
 select test.ok(:'bad' = '', 'nor any owner-only table of its own café ' || :'bad');
 select test.ok((select n from test.rc_rows(:'ra') where tbl = 'kitchen_tickets') > 0, 'but it does see its own tickets');
+select test.ok((select count(*) from public.members) > 0, 'and its café''s staff list');
+select test.fails('select pin_hash from public.members', '%permission denied%',
+  'but not their PIN hashes (security review L-5)');
 select coalesce(string_agg(tbl || ' ' || op, ', '), '') as bad from test.rc_writes(:'ra') where n > 0
   and tbl not in ('stop_list') \gset
 select test.ok(:'bad' = '', 'and it changes nothing but the stop list directly ' || :'bad');

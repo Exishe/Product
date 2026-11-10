@@ -6,8 +6,11 @@
 -- L-1: storage paths kept on menu rows stay inside the café's own folder, the
 --      same shape the editor writes. Owners and managers can update these rows
 --      directly through RLS, so the rule lives on the table, not in an RPC.
+-- L-5: members.pin_hash (Stage 2 PIN switching, still unused) is not readable
+--      by staff. Every member of a café, devices included, can read the
+--      members table, and a PIN hash is cheap to brute-force offline.
 --
--- No new functions or tables: nothing to revoke or grant.
+-- No new functions or tables.
 
 -- M-1 -------------------------------------------------------------------------
 -- A row that fails the rule could never have received a push, so it goes.
@@ -39,3 +42,9 @@ alter table public.restaurants
     logo_path is null
     or (logo_path like id::text || '/%' and logo_path !~ '(^|/)\.\.(/|$)')
   ) not valid;
+
+-- L-5 -------------------------------------------------------------------------
+revoke select on public.members from anon, authenticated;
+grant select (id, restaurant_id, user_id, role, kind, display_name, locale, all_locations, is_active,
+              created_at, updated_at, last_seen_at)
+  on public.members to authenticated;
