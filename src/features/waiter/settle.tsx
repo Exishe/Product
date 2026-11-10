@@ -17,6 +17,7 @@ export function SettleSheet({
   label,
   total,
   oldBill,
+  preferred,
   online,
   onClose,
   onConfirm,
@@ -24,6 +25,8 @@ export function SettleSheet({
   label: string;
   total: number;
   oldBill: boolean;
+  // What the guest said they would use when asking for the bill; the waiter can change it.
+  preferred?: "card" | "cash" | null;
   online: boolean;
   onClose: () => void;
   onConfirm: (payments: Payment[]) => Promise<DirectResult>;
@@ -31,7 +34,7 @@ export function SettleSheet({
   const t = useTranslations("waiter");
   const locale = useLocale() as Locale;
   const id = useId();
-  const [input, setInput] = useState<PayInput>({ mode: null, cash: "", card: "" });
+  const [input, setInput] = useState<PayInput>({ mode: preferred ?? null, cash: "", card: "" });
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const result = settlement(input, total);

@@ -119,6 +119,28 @@ select api.guest_service_request(:'ga', 'bring_bill') as r2 \gset
 select test.ok(:'r2' <> :'r1', 'asking for the bill is a separate request');
 select test.ok((select count(*) from public.service_requests where id in (:'r1', :'r2')) = 2, 'the guest reads their own requests');
 
+-- Card or cash with the bill (20261110120000_bill_payment_preference).
+select test.ok((select payment_preference from public.service_requests where id = :'r2') is null, 'no preference given: none stored');
+select test.ok(api.guest_service_request(:'ga', 'bring_bill', 'card') = :'r2', 'choosing card returns the open bill request');
+select test.ok((select payment_preference from public.service_requests where id = :'r2') = 'card', 'the open request now says card');
+select test.act_as('e0000000-0000-0000-0000-000000000003', true);
+select test.ok(api.guest_service_request(:'gb', 'bring_bill', 'cash') = :'r2', 'another phone changes it to cash on the same request');
+select test.ok(api.guest_service_request(:'gb', 'bring_bill') = :'r2', 'a tap without a preference keeps the old behaviour');
+reset role;
+select test.ok((select payment_preference from public.service_requests where id = :'r2') = 'cash', 'cash stays after a plain tap');
+select test.ok((select count(*) from public.service_requests where table_id = :'t3' and kind = 'bring_bill' and status <> 'resolved') = 1, 'still one open bill request');
+select test.act_as('e0000000-0000-0000-0000-000000000002', true);
+select test.fails(format('select api.guest_service_request(%L, %L, %L)', :'ga', 'bring_bill', 'bitcoin'), 'invalid_payment_preference',
+  'only card or cash');
+select test.fails(format('select api.guest_service_request(%L, %L, %L)', :'ga', 'call_waiter', 'card'), 'invalid_payment_preference',
+  'a preference belongs to the bill only');
+select test.ok(not exists (
+  select 1 from information_schema.routine_privileges
+  where specific_schema = 'api' and routine_name = 'guest_service_request' and grantee in ('anon', 'PUBLIC')),
+  'the new signature is not callable by anon or public');
+select test.ok((select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'api' and p.proname = 'guest_service_request') = 1,
+  'one guest_service_request, no ambiguous overload');
+
 reset role;
 update public.service_requests set status = 'resolved', resolved_at = now() where id = :'r1';
 select test.act_as('e0000000-0000-0000-0000-000000000002', true);

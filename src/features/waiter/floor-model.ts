@@ -53,6 +53,7 @@ export type RequestRow = {
   kind: Enums["service_request_kind"];
   status: Enums["service_request_status"];
   created_at: string;
+  payment_preference: string | null;
 };
 
 export type TableRow = {
@@ -118,7 +119,7 @@ export type FloorTable = {
   orders: WaiterOrder[]; // newest first
   waiting: { sessionId: string; minutes: number; orders: WaiterOrder[] } | null;
   call: { id: string; minutes: number } | null;
-  bill: { id: string; minutes: number } | null;
+  bill: { id: string; minutes: number; payment: "card" | "cash" | null } | null;
   total: number;
 };
 
@@ -231,7 +232,13 @@ export function buildFloor(rows: FloorRows, locale: Locale, now: number): Floor 
           }
         : null,
       call: call ? { id: call.id, minutes: minutesSince(call.created_at, now) } : null,
-      bill: bill ? { id: bill.id, minutes: minutesSince(bill.created_at, now) } : null,
+      bill: bill
+        ? {
+            id: bill.id,
+            minutes: minutesSince(bill.created_at, now),
+            payment: (["card", "cash"] as const).find((m) => m === bill.payment_preference) ?? null,
+          }
+        : null,
     };
     return { ...base, state: stateOf(base), total: sumAccepted(base.orders) };
   });

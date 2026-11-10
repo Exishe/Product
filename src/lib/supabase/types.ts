@@ -2798,6 +2798,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["service_request_kind"]
           location_id: string
+          payment_preference: string | null
           resolved_at: string | null
           resolved_by: string | null
           restaurant_id: string
@@ -2813,6 +2814,7 @@ export type Database = {
           id?: string
           kind: Database["public"]["Enums"]["service_request_kind"]
           location_id: string
+          payment_preference?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           restaurant_id: string
@@ -2828,6 +2830,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["service_request_kind"]
           location_id?: string
+          payment_preference?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           restaurant_id?: string

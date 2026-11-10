@@ -107,14 +107,21 @@ describe("table states (screens.md §5)", () => {
   it("an open bill request is «Հաշիվ», a call is «Կանչում են»", () => {
     const served = order("o1", { kitchen_status: "served", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "served" }] });
     const base = { sessions: [session("s1", "t1", [served])] };
-    const bill = buildFloor(rows({ ...base, requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2) }] }), "hy", T0);
+    const bill = buildFloor(rows({ ...base, requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: null }] }), "hy", T0);
     expect(byId(bill, "t1").state).toBe("bill");
+    expect(byId(bill, "t1").bill?.payment).toBeNull();
+    const card = buildFloor(
+      rows({ ...base, requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: "card" }] }),
+      "hy",
+      T0,
+    );
+    expect(byId(card, "t1").bill?.payment).toBe("card");
     const call = buildFloor(
       rows({
         ...base,
         requests: [
-          { id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2) },
-          { id: "r2", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "acknowledged", created_at: iso(-3) },
+          { id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: null },
+          { id: "r2", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "acknowledged", created_at: iso(-3), payment_preference: null },
         ],
       }),
       "hy",
@@ -151,7 +158,7 @@ describe("table states (screens.md §5)", () => {
     const floor = buildFloor(
       rows({
         sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })]), session("s2", "t2", [])],
-        requests: [{ id: "r", table_id: "t10", table_session_id: null, kind: "call_waiter", status: "open", created_at: iso(0) }],
+        requests: [{ id: "r", table_id: "t10", table_session_id: null, kind: "call_waiter", status: "open", created_at: iso(0), payment_preference: null }],
       }),
       "hy",
       T0,
@@ -252,7 +259,7 @@ describe("taps not yet confirmed", () => {
     buildFloor(
       rows({
         sessions: [session("s1", "t1", [placed, ready])],
-        requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "open", created_at: iso(0) }],
+        requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "open", created_at: iso(0), payment_preference: null }],
       }),
       "hy",
       T0,

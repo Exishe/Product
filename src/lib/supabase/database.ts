@@ -130,6 +130,7 @@ export type ApiSchema = {
       Args: {
         p_guest_session_id: string;
         p_kind: Enums["service_request_kind"];
+        p_payment_preference?: string;
       };
       Returns: string;
     };

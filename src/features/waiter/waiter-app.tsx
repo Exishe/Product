@@ -351,6 +351,7 @@ function App(p: WaiterAppProps) {
           label={sheetTable.label}
           total={sheetTable.total}
           oldBill={sheetTable.waiting !== null}
+          preferred={sheetTable.bill?.payment ?? null}
           online={online}
           onClose={() => setSheet(null)}
           onConfirm={(payments) => onSettle(sheetTable, sheet.sessionId, sheet.key, payments)}

@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import type { TestCafe } from "./guest-helpers";
 import { createTestCafe } from "./guest-menu-fixture";
+import { hasBillPreference } from "./waiter-helpers";
 
 // Ordering opens table sessions and places orders, so it runs at a café made
 // for this worker (never the demo café, whose tables real people scan). Each
@@ -119,8 +120,8 @@ test.describe("ordering at a fresh café", () => {
   });
 
   test("calling the waiter twice makes one open request", async ({ page }) => {
-    // Needs supabase/migrations/20261109190300_guest_service_requests.sql on the dev project.
-    test.fixme(true, "api.guest_service_request is applied to the dev project by the lead");
+    // Needs 20261109190300_guest_service_requests and 20261110120000_bill_payment_preference on the dev project.
+    test.skip(!(await hasBillPreference(cafe.owner)), "needs migration 20261110120000_bill_payment_preference on the dev project");
     const table = { id: cafe.tables["3"]!.id, token: cafe.tables["3"]!.token };
     await openMenuFromQr(page, table.token);
     await addAndOpenCart(page, "Տոլմա");
@@ -135,7 +136,16 @@ test.describe("ordering at a fresh café", () => {
     const { data } = await owner.from("service_requests").select("id").eq("table_id", table.id).eq("kind", "call_waiter").neq("status", "resolved");
     expect(data).toHaveLength(1);
     await page.getByRole("button", { name: "Խնդրել հաշիվը" }).click();
+    await expect(page.getByTestId("pay-choice")).toBeVisible();
+    await page.getByTestId("pay-choice").getByRole("button", { name: "Կանխիկ" }).click();
     await expect(page.getByText("Մատուցողը կբերի հաշիվը։")).toBeVisible();
+    const { data: bill } = await owner
+      .from("service_requests")
+      .select("payment_preference")
+      .eq("table_id", table.id)
+      .eq("kind", "bring_bill")
+      .neq("status", "resolved");
+    expect(bill?.map((x) => x.payment_preference)).toEqual(["cash"]);
   });
 });
 

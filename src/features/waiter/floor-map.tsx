@@ -101,7 +101,10 @@ export function FloorMap({
 
 function TableButton({ table, selected, onSelect }: { table: FloorTable; selected: boolean; onSelect: (id: string) => void }) {
   const t = useTranslations("waiter");
-  const state = t(`state.${table.state}`);
+  const state =
+    table.state === "bill" && table.bill?.payment
+      ? t(table.bill.payment === "card" ? "state.billCard" : "state.billCash")
+      : t(`state.${table.state}`);
   const minutes = (table.state === "busy" || table.state === "bill") && table.openMinutes !== null ? table.openMinutes : null;
   return (
     <button

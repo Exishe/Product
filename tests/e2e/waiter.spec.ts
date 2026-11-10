@@ -6,6 +6,7 @@ import {
   createWaiterCafe,
   guestOrder,
   guestRequest,
+  hasBillPreference,
   hasFunction,
   kitchenReady,
   kitchenServe,
@@ -23,7 +24,7 @@ import {
 // café and pairs one waiter tablet; the tests' `page` is that tablet. Guests
 // order through the same api functions as the guest pages.
 
-type Migrations = { calls: boolean; guard: boolean };
+type Migrations = { calls: boolean; guard: boolean; billPreference: boolean };
 
 const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrations: Migrations }>({
   cafe: [async ({}, provide) => provide(await createWaiterCafe()), { scope: "worker" }],
@@ -36,6 +37,7 @@ const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrati
       provide({
         calls: (await hasFunction(cafe.owner, "guest_service_request")) && (await hasFunction(cafe.owner, "resolve_service_request")),
         guard: await hasFunction(cafe.owner, "seat_waiting_guests"),
+        billPreference: await hasBillPreference(cafe.owner),
       }),
     { scope: "worker" },
   ],
@@ -109,6 +111,29 @@ test.describe("waiter app", () => {
     await guestRequest(guest, "bring_bill");
     await expect(tableButton(page, "2")).toHaveAttribute("data-state", "bill");
     await expect(panel(page).getByText("Հաշիվ են խնդրում")).toBeVisible();
+  });
+
+  test("7.1 a bill asked for by card shows «Հաշիվ՝ քարտով» and the settle sheet preselects the guest's choice", async ({ page, cafe, migrations }, info) => {
+    test.skip(!migrations.calls || !migrations.billPreference, "needs migration 20261110120000_bill_payment_preference on the dev project");
+    const guest = await seatGuest(cafe, "4");
+    await guestOrder(cafe, guest, [{ dish: "coffee", quantity: 1 }]);
+    await page.goto("/waiter");
+    await guestRequest(guest, "bring_bill", "card");
+    await expect(tableButton(page, "4")).toHaveAttribute("data-state", "bill");
+    await expect(tableButton(page, "4")).toContainText("Հաշիվ՝ քարտով");
+    await openTable(page, "4");
+    await expect(panel(page).getByTestId("bill-alert")).toHaveText("Հաշիվ՝ քարտով");
+
+    // The guest changes their mind: the same request now says cash.
+    await guestRequest(guest, "bring_bill", "cash");
+    await expect(panel(page).getByTestId("bill-alert")).toHaveText("Հաշիվ՝ կանխիկ");
+
+    await panel(page).getByRole("button", { name: "Փակել սեղանը" }).click();
+    const sheet = page.getByRole("dialog", { name: "Սեղան 4" });
+    await expect(sheet.getByRole("button", { name: "Կանխիկ" })).toHaveAttribute("aria-pressed", "true");
+    await sheet.getByRole("button", { name: "Քարտով" }).click();
+    await expect(sheet.getByRole("button", { name: "Քարտով" })).toHaveAttribute("aria-pressed", "true");
+    await shot(page, "71-bill-preference", info.project.name);
   });
 
   test("7.2 a large QR order waits for acceptance and reaches the kitchen after «Ընդունել»", async ({ page, cafe }, info) => {

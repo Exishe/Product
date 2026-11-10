@@ -66,7 +66,11 @@ export function TablePanel(p: PanelProps) {
             </button>
           </div>
         )}
-        {table.bill && <div className="rounded-sheet bg-mist px-4 py-3 font-semibold">{t("panel.billRequested")}</div>}
+        {table.bill && (
+          <div data-testid="bill-alert" className="rounded-sheet bg-mist px-4 py-3 font-semibold">
+            {table.bill.payment === "card" ? t("panel.billCard") : table.bill.payment === "cash" ? t("panel.billCash") : t("panel.billRequested")}
+          </div>
+        )}
 
         {table.waiting && (
           <section data-testid="waiting-party" aria-labelledby="waiting-title" className="grid gap-3 rounded-sheet border-2 border-apricot-deep p-4">

@@ -29,7 +29,9 @@ export async function fetchFloor(supabase: Client, locationId: string): Promise<
     supabase.from("table_sessions").select(SESSION_SELECT).eq("location_id", locationId).not("status", "in", "(closed,void)"),
     supabase
       .from("service_requests")
-      .select("id, table_id, table_session_id, kind, status, created_at")
+      // "*": payment_preference exists only once migration 20261110120000_bill_payment_preference
+      // has reached the project; naming it would make the whole read fail before that.
+      .select("*")
       .eq("location_id", locationId)
       .neq("status", "resolved"),
     supabase.from("stations").select("id, name, is_default").eq("location_id", locationId),
@@ -44,7 +46,7 @@ export async function fetchFloor(supabase: Client, locationId: string): Promise<
       areas: areas.data ?? [],
       tables: tables.data ?? [],
       sessions: sessionRows,
-      requests: requests.data ?? [],
+      requests: (requests.data ?? []).map((r) => ({ ...r, payment_preference: r.payment_preference ?? null })),
       stations: stations.data ?? [],
     },
   };

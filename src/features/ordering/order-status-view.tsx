@@ -186,6 +186,7 @@ export function OrderStatusView({ tableId, menuHref }: { tableId: string; menuHr
   const [slow, setSlow] = useState(false);
   const [told, setTold] = useState<{ kind: Request["kind"] | "error"; key: number } | null>(null);
   const [asking, setAsking] = useState<Request["kind"] | null>(null);
+  const [choosing, setChoosing] = useState(false);
 
   useEffect(() => {
     if (!db) return;
@@ -218,10 +219,15 @@ export function OrderStatusView({ tableId, menuHref }: { tableId: string; menuHr
   const active = useMemo(() => (data ? data.orders.some(isActive) || data.requests.length > 0 : false), [data]);
   const channel = useGuestChannel({ supabase: db, guestSessionId, refresh, poll: active && !data?.closed });
 
-  const ask = async (kind: Request["kind"]) => {
+  const ask = async (kind: Request["kind"], payment?: "card" | "cash") => {
     if (!db || !guestSessionId) return;
+    setChoosing(false);
     setAsking(kind);
-    const { error } = await db.schema("api").rpc("guest_service_request", { p_guest_session_id: guestSessionId, p_kind: kind });
+    const { error } = await db.schema("api").rpc("guest_service_request", {
+      p_guest_session_id: guestSessionId,
+      p_kind: kind,
+      ...(payment ? { p_payment_preference: payment } : {}),
+    });
     setAsking(null);
     setTold({ kind: error ? "error" : kind, key: Date.now() });
     if (!error) refresh();
@@ -281,10 +287,26 @@ export function OrderStatusView({ tableId, menuHref }: { tableId: string; menuHr
             <button type="button" className={secondary} aria-pressed={open.has("call_waiter")} disabled={asking !== null} onClick={() => void ask("call_waiter")}>
               {t("order.callWaiter")}
             </button>
-            <button type="button" className={secondary} aria-pressed={open.has("bring_bill")} disabled={asking !== null} onClick={() => void ask("bring_bill")}>
+            <button type="button" className={secondary} aria-pressed={open.has("bring_bill")} disabled={asking !== null} aria-expanded={choosing} onClick={() => setChoosing((x) => !x)}>
               {t("order.askBill")}
             </button>
           </div>
+          {choosing && (
+            <div role="group" aria-label={t("order.payTitle")} data-testid="pay-choice" className="mt-3 grid gap-2">
+              <p className="m-0 font-semibold">{t("order.payTitle")}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" className={secondary} onClick={() => void ask("bring_bill", "card")}>
+                  {t("order.payCard")}
+                </button>
+                <button type="button" className={secondary} onClick={() => void ask("bring_bill", "cash")}>
+                  {t("order.payCash")}
+                </button>
+              </div>
+              <button type="button" className="min-h-12 justify-self-start font-semibold text-tarragon" onClick={() => setChoosing(false)}>
+                {t("order.payBack")}
+              </button>
+            </div>
+          )}
           <p className="mt-2 min-h-6 text-sm" role="status" aria-live="polite" key={told?.key}>
             {told?.kind === "error"
               ? t("order.requestFailed")

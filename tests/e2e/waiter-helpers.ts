@@ -94,8 +94,10 @@ export async function guestOrder(cafe: TestCafe, guest: Guest, lines: { dish: st
   return data;
 }
 
-export async function guestRequest(guest: Guest, kind: "call_waiter" | "bring_bill"): Promise<string> {
-  const { data, error } = await guest.db.schema("api").rpc("guest_service_request", { p_guest_session_id: guest.sessionId, p_kind: kind });
+export async function guestRequest(guest: Guest, kind: "call_waiter" | "bring_bill", payment?: "card" | "cash"): Promise<string> {
+  const { data, error } = await guest.db
+    .schema("api")
+    .rpc("guest_service_request", { p_guest_session_id: guest.sessionId, p_kind: kind, ...(payment ? { p_payment_preference: payment } : {}) });
   if (error) throw new Error(`guest_service_request: ${error.message}`);
   return data;
 }
@@ -110,6 +112,15 @@ export async function hasFunction(db: Db, name: "resolve_service_request" | "gue
       : name === "seat_waiting_guests"
         ? await api.rpc(name, { p_table_session_id: zero })
         : await api.rpc(name, { p_request_id: zero });
+  return res.error?.code !== "PGRST202";
+}
+
+// The bill's card/cash choice (20261110120000_bill_payment_preference): the
+// three-argument call is unknown (PGRST202) until the migration is applied.
+export async function hasBillPreference(db: Db): Promise<boolean> {
+  const res = await db
+    .schema("api")
+    .rpc("guest_service_request", { p_guest_session_id: "00000000-0000-0000-0000-000000000000", p_kind: "bring_bill", p_payment_preference: "card" });
   return res.error?.code !== "PGRST202";
 }
 
