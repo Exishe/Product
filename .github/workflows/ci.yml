@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -85,7 +86,7 @@ jobs:
     name: Apply migrations to restaurant-os-dev
     # Only from the development branch, only after the SQL tests pass, and only
     # once the owner has added the SUPABASE_ACCESS_TOKEN repository secret.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/new-session-qjsyvc'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/claude/new-session-qjsyvc'
     needs: [sql, checks]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
