@@ -136,12 +136,16 @@ export function OrderPad({
                     type="button"
                     data-testid="pad-item"
                     disabled={item.soldOut}
-                    aria-label={t("add", { name: item.name.text })}
                     onClick={() => tap(item)}
                     className="flex min-h-16 w-full items-center justify-between gap-3 rounded-sheet border border-line bg-white px-4 py-2 text-left disabled:bg-mist disabled:text-muted"
                   >
-                    <span className="min-w-0 font-semibold break-words" lang={nameLang(item.name.lang)}>
-                      {item.name.text}
+                    {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
+                    <span className="min-w-0 font-semibold break-words">
+                      {t.rich("addItem", {
+                        name: item.name.text,
+                        hidden: (chunks) => <span className="sr-only">{chunks}</span>,
+                        dish: (chunks) => <span lang={nameLang(item.name.lang)}>{chunks}</span>,
+                      })}
                     </span>
                     <span className="num flex-none">{item.soldOut ? t("soldOut") : formatAmd(item.price, locale)}</span>
                   </button>

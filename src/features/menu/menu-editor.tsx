@@ -236,7 +236,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
   return (
     <div className="flex flex-col gap-6">
       {banner}
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)_minmax(340px,420px)]">
+      <div className={`grid gap-6 ${panel ? "lg:grid-cols-[220px_minmax(0,1fr)_minmax(340px,420px)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
         <nav aria-label={t("categories")} className="flex flex-col gap-1">
           <h2 className="text-muted mb-1 text-sm font-semibold">{t("categories")}</h2>
           <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
@@ -310,11 +310,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
           {category && dishes.length === 0 && <p className="text-muted">{t("emptyCategory")}</p>}
           <ul className="flex flex-col">
             {dishes.map((d) => (
-              <li key={d.id} className="border-line flex items-stretch gap-2 border-b">
+              <li key={d.id} className="border-line flex flex-wrap items-stretch gap-x-2 border-b">
                 <button
                   type="button"
                   onClick={() => openDish(d)}
-                  className={`flex min-h-14 min-w-0 flex-1 items-baseline gap-2 py-3 text-left ${data.soldOut.includes(d.id) ? "opacity-50" : ""}`}
+                  className={`flex min-h-14 min-w-[min(100%,16rem)] flex-1 items-baseline gap-2 py-3 text-left ${data.soldOut.includes(d.id) ? "text-muted" : ""}`}
                   data-testid="dish-row"
                 >
                   <span className="display-face truncate text-xl" lang={d.names[locale] ? locale : "hy"}>
@@ -326,7 +326,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                   />
                   <span className="num shrink-0 font-semibold">{formatAmd(d.price, locale)}</span>
                 </button>
-                <span className="flex items-center gap-1 text-xs">
+                <span className="ml-auto flex items-center gap-1 pb-2 text-xs sm:pb-0">
                   {LOCALES.map((l) => (
                     <span
                       key={l}

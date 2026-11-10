@@ -55,6 +55,8 @@ export type TestDish = {
 
 export type TestCafe = {
   owner: Db;
+  email: string;
+  password: string;
   slug: string;
   name: string;
   restaurantId: string;
@@ -70,10 +72,13 @@ export async function createCafeWithMenu(opts: {
   dishes: TestDish[];
   tables?: string[];
   name?: string;
+  ownerName?: string;
 }): Promise<TestCafe> {
   const id = unique();
   const owner = newClient();
-  const signedUp = await owner.auth.signUp({ email: `e2e-guest-${id}@pativ.test`, password: "e2e-password-123" });
+  const email = `e2e-guest-${id}@pativ.test`;
+  const password = "e2e-password-123";
+  const signedUp = await owner.auth.signUp({ email, password });
   if (signedUp.error) throw new Error(`sign-up: ${signedUp.error.message}`);
   const name = opts.name ?? `Թեստ ${id}`;
   const slug = `e2e-${id}`;
@@ -82,7 +87,7 @@ export async function createCafeWithMenu(opts: {
       p_name: name,
       p_slug: slug,
       p_location_name: "Main",
-      p_display_name: "Թեստ",
+      p_display_name: opts.ownerName ?? "Թեստ",
     }),
     "create_restaurant",
   );
@@ -156,7 +161,7 @@ export async function createCafeWithMenu(opts: {
   }
 
   must(await owner.schema("api").rpc("publish_menu", { p_location_id: locationId }), "publish");
-  return { owner, slug, name, restaurantId, locationId, items, tables };
+  return { owner, email, password, slug, name, restaurantId, locationId, items, tables };
 }
 
 // Base64url helpers for building tampered and forged tokens in tests.

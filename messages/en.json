@@ -1,7 +1,8 @@
 {
   "brand": {
     "name": "Pativ",
-    "tagline": "Orders go from the guest's phone straight to the kitchen"
+    "tagline": "Orders go from the guest's phone straight to the kitchen",
+    "staffApp": "Kitchen screen and waiter tablet"
   },
   "common": {
     "notFound": "This page doesn't exist.",
@@ -196,7 +197,8 @@
       "call": "Calling",
       "bill": "Bill"
     },
-    "tableAria": "Table {label}, {state}",
+    "tableName": "<hidden>Table </hidden>{label}",
+    "tableState": "<hidden>, </hidden>{state}",
     "minutesShort": "{minutes} min",
     "noTables": "No tables yet. Add them in the admin panel.",
     "noTablesLink": "Open table settings",
@@ -293,7 +295,6 @@
       "empty": "Nothing found.",
       "noMenu": "The menu isn't published yet.",
       "soldOut": "Sold out",
-      "add": "Add {name}",
       "less": "One fewer {name}",
       "more": "One more {name}",
       "options": "Choose",
@@ -305,7 +306,8 @@
       "send": "Send to the kitchen",
       "close": "Close",
       "sent": "Table {label}: order sent.",
-      "queued": "No connection. The order will go out when it's back."
+      "queued": "No connection. The order will go out when it's back.",
+      "addItem": "<hidden>Add </hidden><dish>{name}</dish>"
     },
     "settle": {
       "title": "How did they pay?",

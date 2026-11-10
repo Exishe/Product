@@ -361,7 +361,7 @@ function Board(p: KitchenBoardProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 auto-rows-max gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[1fr_1.5fr_0.8fr] lg:grid-rows-[minmax(0,1fr)]">
+      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)] lg:grid-rows-[minmax(0,1fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}

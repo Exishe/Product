@@ -110,19 +110,29 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
       data-table={table.label}
       data-state={table.state}
       aria-pressed={selected}
-      aria-label={t("tableAria", { label: table.label, state })}
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "grid min-h-28 place-content-center gap-0.5 border-2 p-2 text-center",
+        "flex min-h-28 min-w-0 flex-col items-center justify-center gap-0.5 border-2 p-2 text-center",
         table.shape === "round" ? "aspect-square rounded-full" : "rounded-sheet",
         table.shape === "rect" && "col-span-2",
         STATE_CLASS[table.state],
         selected && "outline-4 outline-offset-[3px] outline-ink outline-solid",
       )}
     >
-      <b className={clsx("num text-[1.875rem] leading-none font-bold", NUMBER_CLASS[table.state])}>{table.label}</b>
-      <span className="text-sm leading-tight font-semibold">{state}</span>
+      {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
+      <b
+        className={clsx(
+          "num max-w-full leading-none font-bold [overflow-wrap:anywhere]",
+          table.label.length > 4 ? "text-xl" : "text-[1.875rem]",
+          NUMBER_CLASS[table.state],
+        )}
+      >
+        {t.rich("tableName", { label: table.label, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
+      </b>
+      <span className="text-sm leading-tight font-semibold">
+        {t.rich("tableState", { state, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
+      </span>
       {minutes !== null && <span className="num text-sm">{t("minutesShort", { minutes })}</span>}
     </button>
   );
