@@ -110,7 +110,7 @@ Secrets are never committed. `.env*.local` is in `.gitignore`, and a pre-commit 
 
 ## Backups while on Supabase Free
 
-The Free plan has no backups. `.github/workflows/db-backup.yml` runs nightly: `supabase db dump` against the live project using a connection string stored as a GitHub secret, encrypts the dump with `age` using a key held only by the owner, and uploads it as a workflow artifact kept for 30 days. A restore drill runs once in Phase 4. The job goes away when we move to Supabase Pro.
+The Free plan has no backups. `.github/workflows/backup.yml` runs nightly (ADR-050): `supabase db dump` against the live project using a connection string stored as a GitHub secret, encrypts the dump with `age` using a key held only by the owner, and uploads it as a workflow artifact kept for 14 days. A restore drill runs once in Phase 4. The job goes away when we move to Supabase Pro.
 
 ## Notes for Claude Code cloud sessions
 

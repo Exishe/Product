@@ -1,0 +1,93 @@
+name: Database backup
+
+# Supabase Free has no backups (ADR-050). Every night this dumps the dev/pilot
+# project, compresses the dump (and encrypts it when an age key is set) and keeps
+# it as a workflow artifact for 14 days. Runs only with a database password or
+# connection string secret; without one it skips with a notice. See
+# docs/04-operations/backups.md.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Dump restaurant-os-dev
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROJECT_REF: mhuxfmdehkgpjunxgptc
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+      HAS_CREDS: ${{ (secrets.SUPABASE_DB_PASSWORD != '' || secrets.SUPABASE_DB_URL != '') }}
+    steps:
+      - if: env.HAS_CREDS != 'true'
+        run: >-
+          echo "::notice::Neither SUPABASE_DB_PASSWORD nor SUPABASE_DB_URL is set;
+          no backup was made. Add one of them (see docs/04-operations/backups.md)."
+      - if: env.HAS_CREDS == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: env.HAS_CREDS == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - if: env.HAS_CREDS == 'true'
+        run: npm ci
+      - if: env.HAS_CREDS == 'true'
+        name: Dump schema and data
+        run: |
+          set -euo pipefail
+          # GitHub runners have no IPv6 and Supabase's direct host is IPv6-only,
+          # so connect through the session-mode pooler (port 5432). A full
+          # connection string secret wins; otherwise one is built from the password.
+          if [ -n "$SUPABASE_DB_URL" ]; then
+            DB_URL="$SUPABASE_DB_URL"
+          else
+            ENC_PASSWORD=$(node -e 'process.stdout.write(encodeURIComponent(process.env.SUPABASE_DB_PASSWORD))')
+            DB_URL="postgresql://postgres.${PROJECT_REF}:${ENC_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+          fi
+          echo "::add-mask::$DB_URL"
+          [ -n "${ENC_PASSWORD:-}" ] && echo "::add-mask::$ENC_PASSWORD"
+
+          OUT="$RUNNER_TEMP/backup"
+          mkdir -p "$OUT"
+          # Output goes to files only; stdout is discarded so no data reaches the log.
+          npx supabase db dump --remote="$DB_URL" --file "$OUT/schema.sql" >/dev/null
+          npx supabase db dump --remote="$DB_URL" --data-only --use-copy --file "$OUT/data.sql" >/dev/null
+          # The auth schema (users, identities) is skipped by default but the café data points at it.
+          npx supabase db dump --remote="$DB_URL" --data-only --use-copy --schema auth --file "$OUT/auth-data.sql" >/dev/null
+          test -s "$OUT/schema.sql" && test -s "$OUT/data.sql" && test -s "$OUT/auth-data.sql"
+
+          STAMP=$(date -u +%Y%m%d-%H%M)
+          tar -C "$OUT" -czf "$RUNNER_TEMP/pativ-db-$STAMP.tar.gz" schema.sql data.sql auth-data.sql
+          rm -rf "$OUT"
+          mkdir -p "$RUNNER_TEMP/upload"
+          if [ -n "$BACKUP_AGE_PUBLIC_KEY" ]; then
+            sudo apt-get install -y -qq age >/dev/null
+            age -r "$BACKUP_AGE_PUBLIC_KEY" -o "$RUNNER_TEMP/upload/pativ-db-$STAMP.tar.gz.age" "$RUNNER_TEMP/pativ-db-$STAMP.tar.gz"
+            rm "$RUNNER_TEMP/pativ-db-$STAMP.tar.gz"
+          else
+            echo "::warning::BACKUP_AGE_PUBLIC_KEY is not set; the artifact is compressed but not encrypted."
+            mv "$RUNNER_TEMP/pativ-db-$STAMP.tar.gz" "$RUNNER_TEMP/upload/"
+          fi
+          ls -l "$RUNNER_TEMP/upload" | awk '{print $5, $9}'
+      - if: env.HAS_CREDS == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: db-backup
+          path: ${{ runner.temp }}/upload/
+          retention-days: 14
+          if-no-files-found: error

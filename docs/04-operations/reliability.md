@@ -102,9 +102,9 @@ Signs: every device red for more than 5 minutes, hotspot doesn't help, or our st
 
 Used for the drill in Phase 6 and in a real data loss.
 
-1. Download the latest `db-backup` artifact from GitHub Actions and decrypt it with the owner's `age` key: `age -d -i key.txt backup.sql.age > backup.sql`.
+1. Download the latest `db-backup` artifact from GitHub Actions (`.github/workflows/backup.yml`, see `backups.md`). If it is encrypted, decrypt it with the owner's `age` key: `age -d -i key.txt pativ-db-<date>.tar.gz.age | tar -xz`; you get `schema.sql`, `data.sql` and `auth-data.sql`.
 2. Create a fresh Supabase project in the same region (never restore over the live one while it might still hold newer data).
-3. Apply the dump: `psql "$NEW_DB_URL" -f backup.sql`.
+3. Apply the dumps in order: `psql "$NEW_DB_URL" -f schema.sql -f auth-data.sql -f data.sql`.
 4. Run `npm run test:db` against it and compare row counts of `orders` and `bills` for the last full day with the Telegram summary.
 5. Point a preview deploy at the restored project and click through a test order. Switching production over is the owner's decision.
 6. Record the time taken in the History table below. The target is under 60 minutes.

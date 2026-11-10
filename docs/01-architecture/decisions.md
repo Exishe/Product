@@ -456,3 +456,13 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - One browser has one subscription per origin: the same browser used as a guest, then as a waiter or owner, moves its single subscription (the endpoint is unique). Not a problem on separate devices.
   - Push services may delay or drop a message; the status page and the waiters' floor map stay the source of truth.
 - Consequences: Migration `20261110130000_push_guests_waiters` (not yet applied to the dev project; CI applies it on push). Its e2e test skips until then. VAPID keys must be set in the environment (`scripts/gen-vapid.ts`); without them the guest button is hidden and the waiter switch is absent, and nothing else changes.
+
+### ADR-050: Pilot readiness: nightly backup and automatic test-data clean-up
+
+- Status: Accepted, 2026-11-10 (sensible calls under the owner's delegation; free only: GitHub Actions and `pg_cron`)
+- Decisions:
+  1. **One cloud project hosts CI test cafés, the demo and the pilot café**, so a daily job (`pativ-purge-test-data`, 02:40 UTC) calls `private.purge_test_cafes()` and `private.purge_demo_activity()`. A café is a test café only if it has an owner, is older than a day, is not `demo-cafe`, and every person member has an `@pativ.test` email (the address all e2e helpers sign up with). One real member keeps it. Test users with no café are deleted afterwards, never platform admins. Anonymous users are left alone.
+  2. **Demo café keeps its menu, tables and stations**; only its orders, bills, table and guest sessions and service requests older than a day are deleted.
+  3. **Both functions are `SECURITY DEFINER`, executable by the owner only**, in line with ADR-038; the app never needs the secret key for this.
+  4. **Nightly backup in GitHub Actions** (`.github/workflows/backup.yml`, 03:17 UTC): schema, data and `auth` data via `supabase db dump`, compressed, optionally `age`-encrypted, kept 14 days as an artifact. It needs a database password or pooler URL as a secret (a dump connects to Postgres; the access token is not enough) and skips with a notice without one. It connects through the session pooler because GitHub runners have no IPv6.
+- Consequences: Migration `20261110140000_purge_test_data` (applied by the CI `migrate` job; it also purges once on apply). The owner adds `SUPABASE_DB_PASSWORD` (or `SUPABASE_DB_URL`) and, preferably, `BACKUP_AGE_PUBLIC_KEY` as repository secrets and does one restore drill (RB5). Free-plan retention is 14 days of artifacts; no paid backup is used. Details in `docs/04-operations/backups.md`.
