@@ -34,3 +34,5 @@ Armenian-first cloud platform for small cafés in Yerevan (QR menu, waiter app, 
 - Docker starts but can't pull images here, so `supabase start` doesn't work in cloud sessions. Use the dev cloud project and the plain-Postgres harness in `docs/01-architecture/sql/`.
 - The Supabase MCP asks the owner to confirm destructive SQL (`DELETE`, `DROP`, …) and times out after 60 s if they don't answer. Keep ad-hoc queries read-only and put schema changes in migrations.
 - Develop on the branch named in the session instructions; commit and push there.
+- Migrations reach `restaurant-os-dev` through the CI `migrate` job (GitHub secret `SUPABASE_ACCESS_TOKEN`, scoped token: project read, database/migrations/JIT read-write). Push a new migration file to the session branch; don't use MCP `apply_migration`.
+- Vercel project `pativ` (team Sroondz, Hobby) builds a protected preview for every push to the session branch. Production only when the owner says so.
