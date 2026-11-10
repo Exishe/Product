@@ -12,6 +12,7 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/lib/supabase/database";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
+import { NotifyReady } from "./notify-ready";
 import { displayStatus, isActive, STEPS, stepIndex, type DisplayStatus, type OrderState } from "./order-status";
 
 type Db = SupabaseClient<Database>;
@@ -29,6 +30,9 @@ type Line = {
 type Order = OrderState & { id: string; number: number; total: number; placed_at: string; reject_reason: string | null; order_items: Line[] };
 type Request = { id: string; kind: "call_waiter" | "bring_bill"; status: string };
 type Data = { orders: Order[]; requests: Request[]; closed: boolean };
+
+// The stages before "ready": the only time «Notify me when it's ready» makes sense.
+const waiting = new Set<DisplayStatus>(["received", "accepted", "cooking"]);
 
 const ORDER_COLUMNS =
   "id, number, status, kitchen_status, paid_at, total, placed_at, reject_reason, possible_duplicate_of, " +
@@ -177,7 +181,15 @@ function OrderCard({ order, latest }: { order: Order; latest: boolean }) {
 // The order status page: the guest's orders at this table (read through RLS),
 // newest first, live over the guest's Realtime channel with a 10-second
 // safety poll, plus "call the waiter" and "ask for the bill".
-export function OrderStatusView({ tableId, menuHref }: { tableId: string; menuHref: string }) {
+export function OrderStatusView({
+  tableId,
+  menuHref,
+  vapidPublicKey = null,
+}: {
+  tableId: string;
+  menuHref: string;
+  vapidPublicKey?: string | null;
+}) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
   const [guestSessionId, setGuestSessionId] = useState<string | null>(null);
@@ -283,6 +295,9 @@ export function OrderStatusView({ tableId, menuHref }: { tableId: string; menuHr
         </div>
       ) : (
         <>
+          {db && guestSessionId && latestStatus && waiting.has(latestStatus) && (
+            <NotifyReady db={db} guestSessionId={guestSessionId} vapidPublicKey={vapidPublicKey} />
+          )}
           <div className="grid grid-cols-2 gap-3">
             <button type="button" className={secondary} aria-pressed={open.has("call_waiter")} disabled={asking !== null} onClick={() => void ask("call_waiter")}>
               {t("order.callWaiter")}

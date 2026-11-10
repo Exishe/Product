@@ -6,6 +6,7 @@ import { fetchFloor } from "@/features/waiter/floor-data";
 import { WaiterApp } from "@/features/waiter/waiter-app";
 import type { Locale } from "@/i18n/routing";
 import { requireMember } from "@/lib/auth/require-member";
+import { vapidPublicKeyOrNull } from "@/lib/env.server";
 import { createClient } from "@/lib/supabase/server";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
@@ -69,6 +70,8 @@ export default async function WaiterPage() {
         menu={menu}
         renderedAt={renderedAt}
         memberId={me.id}
+        restaurantId={me.restaurantId}
+        vapidPublicKey={vapidPublicKeyOrNull(process.env)}
         role={me.role}
         isDevice={me.kind === "device"}
         canManageTables={me.role === "owner" || me.role === "manager"}

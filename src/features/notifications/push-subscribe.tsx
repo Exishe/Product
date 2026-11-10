@@ -3,34 +3,22 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { deletePushSubscription, isPushSubscribed, savePushSubscription } from "./actions";
+import {
+  currentSubscription,
+  pushAvailability,
+  readPushEnvironment,
+  subscribeThisBrowser,
+} from "./push-browser";
 
 // Web push for owners without Telegram (ADR-035). On iPhones it works only
 // once the admin is added to the home screen, so the toggle says so.
 
 type Status = "loading" | "unsupported" | "install" | "unconfigured" | "denied" | "off" | "on";
 
-function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
-  const b64 = base64url
-    .replace(/-/g, "+")
-    .replace(/_/g, "/")
-    .padEnd(Math.ceil(base64url.length / 4) * 4, "=");
-  const raw = atob(b64);
-  const out = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-  return out;
-}
-
 async function detect(vapidPublicKey: string | null): Promise<Status> {
-  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  if (!supported) {
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const standalone = window.matchMedia("(display-mode: standalone)").matches;
-    return ios && !standalone ? "install" : "unsupported";
-  }
-  if (!vapidPublicKey) return "unconfigured";
-  if (Notification.permission === "denied") return "denied";
-  const registration = await navigator.serviceWorker.getRegistration("/");
-  const subscription = await registration?.pushManager.getSubscription();
+  const availability = pushAvailability(readPushEnvironment(vapidPublicKey));
+  if (availability !== "ready") return availability;
+  const subscription = await currentSubscription();
   if (subscription && (await isPushSubscribed(subscription.endpoint))) return "on";
   return "off";
 }
@@ -56,27 +44,13 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
     setBusy(true);
     setError(false);
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setStatus(permission === "denied" ? "denied" : "off");
+      const result = await subscribeThisBrowser(vapidPublicKey);
+      if (!result.ok) {
+        if (result.reason === "failed") setError(true);
+        else setStatus(result.reason === "denied" ? "denied" : "off");
         return;
       }
-      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-      const registration = await navigator.serviceWorker.ready;
-      const subscription =
-        (await registration.pushManager.getSubscription()) ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: keyBytes(vapidPublicKey),
-        }));
-      const json = subscription.toJSON();
-      const ok = await savePushSubscription(
-        {
-          endpoint: subscription.endpoint,
-          keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" },
-        },
-        navigator.userAgent,
-      );
+      const ok = await savePushSubscription(result.subscription, navigator.userAgent);
       if (ok) setStatus("on");
       else setError(true);
     } catch {
@@ -90,8 +64,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
     setBusy(true);
     setError(false);
     try {
-      const registration = await navigator.serviceWorker.getRegistration("/");
-      const subscription = await registration?.pushManager.getSubscription();
+      const subscription = await currentSubscription();
       if (subscription) {
         await deletePushSubscription(subscription.endpoint);
         await subscription.unsubscribe();

@@ -341,6 +341,15 @@
       "title": "This device was disconnected.",
       "body": "Ask the owner to connect it again.",
       "action": "Enter a new code"
+    },
+    "notify": {
+      "label": "Notifications on this device",
+      "on": "on",
+      "off": "off",
+      "denied": "Notifications are blocked in the browser settings.",
+      "unsupported": "This browser can't receive notifications.",
+      "install": "On iPhone, add the page to the home screen to get notifications.",
+      "error": "Couldn't do it. Please try again."
     }
   },
   "menu": {
@@ -645,6 +654,13 @@
       "payCard": "Card",
       "payCash": "Cash",
       "payBack": "Back",
+      "notifyReady": "Notify me when it's ready",
+      "notifyOn": "We'll notify you when your order is ready.",
+      "notifyOff": "Turn off the notification",
+      "notifyDenied": "Notifications are blocked in your browser settings. You can still follow your order on this page.",
+      "notifyUnsupported": "This browser can't receive notifications. You can still follow your order on this page.",
+      "notifyInstall": "On iPhone, notifications only work from a page added to the home screen. You can still follow your order on this page.",
+      "notifyError": "Couldn't turn it on. Please try again.",
       "requestFailed": "That didn't go through. Try again.",
       "orderMore": "Order more",
       "reconnecting": "Updating…",

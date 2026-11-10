@@ -18,7 +18,7 @@ export default async function TelegramPage() {
     supabase.schema("api").rpc("telegram_status", { p_restaurant_id: me.restaurantId }),
     supabase
       .from("notification_channels")
-      .select("id, kind, title, locale, events, created_by")
+      .select("id, kind, title, locale, events, created_by, audience")
       .eq("restaurant_id", me.restaurantId)
       .eq("is_active", true)
       .order("created_at"),
@@ -29,9 +29,12 @@ export default async function TelegramPage() {
   const botReady = (status as { bot_ready?: boolean } | null)?.bot_ready === true;
 
   // Telegram chats are shared by the café's admins; phone notifications are
-  // each person's own.
+  // each person's own. Waiter and guest channels (ADR-049) are not shown here.
   const channels: ChannelView[] = (rows ?? [])
-    .filter((c) => c.kind === "telegram" || (c.kind === "web_push" && c.created_by === userId))
+    .filter(
+      (c) =>
+        c.kind === "telegram" || (c.kind === "web_push" && c.audience === "owner" && c.created_by === userId),
+    )
     .map((c) => ({
       id: c.id,
       kind: c.kind as ChannelView["kind"],

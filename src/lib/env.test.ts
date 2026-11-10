@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parsePublicEnv } from "./env";
-import { parseServerEnv } from "./env.server";
+import { parseServerEnv, vapidPublicKeyOrNull } from "./env.server";
 
 const goodPublic = {
   NEXT_PUBLIC_SUPABASE_URL: "https://mhuxfmdehkgpjunxgptc.supabase.co",
@@ -48,6 +48,14 @@ describe("parseServerEnv", () => {
     expect(parseServerEnv(base).VAPID_PRIVATE_KEY).toBeUndefined();
     expect(() => parseServerEnv({ ...base, VAPID_PRIVATE_KEY: "not a key" })).toThrow();
     expect(() => parseServerEnv({ ...base, VAPID_SUBJECT: "http://insecure.example" })).toThrow();
+  });
+
+  it("hands the VAPID public key to guest pages without needing the rest of the settings", () => {
+    const key = "B".repeat(87);
+    expect(vapidPublicKeyOrNull({ VAPID_PUBLIC_KEY: key })).toBe(key);
+    expect(vapidPublicKeyOrNull({})).toBeNull();
+    expect(vapidPublicKeyOrNull({ VAPID_PUBLIC_KEY: "" })).toBeNull();
+    expect(vapidPublicKeyOrNull({ VAPID_PUBLIC_KEY: "not a key" })).toBeNull();
   });
 
   it("reads the Gemini model list in order", () => {

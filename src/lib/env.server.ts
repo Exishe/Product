@@ -52,3 +52,10 @@ export type ServerEnv = z.infer<typeof serverSchema>;
 export function parseServerEnv(source: Source): ServerEnv {
   return serverSchema.parse(clean(source));
 }
+
+// The VAPID public key for pages that must not fail on other missing settings
+// (the guest status page, ADR-049). null when it is missing or malformed.
+export function vapidPublicKeyOrNull(source: Source): string | null {
+  const parsed = serverSchema.shape.VAPID_PUBLIC_KEY.safeParse(clean(source).VAPID_PUBLIC_KEY);
+  return parsed.success ? (parsed.data ?? null) : null;
+}

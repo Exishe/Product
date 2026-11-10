@@ -8,6 +8,7 @@ import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest
 import { OrderStatusView } from "@/features/ordering/order-status-view";
 import { resolveTable } from "@/features/ordering/resolve-table.server";
 import { routing, type Locale } from "@/i18n/routing";
+import { vapidPublicKeyOrNull } from "@/lib/env.server";
 
 type Params = Promise<{ locale: string; restaurant: string; location: string }>;
 type Search = Promise<{ t?: string | string[] }>;
@@ -35,6 +36,8 @@ export default async function OrderStatusPage({ params, searchParams }: { params
   const menuHref = `/${locale}/m/${restaurant}/${location}${query}`;
   const hrefFor = (l: Locale) => `/${l}/m/${restaurant}/${location}/order${query}`;
   const t = await getTranslations({ locale, namespace: "guest" });
+  // The public key goes to the phone for «Notify me when it's ready» (ADR-049).
+  const vapidPublicKey = vapidPublicKeyOrNull(process.env);
 
   return (
     <div className="min-h-dvh bg-mist">
@@ -43,7 +46,7 @@ export default async function OrderStatusPage({ params, searchParams }: { params
           <>
             <GuestHeader locale={locale} cafeName={table.restaurant_name} tableLabel={table.table_label} locales={table.guest_locales} hrefFor={hrefFor} />
             <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
-              <OrderStatusView tableId={table.table_id} menuHref={menuHref} />
+              <OrderStatusView tableId={table.table_id} menuHref={menuHref} vapidPublicKey={vapidPublicKey} />
             </GuestI18nProvider>
           </>
         ) : (

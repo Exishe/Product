@@ -1,4 +1,4 @@
--- Web push for café guests and waiters (ADR-050), on the pipeline of ADR-035:
+-- Web push for café guests and waiters (ADR-049), on the pipeline of ADR-035:
 -- outbox rows → pg_net → /api/push (signed per row) → encrypted send.
 --
 -- Guests: «Notify me when it's ready» on the order status page. The phone's

@@ -18,6 +18,7 @@ import { cancelLine, sameWaiterAction, seatWaitingGuests, settleTable, waiterAct
 import { fetchFloor } from "./floor-data";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { applyPending, areaOf, buildFloor, needCount, type FloorRows, type FloorTable, type Payment, type WaiterAction } from "./floor-model";
+import { NotifyToggle } from "./notify-toggle";
 import { OrderPad, type PadOrder } from "./order-pad";
 import { SettleSheet } from "./settle";
 import { TablePanel } from "./table-panel";
@@ -30,6 +31,9 @@ export type WaiterAppProps = {
   menu: GuestCategory[];
   renderedAt: number;
   memberId: string;
+  restaurantId: string;
+  /** For «Ծանուցումներ այս սարքում» (ADR-049); null where web push is not set up. */
+  vapidPublicKey: string | null;
   role: MemberRole;
   isDevice: boolean;
   canManageTables: boolean;
@@ -293,6 +297,7 @@ function App(p: WaiterAppProps) {
         <span data-testid="need" className="ml-auto font-semibold">
           {need > 0 ? t("need", { count: need }) : t("allServed")}
         </span>
+        <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         <ConnectionPill state={connection} waiting={outbox.entries.length} />
         <span data-testid="clock" className="num text-xl font-semibold">
           {formatTime(new Date(now), p.location.timeZone)}

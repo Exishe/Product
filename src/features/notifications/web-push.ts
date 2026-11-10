@@ -89,7 +89,7 @@ export function vapidAuthorization(endpoint: string, vapid: VapidKeys, now = Dat
   return `vapid t=${unsigned}.${signature}, k=${vapid.publicKey.replace(/=+$/, "")}`;
 }
 
-export type PushMessage = { title: string; body: string; tag: string; url: string };
+export type PushMessage = { title: string; body: string; tag: string; url: string; renotify?: boolean };
 
 // The browsers' push services (Chrome, Firefox, Safari, Edge). Any other
 // endpoint would make the server post to a host a café owner picked (SSRF),

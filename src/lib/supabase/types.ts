@@ -1862,6 +1862,8 @@ export type Database = {
       }
       notification_channels: {
         Row: {
+          audience: string
+          guest_session_id: string | null
           created_at: string
           created_by: string | null
           events: string[]
@@ -1875,6 +1877,8 @@ export type Database = {
           title: string | null
         }
         Insert: {
+          audience?: string
+          guest_session_id?: string | null
           created_at?: string
           created_by?: string | null
           events?: string[]
@@ -1888,6 +1892,8 @@ export type Database = {
           title?: string | null
         }
         Update: {
+          audience?: string
+          guest_session_id?: string | null
           created_at?: string
           created_by?: string | null
           events?: string[]

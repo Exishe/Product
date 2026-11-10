@@ -1,6 +1,7 @@
 // Pativ service worker, hand-written (ADR-029). One worker for the whole
 // origin, since a scope has one service worker:
-// - owner alerts sent by /api/push (ADR-035);
+// - web push sent by /api/push: owner alerts (ADR-035), a guest's «your order
+//   is ready» and a waiter's table calls and bills (ADR-049);
 // - the installed staff app (ADR-048): the kitchen screen and the waiter
 //   tablet open offline to the last screen they showed.
 //
@@ -153,25 +154,42 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = typeof data.title === "string" && data.title ? data.title : "Pativ";
+  // Owner alerts, a guest's «your order is ready» and a waiter's table call all
+  // come this way (ADR-035, ADR-049). A tag per table or order makes a repeat
+  // replace the earlier notification; renotify makes the replacement buzz again.
+  const tag = typeof data.tag === "string" && data.tag ? data.tag : undefined;
   event.waitUntil(
     self.registration.showNotification(title, {
       body: typeof data.body === "string" ? data.body : "",
-      tag: typeof data.tag === "string" ? data.tag : undefined,
+      tag,
+      renotify: tag !== undefined && data.renotify === true,
       icon: "/icon.svg",
-      data: { url: typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/admin" },
+      data: { url: safePath(data.url) },
     }),
   );
 });
 
+// Only a path on this origin ("/waiter", "/hy/m/…/order?t=…") may be opened by
+// a tap; anything else (another site, "//host") goes to the admin.
+function safePath(value) {
+  return typeof value === "string" && /^\/(?![/\\])/.test(value) ? value : "/admin";
+}
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url ?? "/admin", self.location.origin).href;
+  const target = new URL(safePath(event.notification.data?.url), self.location.origin);
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
-      for (const w of windows) {
-        if (w.url === url && "focus" in w) return w.focus();
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
+      // The screen is already open: show it. The same page with another link
+      // (a guest's status page with a new sticker token) is navigated.
+      const same = windows.find((w) => w.url === target.href);
+      if (same && "focus" in same) return same.focus();
+      const samePage = windows.find((w) => new URL(w.url).pathname === target.pathname);
+      if (samePage && "navigate" in samePage) {
+        const moved = await samePage.navigate(target.href).catch(() => null);
+        return (moved ?? samePage).focus();
       }
-      return self.clients.openWindow(url);
+      return self.clients.openWindow(target.href);
     }),
   );
 });

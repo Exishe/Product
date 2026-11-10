@@ -76,4 +76,21 @@ describe("handlePush", () => {
       { endpoint: "https://web.push.apple.com/b", status: 410 },
     ]);
   });
+
+  it("passes the tag, the tap target and renotify of a table call on to the device", async () => {
+    const call = {
+      ...claimData,
+      body: "Սեղան 5․ կանչում են",
+      tag: "table:t5:service.call",
+      url: "/waiter",
+      renotify: true,
+    };
+    const d = deps({ claim: vi.fn(async () => ({ data: call, error: null })) });
+    await handlePush({ id: 8, attempt: 1, sig }, d);
+    expect(d.send).toHaveBeenCalledWith(
+      claimData.subscriptions[0],
+      { title: call.title, body: call.body, tag: call.tag, url: "/waiter", renotify: true },
+      vapid,
+    );
+  });
 });

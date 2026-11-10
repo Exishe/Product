@@ -1,4 +1,4 @@
--- Web push for guests and waiters (20261110130000_push_guests_waiters, ADR-050).
+-- Web push for guests and waiters (20261110130000_push_guests_waiters, ADR-049).
 -- pg_net and pg_cron are the harness stand-ins of 00-supabase-stubs.sql. Runs
 -- after 90-smoke-test.sql and adr038.sql and reuses their test.* helpers.
 \set ON_ERROR_STOP 1

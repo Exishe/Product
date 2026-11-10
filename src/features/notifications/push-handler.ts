@@ -17,6 +17,8 @@ const claimSchema = z.object({
   body: z.string(),
   tag: z.string(),
   url: z.string(),
+  // A repeat under the same tag buzzes again (a call, a bill, a ready dish).
+  renotify: z.boolean().optional(),
   subscriptions: z.array(z.object({ endpoint: z.url(), p256dh: z.string(), auth: z.string() })),
 });
 

@@ -126,6 +126,21 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    guest_push_exists: {
+      Args: {
+        p_guest_session_id: string;
+        p_endpoint: string;
+      };
+      Returns: boolean;
+    };
+    guest_push_subscribe: {
+      Args: {
+        p_guest_session_id: string;
+        p_subscription: Json;
+        p_user_agent?: string;
+      };
+      Returns: string;
+    };
     guest_service_request: {
       Args: {
         p_guest_session_id: string;
@@ -355,6 +370,17 @@ export type ApiSchema = {
         p_is_active: boolean;
       };
       Returns: undefined;
+    };
+    waiter_push_subscribe: {
+      Args: {
+        p_restaurant_id: string;
+        p_endpoint: string;
+        p_p256dh: string;
+        p_auth: string;
+        p_user_agent?: string;
+        p_locale?: Enums["app_locale"];
+      };
+      Returns: string;
     };
   };
   Enums: { [_ in never]: never };
