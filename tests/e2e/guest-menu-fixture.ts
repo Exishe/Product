@@ -6,7 +6,7 @@ import { createCafeWithMenu, type TestCafe } from "./guest-helpers";
 export const LONG_RU = "Домашняя хашлама из молодой баранины с картофелем, баклажанами и свежей зеленью";
 export const LONG_HY = "Տնական խաշլամա գառան մսով, կարտոֆիլով, սմբուկով, լոլիկով և թարմ կանաչիով";
 
-export function createTestCafe(): Promise<TestCafe> {
+export function createTestCafe(tables: string[] = ["1", "2"]): Promise<TestCafe> {
   return createCafeWithMenu({
     categories: [
       { key: "hot", names: { hy: "Տաք ուտեստներ", ru: "Горячие блюда", en: "Hot dishes" } },
@@ -60,6 +60,6 @@ export function createTestCafe(): Promise<TestCafe> {
         ],
       },
     ],
-    tables: ["1", "2"],
+    tables,
   });
 }

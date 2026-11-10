@@ -1,6 +1,7 @@
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { test as base, expect } from "./fixtures";
-import { createFreshCafe, ownerEmail, ownerPassword, signInAsDemoOwner } from "./helpers";
+import { createCafeWithMenu } from "./guest-helpers";
+import { createFreshCafe, ownerEmail, ownerPassword } from "./helpers";
 import {
   allowConsoleErrors,
   column,
@@ -26,18 +27,30 @@ import {
 
 // Kitchen board, milestone 6 (plan.md Tasks 6.1–6.3). A kitchen tablet is
 // paired once per worker and revoked at the end; orders are placed by the
-// demo owner through api.place_waiter_order and served afterwards.
+// cafe owner through api.place_waiter_order and served afterwards.
+
+// One café per worker (own owner, menu, 12 tables, 8 dishes without options).
+let workerCafeOnce: ReturnType<typeof createCafeWithMenu> | undefined;
+const DISHES = ["Տոլմա", "Բորանի", "Խորոված", "Լահմաջո", "Գաթա", "Լավաշ", "Խաշլամա", "Շորվա", "Սալաթ"];
+function workerCafe() {
+  workerCafeOnce ??= createCafeWithMenu({
+    categories: [{ key: "hot", names: { hy: "Տաք ուտեստներ", ru: "Горячие блюда", en: "Hot dishes" } }],
+    dishes: DISHES.map((name, i) => ({ key: `d${i}`, category: "hot", names: { hy: name }, price: 1500 + i * 100 })),
+    tables: Array.from({ length: 12 }, (_, i) => String(i + 1)),
+  });
+  return workerCafeOnce;
+}
 
 type DeviceState = { storageState: Awaited<ReturnType<BrowserContext["storageState"]>>; memberId: string };
 type Viewport = { width: number; height: number };
 
-const test = base.extend<{ viewportSize: Viewport }, { api: Api; demo: Cafe; device: DeviceState }>({
+const test = base.extend<{ viewportSize: Viewport }, { api: Api; cafe: Cafe; device: DeviceState }>({
   viewportSize: async ({ viewport }, provide) => provide(viewport ?? { width: 1280, height: 800 }),
-  api: [async ({}, provide) => provide(await signedInOwner()), { scope: "worker" }],
-  demo: [async ({ api }, provide) => provide(await loadCafe(api, "demo-cafe")), { scope: "worker" }],
+  api: [async ({}, provide) => provide((await workerCafe()).owner), { scope: "worker" }],
+  cafe: [async ({ api }, provide) => provide(await loadCafe(api, (await workerCafe()).slug)), { scope: "worker" }],
   device: [
-    async ({ browser, api, demo }, provide) => {
-      const device = await pairKitchenDevice(browser, api, demo, { width: 1280, height: 800 });
+    async ({ browser, api, cafe }, provide) => {
+      const device = await pairKitchenDevice(browser, api, cafe, { width: 1280, height: 800 });
       const storageState = await device.context.storageState();
       await device.context.close();
       await provide({ storageState, memberId: device.memberId });
@@ -50,7 +63,7 @@ const test = base.extend<{ viewportSize: Viewport }, { api: Api; demo: Cafe; dev
 async function openBoard(
   browser: Browser,
   device: DeviceState,
-  demo: Cafe,
+  cafe: Cafe,
   viewport: Viewport,
   errors: string[],
   options: { instrument?: boolean; clockAheadMs?: number } = {},
@@ -63,7 +76,7 @@ async function openBoard(
   }
   const page = await context.newPage();
   trackConsole(page, errors);
-  await page.goto(`/kitchen/${demo.kitchenStationId}`);
+  await page.goto(`/kitchen/${cafe.kitchenStationId}`);
   return { context, page };
 }
 
@@ -84,18 +97,18 @@ test.describe("kitchen board", () => {
   test("a new order arrives as a paper slip of the design's sizes and moves through the columns", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
     test.setTimeout(60_000); // includes pairing the worker's tablet
-    const [first, second] = simpleItems(demo);
-    const order = await placeOrder(api, demo, "5", [
+    const [first, second] = simpleItems(cafe);
+    const order = await placeOrder(api, cafe, "5", [
       { item: first!, quantity: 2 },
       { item: second!, quantity: 1, note: "Առանց սոխի" },
     ], "Երեխայի համար՝ առանց համեմունքի");
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       await startShift(page);
       await expect(page.getByRole("heading", { level: 2 })).toContainText(["Նոր", "Պատրաստվում է", "Պատրաստ"]);
@@ -137,15 +150,15 @@ test.describe("kitchen board", () => {
   test("a ticket turns apricot at 8 minutes and red at 12, timed by the server's clock", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
-    const order = await placeOrder(api, demo, "11", [{ item: simpleItems(demo)[2]!, quantity: 1 }]);
+    const order = await placeOrder(api, cafe, "11", [{ item: simpleItems(cafe)[2]!, quantity: 1 }]);
     try {
       // The server says it's 8 min 10 s later than the tablet thinks.
-      let board = await openBoard(browser, device, demo, viewportSize, consoleErrors, { clockAheadMs: 8 * 60_000 + 10_000 });
+      let board = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { clockAheadMs: 8 * 60_000 + 10_000 });
       let s = slip(board.page, order.ticketId);
       await expect(s).toHaveAttribute("data-lateness", "hurry");
       await expect(s.getByTestId("ticket-age")).toHaveText("Շտապել");
@@ -153,7 +166,7 @@ test.describe("kitchen board", () => {
       expect(await s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(242, 162, 58)");
       await board.context.close();
 
-      board = await openBoard(browser, device, demo, viewportSize, consoleErrors, { clockAheadMs: 12 * 60_000 + 10_000 });
+      board = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { clockAheadMs: 12 * 60_000 + 10_000 });
       s = slip(board.page, order.ticketId);
       await expect(s).toHaveAttribute("data-lateness", "late");
       await expect(s.getByTestId("ticket-age")).toHaveText("Ուշանում է");
@@ -172,17 +185,17 @@ test.describe("kitchen board", () => {
   test("a cancellation stays on top of New, struck through, until «Հասկացա»", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
-    const [x, y] = simpleItems(demo).slice(3);
-    const order = await placeOrder(api, demo, "9", [
+    const [x, y] = simpleItems(cafe).slice(3);
+    const order = await placeOrder(api, cafe, "9", [
       { item: x!, quantity: 2 },
       { item: y!, quantity: 1 },
     ]);
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       await startShift(page);
       await slip(page, order.ticketId).getByRole("button", { name: "Սկսել" }).click();
@@ -222,7 +235,7 @@ test.describe("kitchen board", () => {
     page,
     viewportSize,
   }) => {
-    // A fresh café (never the demo café's menu) whose kitchen reads Russian.
+    // A fresh café (never the cafe café's menu) whose kitchen reads Russian.
     const id = await createFreshCafe(page);
     const owner = await signedInOwner(`e2e-${id}@pativ.test`, "e2e-password-123");
     const { data: r } = await owner.from("restaurants").select("id, slug, locations(id)").single();
@@ -307,13 +320,13 @@ test.describe("kitchen board", () => {
   test("orders reach a paired kitchen tablet within 2 seconds (p95 of 20), with a beep", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }, testInfo) => {
     test.setTimeout(180_000);
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors, { instrument: true });
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { instrument: true });
     const orders: string[] = [];
     const tickets: string[] = [];
     try {
@@ -337,11 +350,11 @@ test.describe("kitchen board", () => {
         new MutationObserver(mark).observe(document.body, { childList: true, subtree: true });
       });
 
-      const items = simpleItems(demo);
+      const items = simpleItems(cafe);
       const fromCall: number[] = [];
       const fromCommit: number[] = [];
       for (let i = 0; i < 20; i++) {
-        const o = await placeOrder(api, demo, String((i % 12) + 1), [{ item: items[i % items.length]!, quantity: 1 + (i % 3) }]);
+        const o = await placeOrder(api, cafe, String((i % 12) + 1), [{ item: items[i % items.length]!, quantity: 1 + (i % 3) }]);
         orders.push(o.orderId);
         tickets.push(o.ticketId);
         let seen: number | undefined;
@@ -393,14 +406,14 @@ test.describe("kitchen board", () => {
   test("taps made offline wait in the outbox, the label turns red after 15 s, and each tap is replayed once", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
     test.setTimeout(120_000);
-    const order = await placeOrder(api, demo, "6", [{ item: simpleItems(demo)[5]!, quantity: 1 }]);
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const order = await placeOrder(api, cafe, "6", [{ item: simpleItems(cafe)[5]!, quantity: 1 }]);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       await startShift(page);
       const conn = page.getByTestId("connection");
@@ -433,7 +446,7 @@ test.describe("kitchen board", () => {
       await context.setOffline(false);
       const again = await context.newPage();
       trackConsole(again, consoleErrors);
-      await again.goto(`/kitchen/${demo.kitchenStationId}`);
+      await again.goto(`/kitchen/${cafe.kitchenStationId}`);
       await expect.poll(async () => (await ticketStatus(api, order.ticketId))?.status).toBe("ready");
       await expect(inColumn(again, "ready", order.ticketId)).toBeVisible();
 
@@ -451,18 +464,23 @@ test.describe("kitchen board", () => {
     browser,
     page,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
     test.setTimeout(90_000);
-    const order = await placeOrder(api, demo, "4", [{ item: simpleItems(demo)[6]!, quantity: 2 }]);
-    const tablet = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const order = await placeOrder(api, cafe, "4", [{ item: simpleItems(cafe)[6]!, quantity: 2 }]);
+    const tablet = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       // Second screen: the owner's phone on the pass (RB2).
-      await signInAsDemoOwner(page);
-      await page.goto(`/kitchen/${demo.kitchenStationId}`);
+      const owner = await workerCafe();
+      await page.goto("/login");
+      await page.getByLabel("Էլ․ փոստ").fill(owner.email);
+      await page.getByLabel("Գաղտնաբառ").fill(owner.password);
+      await page.getByRole("button", { name: "Մուտք գործել" }).click();
+      await expect(page).toHaveURL(/\/admin/);
+      await page.goto(`/kitchen/${cafe.kitchenStationId}`);
       await startShift(page);
       await startShift(tablet.page);
       await expect(inColumn(page, "new", order.ticketId)).toBeVisible();
@@ -493,13 +511,13 @@ test.describe("kitchen board", () => {
   test("a waiter cancels while the kitchen starts: the kitchen is told and the slip goes away", async ({
     browser,
     api,
-    demo,
+    cafe,
     device,
     viewportSize,
     consoleErrors,
   }) => {
-    const order = await placeOrder(api, demo, "8", [{ item: simpleItems(demo)[7]!, quantity: 1 }]);
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const order = await placeOrder(api, cafe, "8", [{ item: simpleItems(cafe)[7]!, quantity: 1 }]);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       await startShift(page);
       await expect(inColumn(page, "new", order.ticketId)).toBeVisible();
@@ -518,15 +536,15 @@ test.describe("kitchen board", () => {
     }
   });
 
-  test("the kitchen-busy switch sets the expected wait guests see", async ({ browser, api, demo, device, viewportSize, consoleErrors }) => {
-    const probe = await api.schema("api").rpc("set_kitchen_busy", { p_location_id: demo.locationId, p_minutes: null as unknown as number });
+  test("the kitchen-busy switch sets the expected wait guests see", async ({ browser, api, cafe, device, viewportSize, consoleErrors }) => {
+    const probe = await api.schema("api").rpc("set_kitchen_busy", { p_location_id: cafe.locationId, p_minutes: null as unknown as number });
     test.skip(probe.error?.code === "PGRST202", "needs migration 20261109190600_kitchen_busy.sql on the cloud project");
     const guest = newClient();
     const busy = async () =>
-      ((await guest.schema("api").rpc("public_menu", { p_restaurant_slug: "demo-cafe", p_location_slug: "main" })).data as {
+      ((await guest.schema("api").rpc("public_menu", { p_restaurant_slug: (await workerCafe()).slug, p_location_slug: "main" })).data as {
         kitchen_busy: { expected_wait_minutes: number } | null;
       }).kitchen_busy;
-    const { context, page } = await openBoard(browser, device, demo, viewportSize, consoleErrors);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       await startShift(page);
       await page.getByTestId("busy-button").click();
@@ -539,19 +557,19 @@ test.describe("kitchen board", () => {
       expect(await busy()).toBeNull();
     } finally {
       await context.close();
-      await api.schema("api").rpc("set_kitchen_busy", { p_location_id: demo.locationId, p_minutes: null as unknown as number });
+      await api.schema("api").rpc("set_kitchen_busy", { p_location_id: cafe.locationId, p_minutes: null as unknown as number });
     }
   });
 
   test("a tablet disconnected by the owner says so instead of showing an empty kitchen", async ({
     browser,
     api,
-    demo,
+    cafe,
     viewportSize,
     consoleErrors,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "one extra pairing per run is enough");
-    const spare = await pairKitchenDevice(browser, api, demo, viewportSize);
+    const spare = await pairKitchenDevice(browser, api, cafe, viewportSize);
     trackConsole(spare.page, consoleErrors);
     try {
       await startShift(spare.page);
