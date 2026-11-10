@@ -65,6 +65,81 @@
     outline: 3px solid var(--color-tarragon);
     outline-offset: 2px;
   }
+
+  /* Every button and button-like link: pointer, a visible hover (pointer
+     devices only) and a pressed state. This sits in the base layer, so any
+     Tailwind utility on a component (hover:bg-mist, active:translate-y-px, an
+     existing filter or translate) wins over it. Links are matched by the
+     classes that make them look like buttons (rounded, min height). */
+  button,
+  [role="button"],
+  [role="tab"],
+  summary,
+  input:is([type="submit"], [type="button"], [type="reset"]),
+  a:is([class*="rounded"], [class*="min-h-"], [class*="h-1"], [class*="h-9"]) {
+    cursor: pointer;
+    transition:
+      filter 120ms ease-out,
+      translate 80ms ease-out,
+      background-color 120ms ease-out,
+      border-color 120ms ease-out,
+      color 120ms ease-out;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  input:disabled {
+    cursor: not-allowed;
+  }
+
+  @media (hover: hover) {
+    :is(
+      button:not(:disabled),
+      [role="button"]:not([aria-disabled="true"]),
+      [role="tab"],
+      summary,
+      input:is([type="submit"], [type="button"], [type="reset"]):not(:disabled),
+      a:is([class*="rounded"], [class*="min-h-"], [class*="h-1"], [class*="h-9"])
+    ):hover {
+      filter: brightness(0.9);
+    }
+    /* Dark fills and the dark kitchen board get lighter instead of darker. */
+    :is(button, [role="button"], a):is(
+        .bg-ink,
+        .bg-basalt-2,
+        .bg-basalt-3,
+        [class*="aria-pressed:bg-ink"][aria-pressed="true"]
+      ):hover:not(:disabled),
+    :where(.bg-basalt, .bg-basalt-2) :is(button, [role="button"], a):hover:not(:disabled) {
+      filter: brightness(1.3);
+    }
+    /* A light panel inside the dark board (stop list, busy dialog) goes back to darker. */
+    :where(.bg-slip, .bg-white) :is(button, [role="button"]):hover:not(:disabled) {
+      filter: brightness(0.9);
+    }
+  }
+
+  :is(
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    [role="tab"],
+    summary,
+    input:is([type="submit"], [type="button"], [type="reset"]):not(:disabled),
+    a:is([class*="rounded"], [class*="min-h-"], [class*="h-1"], [class*="h-9"])
+  ):active {
+    translate: 0 1px;
+    filter: brightness(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  [role="button"]:active,
+  [role="tab"]:active,
+  summary:active,
+  a:active {
+    translate: none;
+  }
 }
 
 @utility display-face {
