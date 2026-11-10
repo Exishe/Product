@@ -62,18 +62,24 @@ export async function saveCategory(input: CategoryInput): Promise<SaveResult> {
 
 export async function deleteDish(id: string): Promise<boolean> {
   await requireMember(["owner", "manager"]);
+  const parsed = z.uuid().safeParse(id);
+  if (!parsed.success) return false;
   const supabase = await createClient();
-  const { error } = await supabase.schema("api").rpc("delete_item", { p_item_id: id });
+  const { error } = await supabase.schema("api").rpc("delete_item", { p_item_id: parsed.data });
   revalidatePath("/admin/menu");
   return !error;
 }
 
 export async function reorder(kind: "categories" | "items", ids: string[]): Promise<boolean> {
   const me = await requireMember(["owner", "manager"]);
+  const parsed = z
+    .object({ kind: z.enum(["categories", "items"]), ids: z.array(z.uuid()).max(1000) })
+    .safeParse({ kind, ids });
+  if (!parsed.success) return false;
   const supabase = await createClient();
   const { error } = await supabase
     .schema("api")
-    .rpc("reorder", { p_restaurant_id: me.restaurantId, p_kind: kind, p_ids: ids });
+    .rpc("reorder", { p_restaurant_id: me.restaurantId, p_kind: parsed.data.kind, p_ids: parsed.data.ids });
   revalidatePath("/admin/menu");
   return !error;
 }

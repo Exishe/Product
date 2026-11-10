@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireMember } from "@/lib/auth/require-member";
 import { createClient } from "@/lib/supabase/server";
 import { ALERT_EVENTS } from "./events";
+import { isPushServiceEndpoint } from "./web-push";
 
 const PAGE = "/admin/telegram";
 
@@ -75,7 +76,7 @@ export async function updateChannel(_prev: ChannelState, form: FormData): Promis
 }
 
 const subscription = z.object({
-  endpoint: z.url().startsWith("https://").max(1000),
+  endpoint: z.url().max(1000).refine(isPushServiceEndpoint),
   p256dh: z.string().regex(/^[A-Za-z0-9_-]{86,88}={0,2}$/),
   auth: z.string().regex(/^[A-Za-z0-9_-]{22,24}={0,2}$/),
 });
@@ -97,7 +98,7 @@ export async function savePushSubscription(
     p_endpoint: parsed.data.endpoint,
     p_p256dh: parsed.data.p256dh,
     p_auth: parsed.data.auth,
-    p_user_agent: userAgent.slice(0, 300),
+    p_user_agent: typeof userAgent === "string" ? userAgent.slice(0, 300) : undefined,
   });
   revalidatePath(PAGE);
   return !error;

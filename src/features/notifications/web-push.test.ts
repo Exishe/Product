@@ -7,7 +7,7 @@ import {
   verify,
 } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { b64urlDecode, encryptPayload, sendPush, vapidAuthorization } from "./web-push";
+import { b64urlDecode, encryptPayload, isPushServiceEndpoint, sendPush, vapidAuthorization } from "./web-push";
 
 // The receiving browser's side of RFC 8291, to check what we send.
 function decrypt(message: Buffer, uaPrivate: Buffer, auth: Buffer): string {
@@ -136,14 +136,14 @@ describe("sendPush", () => {
       url: "/admin/telegram",
     };
     const status = await sendPush(
-      { endpoint: "https://push.example/abc", ...keys },
+      { endpoint: "https://fcm.googleapis.com/fcm/send/abc", ...keys },
       msg,
       throwawayVapid(),
       fetchImpl as typeof fetch,
     );
     expect(status).toBe(201);
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("https://push.example/abc");
+    expect(url).toBe("https://fcm.googleapis.com/fcm/send/abc");
     const headers = init.headers as Record<string, string>;
     expect(headers["Content-Encoding"]).toBe("aes128gcm");
     expect(headers.Authorization).toMatch(/^vapid t=.+, k=.+$/);
@@ -158,11 +158,53 @@ describe("sendPush", () => {
     const msg = { title: "t", body: "b", tag: "x", url: "/" };
     expect(
       await sendPush(
-        { endpoint: "https://push.example/abc", ...keys },
+        { endpoint: "https://fcm.googleapis.com/fcm/send/abc", ...keys },
         msg,
         throwawayVapid(),
         fetchImpl as typeof fetch,
       ),
     ).toBe(0);
+  });
+});
+
+describe("isPushServiceEndpoint", () => {
+  it("accepts the browsers' push services", () => {
+    for (const e of [
+      "https://fcm.googleapis.com/fcm/send/abc",
+      "https://updates.push.services.mozilla.com/wpush/v2/abc",
+      "https://web.push.apple.com/QGx",
+      "https://wns2-db5p.notify.windows.com/w/?token=abc",
+    ]) {
+      expect(isPushServiceEndpoint(e)).toBe(true);
+    }
+  });
+
+  it("refuses any other host, plain http, ports and credentials", () => {
+    for (const e of [
+      "https://push.example/abc",
+      "https://fcm.googleapis.com.evil.example/x",
+      "https://evilfcm-googleapis.com/x",
+      "http://fcm.googleapis.com/fcm/send/abc",
+      "https://fcm.googleapis.com:8443/x",
+      "https://user@fcm.googleapis.com/x",
+      "https://169.254.169.254/latest",
+      "not a url",
+    ]) {
+      expect(isPushServiceEndpoint(e)).toBe(false);
+    }
+  });
+
+  it("never fetches an endpoint outside the list and reports it gone", async () => {
+    const { keys } = browserKeys();
+    const fetchImpl = vi.fn(async () => new Response(null, { status: 201 }));
+    const msg = { title: "t", body: "b", tag: "x", url: "/" };
+    const status = await sendPush(
+      { endpoint: "https://push.example/abc", ...keys },
+      msg,
+      throwawayVapid(),
+      fetchImpl as typeof fetch,
+    );
+    expect(status).toBe(410);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

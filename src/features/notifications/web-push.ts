@@ -91,6 +91,21 @@ export function vapidAuthorization(endpoint: string, vapid: VapidKeys, now = Dat
 
 export type PushMessage = { title: string; body: string; tag: string; url: string };
 
+// The browsers' push services (Chrome, Firefox, Safari, Edge). Any other
+// endpoint would make the server post to a host a café owner picked (SSRF),
+// so it is never fetched and is reported as gone (security-review.md, M-1).
+const PUSH_HOSTS =
+  /(^|\.)(fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/;
+
+export function isPushServiceEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    return url.protocol === "https:" && url.port === "" && url.username === "" && PUSH_HOSTS.test(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 // Sends one message to one device; returns the push service's HTTP status
 // (0 when the request itself failed). 404 and 410 mean the device is gone.
 export async function sendPush(
@@ -99,6 +114,7 @@ export async function sendPush(
   vapid: VapidKeys,
   fetchImpl: typeof fetch = fetch,
 ): Promise<number> {
+  if (!isPushServiceEndpoint(subscription.endpoint)) return 410;
   try {
     const body = encryptPayload(Buffer.from(JSON.stringify(message)), subscription);
     const res = await fetchImpl(subscription.endpoint, {
@@ -111,6 +127,7 @@ export async function sendPush(
         Urgency: "high",
       },
       body: new Uint8Array(body),
+      redirect: "manual",
       signal: AbortSignal.timeout(10_000),
     });
     return res.status;

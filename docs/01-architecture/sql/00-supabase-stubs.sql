@@ -17,6 +17,13 @@ do $$ begin
   create role service_role nologin bypassrls;
 exception when duplicate_object then null; end $$;
 
+-- Supabase grants everything in public to the API roles by default, so a
+-- migration that forgets its revokes would leave a table open to anon. The
+-- harness does the same so tests/sql/rls_coverage.sql catches that.
+alter default privileges for role postgres in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges for role postgres in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges for role postgres in schema public grant all on sequences to anon, authenticated, service_role;
+
 -- auth -----------------------------------------------------------------------
 create schema if not exists auth;
 grant usage on schema auth to anon, authenticated, service_role;
