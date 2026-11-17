@@ -492,10 +492,10 @@ export const game: Game = {
       setSt(winner, "win");
       winner.wins++;
       discs = [];
-      add(loser.x, 60, 4, 1, 0, 0.3, 55);
+      add(loser.x, 60, 4, 1, 0, 0.2, 36);
       add(loser.x, 60, 1, 7, 170, 1.1, 8);
       api.sfx(winner === P ? "win" : "lose");
-      if (!calm) flash = 0.35;
+      if (!calm) flash = 0.18;
       if (winner === P) bonus += 300 + Math.ceil(timer) * 5;
       if (winner.wins >= 2) {
         over = true;
@@ -1214,7 +1214,7 @@ export const game: Game = {
       }
       ctx.restore();
       if (flash > 0) {
-        ctx.fillStyle = `rgba(255,250,230,${Math.min(0.8, flash * 2.4)})`;
+        ctx.fillStyle = `rgba(255,250,230,${Math.min(0.5, flash * 2.8)})`;
         ctx.fillRect(0, 0, s.w, ah);
       }
       // HUD: health bars, portraits, rounds won, the clock.
