@@ -335,7 +335,7 @@ export const game: Game = {
       ww = aw / u;
       floorY = ah * 0.93;
       bg = paintBg(s);
-      for (const f of [P, B]) f.x = clamp(f.x, 20, ww - 20);
+      for (const f of [P, B]) f.x = clamp(f.x, 28, ww - 28);
     });
     const ctx = fit.ctx;
     const pad = createPad(canvas, layout);
@@ -460,7 +460,7 @@ export const game: Game = {
           if (f.st === "idle") f.vx = 0;
         }
       }
-      f.x = clamp(f.x + (f.vx + f.kb) * dt, 20, ww - 20);
+      f.x = clamp(f.x + (f.vx + f.kb) * dt, 28, ww - 28);
       f.kb *= Math.exp(-7 * dt);
       f.chip = f.chip > f.hp ? Math.max(f.hp, f.chip - 30 * dt) : f.hp;
     };
@@ -533,8 +533,8 @@ export const game: Game = {
       const gap = B.x - P.x;
       if (Math.abs(gap) < 34 && Math.abs(P.y - B.y) < 60) {
         const push = ((34 - Math.abs(gap)) / 2) * (gap >= 0 ? 1 : -1);
-        P.x = clamp(P.x - push, 20, ww - 20);
-        B.x = clamp(B.x + push, 20, ww - 20);
+        P.x = clamp(P.x - push, 28, ww - 28);
+        B.x = clamp(B.x + push, 28, ww - 28);
       }
       for (const d of discs) {
         d.x += d.vx * dt;

@@ -105,7 +105,7 @@ export const game: Game = {
     });
 
     // Small drawing helpers
-    const box = (col: string, x: number, y: number, w: number, h: number) => {
+    const box = (col: string | CanvasGradient, x: number, y: number, w: number, h: number) => {
       ctx.fillStyle = col;
       ctx.fillRect(x, y, w, h);
     };
@@ -504,7 +504,7 @@ export const game: Game = {
       g.addColorStop(0, C.sky);
       g.addColorStop(0.55, "#fbdcae");
       g.addColorStop(1, "#f5b06a");
-      box(g as unknown as string, 0, 0, w, viewH);
+      box(g, 0, 0, w, viewH);
       oval("rgba(255,240,205,0.85)", w * 0.72, viewH * 0.5, T * 1.1); // low sun
       // Pale twin-peaked mountain, barely moving
       const mx = w * 0.3 - camX * T * 0.04;
