@@ -550,6 +550,7 @@ export const game: Game = {
       ctx.fill();
       box(C.apricotDeep, px - s * 0.2, py - s * 2.85, s * 0.32, s * 0.3);
       lines(C.apricotDeep, 3, [px + s * 0.12, py - s * 2.8, px + s * 0.22, py - s * 2.7]);
+      box(C.apricotDeep, px - s * 0.28, py - s * 2.53, s * 0.48, s * 0.04);
       ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.beginPath();
       for (const dx of [-0.1, 0.03]) {
@@ -570,6 +571,11 @@ export const game: Game = {
       drawBackground(s.w);
       const ox = -camX * T;
       const oy = viewH - ROWS * T;
+      // Dusk haze down in the streets, so gaps read as drops
+      const haze = ctx.createLinearGradient(0, oy + T * 7.5, 0, viewH);
+      haze.addColorStop(0, "rgba(70,30,20,0)");
+      haze.addColorStop(1, "rgba(70,30,20,0.6)");
+      box(haze, 0, oy + T * 7.5, s.w, T * 2.5);
       for (let r = 0; r < ROWS; r++) {
         for (let c = Math.max(0, Math.floor(camX) - 1); c <= Math.min(W - 1, camX + s.w / T + 1); c++) {
           const ch = at(c, r);
