@@ -127,7 +127,7 @@ test.describe("sales dashboard", () => {
     }
     const kpis = page.getByTestId(/^kpi-[a-z-]+$/);
     await expect(kpis.first()).toHaveAttribute("data-testid", "kpi-avg-bill");
-    await expect(page.getByTestId("kpi-avg-bill-value")).toHaveText(/^\d{1,3}( \d{3})* ֏$/);
+    await expect(page.getByTestId("kpi-avg-bill-value")).toHaveText(/^\d{1,3}([ \u00a0]\d{3})*[ \u00a0]֏$/);
     await expect(page.getByTestId("kpi-revenue-value")).toHaveText(/֏$/);
     await expect(page.getByTestId("best-dishes")).toBeVisible();
     await expect(page.getByTestId("weak-dishes")).toBeVisible();
