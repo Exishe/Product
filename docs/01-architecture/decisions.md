@@ -493,3 +493,13 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   8. **Icons** are Lucide (`lucide-react` 1.67.0, ISC, imported per icon; `sideEffects: false`, so only the used icons ship). The guest's own small icons (plus, minus, close, back, check, bell) moved to Lucide for one stroke style.
   9. **Fonts** unchanged from ADR-051: Stardom for Latin display text and Switzer for Latin body text (Fontshare API, never in the repository), Noto Serif Armenian and Noto Sans Armenian for Armenian, Noto Serif and Google Sans for Cyrillic. Display weight and width are per preset.
 - Consequences: Migration `20261117120000_guest_theme` (CI applies it); SQL tests in `supabase/tests/sql/guest_theme.sql`. Until it is applied, `public_menu` has no `guest_theme` and every café shows Evening; `/admin/look` shows a notice and can't save. The order status page now also reads `public_menu` (request-cached) for the café's look. The guest menu's own JavaScript stays inside the 25 KB budget (see the report in the session).
+
+## ADR-053: npm audit gate with a reviewed, expiring allowlist
+
+**Date:** 17 Nov 2026. **Status:** accepted.
+
+**Context.** CI ran `npm audit --audit-level=high`, and the `migrate` job waits for it. Advisory GHSA-fc5q-39xc-vjpf (picomatch ReDoS) has no fixed release (the latest picomatch, 4.0.7, is affected), so the gate failed on every push and blocked migrations. picomatch reaches us only through build and dev tooling (eslint, vite, vitest, tinyglobby, and @parcel/watcher under next-intl), matching patterns from our own config; no guest input reaches it and it is not on any request path.
+
+**Decision.** CI runs `node scripts/check-audit.mjs`: npm audit, failing on any high or critical advisory except those in `.audit-allowlist.json`. Each entry has a reason and an `until` date; an expired entry fails the build, so it is reviewed again. The first entry is GHSA-fc5q-39xc-vjpf until 31 Dec 2026.
+
+**Consequences.** Real new high/critical advisories still stop CI. Remove the entry once picomatch ships a fix (then `npm update` / overrides).
