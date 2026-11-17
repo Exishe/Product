@@ -490,9 +490,6 @@ export const game: Game = {
         ctx.arc(30, 12, 14, 0, TAU);
         ctx.arc(54, 8, 18, 0, TAU);
         ctx.fill();
-        ctx.fillStyle = "rgba(246,206,190,0.45)";
-        roundRect(ctx, 4, 24, 88, 8, 4);
-        ctx.fill();
         ctx.restore();
       }
     };
@@ -554,8 +551,6 @@ export const game: Game = {
         const x = i * cell - off;
         ctx.fillStyle = hash(i + 5) > 0.5 ? "#d9c3cc" : "#cfbac8";
         ctx.fillRect(x, py - 60 * u - h, cell - 5 * u, h + 60 * u);
-        ctx.fillStyle = "rgba(255,240,226,0.5)";
-        for (let r = 1; r * 22 * u < h; r++) ctx.fillRect(x + 8 * u, py - 60 * u - h + r * 22 * u, cell - 21 * u, 3 * u);
       }
     };
 
@@ -750,7 +745,7 @@ export const game: Game = {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       const sw = Math.sin(clock * 2.4 + o.seed * 6);
-      if (o.hi) blob(w / 2 + 8, 3, w / 2 + 6, 5, "rgba(52,40,110,0.16)");
+      if (o.hi) blob(w / 2 + 6, 3, w / 2 + 4, 6, "rgba(52,40,110,0.3)");
       else if (o.kind !== "puddle") blob(w / 2 + 3, 1, w / 2 + 4, 4.5, "rgba(52,40,110,0.24)");
       if (o.kind === "chair") {
         ctx.strokeStyle = "#5b3a29";
@@ -846,12 +841,6 @@ export const game: Game = {
       } else if (o.kind === "puddle") {
         blob(33, 3, 33, 6, "rgba(130,176,214,0.9)");
         blob(24, 2, 12, 2, "rgba(255,240,226,0.85)");
-        const f = (clock * 0.8 + o.seed) % 1;
-        ctx.strokeStyle = `rgba(255,255,255,${0.7 * (1 - f)})`;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(44, 3, 4 + f * 12, 1 + f * 2.5, 0, 0, TAU);
-        ctx.stroke();
       } else if (o.kind === "crates") {
         for (let j = 0; j < 3; j++) {
           const x = j === 0 ? 0 : (hash(o.seed * 90 + j) - 0.5) * 6;
@@ -1020,10 +1009,11 @@ export const game: Game = {
       };
       const back = "#1d212b";
       const fore = "#2b2f3a";
-      if (run) leg(-s * 13, -3 - Math.max(0, -cs) * 9, back);
-      else if (mode === "jump") leg(-10, -5, back);
-      else if (sl) leg(18, -4, back);
-      else leg(mode === "fall" ? -8 : -5, mode === "fall" ? -4 : -2, back);
+      // Leg end points per pose: [back x, back y, front x, front y].
+      const L = run
+        ? [-s * 13, -3 - Math.max(0, -cs) * 9, s * 13, -3 - Math.max(0, cs) * 9]
+        : { jump: [-10, -5, 11, -13], slide: [18, -4, 28, -3], fall: [-8, -4, 8, -5], stand: [-5, -2, 5, -2] }[mode as "jump"]!;
+      leg(L[0]!, L[1]!, back);
       // Upper body turns about the hip: a lean while running, lying back in a slide.
       const lean = () => {
         ctx.save();
@@ -1034,10 +1024,7 @@ export const game: Game = {
       lean();
       arm(sl ? -20 : run ? -5 + s * 10 : mode === "stand" ? -8 : -13, sl ? hip - 4 : run || mode === "stand" ? hip - 4 : hip - 17, "#e4e9e1");
       ctx.restore();
-      if (run) leg(s * 13, -3 - Math.max(0, cs) * 9, fore);
-      else if (mode === "jump") leg(11, -13, fore);
-      else if (sl) leg(28, -3, fore);
-      else leg(mode === "fall" ? 8 : 5, mode === "fall" ? -5 : -2, fore);
+      leg(L[2]!, L[3]!, fore);
       lean();
       // Torso, apron, bow tie.
       ctx.fillStyle = C.matsoni;
@@ -1162,10 +1149,6 @@ export const game: Game = {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(14, 20);
-      ctx.lineTo(14, 27);
-      ctx.stroke();
     };
 
     // --- Frame ----------------------------------------------------------------
@@ -1266,7 +1249,7 @@ export const game: Game = {
       if (state === "run" && !slides && obs.some((o) => o.hi && o.x - xh > 0 && o.x - xh < speed * 1.3)) chevrons(xh, gy - 132 * u, u);
       ctx.restore();
       if (flash > 0) {
-        ctx.fillStyle = `rgba(255,255,255,${(flash / 0.18) * 0.55})`;
+        ctx.fillStyle = `rgba(255,255,255,${(flash / 0.18) * 0.3})`;
         ctx.fillRect(0, 0, W, H);
       }
       drawHud();
