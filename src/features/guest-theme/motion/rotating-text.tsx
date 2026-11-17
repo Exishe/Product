@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadMotion, motionNow, reducedMotion } from "./motion";
+import { motionNow, reducedMotion } from "./motion";
 import styles from "./motion.module.css";
 
 // Rotating Text, after React Bits (https://reactbits.dev/text-animations/rotating-text,
@@ -21,8 +21,6 @@ export function RotatingText({ words, className }: { words: string[]; className?
     const el = box.current;
     if (!el || words.length < 2 || reducedMotion()) return;
     let visible = false;
-    let gone = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
     const tick = () => {
       const m = motionNow();
       if (!m || document.hidden || !visible) return;
@@ -45,11 +43,9 @@ export function RotatingText({ words, className }: { words: string[]; className?
       visible = Boolean(e?.isIntersecting);
     });
     io.observe(el);
-    void loadMotion().then((m) => {
-      if (m && !gone) timer = setInterval(tick, INTERVAL);
-    });
+    // Turns once Motion has arrived (after the guest's first interaction).
+    const timer = setInterval(tick, INTERVAL);
     return () => {
-      gone = true;
       io.disconnect();
       clearInterval(timer);
     };

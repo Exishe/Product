@@ -43,9 +43,14 @@ const COLUMN = "mx-auto w-full max-w-[1360px] px-4 md:px-8";
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 
-// The featured card of a section: its first popular dish with a photo that
-// can be had today. It spans the row and breaks the grid's rhythm.
-const featuredOf = (items: GuestItem[]) => items.find((i) => i.image && !i.soldOut && i.tags.includes("popular"))?.id;
+// The featured card of a section (three dishes or more): its first popular
+// dish with a photo that can be had today, else its first dish with a photo.
+// It spans the row and breaks the grid's rhythm.
+function featuredOf(items: GuestItem[]): string | undefined {
+  if (items.length < 3) return undefined;
+  const pictured = items.filter((i) => i.image && !i.soldOut);
+  return (pictured.find((i) => i.tags.includes("popular")) ?? pictured[0])?.id;
+}
 
 export function GuestMenu({
   menu,
@@ -315,7 +320,7 @@ export function GuestMenu({
       <div ref={sentinel} aria-hidden="true" />
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
       <div
-        className={`bg-page/92 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.slim}`}
+        className={`bg-page/95 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.slim}`}
         data-shown={scrolled}
         data-testid="slim-bar"
         inert={!scrolled}
@@ -378,11 +383,12 @@ export function GuestMenu({
                         id={`h-${c.id}`}
                         text={c.name.text}
                         lang={c.name.lang === locale ? undefined : c.name.lang}
-                        className="display-face mb-5 block text-[2.125rem] leading-[1.02] [overflow-wrap:anywhere] md:text-[2.75rem]"
+                        className="display-face text-title mb-5 block text-[2.125rem] leading-[1.02] [overflow-wrap:anywhere] md:text-[2.75rem]"
                       />
                     )}
                     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
-                      {c.items.map((item) => (
+                      {/* The featured dish leads its section, so the grid below it stays whole. */}
+                      {[...c.items].sort((a, b) => Number(b.id === featured) - Number(a.id === featured)).map((item) => (
                         <DishCard
                           key={item.id}
                           item={item}
@@ -439,7 +445,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float fixed top-[calc(16px+env(safe-area-inset-top,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-card px-5 py-3 text-center ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 lg:bottom-[calc(104px+env(safe-area-inset-bottom,0px))] w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-card px-5 py-3 text-center ${styles.toast}`}
         >
           {toast.text}
         </p>

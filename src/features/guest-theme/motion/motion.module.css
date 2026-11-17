@@ -38,7 +38,7 @@
    widest word and the line never reflows. */
 .rotator {
   display: inline-grid;
-  vertical-align: bottom;
+  vertical-align: baseline;
   overflow: clip;
   overflow-clip-margin: 0.25em;
   padding-block: 0.1em;

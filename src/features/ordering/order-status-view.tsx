@@ -15,7 +15,7 @@ import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ConciergeBell, Gamepad2, Receipt, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Gamepad2, ReceiptText, UtensilsCrossed } from "lucide-react";
 import { displayStatus, isActive, STEPS, stepIndex, type DisplayStatus, type OrderState } from "./order-status";
 
 type Db = SupabaseClient<Database>;
@@ -294,7 +294,7 @@ export function OrderStatusView({
     {
       key: "order",
       label: t("nav.order"),
-      icon: <Receipt size={22} aria-hidden />,
+      icon: <ReceiptText size={22} aria-hidden />,
       current: true,
       onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
     },

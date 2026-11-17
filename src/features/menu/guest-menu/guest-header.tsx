@@ -82,7 +82,7 @@ export function GuestHeader({
             reveal="load"
             text={cafeName}
             lang={nameLang && nameLang !== locale ? nameLang : undefined}
-            className="display-face block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
+            className="display-face text-title block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
           />
           {below}
           <p className="text-muted mt-2 text-sm">{t("payHint")}</p>

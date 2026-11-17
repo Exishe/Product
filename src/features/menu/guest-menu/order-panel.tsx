@@ -14,19 +14,22 @@ export function CartBar({
   summary,
   items,
   onOpen,
+  plates: showPlates = true,
   className = "",
 }: {
   summary: CartSummary;
   items: Record<string, GuestItem>;
   onOpen: () => void;
+  /** The order panel lists the plates itself. */
+  plates?: boolean;
   className?: string;
 }) {
   const { t, locale } = useGuestI18n();
-  const plates = summary.lines.slice(-3).map((p) => items[p.line.itemId]).filter((i): i is GuestItem => Boolean(i));
+  const plates = (showPlates ? summary.lines : []).slice(-3).map((p) => items[p.line.itemId]).filter((i): i is GuestItem => Boolean(i));
   return (
     <ThemedStarBorder
       onClick={onOpen}
-      className={`pointer-events-auto flex min-h-14 w-full items-center gap-3 py-2 pr-5 pl-2.5 text-left font-semibold ${className}`}
+      className={`pointer-events-auto flex min-h-14 w-full items-center gap-3 py-2 pr-5 text-left font-semibold ${plates.length ? "pl-2.5" : "pl-6"} ${className}`}
     >
       <span aria-hidden="true" className="flex flex-none -space-x-3">
         {plates.map((i) => (
@@ -108,7 +111,7 @@ export function OrderPanel({
             <span className="display-face text-xl">{t("cart.total")}</span>
             <span className="num text-lg font-semibold">{formatAmd(summary.total, locale)}</span>
           </div>
-          <CartBar summary={summary} items={items} onOpen={onOpen} className="mt-4" />
+          <CartBar summary={summary} items={items} onOpen={onOpen} plates={false} className="mt-4" />
         </>
       )}
     </aside>

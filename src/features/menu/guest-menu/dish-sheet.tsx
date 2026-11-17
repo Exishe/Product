@@ -68,13 +68,13 @@ export function DishSheet({
       }}
       className={`rounded-t-feature bg-page text-ink mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[600px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:rounded-feature md:shadow-float md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
-      <div className="max-h-[90dvh] overflow-y-auto overscroll-contain px-5 pt-7 md:max-h-[88dvh] md:px-9 md:pt-9">
+      <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-7 md:max-h-[88dvh] md:px-9 md:pt-9">
         <Plate
           src={item.image ? dishPhotoUrl(item.image) : null}
           name={item.name.text}
           size={440}
           lazy={false}
-          className="mx-auto mb-5 block w-[min(62%,15rem)]"
+          className={`mx-auto mb-5 block ${item.image ? "w-[min(62%,15rem)]" : "w-[min(36%,8.5rem)]"}`}
         />
         <div className="flex items-start justify-between gap-3">
           <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">

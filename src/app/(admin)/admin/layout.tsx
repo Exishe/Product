@@ -50,6 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/menu/import", label: t("import"), sub: true },
     { href: "/admin/tables", label: t("tables") },
     { href: "/admin/staff", label: t("staff") },
+    { href: "/admin/look", label: t("look") },
     { href: "/admin/telegram", label: t("telegram") },
     { href: "/admin/export", label: t("export") },
     ...(admin ? [{ href: "/platform", label: t("platform") }] : []),

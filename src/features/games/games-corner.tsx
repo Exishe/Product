@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
-import styles from "./games.module.css";
 import { GAMES, type GameId } from "./registry";
 
 // "Play while you wait" on the order status page: five small games in a

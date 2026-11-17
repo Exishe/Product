@@ -157,7 +157,8 @@ Fiscal receipts (HDM) are deliberately out of scope; cafés keep their existing 
 
 - **Guest menu redesign, on preview only:**
   - full-screen layout on computers and tablets as well as phones;
-  - a more luxurious "noir and champagne" colour scheme;
-  - the Stardom display font;
-  - a rotating 3D carousel of signature dishes at the top of the menu.
+  - three looks each café picks in its admin («Հյուրի էջի տեսքը»): Evening (noir and champagne), Wine (dark wine with one red) and Soft (light grey with white cards), plus the café's own brand colour and logo;
+  - dishes as cards on round plates, a featured dish per section, an order panel beside the menu on computers;
+  - a floating bottom bar: menu, order, games, call the waiter;
+  - the Stardom display font and four small effects (letters rising in, rotating category names, cards tilting under the finger, a spark when adding).
 - **Production:** the games and the redesign go to production when the owner says "go".

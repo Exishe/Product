@@ -66,6 +66,7 @@
   --color-on-deep-accent: var(--guest-on-deep-accent);
   --color-alert: var(--guest-alert);
   --color-alert-tint: var(--guest-alert-tint);
+  --color-title: var(--guest-title);
   --color-success: var(--guest-success, var(--color-tarragon));
   --color-success-tint: var(--guest-success-tint, var(--color-tarragon-tint));
   --radius-card: var(--guest-r-card);
@@ -140,12 +141,12 @@
     /* Dark fills and the dark kitchen board get lighter instead of darker. */
     :is(button, [role="button"], a):is(
         .bg-ink,
-        .bg-noir,
+        .bg-accent,
         .bg-basalt-2,
         .bg-basalt-3,
         [class*="aria-pressed:bg-ink"][aria-pressed="true"]
       ):hover:not(:disabled),
-    :where(.bg-basalt, .bg-basalt-2, .bg-noir) :is(button, [role="button"], a):hover:not(:disabled) {
+    :where(.bg-basalt, .bg-basalt-2, .bg-deep) :is(button, [role="button"], a):hover:not(:disabled) {
       filter: brightness(1.3);
     }
     /* A light panel inside the dark board (stop list, busy dialog) goes back to darker. */
@@ -258,9 +259,9 @@
   --guest-glow: #a8844e; /* champagne: active glow, decoration only */
   --guest-star: #d2b27a; /* the StarBorder star on noir */
   --guest-soft: #6f655a; /* inactive tabs */
-  --guest-dock: rgb(255 253 248 / 0.86);
+  --guest-dock: rgb(255 253 248 / 0.96);
   --guest-dock-ink: #1b1712;
-  --guest-dock-muted: #6f655a; /* 5.3:1 on the dock */
+  --guest-dock-muted: #5c5349; /* 7.4:1 on the dock, 5.1:1 even over the noir games panel */
   --guest-deep: #1b1712; /* the games panel */
   --guest-deep-2: #2a231c;
   --guest-deep-3: #3b3229;
@@ -284,6 +285,7 @@
   --guest-r-field: 14px;
   --guest-display-weight: 400;
   --guest-display-stretch: 87.5%;
+  --guest-title: var(--guest-ink); /* the café name and section headings */
 
   /* the older tokens, mapped onto the palette */
   --color-matsoni: var(--guest-page);
@@ -366,6 +368,7 @@
   --guest-r-field: 12px;
   --guest-display-weight: 500;
   --guest-display-stretch: 75%;
+  --guest-title: #e10600; /* large display text only: 3.8:1 on the page (AA large needs 3:1) */
   color-scheme: dark;
 }
 
@@ -386,9 +389,9 @@
   --guest-glow: #e10600;
   --guest-star: #ffd2d0;
   --guest-soft: #565c67;
-  --guest-dock: rgb(255 255 255 / 0.9);
+  --guest-dock: rgb(255 255 255 / 0.96);
   --guest-dock-ink: #1d1f24;
-  --guest-dock-muted: #565c67;
+  --guest-dock-muted: #4d535d; /* 7.7:1 on the dock */
   --guest-deep: #1d1f24;
   --guest-deep-2: #2a2d33;
   --guest-deep-3: #3a3e46;
@@ -412,6 +415,7 @@
   --guest-r-field: 16px;
   --guest-display-weight: 300;
   --guest-display-stretch: 100%;
+  --guest-title: var(--guest-ink);
 }
 
 /* Stardom has one weight: no faux bold. The Noto serifs follow the preset
@@ -423,14 +427,15 @@
   letter-spacing: 0.005em;
 }
 
-/* Overscroll beyond the page shows the café's page colour too. */
-body:has(.guest-lux) {
+/* Overscroll beyond the page shows the café's page colour too (not for the
+   miniature previews on the admin page, marked data-guest-preview). */
+body:has(.guest-lux:not([data-guest-preview])) {
   background: #f6f1e7;
 }
-body:has([data-guest-theme="soft"]) {
+body:has(.guest-lux[data-guest-theme="soft"]:not([data-guest-preview])) {
   background: #eceef1;
 }
-body:has([data-guest-theme="wine"]) {
+body:has(.guest-lux[data-guest-theme="wine"]:not([data-guest-preview])) {
   background: #260212;
 }
 

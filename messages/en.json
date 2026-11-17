@@ -595,11 +595,8 @@
       "callYes": "Yes, call",
       "callCancel": "No",
       "waiterCalled": "Waiter called",
-      "signature": {
-        "title": "Signature dishes",
-        "hint": "Turn it with a swipe or the arrow keys; tap a photo to open the dish.",
-        "carousel": "carousel"
-      }
+      "searchOpen": "Search",
+      "todayIn": "Today on the menu:"
     },
     "sheet": {
       "required": "Required",
@@ -723,6 +720,17 @@
       "fab": "Play while you wait",
       "soundOff": "Turn sound on",
       "soundOn": "Sound is on"
+    },
+    "nav": {
+      "label": "Navigation",
+      "menu": "Menu",
+      "order": "Order",
+      "orderCount": "Order: {count, plural, one {# item} other {# items}}",
+      "games": "Games",
+      "waiter": "Waiter"
+    },
+    "panel": {
+      "empty": "Add dishes and they appear here."
     }
   },
   "telegram": {
@@ -784,7 +792,8 @@
     "staff": "Staff and devices",
     "telegram": "Telegram",
     "export": "Export",
-    "platform": "Platform"
+    "platform": "Platform",
+    "look": "Guest page look"
   },
   "billing": {
     "planName": {
@@ -919,5 +928,41 @@
     "none": "Nothing here.",
     "attempts": "{count, plural, one {# attempt} other {# attempts}}",
     "noError": "No error text"
+  },
+  "look": {
+    "title": "Guest page look",
+    "intro": "Choose how guests see your menu when they scan the QR code. The order and order status pages follow it.",
+    "theme": "Theme",
+    "themes": {
+      "evening": {
+        "name": "Evening",
+        "hint": "Ivory page, black buttons, champagne details"
+      },
+      "wine": {
+        "name": "Wine",
+        "hint": "Dark wine page, burgundy cards and one bright red"
+      },
+      "soft": {
+        "name": "Soft",
+        "hint": "Light grey page, white cards and a red accent"
+      }
+    },
+    "previewTitle": "Menu",
+    "color": "Brand colour",
+    "colorHint": "The colour of buttons and highlights. Without one, the theme's colour stays.",
+    "colorUse": "Use my colour",
+    "colorWeak": "This colour is too light or too dark for small text: buttons take it, small text keeps the theme's colour.",
+    "logo": "Logo",
+    "logoHint": "Shown at the top of the menu in a round frame. PNG, JPG or WebP.",
+    "logoChoose": "Choose a picture",
+    "logoRemove": "Remove the logo",
+    "uploading": "Uploading…",
+    "uploadFailed": "The picture didn't upload. Try again.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved. Guests see the new look when they open the page.",
+    "failed": "Couldn't save. Try again.",
+    "pending": "Choosing a theme starts working after the next database update.",
+    "openMenu": "Open the menu"
   }
 }

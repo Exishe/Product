@@ -120,4 +120,13 @@ describe("buildGuestMenu", () => {
     }
     expect(dish.search.includes(normalizeForSearch("tolma"))).toBe(false);
   });
+
+  it("reads the café's look, and wears Evening until the database says otherwise", () => {
+    const before = buildGuestMenu(menu({}, []), "hy");
+    expect([before.theme, before.brandColor, before.logo]).toEqual(["evening", null, null]);
+    const m = menu({}, []);
+    m.restaurant = { name: "Café", guest_theme: "wine", brand_color: "#c2185b", logo: "r1/logo/1.webp" };
+    const after = buildGuestMenu(m, "hy");
+    expect([after.theme, after.brandColor, after.logo]).toEqual(["wine", "#c2185b", "r1/logo/1.webp"]);
+  });
 });

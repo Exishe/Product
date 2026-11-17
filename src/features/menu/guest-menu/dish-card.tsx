@@ -67,8 +67,8 @@ export function DishCard({
           type="button"
           disabled={item.soldOut}
           onClick={() => onOpen(item)}
-          className={`block h-full w-full rounded-[inherit] text-left disabled:cursor-default ${
-            featured ? "min-h-[15rem] p-5 pr-[44%] sm:min-h-[17rem] sm:p-7 sm:pr-[42%]" : "px-3 pt-4 pb-6 text-center sm:px-4"
+          className={`block h-full w-full rounded-[inherit] disabled:cursor-default ${
+            featured ? "min-h-[15rem] p-5 pr-[44%] text-left sm:min-h-[17rem] sm:p-7 sm:pr-[42%]" : "px-3 pt-4 pb-7 text-center sm:px-4"
           }`}
         >
           {featured ? (
