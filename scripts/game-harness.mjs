@@ -33,6 +33,7 @@ w.__scores = []; w.__over = null; w.__api = { paused: false };
 w.__stop = game.mount({
   canvas,
   setScore: (s) => { w.__scores.push(s); },
+  sfx: () => {},
   gameOver: (s) => { w.__over = s; },
   isPaused: () => w.__api.paused,
   reducedMotion: false,

@@ -712,7 +712,8 @@
       "platformer": {
         "name": "Rooftop Cat",
         "howTo": "◀ ▶ walk, ⤒ jump. Collect apricots, jump on pigeons and reach the café door. Three levels."
-      }
+      },
+      "sound": "Sound"
     }
   },
   "telegram": {

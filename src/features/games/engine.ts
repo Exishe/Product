@@ -16,7 +16,24 @@ export type GameApi = {
   isPaused(): boolean;
   reducedMotion: boolean;
   locale: Locale;
+  /** Short synthesized sound effects; silent unless the guest turned sound on in the host. */
+  sfx: (kind: SfxKind) => void;
 };
+
+export type SfxKind =
+  | "tap"
+  | "jump"
+  | "land"
+  | "coin"
+  | "hit"
+  | "heavy"
+  | "block"
+  | "slice"
+  | "whoosh"
+  | "merge"
+  | "bad"
+  | "win"
+  | "lose";
 
 /** A game mounts into the host's canvas and returns its cleanup. */
 export type Game = { mount(api: GameApi): () => void };
@@ -346,4 +363,91 @@ export function saveBest(gameId: string, score: number): number {
     // private mode: the best score just isn't kept
   }
   return best;
+}
+
+// --- Sound: tiny synthesized effects, no audio files ------------------------
+
+type Note = { f: number; to?: number; t: number; type?: OscillatorType; v?: number; noise?: boolean };
+const SFX: Record<SfxKind, Note[]> = {
+  tap: [{ f: 660, t: 0.04, type: "triangle", v: 0.15 }],
+  jump: [{ f: 320, to: 640, t: 0.12, type: "square", v: 0.08 }],
+  land: [{ f: 140, to: 70, t: 0.08, type: "triangle", v: 0.2 }],
+  coin: [
+    { f: 988, t: 0.06, type: "square", v: 0.07 },
+    { f: 1319, t: 0.12, type: "square", v: 0.07 },
+  ],
+  hit: [{ f: 0, t: 0.08, noise: true, v: 0.35 }, { f: 180, to: 90, t: 0.1, type: "square", v: 0.12 }],
+  heavy: [{ f: 0, t: 0.16, noise: true, v: 0.45 }, { f: 110, to: 45, t: 0.18, type: "sawtooth", v: 0.14 }],
+  block: [{ f: 420, t: 0.05, type: "square", v: 0.1 }, { f: 0, t: 0.05, noise: true, v: 0.15 }],
+  slice: [{ f: 0, t: 0.07, noise: true, v: 0.25 }, { f: 1800, to: 900, t: 0.07, type: "sine", v: 0.06 }],
+  whoosh: [{ f: 0, t: 0.12, noise: true, v: 0.12 }],
+  merge: [{ f: 523, to: 784, t: 0.1, type: "triangle", v: 0.14 }],
+  bad: [{ f: 200, to: 80, t: 0.25, type: "sawtooth", v: 0.12 }],
+  win: [
+    { f: 523, t: 0.1, type: "square", v: 0.07 },
+    { f: 659, t: 0.1, type: "square", v: 0.07 },
+    { f: 784, t: 0.1, type: "square", v: 0.07 },
+    { f: 1047, t: 0.25, type: "square", v: 0.07 },
+  ],
+  lose: [
+    { f: 392, t: 0.15, type: "triangle", v: 0.12 },
+    { f: 311, t: 0.15, type: "triangle", v: 0.12 },
+    { f: 233, t: 0.35, type: "triangle", v: 0.12 },
+  ],
+};
+
+/** A synth for the host to hand to games as api.sfx; plays nothing while muted. */
+export function createSfx(isOn: () => boolean): { play: (kind: SfxKind) => void; close: () => void } {
+  let ac: AudioContext | null = null;
+  let noise: AudioBuffer | null = null;
+  let last = new Map<SfxKind, number>();
+  return {
+    play(kind) {
+      if (!isOn()) return;
+      try {
+        ac ??= new AudioContext();
+        if (ac.state === "suspended") void ac.resume();
+        const now = ac.currentTime;
+        // The same sound at most every 40 ms: a burst of coins doesn't turn into noise.
+        if (now - (last.get(kind) ?? -1) < 0.04) return;
+        last.set(kind, now);
+        let at = now;
+        for (const n of SFX[kind]) {
+          const gain = ac.createGain();
+          gain.gain.setValueAtTime(n.v ?? 0.1, at);
+          gain.gain.exponentialRampToValueAtTime(0.0001, at + n.t);
+          gain.connect(ac.destination);
+          if (n.noise) {
+            if (!noise) {
+              noise = ac.createBuffer(1, ac.sampleRate * 0.3, ac.sampleRate);
+              const d = noise.getChannelData(0);
+              for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            }
+            const src = ac.createBufferSource();
+            src.buffer = noise;
+            src.connect(gain);
+            src.start(at);
+            src.stop(at + n.t);
+          } else {
+            const osc = ac.createOscillator();
+            osc.type = n.type ?? "sine";
+            osc.frequency.setValueAtTime(n.f, at);
+            if (n.to) osc.frequency.exponentialRampToValueAtTime(n.to, at + n.t);
+            osc.connect(gain);
+            osc.start(at);
+            osc.stop(at + n.t);
+          }
+          // Notes of one sound play in sequence, except noise layered under a tone.
+          if (!n.noise) at += n.t * 0.85;
+        }
+      } catch {
+        // no audio on this device: games stay silent
+      }
+    },
+    close() {
+      void ac?.close();
+      ac = null;
+      last = new Map();
+    },
+  };
 }

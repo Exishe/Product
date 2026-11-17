@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
-import { bestScore, saveBest, type Game, type GameApi } from "./engine";
+import { bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
 import { GAMES, type GameId } from "./registry";
 
 // "Play while you wait" on the order status page: five small games in a
@@ -11,6 +11,15 @@ import { GAMES, type GameId } from "./registry";
 // guest never misses their food.
 type Phase = "intro" | "loading" | "playing" | "over";
 const READY_ICON = "🍽️";
+const SOUND_KEY = "pativ:games:sound";
+
+function readSound(): boolean {
+  try {
+    return localStorage.getItem(SOUND_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export function GamesCorner({ ready }: { ready: boolean }) {
   const { t } = useGuestI18n();
@@ -65,6 +74,25 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
   const canvas = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
   const pushed = useRef(false);
+  // Sound is off until the guest turns it on (a café), and the choice is kept.
+  const [sound, setSound] = useState(() => readSound());
+  const soundOn = useRef(sound);
+  useEffect(() => {
+    soundOn.current = sound;
+    try {
+      localStorage.setItem(SOUND_KEY, sound ? "1" : "0");
+    } catch {
+      // private mode: the choice lasts for this visit
+    }
+  }, [sound]);
+  const sfx = useRef<ReturnType<typeof createSfx> | null>(null);
+  useEffect(
+    () => () => {
+      sfx.current?.close();
+      sfx.current = null;
+    },
+    [],
+  );
 
   // The phone's back button closes the game, not the page.
   const close = useCallback(() => {
@@ -132,6 +160,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
       isPaused: () => paused.current,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       locale,
+      sfx: (kind) => (sfx.current ??= createSfx(() => soundOn.current)).play(kind),
     };
     return game.mount(api);
     // round remounts the game for "play again"
@@ -159,6 +188,19 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
           </svg>
         </button>
         <span className="min-w-0 flex-1 truncate font-semibold">{t(`games.${id}.name`)}</span>
+        <button
+          type="button"
+          onClick={() => setSound((on) => !on)}
+          aria-pressed={sound}
+          aria-label={t("games.sound")}
+          className="grid size-11 place-items-center rounded-full text-slip hover:bg-basalt-3 aria-pressed:text-apricot-on-dark"
+          data-testid="game-sound"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+            {sound ? <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /> : <path d="M17 9l5 6M22 9l-5 6" />}
+          </svg>
+        </button>
         <span className="text-right text-sm leading-tight">
           <span className="block text-slip-dim">{t("games.best", { score: best })}</span>
           <span className="num block text-lg font-semibold text-apricot-on-dark" aria-live="off">
