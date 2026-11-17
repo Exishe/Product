@@ -5,7 +5,7 @@ import { Banknote, BellRing, CircleDashed, ClipboardList, CreditCard, HandPlatte
 import { useTranslations } from "next-intl";
 import { areaLayout, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
-// Every table state has a colour, an icon and a word (ADR-053), so it never
+// Every table state has a colour, an icon and a word (ADR-054), so it never
 // relies on colour alone. Colours from direction A: green is food or a seated
 // party, amber a new order, red a call, ink the bill.
 const STATE_CLASS: Record<TableState, string> = {

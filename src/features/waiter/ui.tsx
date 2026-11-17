@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import type { Connection } from "@/features/kitchen/connection";
 
-// Staff controls (ADR-053, Apple HIG adapted): one filled tint for the main
+// Staff controls (ADR-054, Apple HIG adapted): one filled tint for the main
 // action, grey fill for the others, red only for what removes something.
 // Every control is at least 48 px tall on the waiter's phone.
 export const btn = {

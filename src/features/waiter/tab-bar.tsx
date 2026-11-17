@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 type Key = "tables" | "orders" | "calls";
 
-// The waiter's sections as a floating pill (ADR-053): the guest dock's shape
+// The waiter's sections as a floating pill (ADR-054): the guest dock's shape
 // in neutral staff colours. The current section is filled and bold, not only
 // coloured. Items are 56 px tall and the bar clears the home indicator.
 export function TabBar({

@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import type { BoardLine, KitchenAction, ShownTicket } from "./board-model";
 import { classifyLateness, elapsedMinutes, type Lateness } from "./lateness";
 
-// A ticket on the dark kitchen board (ADR-053), readable at 1.5 m: table
+// A ticket on the dark kitchen board (ADR-054), readable at 1.5 m: table
 // number 64 px, quantity boxes and dish names 26 px, one big 72 px action.
 // The head band is the timer: grey while on time, amber with an hourglass and
 // «Շտապել» from 8 minutes, red with an alert sign and «Ուշանում է» from 12

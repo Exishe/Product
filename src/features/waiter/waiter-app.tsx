@@ -313,7 +313,7 @@ function App(p: WaiterAppProps) {
   const tabTitle = t(`tabs.${tab}`);
 
   return (
-    <div className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-staff-bg text-ink">
+    <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-staff-bg text-ink">
       <header className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 border-b border-staff-sep bg-white/95 px-4 py-1.5 lg:px-6">
         <p className="m-0 min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">{p.cafeName}</p>
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
@@ -331,9 +331,9 @@ function App(p: WaiterAppProps) {
         <span />
       )}
 
-      <div className="grid min-h-0 md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:grid-cols-[minmax(0,1fr)_26.25rem]">
-        <div className={clsx("grid min-h-0 grid-rows-[minmax(0,1fr)_auto]", table && "max-md:hidden")}>
-          <main className="grid min-h-0 content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
+      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:grid-cols-[minmax(0,1fr)_26.25rem]">
+        <div className={clsx("grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto]", table && "max-md:hidden")}>
+          <main className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
             <div className="grid gap-1">
               <h1 className="m-0 text-[2.125rem] leading-tight font-bold">{tabTitle}</h1>
               <p

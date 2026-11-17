@@ -171,10 +171,11 @@ test.describe("waiter app", () => {
   });
 
   test("7.2 the order pad sends a waiter order, with options, through the outbox", async ({ page, cafe }, info) => {
+    // Its own table: the bill test seats a guest at table 4.
     await page.goto("/waiter");
-    await openTable(page, "4");
+    await openTable(page, "9");
     await panel(page).getByRole("button", { name: "Ընդունել պատվեր" }).click();
-    const pad = page.getByRole("dialog", { name: "Նոր պատվեր՝ սեղան 4" });
+    const pad = page.getByRole("dialog", { name: "Նոր պատվեր՝ սեղան 9" });
     await pad.getByRole("button", { name: "Ավելացնել՝ Տոլմա" }).click();
     await pad.getByRole("button", { name: "Ավելացնել քանակը՝ Տոլմա" }).click();
     await pad.getByRole("searchbox", { name: "Որոնել ճաշացանկում" }).fill("tey");
@@ -186,10 +187,10 @@ test.describe("waiter app", () => {
     await pad.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
     await expect(pad).toBeHidden();
 
-    await expect(tableButton(page, "4")).toHaveAttribute("data-state", "busy");
+    await expect(tableButton(page, "9")).toHaveAttribute("data-state", "busy");
     await expect(panel(page).getByTestId("table-total")).toHaveText("7 100 ֏");
     const placed = async () =>
-      (await cafe.owner.from("orders").select("id, source, status, total").eq("table_id", cafe.tables["4"]?.id ?? "").maybeSingle()).data;
+      (await cafe.owner.from("orders").select("id, source, status, total").eq("table_id", cafe.tables["9"]?.id ?? "").maybeSingle()).data;
     await expect.poll(placed).toMatchObject({ source: "waiter", status: "accepted", total: 7100 });
     expect(await tickets(cafe, (await placed())?.id ?? "")).toHaveLength(1);
     await expect(panel(page).getByTestId("unsent")).toHaveCount(0);

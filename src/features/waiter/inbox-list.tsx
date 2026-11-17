@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { STATE_BADGE, StateIcon } from "./floor-map";
 import type { InboxRow } from "./floor-model";
 
-// The Orders and Calls tabs (ADR-053): a grouped list, one row per table and
+// The Orders and Calls tabs (ADR-054): a grouped list, one row per table and
 // request, the longest-waiting first. A row opens the table, as on the map.
 export function InboxList({
   rows,

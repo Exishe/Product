@@ -163,7 +163,7 @@ test.describe("kitchen board", () => {
       await expect(s).toHaveAttribute("data-lateness", "hurry");
       await expect(s.getByTestId("ticket-age")).toHaveText("Շտապել");
       await expect(s.getByTestId("ticket-timer")).toHaveText("8 ր");
-      // The colour fades in over 200 ms (ADR-053), so wait for it to settle.
+      // The colour fades in over 200 ms (ADR-054), so wait for it to settle.
       await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(242, 162, 58)");
       await board.context.close();
 
@@ -172,7 +172,7 @@ test.describe("kitchen board", () => {
       await expect(s).toHaveAttribute("data-lateness", "late");
       await expect(s.getByTestId("ticket-age")).toHaveText("Ուշանում է");
       await expect(s.getByTestId("ticket-timer")).toHaveText("12 ր");
-      // The dark board's red (ADR-053): 3.4:1 against the column, white text on it 4.8:1.
+      // The dark board's red (ADR-054): 3.4:1 against the column, white text on it 4.8:1.
       await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(208, 56, 74)");
 
       // Ready food waits for the waiter: never marked late.

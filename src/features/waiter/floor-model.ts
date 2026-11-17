@@ -258,7 +258,7 @@ export const areaOf = (t: FloorTable, areas: readonly FloorArea[]): string | nul
 const NEEDS: readonly TableState[] = ["new", "ready", "call", "bill"];
 export const needCount = (tables: readonly FloorTable[]) => tables.filter((t) => NEEDS.includes(t.state)).length;
 
-// The Orders and Calls tabs (ADR-053): one row per table and kind of request,
+// The Orders and Calls tabs (ADR-054): one row per table and kind of request,
 // the longest-waiting first. Only a different view of the floor; nothing new.
 export type InboxRow = { table: FloorTable; kind: "new" | "ready" | "call" | "bill"; minutes: number };
 

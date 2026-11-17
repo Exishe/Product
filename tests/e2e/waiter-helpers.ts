@@ -37,7 +37,7 @@ export async function createWaiterCafe(): Promise<TestCafe> {
         groups: [{ names: { hy: "Տեսակը", ru: "Сорт" }, min: 1, max: 1, options: [{ names: { hy: "Ուրց" } }, { names: { hy: "Կանաչ" }, delta: 100 }] }],
       },
     ],
-    tables: ["1", "2", "3", "4", "5", "6", "7", "8"],
+    tables: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
   });
   // Orders over 5 000 ֏ wait for the waiter.
   const { error } = await cafe.owner.from("locations").update({ max_auto_accept_total: 5000 }).eq("id", cafe.locationId);

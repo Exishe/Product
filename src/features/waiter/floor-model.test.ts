@@ -168,7 +168,7 @@ describe("table states (screens.md §5)", () => {
   });
 });
 
-describe("Orders and Calls tabs (ADR-053)", () => {
+describe("Orders and Calls tabs (ADR-054)", () => {
   it("lists new and ready orders and calls and bills per table, the longest-waiting first", () => {
     const placed = order("o2", { status: "placed", placed_at: iso(-4), kitchen_tickets: [] });
     const ready = order("o1", { placed_at: iso(-20), kitchen_status: "ready", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }] });
