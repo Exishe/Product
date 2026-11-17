@@ -8,6 +8,9 @@ import type { GuestCategory } from "./view-model";
 
 export const sectionId = (id: string) => `cat-${id}`;
 
+/** The tabs stand as a sidebar on wide screens (lg:flex-col). */
+const vertical = (el: HTMLElement) => getComputedStyle(el).flexDirection === "column";
+
 const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
 // Sticky section tabs. The tab of the section under the bar is highlighted
@@ -28,8 +31,11 @@ export function CategoryNav({
     let frame = 0;
     const update = () => {
       frame = 0;
-      // Sections scroll to 80 px from the top (scroll-mt-20), just under the bar.
-      const offset = Math.max(nav.current?.getBoundingClientRect().bottom ?? 0, 80) + 24;
+      // Sections scroll to just under the bar and the tabs. On a wide screen
+      // the tabs are a sidebar, so only the bar counts (lg:scroll-mt-20).
+      const bar = nav.current;
+      const offset =
+        (bar && !vertical(bar) ? Math.max(bar.getBoundingClientRect().bottom, 80) : 80) + 24;
       let id = categories[0]?.id ?? null;
       for (const c of categories) {
         const el = document.getElementById(sectionId(c.id));
@@ -52,6 +58,13 @@ export function CategoryNav({
     const bar = nav.current;
     const tab = bar?.querySelector<HTMLElement>(`[data-cat="${current}"]`);
     if (!bar || !tab) return;
+    if (vertical(bar)) {
+      const top = tab.offsetTop - 16;
+      const bottom = tab.offsetTop + tab.offsetHeight + 16 - bar.clientHeight;
+      if (bar.scrollTop > top) bar.scrollTo({ top, behavior: smooth() });
+      else if (bar.scrollTop < bottom) bar.scrollTo({ top: bottom, behavior: smooth() });
+      return;
+    }
     const left = tab.offsetLeft - 16;
     const right = tab.offsetLeft + tab.offsetWidth + 16 - bar.clientWidth;
     if (bar.scrollLeft > left) bar.scrollTo({ left, behavior: smooth() });
@@ -63,7 +76,7 @@ export function CategoryNav({
     <nav
       ref={nav}
       aria-label={t("menu.categories")}
-      className={`sticky z-10 flex gap-2 transition-[top] duration-200 motion-reduce:transition-none ${belowBar ? "top-14" : "top-0"} border-line bg-matsoni overflow-x-auto border-b px-4 py-2 ${styles.tabs}`}
+      className={`sticky z-10 flex gap-1.5 transition-[top] duration-200 motion-reduce:transition-none ${belowBar ? "top-14" : "top-0"} border-line bg-matsoni -mx-4 overflow-x-auto border-b px-4 py-2 md:-mx-8 md:px-8 lg:top-24 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mx-0 lg:mt-10 lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-0 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-l lg:px-0 lg:py-1 ${styles.tabs}`}
     >
       {categories.map((c) => (
         <a
@@ -76,7 +89,7 @@ export function CategoryNav({
             setActive(c.id);
             document.getElementById(sectionId(c.id))?.scrollIntoView({ behavior: smooth(), block: "start" });
           }}
-          className="rounded-chip text-muted aria-[current=true]:bg-tarragon flex min-h-12 flex-none items-center px-3 font-semibold whitespace-nowrap aria-[current=true]:text-white"
+          className="text-muted hover:text-ink aria-[current=true]:bg-noir aria-[current=true]:text-ivory lg:aria-[current=true]:border-champagne lg:aria-[current=true]:text-ink flex min-h-11 flex-none items-center rounded-full px-4 font-semibold whitespace-nowrap lg:-ml-px lg:min-h-10 lg:rounded-none lg:border-l-2 lg:border-transparent lg:px-4 lg:whitespace-normal lg:aria-[current=true]:bg-transparent"
         >
           {c.name ? <Txt value={c.name} locale={locale} /> : null}
         </a>

@@ -10,11 +10,12 @@ import { normalizeForSearch } from "@/lib/format/search";
 import { CallWaiterButton } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
+import { CircularCarousel, type CarouselItem } from "./circular-carousel";
 import { DishRow } from "./dish-row";
 import { DishSheet } from "./dish-sheet";
 import styles from "./guest.module.css";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, Txt } from "./ui";
+import { Notice, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem, GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -26,6 +27,22 @@ const newId = () =>
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const CART_HASH = "#cart";
+const SIGNATURE_MAX = 10;
+const SIGNATURE_MIN = 3;
+
+// Dishes for the "signature" cylinder: those with a photo that can be had
+// today, popular ones first, up to ten. Fewer than three: no cylinder.
+function signatureDishes(menu: GuestMenuData): GuestItem[] {
+  const withPhoto = menu.categories.flatMap((c) => c.items).filter((i) => i.image && !i.soldOut);
+  const picked = [
+    ...withPhoto.filter((i) => i.tags.includes("popular")),
+    ...withPhoto.filter((i) => !i.tags.includes("popular")),
+  ].slice(0, SIGNATURE_MAX);
+  return picked.length >= SIGNATURE_MIN ? picked : [];
+}
+
+/** The guest pages' content column: full width on a phone, centred on a desktop. */
+const COLUMN = "mx-auto w-full max-w-[1200px] px-4 md:px-8";
 
 export function GuestMenu({
   menu,
@@ -75,6 +92,18 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
+  const signature = useMemo(() => signatureDishes(menu), [menu]);
+  const signatureItems: CarouselItem[] = useMemo(
+    () =>
+      signature.map((i) => ({
+        src: dishPhotoUrl(i.image as string),
+        alt: i.name.text,
+        title: i.name.text,
+        subtitle: formatAmd(i.price, locale),
+        lang: i.name.lang === locale ? undefined : i.name.lang,
+      })),
+    [signature, locale],
+  );
 
   const q = normalizeForSearch(query);
   const shown = useMemo(
@@ -190,7 +219,7 @@ export function GuestMenu({
   return (
     <>
       {(orderingNotice || menu.kitchenBusy) && (
-        <div className="grid gap-2 px-4 pb-3">
+        <div className={`${COLUMN} grid gap-2 pt-4`}>
           {orderingNotice}
           {menu.kitchenBusy && canOrder && (
             <Notice tone="busy">
@@ -201,33 +230,45 @@ export function GuestMenu({
           )}
         </div>
       )}
-      <div className="px-4 pb-3">
-        <label className="sr-only" htmlFor="menu-search">
-          {t("menu.search")}
-        </label>
-        <input
-          id="menu-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("menu.search")}
-          autoComplete="off"
-          enterKeyHint="search"
-          className="rounded-input border-line-strong placeholder:text-muted min-h-12 w-full border bg-white px-4"
-        />
-      </div>
+      {signature.length > 0 && (
+        <section aria-labelledby="signature-title" className={`${COLUMN} pt-6 md:pt-10`} data-testid="signature">
+          <h2 id="signature-title" className="display-face text-center text-[1.75rem] leading-tight md:text-[2.25rem]">
+            {t("menu.signature.title")}
+          </h2>
+          <span aria-hidden="true" className="bg-champagne mx-auto mt-3 block h-px w-12" />
+          <CircularCarousel
+            items={signatureItems}
+            preset="cylinder"
+            intro="rise"
+            cardWidth={220}
+            aspectRatio={1}
+            speed={14}
+            captions
+            className="h-[300px] sm:h-[340px] md:h-[420px] lg:h-[460px]"
+            label={t("menu.signature.title")}
+            hint={t("menu.signature.hint")}
+            roleDescription={t("menu.signature.carousel")}
+            onSelect={(i) => {
+              const item = signature[i];
+              if (item) setSheet(item);
+            }}
+          />
+        </section>
+      )}
       <div ref={sentinel} aria-hidden="true" />
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
       <div
-        className={`bg-matsoni fixed inset-x-0 top-0 z-20 mx-auto max-w-[430px] ${styles.slim}`}
+        className={`bg-noir text-ivory fixed inset-x-0 top-0 z-20 ${styles.slim}`}
         data-shown={scrolled}
         data-testid="slim-bar"
         inert={!scrolled}
       >
-        <div className="flex h-14 items-center gap-2 px-4">
-          <span className="display-face min-w-0 flex-1 truncate text-xl">{menu.restaurantName}</span>
+        <div className={`${COLUMN} flex h-14 items-center gap-3`}>
+          <span className="display-face text-champagne-light min-w-0 flex-1 truncate text-xl md:text-2xl">
+            {menu.restaurantName}
+          </span>
           {table.kind === "ok" && (
-            <span className="bg-tarragon-tint text-tarragon flex-none rounded-full px-2.5 py-0.5 text-sm font-semibold">
+            <span className="border-champagne/50 text-champagne-light flex-none rounded-full border px-2.5 py-0.5 text-sm font-semibold">
               {t("table", { label: table.label })}
             </span>
           )}
@@ -236,56 +277,76 @@ export function GuestMenu({
           )}
         </div>
       </div>
-      <CategoryNav categories={shown} belowBar={scrolled} />
-      <main className="flex-1 px-4 pb-8">
-        {shown.length === 0 ? (
-          <p className="text-muted py-12 text-center" role="status">
-            {t("menu.noResults")}
-          </p>
-        ) : (
-          shown.map((c) => (
-            <section
-              key={c.id}
-              id={sectionId(c.id)}
-              aria-labelledby={`h-${c.id}`}
-              className="scroll-mt-32 pt-6"
-            >
-              {c.name && (
-                <Txt
-                  as="h2"
-                  id={`h-${c.id}`}
-                  value={c.name}
-                  locale={locale}
-                  className="display-face text-tarragon mb-2 text-3xl"
-                />
-              )}
-              <ul>
-                {c.items.map((item) => (
-                  <DishRow
-                    key={item.id}
-                    item={item}
-                    canOrder={canOrder}
-                    onOpen={setSheet}
-                    onQuickAdd={quickAdd}
-                  />
-                ))}
-              </ul>
-            </section>
-          ))
-        )}
-      </main>
+      <div className={`${COLUMN} flex-1 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-14`}>
+        <div className="pt-6 pb-3 lg:col-start-2 lg:row-start-1 lg:pt-10 lg:pb-0">
+          <label className="sr-only" htmlFor="menu-search">
+            {t("menu.search")}
+          </label>
+          <input
+            id="menu-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("menu.search")}
+            autoComplete="off"
+            enterKeyHint="search"
+            className="border-line-strong placeholder:text-muted focus:border-gold-deep min-h-12 w-full rounded-full border bg-white px-5 md:max-w-[420px]"
+          />
+        </div>
+        <CategoryNav categories={shown} belowBar={scrolled} />
+        <main className="pb-10 lg:col-start-2 lg:row-start-2">
+          {shown.length === 0 ? (
+            <p className="text-muted py-12 text-center" role="status">
+              {t("menu.noResults")}
+            </p>
+          ) : (
+            shown.map((c) => (
+              <section
+                key={c.id}
+                id={sectionId(c.id)}
+                aria-labelledby={`h-${c.id}`}
+                className="scroll-mt-32 pt-8 lg:scroll-mt-20"
+              >
+                {c.name && (
+                  <div className="mb-1 flex items-center gap-4">
+                    <Txt
+                      as="h2"
+                      id={`h-${c.id}`}
+                      value={c.name}
+                      locale={locale}
+                      className="display-face min-w-0 text-[1.875rem] leading-tight [overflow-wrap:anywhere] md:text-[2.125rem]"
+                    />
+                    <span aria-hidden="true" className="bg-line h-px min-w-6 flex-1 translate-y-1" />
+                  </div>
+                )}
+                <ul className="md:grid md:grid-cols-2 md:gap-x-10">
+                  {c.items.map((item) => (
+                    <DishRow
+                      key={item.id}
+                      item={item}
+                      canOrder={canOrder}
+                      onOpen={setSheet}
+                      onQuickAdd={quickAdd}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          )}
+        </main>
+      </div>
       {lines.length > 0 && (
-        <div className="from-matsoni sticky bottom-0 z-10 bg-linear-to-t from-70% to-transparent px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
+        <div className="from-matsoni sticky bottom-0 z-10 bg-linear-to-t from-60% to-transparent px-4 pt-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
           <button
             type="button"
             onClick={openCart}
-            className="rounded-sheet bg-apricot text-ink shadow-float flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left font-semibold"
+            className="bg-noir text-ivory shadow-float ring-champagne/60 mx-auto flex min-h-14 w-full max-w-[560px] items-center justify-between gap-3 rounded-full py-2 pr-6 pl-6 text-left font-semibold ring-1"
           >
             <span className="flex flex-col leading-tight">
               {t("menu.viewOrder")}
-              <small className="text-sm font-normal">{t("menu.items", { count: summary.count })}</small>
+              <small className="text-ivory-dim text-sm font-normal">{t("menu.items", { count: summary.count })}</small>
             </span>
-            <span className="num whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
+            <span className="num text-champagne-light text-lg whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
           </button>
         </div>
       )}
@@ -305,7 +366,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`rounded-sheet bg-ink text-matsoni shadow-float fixed bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-4 py-3 ${styles.toast}`}
+          className={`bg-noir text-ivory shadow-float fixed bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-2xl px-5 py-3 text-center ${styles.toast}`}
         >
           {toast.text}
         </p>

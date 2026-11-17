@@ -112,7 +112,7 @@ export function dishPhotoUrl(path: string): string {
 const TAG_STYLES: Record<GuestTag, string> = {
   popular: "bg-apricot/30 text-ink",
   spicy: "bg-pom-tint text-pomegranate",
-  vegan: "bg-tarragon-tint text-tarragon",
+  vegan: "bg-success-tint text-success",
   new: "bg-ink text-matsoni",
 };
 

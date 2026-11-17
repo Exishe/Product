@@ -25,6 +25,27 @@
   --color-pom-on-dark: #ff6b7e;
   --color-tarragon-on-dark: #5cc48e;
   --color-slip-dim: #b9c4bc;
+  /* Success green. Staff screens keep tarragon's value; the guest theme
+     (.guest-lux, below) gives it its own. */
+  --color-success: #1d6a43;
+  --color-success-tint: #e2eee6;
+
+  /* Guest "Noir & Champagne" palette (ADR-051). Used by the guest screens
+     only; .guest-lux also maps the older tokens onto it. */
+  --color-ivory: #f6f1e7;
+  --color-paper: #fffdf8;
+  --color-noir: #1b1712;
+  --color-noir-2: #2a231c;
+  --color-noir-3: #3b3229;
+  --color-champagne: #a8844e; /* decoration and large text only (3.1:1 on ivory) */
+  --color-champagne-light: #d2b27a; /* on noir: 9:1 */
+  --color-gold-deep: #7f6135; /* small gold text: 5.1:1 on ivory, 4.6:1 on gold-tint */
+  --color-gold-tint: #efe6d4;
+  --color-wine: #7a1e2c;
+  --color-wine-tint: #f4e6e4;
+  --color-hairline: #e4d9c6;
+  --color-taupe: #6f655a; /* muted text: 5.1:1 on ivory */
+  --color-ivory-dim: #bfb29c; /* muted text on noir: 8.5:1 */
 
   --font-display: var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
   --font-ui: var(--font-google-sans), system-ui, sans-serif;
@@ -40,6 +61,7 @@
   --radius-slip: 2px;
 
   --shadow-float: 0 8px 24px rgb(19 36 27 / 0.16), 0 1px 3px rgb(19 36 27 / 0.12);
+  --shadow-paper: 0 1px 2px rgb(19 36 27 / 0.05), 0 8px 24px -12px rgb(19 36 27 / 0.18);
 }
 
 @layer base {
@@ -106,11 +128,12 @@
     /* Dark fills and the dark kitchen board get lighter instead of darker. */
     :is(button, [role="button"], a):is(
         .bg-ink,
+        .bg-noir,
         .bg-basalt-2,
         .bg-basalt-3,
         [class*="aria-pressed:bg-ink"][aria-pressed="true"]
       ):hover:not(:disabled),
-    :where(.bg-basalt, .bg-basalt-2) :is(button, [role="button"], a):hover:not(:disabled) {
+    :where(.bg-basalt, .bg-basalt-2, .bg-noir) :is(button, [role="button"], a):hover:not(:disabled) {
       filter: brightness(1.3);
     }
     /* A light panel inside the dark board (stop list, busy dialog) goes back to darker. */
@@ -196,4 +219,62 @@
   100% {
     transform: scale(1);
   }
+}
+
+/* Guest screens: "Noir & Champagne" (ADR-051). The guest layout puts this
+   class on its root, so the menu, cart and order pages get the warm ivory
+   palette and the Stardom display face while staff, admin and kitchen screens
+   keep direction A. The older token names are mapped onto the new palette, so
+   every utility inside (bg-matsoni, text-tarragon, …) follows. */
+.guest-lux {
+  --color-matsoni: #f6f1e7;
+  --color-white: #fffdf8;
+  --color-ink: #1b1712;
+  --color-muted: #6f655a;
+  --color-mist: #ede5d6;
+  --color-line: #e4d9c6;
+  --color-line-strong: #94866f; /* input borders: 3.2:1 on ivory */
+  --color-tarragon: #7f6135;
+  --color-tarragon-tint: #efe6d4;
+  --color-apricot: #a8844e;
+  --color-apricot-deep: #7f6135;
+  --color-pomegranate: #7a1e2c;
+  --color-pom-tint: #f4e6e4;
+  --color-basalt: #1b1712;
+  --color-basalt-2: #2a231c;
+  --color-basalt-3: #3b3229;
+  --color-slip: #f6f1e7;
+  --color-slip-dim: #bfb29c;
+  --color-apricot-on-dark: #d2b27a;
+  --color-pom-on-dark: #f09aa5;
+  --color-tarragon-on-dark: #8cc9a5;
+  --color-success: #2e6a4a;
+  --color-success-tint: #e3ede6;
+  --shadow-float: 0 10px 30px rgb(27 23 18 / 0.14), 0 1px 3px rgb(27 23 18 / 0.1);
+  --shadow-paper: 0 1px 2px rgb(27 23 18 / 0.05), 0 8px 24px -12px rgb(27 23 18 / 0.18);
+  /* Stardom (Latin only, loaded from Fontshare) first; Armenian and Cyrillic
+     fall through per glyph to the Noto serifs. */
+  --font-display: "Stardom", var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
+  background: var(--color-matsoni);
+  color: var(--color-ink);
+}
+
+/* Stardom has one weight: no faux bold. The Noto serifs drop to 500 so
+   Armenian and Cyrillic sit next to Stardom's lighter colour. */
+.guest-lux .display-face {
+  font-weight: 500;
+  font-synthesis: none;
+  letter-spacing: 0.005em;
+}
+
+body:has(.guest-lux) {
+  background: #f6f1e7;
+}
+
+.guest-lux :focus-visible {
+  outline-color: var(--color-gold-deep);
+}
+
+.guest-lux .bg-noir :focus-visible {
+  outline-color: var(--color-champagne-light);
 }

@@ -594,7 +594,12 @@
       "callConfirm": "Call the waiter?",
       "callYes": "Yes, call",
       "callCancel": "No",
-      "waiterCalled": "Waiter called"
+      "waiterCalled": "Waiter called",
+      "signature": {
+        "title": "Signature dishes",
+        "hint": "Turn it with a swipe or the arrow keys; tap a photo to open the dish.",
+        "carousel": "carousel"
+      }
     },
     "sheet": {
       "required": "Required",

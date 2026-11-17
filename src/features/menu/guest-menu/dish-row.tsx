@@ -7,8 +7,8 @@ import type { GuestItem } from "./view-model";
 
 // One dish as a line of a printed menu: name, dotted leader and price, a line
 // or two of description, portion and tag chips. On the right, the photo (when
-// the café added one) with the round apricot "+" on its corner, so a dish
-// takes one compact row.
+// the café added one) with the round noir "+" on its corner, so a dish takes
+// one compact row. From 768 px the rows stand in two columns.
 export function DishRow({
   item,
   canOrder,
@@ -27,7 +27,7 @@ export function DishRow({
   const hasFacts = item.portion !== null || item.tags.length > 0;
   return (
     <li
-      className="border-line flex items-center gap-3 border-b py-3"
+      className="border-line flex items-center gap-4 border-b py-4"
       data-testid="dish"
       data-dish-id={item.id}
     >
@@ -45,9 +45,9 @@ export function DishRow({
           />
           <span
             aria-hidden="true"
-            className="border-line-strong min-w-4 flex-1 -translate-y-[0.3em] border-b-2 border-dotted"
+            className="border-champagne/55 min-w-4 flex-1 -translate-y-[0.3em] border-b border-dotted"
           />
-          <span className={`num font-semibold whitespace-nowrap ${muted}`}>
+          <span className={`num font-semibold tracking-tight whitespace-nowrap ${muted}`}>
             {formatAmd(item.price, locale)}
           </span>
         </span>
@@ -90,14 +90,14 @@ export function DishRow({
                 height={88}
                 loading="lazy"
                 decoding="async"
-                className={`rounded-input bg-mist size-[88px] object-cover ${item.soldOut ? "opacity-50 grayscale" : ""}`}
+                className={`bg-mist ring-line size-[88px] rounded-xl object-cover ring-1 md:size-24 ${item.soldOut ? "opacity-50 grayscale" : ""}`}
               />
             </button>
           )}
           {showAdd && (
             <button
               type="button"
-              className={`bg-apricot text-ink hover:bg-apricot-deep grid size-12 place-items-center rounded-full transition-transform active:scale-90 ${
+              className={`bg-noir text-champagne-light grid size-12 place-items-center rounded-full shadow-[0_4px_12px_-4px_rgb(27_23_18/0.5)] transition-transform active:scale-90 ${
                 item.image ? "ring-matsoni absolute -right-1.5 -bottom-1.5 ring-4" : ""
               }`}
               aria-label={t("menu.add", { name: item.name.text })}

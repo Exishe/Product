@@ -3,9 +3,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-// Content Security Policy (security-review.md, M-2). Every script, style, font
-// and service worker is our own; the browser talks only to us and to the
-// Supabase project (REST, Realtime over wss, Storage images). The guest menu is
+// Content Security Policy (security-review.md, M-2). Every script and service
+// worker is our own, and so are styles and fonts, except the guest display
+// face Stardom from the Fontshare API and CDN (ADR-051). The browser talks
+// only to us and to the Supabase project (REST, Realtime over wss, Storage images). The guest menu is
 // rendered statically, so the policy is static too: Next.js's inline bootstrap
 // scripts need 'unsafe-inline' until a nonce-based policy is worth making every
 // page dynamic (accepted risk A-3). Development adds 'unsafe-eval' for React's
@@ -22,9 +23,9 @@ function contentSecurityPolicy(): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
     `img-src 'self' data: blob: ${supabase}`,
-    "font-src 'self' data:",
+    "font-src 'self' data: https://cdn.fontshare.com",
     `connect-src 'self' ${supabase} ${realtime}${dev ? " ws:" : ""}`,
     "worker-src 'self'",
     "manifest-src 'self'",

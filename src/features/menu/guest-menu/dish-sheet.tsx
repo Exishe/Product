@@ -20,7 +20,8 @@ const NOTE_COUNTER_FROM = 160;
 
 // The item sheet: options with their rules, a note for the kitchen, quantity
 // and an add button with the live price. A native <dialog> gives focus
-// trapping, Escape and an inert page behind it.
+// trapping, Escape and an inert page behind it. A bottom sheet on a phone, a
+// centred dialog from 768 px.
 export function DishSheet({
   item,
   canOrder,
@@ -63,9 +64,9 @@ export function DishSheet({
       onClick={(e) => {
         if (e.target === dialog.current) onClose(); // a tap on the backdrop
       }}
-      className={`rounded-t-bottom-sheet bg-matsoni text-ink backdrop:bg-ink/45 mx-auto mt-auto mb-0 max-h-[88dvh] w-full max-w-[430px] overflow-hidden border-0 p-0 ${styles.sheet}`}
+      className={`rounded-t-bottom-sheet bg-matsoni text-ink backdrop:bg-noir/55 mx-auto mt-auto mb-0 max-h-[88dvh] w-full max-w-[560px] overflow-hidden border-0 p-0 md:m-auto md:max-h-[86dvh] md:w-[calc(100%-4rem)] md:rounded-[20px] md:shadow-float ${styles.sheet}`}
     >
-      <div className="max-h-[88dvh] overflow-y-auto overscroll-contain px-4 pt-6">
+      <div className="max-h-[88dvh] overflow-y-auto overscroll-contain px-5 pt-6 md:max-h-[86dvh] md:px-8 md:pt-8">
         {item.image && (
           // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
           <img
@@ -74,7 +75,7 @@ export function DishSheet({
             width={430}
             height={300}
             decoding="async"
-            className="bg-mist -mx-4 -mt-6 mb-4 block aspect-[4/3] w-[calc(100%+2rem)] max-w-none object-cover"
+            className="bg-mist -mx-5 -mt-6 mb-5 block aspect-[4/3] w-[calc(100%+2.5rem)] max-w-none object-cover md:-mx-8 md:-mt-8 md:aspect-[16/10] md:w-[calc(100%+4rem)]"
           />
         )}
         <div className="flex items-start justify-between gap-3">
@@ -82,7 +83,7 @@ export function DishSheet({
             <Txt
               value={item.name}
               locale={locale}
-              className="display-face block text-3xl leading-[1.1] [overflow-wrap:anywhere]"
+              className="display-face block text-3xl leading-[1.1] [overflow-wrap:anywhere] md:text-[2.25rem]"
             />
           </h2>
           <button
@@ -97,8 +98,8 @@ export function DishSheet({
         {item.description && (
           <Txt value={item.description} locale={locale} as="p" className="text-muted mt-2" />
         )}
-        <p className="text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="num text-ink font-semibold">{formatAmd(item.price, locale)}</span>
+        <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span className="num text-gold-deep text-base font-semibold">{formatAmd(item.price, locale)}</span>
           {item.portion && (
             <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
           )}
@@ -179,13 +180,13 @@ export function DishSheet({
         <div
           className={
             canOrder
-              ? "bg-matsoni sticky bottom-0 -mx-4 mt-6 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom,0px))]"
+              ? "bg-matsoni border-line sticky bottom-0 -mx-5 mt-6 border-t px-5 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:-mx-8 md:px-8 md:pb-6"
               : "pb-[calc(24px+env(safe-area-inset-bottom,0px))]"
           }
         >
           {canOrder ? (
             <div className="flex gap-3">
-              <span className="rounded-input border-line-strong inline-flex flex-none items-center border">
+              <span className="border-line-strong inline-flex flex-none items-center rounded-full border bg-white">
                 <button
                   type="button"
                   className="disabled:text-line-strong grid size-12 place-items-center"
@@ -212,10 +213,10 @@ export function DishSheet({
                 type="button"
                 disabled={!valid}
                 onClick={() => onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note })}
-                className="rounded-sheet bg-apricot text-ink disabled:bg-mist disabled:text-muted flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-4 font-semibold"
+                className="bg-noir text-ivory ring-champagne/60 disabled:bg-mist disabled:text-muted flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-full px-6 font-semibold ring-1 disabled:ring-0"
               >
                 <span>{t("sheet.add")}</span>
-                <span className="num whitespace-nowrap">{formatAmd(price, locale)}</span>
+                <span className={`num whitespace-nowrap ${valid ? "text-champagne-light" : ""}`}>{formatAmd(price, locale)}</span>
               </button>
             </div>
           ) : null}

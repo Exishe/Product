@@ -5,7 +5,9 @@ import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import styles from "./guest.module.css";
 import { BellIcon, CheckIcon } from "./ui";
 
-// "Call the waiter" on the menu, before or without an order. Shared state, so
+// "Call the waiter" on the menu, before or without an order. It sits on the
+// noir header band and the noir slim bar, so it is drawn for a dark ground.
+// Shared state, so
 // the button in the header and the one in the bar that slides in on scroll
 // show the same thing. One tap asks, a second confirms: a stray tap never
 // sends a waiter over.
@@ -69,14 +71,14 @@ export function CallWaiterButton({
         <button
           type="button"
           onClick={() => void send()}
-          className={`${pill} bg-apricot text-ink hover:bg-apricot-deep active:scale-95`}
+          className={`${pill} bg-champagne-light text-noir active:scale-95`}
         >
           {compact ? t("menu.callConfirm") : t("menu.callYes")}
         </button>
         <button
           type="button"
           onClick={() => set("idle")}
-          className={`${pill} border-line-strong text-muted hover:bg-mist border bg-white`}
+          className={`${pill} border-ivory-dim/50 text-ivory-dim hover:text-ivory border`}
         >
           {t("menu.callCancel")}
         </button>
@@ -86,7 +88,7 @@ export function CallWaiterButton({
 
   if (current === "called") {
     return (
-      <span role="status" className={`${pill} bg-tarragon text-white ${styles.pop}`}>
+      <span role="status" className={`${pill} bg-success text-white ${styles.pop}`}>
         <CheckIcon />
         {t("menu.waiterCalled")}
       </span>
@@ -101,13 +103,13 @@ export function CallWaiterButton({
         disabled={sending}
         onClick={() => set("confirm", 8000)}
         aria-label={compact ? t("order.callWaiter") : undefined}
-        className={`${pill} border-tarragon text-tarragon hover:bg-tarragon-tint relative border bg-white active:scale-95 disabled:opacity-80`}
+        className={`${pill} border-champagne/60 text-champagne-light hover:border-champagne-light relative border active:scale-95 disabled:opacity-80`}
         data-testid={compact ? "call-waiter-compact" : "call-waiter"}
       >
         {sending && (
           <span
             aria-hidden="true"
-            className="border-tarragon absolute inset-0 animate-ping rounded-full border-2"
+            className="border-champagne-light absolute inset-0 animate-ping rounded-full border-2"
           />
         )}
         <span className={sending ? styles.ringing : styles.bell}>
@@ -116,7 +118,7 @@ export function CallWaiterButton({
         {!compact && t("order.callWaiter")}
       </button>
       {current === "failed" && (
-        <span role="alert" className="text-pomegranate text-sm font-semibold">
+        <span role="alert" className="text-pom-on-dark text-sm font-semibold">
           {t("order.requestFailed")}
         </span>
       )}

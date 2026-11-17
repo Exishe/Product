@@ -40,8 +40,7 @@ export default async function OrderStatusPage({ params, searchParams }: { params
   const vapidPublicKey = vapidPublicKeyOrNull(process.env);
 
   return (
-    <div className="min-h-dvh bg-mist">
-      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-matsoni">
+    <div className="flex min-h-dvh flex-col">
         {table ? (
           <>
             <GuestHeader locale={locale} cafeName={table.restaurant_name} tableLabel={table.table_label} locales={table.guest_locales} hrefFor={hrefFor} />
@@ -50,14 +49,13 @@ export default async function OrderStatusPage({ params, searchParams }: { params
             </GuestI18nProvider>
           </>
         ) : (
-          <main className="grid gap-4 px-4 py-10">
+          <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
             <Notice tone="alert">{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
             <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
               {t("order.toMenu")}
             </a>
           </main>
         )}
-      </div>
     </div>
   );
 }

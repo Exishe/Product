@@ -58,17 +58,15 @@ export default async function GuestMenuPage({
     if (!atThisCafe || !resolved) notFound();
     const t = await getTranslations({ locale, namespace: "guest.menu" });
     return (
-      <div className="bg-mist min-h-dvh">
-        <div className="bg-matsoni mx-auto flex min-h-dvh max-w-[430px] flex-col">
-          <GuestHeader
-            locale={locale}
-            cafeName={resolved.restaurant_name}
-            tableLabel={resolved.table_label}
-            locales={resolved.guest_locales}
-            hrefFor={hrefFor}
-          />
-          <p className="text-muted px-4 py-12 text-center text-xl">{t("notPublished")}</p>
-        </div>
+      <div className="flex min-h-dvh flex-col">
+        <GuestHeader
+          locale={locale}
+          cafeName={resolved.restaurant_name}
+          tableLabel={resolved.table_label}
+          locales={resolved.guest_locales}
+          hrefFor={hrefFor}
+        />
+        <p className="text-muted px-4 py-12 text-center text-xl">{t("notPublished")}</p>
       </div>
     );
   }
@@ -76,32 +74,30 @@ export default async function GuestMenuPage({
   const menu = buildGuestMenu(published, locale);
   const messages = (await getMessages()).guest as GuestMessages;
   return (
-    <div className="bg-mist min-h-dvh">
-      <div className="bg-matsoni mx-auto flex min-h-dvh max-w-[430px] flex-col">
-        <GuestI18nProvider locale={locale} messages={messages}>
-          <GuestHeader
-            locale={locale}
-            cafeName={menu.restaurantName}
-            tableLabel={table.kind === "ok" ? table.label : null}
-            locales={menu.locales}
-            hrefFor={hrefFor}
-            action={
-              menu.ordering && table.kind === "ok" ? (
-                <CallWaiterButton token={table.token} tableId={table.id} />
-              ) : undefined
-            }
-          />
-          <GuestMenu
-            menu={menu}
-            table={table}
-            orderHref={
-              table.kind === "ok"
-                ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`
-                : null
-            }
-          />
-        </GuestI18nProvider>
-      </div>
+    <div className="flex min-h-dvh flex-col">
+      <GuestI18nProvider locale={locale} messages={messages}>
+        <GuestHeader
+          locale={locale}
+          cafeName={menu.restaurantName}
+          tableLabel={table.kind === "ok" ? table.label : null}
+          locales={menu.locales}
+          hrefFor={hrefFor}
+          action={
+            menu.ordering && table.kind === "ok" ? (
+              <CallWaiterButton token={table.token} tableId={table.id} />
+            ) : undefined
+          }
+        />
+        <GuestMenu
+          menu={menu}
+          table={table}
+          orderHref={
+            table.kind === "ok"
+              ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`
+              : null
+          }
+        />
+      </GuestI18nProvider>
     </div>
   );
 }

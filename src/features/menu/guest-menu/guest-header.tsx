@@ -27,46 +27,48 @@ export async function GuestHeader({
   const offered = routing.locales.filter((l) => locales.includes(l));
   const nameLang = scriptLang(cafeName);
   return (
-    <header className="grid min-w-0 grid-cols-1 gap-2.5 px-4 pt-4 pb-3">
-      <h1
-        className="display-face min-w-0 text-[2rem] leading-[1.05] text-balance [overflow-wrap:anywhere]"
-        lang={nameLang && nameLang !== locale ? nameLang : undefined}
-      >
-        {cafeName}
-      </h1>
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-muted flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          {tableLabel && (
-            <span
-              className="bg-tarragon-tint text-tarragon rounded-full px-2.5 py-0.5 font-semibold"
-              data-testid="table-chip"
-            >
-              {t("table", { label: tableLabel })}
-            </span>
-          )}
-          <span>{t("payHint")}</span>
-        </div>
-        {offered.length > 1 && (
-          <nav
-            aria-label={t("language.label")}
-            className="rounded-chip border-line-strong flex flex-none overflow-hidden border"
-          >
-            {offered.map((l) => (
-              <a
-                key={l}
-                href={hrefFor(l)}
-                lang={l}
-                hrefLang={l}
-                aria-current={l === locale ? "true" : undefined}
-                className="text-muted hover:bg-mist aria-[current=true]:bg-ink aria-[current=true]:text-matsoni grid min-h-11 min-w-11 place-items-center px-2 text-sm font-semibold"
+    <header className="bg-noir text-ivory border-champagne/40 border-b">
+      <div className="mx-auto grid w-full max-w-[1200px] min-w-0 grid-cols-1 gap-3 px-4 pt-5 pb-4 md:px-8 md:pt-9 md:pb-7">
+        <h1
+          className="display-face text-champagne-light min-w-0 text-[2.25rem] leading-[1.05] text-balance [overflow-wrap:anywhere] md:text-[3.25rem]"
+          lang={nameLang && nameLang !== locale ? nameLang : undefined}
+        >
+          {cafeName}
+        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="text-ivory-dim flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            {tableLabel && (
+              <span
+                className="border-champagne/50 text-champagne-light rounded-full border px-3 py-0.5 font-semibold"
+                data-testid="table-chip"
               >
-                {t(`language.${l}`)}
-              </a>
-            ))}
-          </nav>
-        )}
+                {t("table", { label: tableLabel })}
+              </span>
+            )}
+            <span>{t("payHint")}</span>
+            {action && <span className="flex flex-wrap items-center gap-2">{action}</span>}
+          </div>
+          {offered.length > 1 && (
+            <nav
+              aria-label={t("language.label")}
+              className="border-champagne/40 flex flex-none overflow-hidden rounded-full border"
+            >
+              {offered.map((l) => (
+                <a
+                  key={l}
+                  href={hrefFor(l)}
+                  lang={l}
+                  hrefLang={l}
+                  aria-current={l === locale ? "true" : undefined}
+                  className="text-ivory-dim hover:text-ivory aria-[current=true]:bg-champagne-light aria-[current=true]:text-noir grid min-h-11 min-w-12 place-items-center px-3 text-sm font-semibold"
+                >
+                  {t(`language.${l}`)}
+                </a>
+              ))}
+            </nav>
+          )}
+        </div>
       </div>
-      {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
     </header>
   );
 }
