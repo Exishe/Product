@@ -97,7 +97,7 @@ export function DishRow({
           {showAdd && (
             <button
               type="button"
-              className={`bg-noir text-champagne-light grid size-12 place-items-center rounded-full shadow-[0_4px_12px_-4px_rgb(27_23_18/0.5)] transition-transform active:scale-90 ${
+              className={`bg-noir text-champagne-light grid size-12 place-items-center rounded-full shadow-[0_4px_12px_-4px_color-mix(in_srgb,var(--guest-noir)_50%,transparent)] transition-transform active:scale-90 ${
                 item.image ? "ring-matsoni absolute -right-1.5 -bottom-1.5 ring-4" : ""
               }`}
               aria-label={t("menu.add", { name: item.name.text })}

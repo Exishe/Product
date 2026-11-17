@@ -3,7 +3,8 @@ import { preconnect, preload } from "react-dom";
 import { FONTSHARE_API, FONTSHARE_CDN, STARDOM_CSS } from "@/features/guest-theme/fontshare";
 import { GuestFonts } from "@/features/guest-theme/guest-fonts";
 
-// The browser bar matches the noir header band.
+// The browser bar matches the noir header band (--guest-noir in globals.css;
+// the meta tag needs a literal colour).
 export const viewport: Viewport = { themeColor: "#1b1712" };
 
 // Every guest screen (menu, cart, order status) wears the "Noir & Champagne"

@@ -218,6 +218,8 @@ export function GuestMenu({
 
   return (
     <>
+      {/* Right under the header: once it has scrolled away, the slim bar shows. */}
+      <div ref={sentinel} aria-hidden="true" />
       {(orderingNotice || menu.kitchenBusy) && (
         <div className={`${COLUMN} grid gap-2 pt-4`}>
           {orderingNotice}
@@ -240,11 +242,11 @@ export function GuestMenu({
             items={signatureItems}
             preset="cylinder"
             intro="rise"
-            cardWidth={220}
+            cardWidth={240}
             aspectRatio={1}
             speed={14}
             captions
-            className="h-[300px] sm:h-[340px] md:h-[420px] lg:h-[460px]"
+            className="h-[290px] sm:h-[330px] md:h-[380px] lg:h-[400px]"
             label={t("menu.signature.title")}
             hint={t("menu.signature.hint")}
             roleDescription={t("menu.signature.carousel")}
@@ -255,7 +257,6 @@ export function GuestMenu({
           />
         </section>
       )}
-      <div ref={sentinel} aria-hidden="true" />
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
       <div
         className={`bg-noir text-ivory fixed inset-x-0 top-0 z-20 ${styles.slim}`}

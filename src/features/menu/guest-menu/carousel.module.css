@@ -18,18 +18,26 @@
   transform-style: preserve-3d;
 }
 
+/* Each card's list item spans the stage and passes the 3D space through. */
+.ring > li {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
 .card {
+  pointer-events: auto;
   position: absolute;
   left: 50%;
   top: 50%;
   display: block;
   padding: 0;
-  border: 1px solid rgb(168 132 78 / 0.45);
+  border: 1px solid color-mix(in srgb, var(--guest-champagne) 45%, transparent);
   border-radius: 14px;
   overflow: hidden;
   background: var(--color-mist);
-  box-shadow: 0 18px 36px -18px rgb(27 23 18 / 0.45);
-  backface-visibility: hidden;
+  box-shadow: 0 18px 36px -18px color-mix(in srgb, var(--guest-noir) 45%, transparent);
   will-change: transform, opacity;
   /* no global hover filter or press nudge: the cylinder's own motion is enough */
   filter: none !important;
@@ -52,7 +60,7 @@
   width: min(80%, 720px);
   height: 18%;
   transform: translateX(-50%);
-  background: radial-gradient(closest-side, rgb(27 23 18 / 0.16), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--guest-noir) 16%, transparent), transparent);
   pointer-events: none;
 }
 

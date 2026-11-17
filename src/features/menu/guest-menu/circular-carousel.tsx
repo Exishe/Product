@@ -52,7 +52,8 @@ type Props = {
 
 type Layout = { w: number; h: number; r: number; p: number; half: number };
 
-const MIN_SLOTS = 6;
+const MIN_SLOTS = 8; // fewer than 6 dishes are repeated up to at least this
+const REPEAT_BELOW = 6;
 const RISE_MS = 900;
 const RISE_STAGGER = 90;
 const RESUME_AFTER_TOUCH = 2500;
@@ -73,7 +74,7 @@ export function CircularCarousel({
   onSelect,
 }: Props) {
   const n = items.length;
-  const slots = n >= MIN_SLOTS ? n : n * Math.ceil(MIN_SLOTS / n);
+  const slots = n >= REPEAT_BELOW ? n : n * Math.ceil(MIN_SLOTS / n);
   const step = 360 / slots;
   const stage = useRef<HTMLDivElement>(null);
   const cards = useRef<(HTMLButtonElement | null)[]>([]);
@@ -136,8 +137,9 @@ export function CircularCarousel({
         const rise = introT < 0 ? 0 : ease(Math.min(1, Math.max(0, (introT - k * RISE_STAGGER) / RISE_MS)));
         const lift = (1 - rise) * layout.h * 0.9;
         card.style.transform = `translate3d(-50%, calc(-50% + ${lift.toFixed(1)}px), ${(-layout.r).toFixed(1)}px) rotateY(${deg.toFixed(2)}deg) translateZ(${layout.r.toFixed(1)}px)`;
-        card.style.opacity = String(cos < -0.05 ? 0 : rise * (0.45 + 0.55 * Math.max(0, cos)));
-        card.style.visibility = cos < -0.05 ? "hidden" : "visible";
+        // The far side shows faintly through, so it reads as a cylinder.
+        card.style.opacity = String(rise * (cos >= 0 ? 0.55 + 0.45 * cos : 0.14 + 0.41 * (1 + cos)));
+        card.style.pointerEvents = cos > 0.2 ? "" : "none";
         card.style.zIndex = String(Math.round(cos * 100) + 100);
       }
       const f = mod(Math.round(-a.rot / step), slots) % n;
