@@ -45,9 +45,9 @@ export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boole
         <div className="flex items-center gap-3">
           <PadIcon className="size-9 flex-none text-apricot-on-dark" />
           <div>
-            <h2 id="games-title" className="display-face text-2xl leading-tight">
+            <h3 id="games-title" className="display-face text-2xl leading-tight">
               {t("games.title")}
-            </h2>
+            </h3>
             <p className="text-sm text-slip-dim">{t("games.subtitle")}</p>
           </div>
         </div>
