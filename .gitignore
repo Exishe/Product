@@ -11,3 +11,6 @@ test-results/
 next-env.d.ts
 .vercel/
 .claude/worktrees/
+
+# game harness output (scripts/game-harness.mjs)
+.game-harness/

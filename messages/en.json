@@ -676,6 +676,43 @@
       "allRounds": "All rounds",
       "earlier": "Earlier orders",
       "placedAt": "Sent at {time}"
+    },
+    "games": {
+      "title": "Games while you wait",
+      "subtitle": "While the kitchen makes your order.",
+      "start": "Start",
+      "loading": "Loading…",
+      "loadFailed": "The game didn't load. Check your connection and try again.",
+      "close": "Close the game",
+      "best": "Best: {score}",
+      "over": "Game over",
+      "newBest": "New best",
+      "again": "Play again",
+      "other": "Other game",
+      "ready": "Your order is ready",
+      "readyHint": "Your waiter will bring it shortly.",
+      "readyOk": "See my order",
+      "keepPlaying": "Keep playing",
+      "merge": {
+        "name": "Merge the Feast",
+        "howTo": "Swipe in any direction. Two of the same dish merge into the next one, from herbs all the way to cake."
+      },
+      "slice": {
+        "name": "Chef's Knife",
+        "howTo": "Swipe across the flying vegetables to slice them. Don't touch the hot coals, and don't let vegetables drop."
+      },
+      "runner": {
+        "name": "Waiter Run",
+        "howTo": "Tap to jump, tap again in the air to jump higher. Clear the chairs and cats, collect the coffee cups."
+      },
+      "fighter": {
+        "name": "Yard Fighters",
+        "howTo": "◀ ▶ move, ▲ jump, ▼ block, ✊ punch, 🦶 kick, 🫓 throw a lavash. Win two rounds out of three."
+      },
+      "platformer": {
+        "name": "Rooftop Cat",
+        "howTo": "◀ ▶ walk, ⤒ jump. Collect apricots, jump on pigeons and reach the café door. Three levels."
+      }
     }
   },
   "telegram": {
