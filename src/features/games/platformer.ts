@@ -33,7 +33,8 @@
 //   cat lands on the pot rack.
 import { C, clamp, createPad, fitCanvas, label, loop, pick, rand, roundRect, type Game, type PadButton, type Size } from "./engine";
 
-// Tile maps, 10 rows each (falling below the last row costs a life).
+// Tile maps, 9 rows each; the floor row is repeated as a tenth (falling
+// below it costs a life).
 // Solid: # floor, C counter, O stove, X crate, S flour sack, B barrel, = bar.
 // One-way (jump up through): - shelf, ~ pot rack, t table, Y chandelier.
 // Hazards: ^ burner (on a stove), _ soapy puddle. Decor: h chair.
@@ -50,7 +51,6 @@ const LEVELS: string[][] = [
     "          CCOOCC       CC         CC          CC  CCOOCCOOCC            ooo     CC",
     "  P  ooo  CCOOCC    m  CC       K CC    c     CC  CCOOCCOOCC  K  __    m        CC      m    D",
     "###########################   ##############################################  ####################",
-    "###########################   ##############################################  ####################",
   ],
   [
     "",
@@ -62,7 +62,6 @@ const LEVELS: string[][] = [
     "           SSXX   BB           BB   XX                     BBXX         XX              BB",
     "  P  ooo SSSSXX   BB      m  K BB   XX   m   S   m __   K  BBXX         XXS     m       BB     D",
     "###############   ###############   ###########################     ################################",
-    "###############   ###############   ###########################     ################################",
   ],
   [
     "",
@@ -73,7 +72,6 @@ const LEVELS: string[][] = [
     "        oho         h                         oooo                h         G            oo",
     "        ttt        ttt        ==              ====               ttt       ttt           ==",
     "  P oooh   h    m h   h     K ==      c       ====  __ m      K h   h     h   h  ooom    ==    D",
-    "########################  ################################  ########################################",
     "########################  ################################  ########################################",
   ],
 ];
@@ -317,7 +315,7 @@ export const game: Game = {
       squash(-0.25);
     };
     const load = (n: number) => {
-      const rows = LEVELS[n]!;
+      const rows = [...LEVELS[n]!, LEVELS[n]![8]!];
       W = Math.max(...rows.map((r) => r.length));
       foes = [];
       items = [];
@@ -381,7 +379,6 @@ export const game: Game = {
       if (soap && !slick) {
         api.sfx("slip");
         api.sfx("whoa", 1.5);
-        dust(x, y, 4, 1.5);
       }
       slick = soap;
       if (dir) {
@@ -601,7 +598,6 @@ export const game: Game = {
       shape(col, [-r * 0.8, 0, -r * 1.55, -r * 0.62, -r * 1.35, 0, -r * 1.55, r * 0.62]);
       oval(col, 0, 0, r, r * 0.56);
       oval("rgba(255,255,255,0.4)", -r * 0.15, -r * 0.22, r * 0.55, r * 0.14);
-      lines("rgba(60,40,40,0.3)", r * 0.08, [r * 0.28, -r * 0.4, r * 0.22, r * 0.4]);
       oval("#fff", r * 0.55, -r * 0.12, r * 0.17);
       oval(C.ink, r * 0.6, -r * 0.12, r * 0.08);
     };
@@ -695,7 +691,6 @@ export const game: Game = {
       const flap = calm ? 0 : Math.sin(f.t * 60) * 0.5;
       oval("rgba(225,240,255,0.75)", -0.08, -0.5, 0.15, 0.07, -0.7 + flap);
       oval("#2a2a33", 0, -0.36, 0.15, 0.11);
-      lines("#2a2a33", 0.025, [-0.05, -0.28, -0.1, -0.18, 0.05, -0.28, 0.08, -0.18]);
       oval("#2a2a33", 0.15, -0.38, 0.08);
       oval("#c0303a", 0.18, -0.4, 0.05);
       oval("rgba(225,240,255,0.75)", 0.02, -0.5, 0.15, 0.07, -0.4 - flap);
@@ -713,7 +708,6 @@ export const game: Game = {
       box("#b0213a", bx - 0.18, -0.24, 0.36, 0.06);
       oval(C.matsoni, 0, -0.95, 0.42, 0.52);
       box("#e2e6e0", -0.32, -0.75, 0.64, 0.5);
-      for (const yy of [-1.2, -1.0, -0.8]) oval("#c9d2c8", 0.12, yy, 0.035);
       lines(C.matsoni, 0.16, [-0.1, -1.2, 0.3, -0.95, 0.3, -0.95, 0.2, -0.95]);
       oval("#f2c29a", 0.24, -0.98, 0.08);
       oval("#f2c29a", 0.05, -1.55, 0.25);
@@ -778,8 +772,8 @@ export const game: Game = {
         box(th[5], 0, 0, 1.02, 1.02);
         lines("rgba(0,0,0,0.2)", 0.03, [0, 0.55, 1, 0.55, (r % 2) * 0.5, 0.55, (r % 2) * 0.5, 1]);
         if (top) {
-          box(c % 2 ? th[3] : th[4], 0, 0, 0.51, 0.24);
-          box(c % 2 ? th[4] : th[3], 0.5, 0, 0.52, 0.24);
+          box(th[3], 0, 0, 0.51, 0.24);
+          box(th[4], 0.5, 0, 0.52, 0.24);
           box("rgba(255,255,255,0.3)", 0, 0, 1.02, 0.04);
           box("rgba(0,0,0,0.3)", 0, 0.24, 1.02, 0.06);
         }
@@ -807,7 +801,7 @@ export const game: Game = {
           box("#3a2a2a", 0.12, 0.78, 0.78, 0.3);
         } else {
           box("#3a2a2a", 0.12, 0, 0.78, 0.62);
-          box(`rgba(255,140,60,${0.45 + (calm ? 0 : Math.sin(time * 4 + c) * 0.1)})`, 0.18, 0.06, 0.66, 0.5);
+          box("rgba(255,140,60,0.5)", 0.18, 0.06, 0.66, 0.5);
         }
       } else if (ch === "X") {
         // Crate: plank frame and a diagonal brace
@@ -819,21 +813,19 @@ export const game: Game = {
         box("#d8c9a8", 0.02, 0.45, 0.98, 0.57);
         oval("#d8c9a8", 0.5, 0.5, 0.5, 0.48);
         oval("rgba(255,255,255,0.45)", 0.3, 0.45, 0.14, 0.08);
-        lines("#c9a24a", 0.04, [0.5, 0.88, 0.5, 0.5]);
-        for (const d of [-1, 1]) for (const yy of [0.56, 0.66, 0.76]) oval("#c9a24a", 0.5 + d * 0.06, yy, 0.05, 0.03, d * 0.6);
+        lines("#c9a24a", 0.05, [0.5, 0.88, 0.5, 0.5, 0.5, 0.62, 0.4, 0.52, 0.5, 0.62, 0.6, 0.52, 0.5, 0.75, 0.4, 0.65, 0.5, 0.75, 0.6, 0.65]);
         if (top) {
           oval("#e4d7b8", 0.5, 0.06, 0.16, 0.1);
           lines("#8a6a3a", 0.05, [0.38, 0.14, 0.62, 0.14]);
         }
       } else if (ch === "B") {
-        // Barrel with staves and iron hoops; a brass tap on some
+        // Barrel with staves and iron hoops
         box("#8f5530", 0.06, 0, 0.9, 1.02);
         oval("#a8683a", 0.4, 0.5, 0.16, 0.5);
         lines("rgba(50,25,10,0.35)", 0.03, [0.28, 0, 0.28, 1, 0.72, 0, 0.72, 1]);
         box("#3f3a3a", 0.04, 0.16, 0.94, 0.08);
         box("#3f3a3a", 0.04, 0.78, 0.94, 0.08);
         if (top) oval("#b7774a", 0.51, 0.04, 0.45, 0.07);
-        else if (h > 0.5) box("#d9b25a", 0.42, 0.42, 0.2, 0.1);
       } else if (ch === "=") {
         // Bar counter: dark wood panels, a brass foot rail
         box("#5a3322", 0, 0, 1.02, 1.02);
@@ -868,8 +860,6 @@ export const game: Game = {
           glow(0, 0.38, 0.9, "rgba(255,226,150,0.45)");
           lines("#b08a3a", 0.04, [0, 0, 0, 0.25]);
           oval("#fff2c0", 0, 0.36, 0.1, 0.13);
-          oval("#dff2ff", -0.3, 0.16, 0.035, 0.07);
-          oval("#dff2ff", 0.3, 0.16, 0.035, 0.07);
         } else {
           lines("#555a63", 0.03, [0, 0, 0, 0.16]);
           const k = Math.floor(h * 3);
@@ -898,8 +888,6 @@ export const game: Game = {
         for (const lx of [left ? 0.2 : -1, right ? 0.8 : -1]) if (lx > 0 && g > 0) box("#6b4630", lx - 0.05, 0.3, 0.1, g - r - 0.3);
         box("#f4efe6", -0.03, 0, 1.06, 0.22);
         box("#ddd5c6", -0.03, 0.22, 1.06, 0.12);
-        if (left) shape("#ddd5c6", [-0.03, 0, -0.15, 0.4, -0.03, 0.34]);
-        if (right) shape("#ddd5c6", [1.03, 0, 1.15, 0.4, 1.03, 0.34]);
       } else if (ch === "h") {
         // Bistro chair; after closing some stand upside down on the tables
         if (at(c, r + 1) === "t") {
@@ -924,16 +912,10 @@ export const game: Game = {
         // Soapy puddle with bubbles rising off it
         oval("rgba(190,228,248,0.8)", 0.5, 0.97, 0.62, 0.08);
         oval("rgba(255,255,255,0.8)", 0.32, 0.95, 0.2, 0.025);
-        ctx.strokeStyle = "rgba(255,255,255,0.85)";
-        ctx.lineWidth = 0.025;
         for (const i of [0.2, 0.55, 0.85]) {
           const p = calm ? 0.3 : (time * 0.5 + i + c * 0.37) % 1;
-          ctx.globalAlpha = 1 - p;
-          ctx.beginPath();
-          ctx.arc(i + Math.sin(p * 6) * 0.05, 0.9 - p * 0.7, 0.05 + p * 0.04, 0, TAU);
-          ctx.stroke();
+          oval(`rgba(235,248,255,${0.8 - p * 0.8})`, i + Math.sin(p * 6) * 0.05, 0.9 - p * 0.7, 0.04 + p * 0.04);
         }
-        ctx.globalAlpha = 1;
       }
     };
 
@@ -955,8 +937,8 @@ export const game: Game = {
       }
       lines(level ? "rgba(0,0,0,0.18)" : "rgba(170,130,90,0.3)", level > 1 ? T * 0.14 : 1, seg);
       // Windows with Ararat in them (dusk, then moonlit), and between them
-      // pendant lamps, bare bulbs or paintings
-      const [ww, wh, wy] = ([[2.6, 2, 1.2], [1.4, 0.8, 0.7], [2.2, 3.4, 1]] as const)[level]!.map((n) => n * T) as [number, number, number];
+      // pendant lamps or bare bulbs (the hall has its chandeliers)
+      const [ww, wh, wy] = ([[2.6, 2, 1.2], [1.4, 0.8, 1.8], [2.2, 3.4, 1]] as const)[level]!.map((n) => n * T) as [number, number, number];
       const sp = T * 9;
       for (let i = Math.floor(off / sp) - 1; i * sp - off < w + sp; i++) {
         const x0 = i * sp - off + T * 1.5;
@@ -972,16 +954,9 @@ export const game: Game = {
         if (level) oval("#fff6d8", x0 + ww * 0.72, wy + wh * 0.22, T * 0.22);
         shape(level ? "rgba(20,20,50,0.45)" : "rgba(170,90,110,0.45)", [x0, wy + wh, x0 + ww * 0.35, wy + wh * 0.5, x0 + ww * 0.6, wy + wh * 0.75, x0 + ww * 0.75, wy + wh * 0.66, x0 + ww, wy + wh]);
         shape("rgba(255,255,255,0.6)", [x0 + ww * 0.26, wy + wh * 0.59, x0 + ww * 0.35, wy + wh * 0.5, x0 + ww * 0.44, wy + wh * 0.59]);
-        lines(fr, T * 0.08, level === 1 ? [x0 + ww * 0.33, wy, x0 + ww * 0.33, wy + wh, x0 + ww * 0.66, wy, x0 + ww * 0.66, wy + wh] : [x0 + ww / 2, wy - (level ? ww / 2 : 0), x0 + ww / 2, wy + wh, x0, wy + wh * 0.5, x0 + ww, wy + wh * 0.5]);
-        box(fr, x0 - T * 0.3, wy + wh + T * 0.1, ww + T * 0.6, T * 0.15);
+        lines(fr, T * 0.08, [x0 + ww / 2, wy - (level > 1 ? ww / 2 : 0), x0 + ww / 2, wy + wh, x0, wy + wh * 0.5, x0 + ww, wy + wh * 0.5]);
         const lx = x0 + T * 4.8;
-        if (level > 1) {
-          // A framed painting: a pomegranate
-          box("#c9a24a", lx - T * 0.7, T * 1.6, T * 1.4, T * 1.1);
-          box("#24402f", lx - T * 0.58, T * 1.72, T * 1.16, T * 0.86);
-          oval(C.pomegranate, lx, T * 2.2, T * 0.28);
-          shape(C.pomegranate, [lx - T * 0.1, T * 1.95, lx, T * 1.82, lx + T * 0.1, T * 1.95]);
-        } else {
+        if (level < 2) {
           lines("#3a3a3a", 1.5, [lx, 0, lx, T * 1.3]);
           glow(lx, T * 1.6, T * 2.4, "rgba(255,222,150,0.35)");
           if (!level) shape(C.tarragon, [lx - T * 0.45, T * 1.62, lx - T * 0.15, T * 1.25, lx + T * 0.15, T * 1.25, lx + T * 0.45, T * 1.62]);
@@ -1009,10 +984,8 @@ export const game: Game = {
       ctx.save();
       ctx.translate(0, -1.32);
       fish(FRIED, 0.42);
-      lines("rgba(120,50,20,0.5)", 0.04, [-0.2, -0.15, -0.1, 0.15, 0, -0.18, 0.1, 0.15]);
       ctx.restore();
       oval("#ffe14a", 0.5, -1.22, 0.13, 0.08);
-      oval(C.tarragonLight, -0.45, -1.2, 0.1, 0.06, 0.4);
       ctx.strokeStyle = "rgba(255,255,255,0.8)";
       ctx.lineWidth = 0.05;
       ctx.beginPath();
@@ -1146,20 +1119,17 @@ export const game: Game = {
         catHead(12 + hs + i * hs * 1.85, hy + hs * 0.1, hs * 0.8, 0);
       }
       ctx.globalAlpha = 1;
-      const fx = 12 + hs * 10.2;
+      const fx = 12 + hs * 10.8;
       put(fx, hy, hs * 2, () => fish("#9cc0d6", 0.3));
       label(ctx, String(fruit), fx + hs * 1.1, hy, hs * 1.4, C.ink, "left");
       label(ctx, `${level + 1}/${LEVELS.length}`, s.w / 2 + hs * 3, hy, hs * 1.3, C.ink);
       label(ctx, String(score), s.w - 16, hy, hs * 1.4, C.ink, "right");
 
-      // Pad area: the floor in the foreground, big dark checks
+      // Pad area: the dark floor in the foreground
       const pg = ctx.createLinearGradient(0, viewH, 0, s.h);
       pg.addColorStop(0, th[5]);
       pg.addColorStop(1, "#1c1416");
       box(pg, 0, viewH, s.w, s.h - viewH);
-      const q = T * 1.2;
-      for (let yy = viewH + 9, i = 0; yy < s.h; yy += q, i++)
-        for (let xx = (i % 2) * q; xx < s.w; xx += q * 2) box("rgba(255,255,255,0.06)", xx, yy, q, q);
       box(th[3], 0, viewH, s.w, 4);
       box("rgba(20,10,10,0.4)", 0, viewH + 4, s.w, 5);
       pad.draw(ctx, s);

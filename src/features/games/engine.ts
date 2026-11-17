@@ -24,7 +24,7 @@ export type GameApi = {
 };
 
 /** Cartoon voices and noises, synthesized like the rest (see VOICES). */
-export type VoiceKind = "eek" | "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
+export type VoiceKind = "smooch" | "eek" | "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
 
 export type SfxKind =
   | VoiceKind
@@ -407,6 +407,8 @@ const VOWEL: Record<string, [number, number, number]> = {
   m: [260, 900, 0.12],
 };
 const VOICES: Record<VoiceKind, Seg[]> = {
+  // A lip-pop kiss with a rising squeak (two dishes merging)
+  smooch: [{ dur: 0.1, p: [480, 1500], tone: "sine", v: 0.32, pre: [2600, 0.025] }],
   eek: [{ dur: 0.13, p: [950, 1350, 1150], vw: "ii", v: 0.8 }],
   oof: [{ dur: 0.2, p: [240, 205, 150], vw: "uhu", post: [1300, 0.07] }],
   ouch: [{ dur: 0.32, p: [330, 480, 250], vw: "aaou", post: [3600, 0.09] }],

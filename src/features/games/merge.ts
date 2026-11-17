@@ -64,7 +64,7 @@ const TILE = ["", "#dcebdc", "#eef0c8", "#f7e3a6", "#f6cf7c", C.apricot, "#e8924
 const BIT = ["", "#5cc48e", "#e0402e", "#4f9a45", "#e0a456", "#7a3590", "#e8c27a", "#ffcf4a", "#f4e7cc", "#9a5530", "#d88a3a", "#f4d8b0", "#ffe08a"];
 const CONF = [C.pomegranate, C.apricot, C.tarragonLight, "#ffe08a", "#7cc6ee"];
 // Where each dish wears its face: centre on the art box and face scale.
-const FACE = [[0, 0, 0], [50, 40, 1.2], [50, 62, 1.5], [47, 53, 1.05], [50, 65, 1.3], [45, 63, 1.2], [50, 53, 1.3], [52, 69, 1.1], [50, 64, 1.35], [50, 51, 0.88], [50, 59, 1.1], [50, 72, 1.1], [50, 66, 1.05]];
+const FACE = [[0, 0, 0], [50, 41, 1.45], [50, 62, 1.8], [47, 53, 1.25], [50, 65, 1.55], [45, 63, 1.45], [50, 53, 1.55], [52, 69, 1.3], [50, 64, 1.6], [50, 51, 1.05], [50, 59, 1.3], [50, 72, 1.3], [50, 66, 1.25]];
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
 const hs = (n: number) => {
@@ -169,9 +169,7 @@ const ART: ((x: X) => void)[] = [
   (x) => {
     for (const d of [-9, 0, 9]) line(x, "#2f7a45", 4, 50 + d * 0.3, 93, 50 + d, 58);
     line(x, C.pomegranate, 4.5, 42, 80, 58, 80);
-    leaf(x, 20, 30, -0.7, 0.65);
-    leaf(x, 80, 30, 0.7, 0.65);
-    leaf(x, 50, 10, 1.57, 0.6);
+    for (let a = -2.6; a < 0; a += 0.43) leaf(x, 50 + Math.cos(a) * 34, 44 + Math.sin(a) * 30, a, 0.62);
     const g = rad(x, 50, 42, 36, "#86d68e", "#2c844b");
     for (const [cx, cy, r] of [[29, 44, 16], [71, 44, 16], [37, 26, 15], [63, 26, 15], [50, 44, 24]]) ell(x, cx!, cy!, r!, r!, g);
   },
@@ -622,7 +620,7 @@ export const game: Game = {
       const cx = cx0(i);
       const cy = cy0(i);
       pops.push({ x: cx, y: cy, a: 0, v: 2 ** t });
-      api.sfx("pop", 1.4 - t * 0.05);
+      api.sfx("smooch", 1.4 - t * 0.05);
       const fan = i === fanI;
       if (fan) {
         fanI = -1;
@@ -841,9 +839,10 @@ export const game: Game = {
             if (k === 1) {
               if (a < KISS) {
                 // Two halves bump noses and kiss, eyes shut.
-                const o = cell * (0.2 - (0.1 * a) / KISS);
-                const w = 0.72 + 0.1 * (a / KISS);
-                for (const d of [1, -1]) dish(t - 1, cx + dv[0] * o * d, cy + dv[1] * o * d, dv[0] ? w : 1.06, dv[1] ? w : 1.06, 0, 4, 0, 0, i + d);
+                const o = cell * (0.31 - (0.07 * a) / KISS);
+                const w = 0.6 * (1 - 0.12 * (a / KISS));
+                for (const d of [1, -1]) dish(t - 1, cx + dv[0] * o * d, cy + dv[1] * o * d, dv[0] ? w : 0.62, dv[1] ? w : 0.62, 0, 4, 0, 0, i + d);
+                heart(ctx, cx, cy - cell * (0.3 + 0.15 * (a / KISS)), cell * 0.07, BLUSH);
                 continue;
               }
               const b = a - KISS;
@@ -878,7 +877,7 @@ export const game: Game = {
           if (md === 2 && !calm) cx += Math.sin(clock * 47 + i * 2) * cell * 0.007;
           if (over) {
             // Fainted: X eyes, tongue out, keeled over.
-            const e = Math.min(1, overT * 3);
+            const e = calm ? 1 : Math.min(1, overT * 3);
             md = 3;
             rot = (hs(i) - 0.5) * 0.5 * e;
             sy *= 1 - 0.08 * e;
