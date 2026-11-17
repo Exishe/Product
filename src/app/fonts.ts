@@ -1,4 +1,4 @@
-import { Google_Sans, Noto_Serif, Noto_Serif_Armenian } from "next/font/google";
+import { Google_Sans, Noto_Sans_Armenian, Noto_Serif, Noto_Serif_Armenian } from "next/font/google";
 
 // Google Sans covers Armenian, Cyrillic and Latin in one family (UI text).
 export const googleSans = Google_Sans({
@@ -23,3 +23,11 @@ export const notoSerif = Noto_Serif({
 });
 
 export const fontVariables = [googleSans.variable, notoSerifArmenian.variable, notoSerif.variable].join(" ");
+
+// Guest body text in Armenian (the guest layout applies this variable; Switzer
+// covers Latin, Google Sans Cyrillic).
+export const notoSansArmenian = Noto_Sans_Armenian({
+  subsets: ["armenian"],
+  variable: "--font-noto-sans-armenian",
+  display: "swap",
+});

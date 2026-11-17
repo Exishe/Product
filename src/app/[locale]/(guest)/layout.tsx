@@ -2,6 +2,7 @@ import type { Viewport } from "next";
 import { preconnect, preload } from "react-dom";
 import { FONTSHARE_API, FONTSHARE_CDN, STARDOM_CSS } from "@/features/guest-theme/fontshare";
 import { GuestFonts } from "@/features/guest-theme/guest-fonts";
+import { notoSansArmenian } from "../../fonts";
 
 // The browser bar matches the noir header band (--guest-noir in globals.css;
 // the meta tag needs a literal colour).
@@ -15,7 +16,7 @@ export default function GuestLayout({ children }: Readonly<{ children: React.Rea
   preconnect(FONTSHARE_CDN, { crossOrigin: "anonymous" });
   preload(STARDOM_CSS, { as: "style" });
   return (
-    <div className="guest-lux min-h-dvh">
+    <div className={`guest-lux ${notoSansArmenian.variable} min-h-dvh`} data-guest-theme="evening">
       {children}
       <GuestFonts />
     </div>

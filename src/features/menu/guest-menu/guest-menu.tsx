@@ -259,17 +259,17 @@ export function GuestMenu({
       )}
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
       <div
-        className={`bg-noir text-ivory fixed inset-x-0 top-0 z-20 ${styles.slim}`}
+        className={`bg-band text-band-ink fixed inset-x-0 top-0 z-20 ${styles.slim}`}
         data-shown={scrolled}
         data-testid="slim-bar"
         inert={!scrolled}
       >
         <div className={`${COLUMN} flex h-14 items-center gap-3`}>
-          <span className="display-face text-champagne-light min-w-0 flex-1 truncate text-xl md:text-2xl">
+          <span className="display-face text-band-accent min-w-0 flex-1 truncate text-xl md:text-2xl">
             {menu.restaurantName}
           </span>
           {table.kind === "ok" && (
-            <span className="border-champagne/50 text-champagne-light flex-none rounded-full border px-2.5 py-0.5 text-sm font-semibold">
+            <span className="border-band-line/50 text-band-accent flex-none rounded-full border px-2.5 py-0.5 text-sm font-semibold">
               {t("table", { label: table.label })}
             </span>
           )}

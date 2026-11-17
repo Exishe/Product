@@ -71,14 +71,14 @@ export function CallWaiterButton({
         <button
           type="button"
           onClick={() => void send()}
-          className={`${pill} bg-champagne-light text-noir active:scale-95`}
+          className={`${pill} bg-band-accent text-band active:scale-95`}
         >
           {compact ? t("menu.callConfirm") : t("menu.callYes")}
         </button>
         <button
           type="button"
           onClick={() => set("idle")}
-          className={`${pill} border-ivory-dim/50 text-ivory-dim hover:text-ivory border`}
+          className={`${pill} border-band-muted/50 text-band-muted hover:text-band-ink border`}
         >
           {t("menu.callCancel")}
         </button>
@@ -103,13 +103,13 @@ export function CallWaiterButton({
         disabled={sending}
         onClick={() => set("confirm", 8000)}
         aria-label={compact ? t("order.callWaiter") : undefined}
-        className={`${pill} border-champagne/60 text-champagne-light hover:border-champagne-light relative border active:scale-95 disabled:opacity-80`}
+        className={`${pill} border-band-line/60 text-band-accent hover:border-band-accent relative border active:scale-95 disabled:opacity-80`}
         data-testid={compact ? "call-waiter-compact" : "call-waiter"}
       >
         {sending && (
           <span
             aria-hidden="true"
-            className="border-champagne-light absolute inset-0 animate-ping rounded-full border-2"
+            className="border-band-accent absolute inset-0 animate-ping rounded-full border-2"
           />
         )}
         <span className={sending ? styles.ringing : styles.bell}>

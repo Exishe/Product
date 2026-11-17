@@ -60,6 +60,11 @@
   --color-hairline: var(--guest-hairline);
   --color-taupe: var(--guest-taupe);
   --color-ivory-dim: var(--guest-ivory-dim);
+  --color-band: var(--guest-band);
+  --color-band-ink: var(--guest-band-ink);
+  --color-band-accent: var(--guest-band-accent);
+  --color-band-muted: var(--guest-band-muted);
+  --color-band-line: var(--guest-band-line);
   --color-success: var(--guest-success, var(--color-tarragon));
   --color-success-tint: var(--guest-success-tint, var(--color-tarragon-tint));
 }
@@ -280,6 +285,16 @@
   /* Stardom (Latin only, from the Fontshare API) first; Armenian and Cyrillic
      fall through per glyph to the Noto serifs. */
   --font-display: "Stardom", var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
+  /* Switzer for Latin, Noto Sans Armenian for Armenian, Google Sans for Cyrillic */
+  --font-ui: "Switzer", var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif;
+  font-family: var(--font-ui);
+
+  /* the header band and the slim bar; dark in Evening and Coffee, light in Daylight */
+  --guest-band: var(--guest-noir);
+  --guest-band-ink: var(--guest-ivory);
+  --guest-band-accent: var(--guest-champagne-light);
+  --guest-band-muted: var(--guest-ivory-dim);
+  --guest-band-line: var(--guest-champagne);
   background: var(--color-matsoni);
   color: var(--color-ink);
 }
@@ -303,4 +318,52 @@ body:has(.guest-lux) {
 
 .guest-lux .bg-noir :focus-visible {
   outline-color: var(--guest-champagne-light);
+}
+
+/* Theme presets (design directions, see docs/03-design/themes.md). Evening is
+   the base .guest-lux palette above; a preset only re-points the palette. */
+.guest-lux[data-guest-theme="coffee"] {
+  /* "Coffee": warm cream, near-black ink, ember orange (refero, coffee & lifestyle direction) */
+  --guest-ivory: #e4dfd9;
+  --guest-paper: #ffffff;
+  --guest-noir: #171717; /* 14.2:1 on the cream */
+  --guest-noir-2: #262626;
+  --guest-noir-3: #383533;
+  --guest-taupe: #4b4b4b; /* 6.9:1 on the cream */
+  --guest-hairline: #cfc8c0;
+  --guest-hairline-strong: #857d74;
+  --guest-mist: #d6cfc7;
+  --guest-champagne: #ff6a1f; /* ember: decoration, large text */
+  --guest-champagne-light: #ff8a4c; /* ember on near-black: 7.9:1 */
+  --guest-gold-deep: #a83800; /* small ember text: 5.3:1 on the cream */
+  --guest-gold-tint: #f6dccb;
+  --guest-ivory-dim: #b9b2aa;
+  --guest-wine: #8f2d1f;
+  --guest-wine-tint: #f3dcd6;
+  --guest-wine-on-dark: #f5a291;
+}
+.guest-lux[data-guest-theme="daylight"] {
+  /* "Daylight": white with one red accent (refero, white with one accent direction) */
+  --guest-ivory: #f7f7f7;
+  --guest-paper: #ffffff;
+  --guest-noir: #222222; /* 15.0:1 on the page */
+  --guest-noir-2: #2f2f2f;
+  --guest-noir-3: #444444;
+  --guest-taupe: #6a6a6a; /* 5.1:1 on the page */
+  --guest-hairline: #ebebeb;
+  --guest-hairline-strong: #8c8c8c;
+  --guest-mist: #ececec;
+  --guest-champagne: #e00b41; /* the one accent */
+  --guest-champagne-light: #ff8fa6; /* accent on dark buttons: 7.4:1 */
+  --guest-gold-deep: #c00936; /* small accent text: 5.6:1 */
+  --guest-gold-tint: #fde7ec;
+  --guest-ivory-dim: #b3b3b3;
+  --guest-wine: #c00936;
+  --guest-wine-tint: #fde7ec;
+  --guest-wine-on-dark: #ff8fa6;
+  --guest-band: #ffffff;
+  --guest-band-ink: #222222;
+  --guest-band-accent: #c00936;
+  --guest-band-muted: #6a6a6a;
+  --guest-band-line: #ebebeb;
 }
