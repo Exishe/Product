@@ -1,30 +1,36 @@
-// "Yard Fighters": a one-on-one cartoon scuffle in an old Yerevan courtyard.
-// The Chef (the guest) and the Baker (the phone) trade ladle jabs, heavy kicks
-// and spinning lavash discs. Hits make flour puffs, sparks and stars; a
-// knocked-out fighter sits down dizzy. Best of three rounds. No words on the
-// canvas: numbers and drawn shapes only.
+// "Kitchen Clash": a comic food fight between two cooks in a busy café
+// kitchen. The tall Chef (the guest) and the round Cook (the phone) bonk each
+// other with wooden spoons, ring each other's heads with frying pans, hide
+// behind pot lids and lob tomatoes that splat on faces, the floor and the walls.
+// A knocked-out cook sits down and a pot drops onto their head, stars circling;
+// the winner dances. Best of three rounds. No words on the canvas: numbers and
+// drawn shapes only.
 //
 // Art direction
-// - Mood: a sunny Saturday squabble between neighbours; warm, loud, never mean.
+// - Mood: the lunch rush gone silly; slapstick between two cooks, loud and
+//   messy, never mean. The waiter peeks through the door porthole now and then.
 // - Camera and scale: 2.5D side view, one static stage under a slightly raised
-//   camera (perspective paving, layered wall, pergola); the world is 300 units
-//   tall and scales to the arena, with small nudges and a KO zoom.
-// - Shapes: the Chef tall and slim (toque, scarf, ladle), the Baker round and
-//   wide (flat cap, moustache, apron, rolling pin); the yard soft and rounded.
-// - Values: the fighters carry the strongest contrast (ink outlines, white
-//   coats); the yard stays in a narrower mid range of warm stone.
-// - Palette: tufa pink and apricot for the yard, tarragon (Chef) against
-//   pomegranate (Baker) in the HUD, gold for stars and sparks; key light warm
-//   from the right, shadows shifted cool towards violet.
-// - Detail: faces, hands and props get the detail; the wall behind the fight
-//   is kept quiet, the laundry and grapes stay up out of the play line.
-// - Rules: saturated 2.5D cartoon; bold ink outlines on the fighters only; each
-//   fighter shape is shaded light-to-shadow from the right with a warm rim
-//   light; soft cool floor shadows; no outlines in the background.
-// - Signature: flour puffs on every hit, and a spinning lavash for a special.
+//   camera (tiled wall, stove, door, a checker floor in perspective); the world
+//   is 300 units tall and scales to the arena, with small nudges and a KO zoom.
+// - Shapes: the Chef tall and thin (huge toque, curled moustache, long legs),
+//   the Cook short and round (bandana, unibrow, rosy cheeks); kitchen things are
+//   soft rounded rectangles and circles.
+// - Values: the fighters, their tools and the tomatoes carry the strongest
+//   contrast (ink outlines, white coats, red splats); the kitchen sits in a
+//   narrow, light range of cream, mint tile and brushed steel under a haze.
+// - Palette: cream and mint tile for the room, copper for the pans, tarragon
+//   (Chef) against pomegranate (Cook) in the HUD, tomato red for the mess, gold
+//   for stars; key light warm from the right, shadows shifted cool to violet.
+// - Detail: faces (four expressions), hands and props get the detail; the wall
+//   behind the fight stays quiet, shelves and pans hang up out of the play line.
+// - Rules: saturated 2.5D cartoon; bold ink outlines on the fighters and props
+//   only; each fighter shape is shaded light-to-shadow from the right with a
+//   warm rim light; soft cool floor shadows; no outlines in the background.
+// - Signature: tomato and flour smears that stay on a face for a moment, and
+//   tomato stains that pile up on the floor and walls as the match goes on.
 import { C, clamp, createPad, fitCanvas, label, loop, rand, roundRect, type Game, type PadButton, type SfxKind, type Size } from "./engine";
 
-type State = "idle" | "walk" | "punch" | "kick" | "throw" | "block" | "hit" | "stag" | "ko" | "win";
+type State = "idle" | "walk" | "spoon" | "pan" | "throw" | "block" | "hit" | "stag" | "ko" | "win";
 type Fighter = {
   cpu: boolean;
   x: number; // world units from the arena's left edge
@@ -38,18 +44,20 @@ type Fighter = {
   st: State;
   t: number;
   stun: number; // how long the current hit or stagger lasts
-  done: boolean; // this attack already landed (or the disc left the hand)
+  done: boolean; // this attack already landed (or the tomato left the hand)
   inv: number;
   cd: number;
   wins: number;
   sq: number; // squash (+) or stretch (-), decays to 0
   fl: number; // white hit flash
+  sm: number; // a smear on the face, seconds left
+  tom: boolean; // the smear is tomato (else flour)
   buf: string; // the last press, kept for 120 ms (input buffer)
   bt: number;
 };
 type Intent = { mv: number; block: boolean; jump: boolean; a: boolean; b: boolean; c: boolean };
-type Disc = { x: number; vx: number; owner: Fighter; spin: number };
-// k: 0 flour puff, 1 star, 2 spark, 3 ring, 4 impact burst.
+type Tomato = { x: number; vx: number; owner: Fighter; spin: number };
+// k: 0 flour puff, 1 star, 2 bonk streak, 3 ring, 4 impact burst, 5 tomato bit.
 type Bit = { x: number; y: number; vx: number; vy: number; life: number; max: number; r: number; k: number; c: string };
 type Mat = readonly [string, string, string]; // light, base, cool shadow
 
@@ -58,10 +66,12 @@ const WALK = 105;
 const GRAV = 1300;
 const TAU = Math.PI * 2;
 const INK = C.ink;
+const RED = "#e2402a";
 const BUFFER = 0.12;
+const TOM_Y = 56; // the height a tomato flies at
 // Attack timing in seconds: [duration, active from, active to, reach, damage].
-// The punch is light (out at once, short); the kick is heavy (wind-up, commits).
-const ATK = { punch: [0.22, 0.035, 0.11, 34, 6], kick: [0.56, 0.24, 0.34, 54, 13], throw: [0.4, 0.17, 0.17, 0, 0] } as const;
+// The spoon is light (out at once, short); the pan is heavy (wind-up, commits).
+const ATK = { spoon: [0.22, 0.035, 0.11, 36, 6], pan: [0.56, 0.24, 0.34, 54, 13], throw: [0.4, 0.17, 0.17, 0, 0] } as const;
 const M = {
   skin: ["#ffe2c4", "#f4bb92", "#c98488"],
   coat: ["#ffffff", "#f2efe9", "#b4bcd8"],
@@ -70,8 +80,12 @@ const M = {
   navy: ["#56698a", "#2d3b55", "#1a2036"],
   brown: ["#b88050", "#87562f", "#4c3046"],
   scarf: ["#ffd07a", "#f2a23a", "#c45a62"],
+  band: ["#ff7a7a", "#d8283e", "#7c1838"],
   wood: ["#f6c890", "#d9a066", "#97606a"],
   steel: ["#ffffff", "#c9d2d8", "#7a84a8"],
+  iron: ["#8f98ad", "#454b5c", "#1b1f2b"],
+  copper: ["#ffc08a", "#d97a45", "#8a3e3a"],
+  tomato: ["#ff8a6a", RED, "#8e1a3a"],
   shoe: ["#5a5f6e", "#262a33", "#0d0f18"],
   gold: ["#fff3a8", "#ffcf3f", "#cf7f2a"],
 } satisfies Record<string, Mat>;
@@ -124,7 +138,7 @@ export const game: Game = {
     const prevTouch = canvas.style.touchAction;
     canvas.style.touchAction = "none";
 
-    // Layout in CSS px; the world is 300 units tall, fighters about 110.
+    // Layout in CSS px; the world is 300 units tall, the Chef about 140.
     let ax = 0;
     let aw = 1;
     let ah = 1;
@@ -133,14 +147,17 @@ export const game: Game = {
     let floorY = 1;
     let bg: HTMLCanvasElement | null = null;
     let btns: { id: PadButton; x: number; y: number; r: number }[] = [];
+    let port = [0, 0, 1]; // the door's porthole: x, y, r in px
+    let steam: number[][] = []; // pot tops that steam, in px
 
     const mk = (cpu: boolean): Fighter => ({
-      cpu, x: 0, y: 0, vx: 0, vy: 0, kb: 0, face: 1, hp: 100, chip: 100, st: "idle", t: 0, stun: 0, done: false, inv: 0, cd: 0, wins: 0, sq: 0, fl: 0, buf: "", bt: 0,
+      cpu, x: 0, y: 0, vx: 0, vy: 0, kb: 0, face: 1, hp: 100, chip: 100, st: "idle", t: 0, stun: 0, done: false, inv: 0, cd: 0, wins: 0, sq: 0, fl: 0, sm: 0, tom: false, buf: "", bt: 0,
     });
     const P = mk(false);
     const B = mk(true);
-    let discs: Disc[] = [];
+    let toms: Tomato[] = [];
     let bits: Bit[] = [];
+    let stains: { x: number; y: number; r: number }[] = [];
     let round = 1;
     let phase: "intro" | "fight" | "ko" = "intro";
     let phaseT = 0;
@@ -158,6 +175,7 @@ export const game: Game = {
     let camX = 0;
     let zoom = 1;
     let now = 0;
+    let potDown = false; // the KO pot has landed
 
     const setScore = () => {
       const s = Math.round(dealt) + bonus;
@@ -176,187 +194,117 @@ export const game: Game = {
       if (!b) return null;
       b.scale(dpr, dpr);
       const W = s.w;
-      const wallTop = ah * 0.2;
-      const floorTop = ah * 0.62;
-      // Golden-hour sky.
-      let g = b.createLinearGradient(0, 0, 0, wallTop);
-      g.addColorStop(0, "#ffae5c");
-      g.addColorStop(1, "#ffe0a6");
-      b.fillStyle = g;
-      b.fillRect(0, 0, W, wallTop + 2);
-      // Tufa wall with stone courses, warmer towards the sun on the right.
-      g = b.createLinearGradient(0, 0, W, 0);
-      g.addColorStop(0, "#c97a6a");
-      g.addColorStop(1, "#ec9a6e");
-      b.fillStyle = g;
-      b.fillRect(0, wallTop, W, floorTop - wallTop);
-      b.strokeStyle = "rgba(150,80,70,0.35)";
-      b.lineWidth = 1.2;
-      const row = Math.max(10, ah * 0.045);
-      for (let y = wallTop, i = 0; y < floorTop; y += row, i++) {
-        b.beginPath();
-        b.moveTo(0, y);
-        b.lineTo(W, y);
-        for (let x = (i % 2) * row; x < W; x += row * 2) {
-          b.moveTo(x, y);
-          b.lineTo(x, Math.min(floorTop, y + row));
-        }
-        b.stroke();
-      }
-      b.fillStyle = C.tufaDark;
-      b.fillRect(0, wallTop - 4, W, 8);
-      // Arched doorways and a window with geraniums.
-      const arch = (x: number, top: number, w: number, bottom: number, fill: string) => {
-        b.beginPath();
-        b.moveTo(x, bottom);
-        b.lineTo(x, top + w / 2);
-        b.arc(x + w / 2, top + w / 2, w / 2, Math.PI, 0);
-        b.lineTo(x + w, bottom);
-        b.closePath();
+      const ft = ah * 0.64; // where the floor starts
+      const tt = ah * 0.34; // where the tiles start
+      const rect = (x: number, y: number, w: number, h: number, fill: string, r = 3) => {
         b.fillStyle = fill;
+        roundRect(b, x, y, w, h, r);
         b.fill();
-        b.lineWidth = Math.max(3, w * 0.09);
-        b.strokeStyle = "#a95f4f";
-        b.stroke();
       };
-      const dw = aw * 0.17;
-      arch(ax + aw * 0.12, floorTop - (floorTop - wallTop) * 0.78, dw, floorTop, "#2c2a3e");
-      arch(ax + aw * 0.66, floorTop - (floorTop - wallTop) * 0.74, dw, floorTop, "#3f6f86");
-      b.strokeStyle = "rgba(19,36,27,0.35)";
-      b.lineWidth = 1.5;
-      b.beginPath();
-      b.moveTo(ax + aw * 0.66 + dw / 2, floorTop - (floorTop - wallTop) * 0.6);
-      b.lineTo(ax + aw * 0.66 + dw / 2, floorTop);
-      b.stroke();
-      const wx = ax + aw * 0.42;
-      const wy = wallTop + (floorTop - wallTop) * 0.22;
-      arch(wx, wy, dw * 0.7, wy + dw * 0.9, "#34506a");
-      b.fillStyle = C.tufaDark;
-      b.fillRect(wx - 6, wy + dw * 0.9, dw * 0.7 + 12, 6);
-      for (let i = 0; i < 4; i++) blob(b, wx + 4 + i * dw * 0.16, wy + dw * 0.86, dw * 0.08, i % 2 ? "#d61f45" : "#ff4d6a");
-      // Laundry line.
-      const lx0 = ax + aw * 0.03;
-      const lx1 = ax + aw * 0.97;
-      const ly = wallTop + ah * 0.05;
-      const sag = ah * 0.07;
-      b.strokeStyle = "rgba(19,36,27,0.5)";
-      b.lineWidth = 1.2;
-      b.beginPath();
-      b.moveTo(lx0, ly);
-      b.quadraticCurveTo((lx0 + lx1) / 2, ly + sag * 2, lx1, ly);
-      b.stroke();
-      const cloth = ["#ffb03a", "#9fd6f2", "#ffc9d2", "#fff8ea", "#63d398", "#ffe066"];
-      for (let i = 0; i < 6; i++) {
-        const t = 0.12 + i * 0.15;
-        const x = lx0 + (lx1 - lx0) * t;
-        const y = ly + sag * 4 * t * (1 - t);
-        const cw = aw * (i % 2 ? 0.06 : 0.08);
-        const ch = ah * (i % 3 ? 0.08 : 0.11);
-        b.fillStyle = cloth[i]!;
-        roundRect(b, x - cw / 2, y, cw, ch, 3);
-        b.fill();
-        b.fillStyle = "rgba(80,60,140,0.22)"; // the cool shadow side
-        b.fillRect(x - cw / 2, y + 2, cw * 0.3, ch - 4);
-        b.fillStyle = C.tufaDark;
-        b.fillRect(x - cw / 2 + 2, y - 2, 3, 6);
-        b.fillRect(x + cw / 2 - 5, y - 2, 3, 6);
-      }
-      // Floor: paving in perspective.
-      g = b.createLinearGradient(0, floorTop, 0, ah);
-      g.addColorStop(0, "#c48f78");
-      g.addColorStop(1, "#ecc69a");
-      b.fillStyle = g;
-      b.fillRect(0, floorTop, W, ah - floorTop);
-      const cx = ax + aw / 2;
-      const tw = aw / 7;
-      b.strokeStyle = "rgba(122,74,60,0.3)";
+      // Warm plaster above, pale mint tiles below with soft grout.
+      b.fillStyle = "#f6e9d2";
+      b.fillRect(0, 0, W, ft);
+      b.fillStyle = "#e2eee3";
+      b.fillRect(0, tt, W, ft - tt);
+      b.strokeStyle = "rgba(110,140,125,0.25)";
       b.lineWidth = 1;
+      const ts = Math.max(12, ah * 0.05);
       b.beginPath();
-      for (let i = -12; i <= 12; i++) {
-        b.moveTo(cx + i * tw * 0.7, floorTop);
-        b.lineTo(cx + i * tw * 1.6, ah);
-      }
-      for (let j = 1; j < 6; j++) {
-        const y = floorTop + (ah - floorTop) * (j / 6) ** 1.5;
+      for (let y = tt; y < ft; y += ts) {
         b.moveTo(0, y);
         b.lineTo(W, y);
       }
+      for (let x = ax % ts; x < W; x += ts) {
+        b.moveTo(x, tt);
+        b.lineTo(x, ft);
+      }
       b.stroke();
-      g = b.createLinearGradient(0, floorTop, 0, floorTop + ah * 0.06);
-      g.addColorStop(0, "rgba(70,40,90,0.32)");
-      g.addColorStop(1, "rgba(70,40,90,0)");
-      b.fillStyle = g;
-      b.fillRect(0, floorTop, W, ah * 0.06);
-      // Nardi table with two stools at the back right.
-      const nx = ax + aw * 0.86;
-      const ny = floorTop + ah * 0.06;
-      const nw = aw * 0.15;
-      b.fillStyle = "rgba(70,40,90,0.25)";
-      b.beginPath();
-      b.ellipse(nx - nw * 0.2, ny + ah * 0.085, nw * 0.9, ah * 0.012, 0, 0, TAU);
-      b.fill();
-      for (const sx of [nx - nw * 0.75, nx + nw * 0.75, nx - nw * 0.4, nx + nw * 0.4]) {
-        const stool = Math.abs(sx - nx) > nw * 0.5;
-        b.fillStyle = "#6b4128";
-        b.fillRect(sx - 1.5, ny + (stool ? ah * 0.05 : 0), 3, stool ? ah * 0.035 : ah * 0.08);
-        if (stool) {
-          b.fillStyle = "#9a6038";
-          roundRect(b, sx - nw * 0.14, ny + ah * 0.035, nw * 0.28, ah * 0.018, 2);
+      b.fillStyle = "#eab9a0";
+      b.fillRect(0, tt - 5, W, 6);
+      // A shelf of jars, upper left.
+      const sx = ax + aw * 0.04;
+      const sw = aw * 0.36;
+      const sy = ah * 0.27;
+      const jars = ["#a8cf98", "#f4b56c", "#ea907e", "#e0cb8e", "#acd0dc", "#f4b56c"];
+      for (let i = 0; i < 6; i++) {
+        const jw = sw / 8;
+        const jh = ah * (0.05 + (i % 3) * 0.013);
+        const x = sx + 4 + (i * sw) / 6.2;
+        rect(x, sy - jh, jw, jh, jars[i]!);
+        rect(x - 1, sy - jh - 4, jw + 2, 5, "#c99a7a", 2);
+        b.fillStyle = "rgba(255,255,255,0.45)";
+        b.fillRect(x + jw * 0.18, sy - jh + 4, jw * 0.16, jh - 8);
+      }
+      rect(sx - 4, sy, sw + 8, 5, "#c99a6e", 1);
+      // A rail of copper pans, top middle.
+      const rx = ax + aw * 0.44;
+      const ry = ah * 0.09;
+      rect(rx - aw * 0.02, ry, aw * 0.45, 3, "#a89a8c", 1);
+      for (let i = 0; i < 4; i++) {
+        const x = rx + aw * (0.03 + i * 0.11);
+        const r = ah * (0.034 + (i % 2) * 0.012);
+        const y = ry + r * 2.4;
+        rect(x - 1.5, ry, 3, r * 1.4, "#b07048", 1);
+        blob(b, x, y, r, "#e6955f");
+        blob(b, x, y, r * 0.72, "#cf7a48");
+        b.fillStyle = "rgba(255,240,215,0.6)";
+        b.fillRect(x + r * 0.2, y - r * 0.55, r * 0.18, r * 0.5);
+      }
+      // The stove on the left, two pots on top (their steam is drawn live).
+      const kx = ax + aw * 0.03;
+      const kw = aw * 0.36;
+      const kt = ft - ah * 0.17;
+      rect(kx, kt, kw, ft - kt + ah * 0.02, "#cfd4d8");
+      rect(kx, kt, kw, 6, "#a7aeb6", 2);
+      rect(kx + kw * 0.14, kt + ah * 0.065, kw * 0.72, ah * 0.07, "#8a929c", 5);
+      for (let i = 0; i < 4; i++) blob(b, kx + kw * (0.2 + i * 0.2), kt + ah * 0.035, ah * 0.011, "#6e7580");
+      steam = [];
+      for (const [t, pw, ph, col] of [[0.27, 0.3, 0.07, "#b3bcc4"], [0.7, 0.24, 0.05, "#e6955f"]] as const) {
+        const x = kx + kw * t;
+        rect(x - (kw * pw) / 2, kt - ah * ph, kw * pw, ah * ph, col, 4);
+        rect(x - (kw * pw) / 2 - 3, kt - ah * ph - 2, kw * pw + 6, 5, "#9aa3ac", 2);
+        steam.push([x, kt - ah * ph - 4]);
+      }
+      // The swinging door to the café, right, with a porthole.
+      const dw = aw * 0.17;
+      const dx = ax + aw * 0.74;
+      const dt = ft - ah * 0.37;
+      rect(dx - 4, dt - 4, dw + 8, ft - dt + 4, "#d6c4ae");
+      rect(dx, dt, dw, ft - dt, "#9cc6bb", 2);
+      rect(dx + dw * 0.08, ft - ah * 0.06, dw * 0.84, ah * 0.045, "#cdd3d6", 2);
+      port = [dx + dw / 2, dt + dw * 0.5, dw * 0.27];
+      blob(b, port[0]!, port[1]!, port[2]! + 4, "#cdd3d6");
+      blob(b, port[0]!, port[1]!, port[2]!, "#7f97a3");
+      // Floor: cream and grey checks in perspective.
+      b.fillStyle = "#efe8db";
+      b.fillRect(0, ft, W, ah - ft);
+      const cx = ax + aw / 2;
+      const tw = aw / 8;
+      const at = (i: number, y: number) => cx + i * tw * (0.75 + (0.95 * (y - ft)) / (ah - ft));
+      b.fillStyle = "#d9d8cf";
+      for (let j = 0; j < 6; j++) {
+        const y0 = ft + (ah - ft) * (j / 6) ** 1.4;
+        const y1 = ft + (ah - ft) * ((j + 1) / 6) ** 1.4;
+        for (let i = -10 + (j % 2); i < 10; i += 2) {
+          b.beginPath();
+          b.moveTo(at(i, y0), y0);
+          b.lineTo(at(i + 1, y0), y0);
+          b.lineTo(at(i + 1, y1), y1);
+          b.lineTo(at(i, y1), y1);
           b.fill();
         }
       }
-      b.fillStyle = "#9a6038";
-      roundRect(b, nx - nw / 2, ny - ah * 0.02, nw, ah * 0.03, 2);
-      b.fill();
-      b.fillStyle = "#f0dcb4";
-      b.fillRect(nx - nw * 0.45, ny - ah * 0.028, nw * 0.9, ah * 0.016);
-      for (let i = 0; i < 10; i++) {
-        const x = nx - nw * 0.43 + i * nw * 0.086;
-        b.fillStyle = i % 2 ? C.pomegranate : "#3a2a20";
-        b.beginPath();
-        b.moveTo(x, ny - ah * 0.028);
-        b.lineTo(x + nw * 0.04, ny - ah * 0.016);
-        b.lineTo(x + nw * 0.08, ny - ah * 0.028);
-        b.fill();
-      }
-      blob(b, nx - nw * 0.2, ny - ah * 0.033, ah * 0.008, C.matsoni);
-      blob(b, nx + nw * 0.15, ny - ah * 0.033, ah * 0.008, INK);
-      // Pergola: posts, beam, vine and grapes.
-      b.fillStyle = "#6e4630";
-      b.fillRect(ax + 2, 0, aw * 0.025, floorTop + ah * 0.1);
-      b.fillRect(ax + aw * 0.975 - 2, 0, aw * 0.025, floorTop + ah * 0.1);
-      b.fillRect(0, ah * 0.17, W, ah * 0.025);
-      for (let x = (ax % 40) - 40; x < W; x += Math.max(26, aw * 0.08)) b.fillRect(x, 0, aw * 0.012, ah * 0.19);
-      const leaves = ["#25704a", "#1d8a4c", "#43a857", "#7bd36a"];
-      for (let x = -10, i = 0; x < W + 10; x += 9, i++) {
-        const y = ah * 0.17 + Math.sin(i * 1.7) * ah * 0.025;
-        blob(b, x, y, ah * (0.022 + ((i * 7) % 5) * 0.004), leaves[i % 4]!);
-        if (i % 3 === 0) blob(b, x + 4, y - ah * 0.06, ah * 0.02, leaves[(i + 1) % 4]!);
-      }
-      for (const t of [0.08, 0.3, 0.55, 0.8]) {
-        const gx = ax + aw * t;
-        const gy = ah * 0.2;
-        const gr = ah * 0.012;
-        for (let r = 0; r < 4; r++) {
-          for (let k = 0; k <= 3 - r; k++) blob(b, gx + (k - (3 - r) / 2) * gr * 1.7, gy + r * gr * 1.5, gr, k % 2 ? "#7a3596" : "#4f2463");
-        }
-      }
-      // Warm sun from the right: a glow and a few soft shafts across the wall.
+      let g = b.createLinearGradient(0, ft, 0, ft + ah * 0.06);
+      g.addColorStop(0, "rgba(70,40,90,0.25)");
+      g.addColorStop(1, "rgba(70,40,90,0)");
+      b.fillStyle = g;
+      b.fillRect(0, ft, W, ah * 0.06);
+      // Warm light from the right, cool towards the left: one soft wash.
       g = b.createLinearGradient(W, 0, 0, ah);
-      g.addColorStop(0, "rgba(255,190,90,0.35)");
-      g.addColorStop(1, "rgba(120,90,200,0.12)");
+      g.addColorStop(0, "rgba(255,200,120,0.22)");
+      g.addColorStop(1, "rgba(120,100,200,0.1)");
       b.fillStyle = g;
       b.fillRect(0, 0, W, ah);
-      b.fillStyle = "rgba(255,230,160,0.13)";
-      for (let k = 0; k < 3; k++) {
-        const x = ax + aw * (0.5 + k * 0.22);
-        b.beginPath();
-        b.moveTo(x, ah * 0.2);
-        b.lineTo(x + aw * 0.08, ah * 0.2);
-        b.lineTo(x - aw * 0.3, ah);
-        b.lineTo(x - aw * 0.42, ah);
-        b.fill();
-      }
       // The pad's panel: dark basalt with a tufa lip.
       g = b.createLinearGradient(0, ah, 0, s.h);
       g.addColorStop(0, C.basalt3);
@@ -401,8 +349,8 @@ export const game: Game = {
     const ctx = fit.ctx;
     const pad = createPad(canvas, layout);
 
-    // Shading for the fighters: L is the sun's direction in the fighter's
-    // local x (the sun is on the world's right, the fighter may be mirrored).
+    // Shading for the fighters: L is the light's direction in the fighter's
+    // local x (the light is on the world's right, the fighter may be mirrored).
     let L = 1;
     const paint = (path: () => void, m: Mat, x: number, y: number, r: number, lw = 2.4) => {
       const g = ctx.createLinearGradient(x + L * r, y - r, x - L * r * 0.6, y + r);
@@ -413,7 +361,7 @@ export const game: Game = {
       ctx.fillStyle = g;
       ctx.fill();
       if (!lw) return;
-      // Rim light: the shape's own edge, nudged away from the sun, clipped inside.
+      // Rim light: the shape's own edge, nudged away from the light, clipped inside.
       ctx.save();
       ctx.clip();
       ctx.translate(-L * 2.4, 2.4);
@@ -427,18 +375,23 @@ export const game: Game = {
       ctx.strokeStyle = INK;
       ctx.stroke();
     };
-    const circ = (x: number, y: number, r: number) => () => {
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, TAU);
-    };
-    const ball = (x: number, y: number, r: number, m: Mat, lw = 2) => paint(circ(x, y, r), m, x, y, r, lw);
+    const ell = (x: number, y: number, rx: number, ry: number, rot: number, m: Mat, lw = 2) =>
+      paint(() => {
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, rot, 0, TAU);
+      }, m, x, y, Math.max(rx, ry), lw);
+    const ball = (x: number, y: number, r: number, m: Mat, lw = 2) => ell(x, y, r, r, 0, m, lw);
     const rr = (x: number, y: number, w: number, h: number, r: number, m: Mat) => paint(() => roundRect(ctx, x, y, w, h, r), m, x + w / 2, y + h / 2, Math.max(w, h) / 2);
+    const tomato = (x: number, y: number, r: number, rot: number) => {
+      ball(x, y, r, M.tomato, 2);
+      star(ctx, x + Math.cos(rot - 1.57) * r * 0.75, y + Math.sin(rot - 1.57) * r * 0.75, r * 0.45, rot, 5, 0.4, C.tarragonLight);
+    };
 
     const reset = () => {
       for (const f of [P, B]) {
-        Object.assign(f, { x: ww * (f.cpu ? 0.72 : 0.28), y: 0, vx: 0, vy: 0, kb: 0, face: f.cpu ? -1 : 1, hp: 100, chip: 100, st: "idle", t: 0, done: false, inv: 0, cd: 0, buf: "" });
+        Object.assign(f, { x: ww * (f.cpu ? 0.72 : 0.28), y: 0, vx: 0, vy: 0, kb: 0, face: f.cpu ? -1 : 1, hp: 100, chip: 100, st: "idle", t: 0, done: false, inv: 0, cd: 0, sm: 0, buf: "" });
       }
-      discs = [];
+      toms = [];
       timer = ROUND;
       phase = "intro";
       phaseT = 0;
@@ -456,31 +409,40 @@ export const game: Game = {
       for (let i = 0; i < n; i++) {
         const a = rand(0, TAU);
         const v = sp * rand(0.5, 1);
-        bits.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v + (k === 1 ? 90 : k ? 0 : 25), life: 0, max, r: k ? r : r * rand(0.6, 1.1), k, c });
+        bits.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v + [25, 90, 0, 0, 0, 160][k]!, life: 0, max, r: k && k < 5 ? r : r * rand(0.6, 1.1), k, c });
       }
     };
-    // Impact: a ring, a comic burst, sparks, flour and stars.
-    const fx = (x: number, y: number, heavy: boolean, blocked: boolean) => {
-      add(x, y, 3, 1, 0, 0.22, heavy ? 22 : 15, blocked ? "#bfe6ff" : "#fff6d0");
-      add(x, y, 2, blocked ? 5 : heavy ? 11 : 7, heavy ? 340 : 260, 0.2, 0, blocked ? "#dff3ff" : "#fff0a0");
+    // A tomato goes splat: red bits, seeds and a stain where it landed.
+    const splat = (x: number, y: number, n: number) => {
+      add(x, y, 5, n, 260, 0.8, 5, RED);
+      add(x, y, 5, n / 3, 170, 0.6, 2.4, "#ffd86b");
+      stains.push({ x, y: y > 70 || x < 12 || x > ww - 12 ? y : 0, r: 9 + n / 2 });
+      stains = stains.slice(-24);
+    };
+    // Impact. kind: 0 spoon, 1 pan, 2 tomato.
+    const fx = (x: number, y: number, kind: number, blocked: boolean) => {
+      add(x, y, 3, 1, 0, 0.22, kind === 1 ? 26 : 15, blocked ? "#bfe6ff" : kind === 2 ? "#ffb3a0" : "#fff6d0");
+      if (kind === 2) return splat(x, y, blocked ? 6 : 14);
+      add(x, y, 2, blocked ? 5 : kind ? 11 : 7, kind ? 340 : 260, 0.2, 0, blocked ? "#dff3ff" : "#fff0a0");
       if (blocked) return;
-      add(x, y, 4, 1, 0, 0.13, heavy ? 30 : 19);
-      add(x, y, 0, heavy ? 8 : 4, heavy ? 90 : 60, 0.55, heavy ? 10 : 7);
-      add(x, y, 1, heavy ? 3 : 1, heavy ? 130 : 100, 0.75, 6);
+      add(x, y, 4, 1, 0, 0.13, kind ? 30 : 19, "#fff6c8");
+      add(x, y, 0, kind ? 5 : 8, kind ? 90 : 70, 0.55, kind ? 8 : 9);
+      add(x, y, 1, kind ? 4 : 2, kind ? 130 : 100, 0.75, 6);
     };
 
-    // The Baker's brain. It only learns of the guest's attack after a human
+    // The Cook's brain. It only learns of the guest's attack after a human
     // delay; it guards more against mashing and counters what it blocks.
     const ai = { mv: 0, think: 0, react: 0, guard: 0, counter: 0, starts: [] as number[] };
     const lvl = () => Math.min(round, 3) - 1;
+    const voice = (f: Fighter) => (f.cpu ? 1.2 : 0.85);
 
     // A cheer (or an "uh-oh") a moment after the knockout, once the "whoa" is out.
     let cheer: { at: number; kind: SfxKind } | null = null;
 
-    const start = (f: Fighter, st: "punch" | "kick" | "throw") => {
+    const start = (f: Fighter, st: "spoon" | "pan" | "throw") => {
       setSt(f, st);
       api.sfx("whoosh");
-      if (st === "kick") api.sfx("hah", f.cpu ? 1.2 : 0.85);
+      if (st === "pan") api.sfx("hah", voice(f));
       if (!f.cpu) {
         ai.starts = ai.starts.filter((t) => now - t < 1.5);
         ai.starts.push(now);
@@ -491,16 +453,17 @@ export const game: Game = {
     const endRound = (winner: Fighter) => {
       phase = "ko";
       phaseT = 0;
+      potDown = false;
       const loser = winner === P ? B : P;
       setSt(loser, "ko");
       setSt(winner, "win");
       winner.wins++;
-      discs = [];
-      add(loser.x, 60, 4, 1, 0, 0.2, 36);
-      add(loser.x, 60, 1, 7, 170, 1.1, 8);
+      toms = [];
+      add(loser.x, 60, 4, 1, 0, 0.2, 36, "#fff6c8");
+      add(loser.x, 60, 0, 8, 120, 0.8, 10);
       api.sfx(winner === P ? "win" : "lose");
-      api.sfx("whoa", loser.cpu ? 1.2 : 0.85);
-      cheer = { at: now + 0.65, kind: winner === P ? "yay" : "uhoh" };
+      api.sfx("whoa", voice(loser));
+      cheer = { at: now + 1, kind: winner === P ? "yay" : "uhoh" };
       if (!calm) flash = 0.18;
       if (winner === P) bonus += 300 + Math.ceil(timer) * 5;
       if (winner.wins >= 2) {
@@ -511,24 +474,26 @@ export const game: Game = {
       setScore();
     };
 
-    // from: +1 when the blow travels to the right.
-    const hurt = (att: Fighter, def: Fighter, dmg: number, from: number, hx: number, hy: number, heavy: boolean) => {
+    // from: +1 when the blow travels to the right. kind: 0 spoon, 1 pan, 2 tomato.
+    const hurt = (att: Fighter, def: Fighter, dmg: number, from: number, hx: number, hy: number, kind: number) => {
       if (def.inv > 0 || def.st === "ko" || phase !== "fight") return false;
+      const heavy = kind > 0;
       const blocked = def.st === "block" && def.face === -from;
       const d = blocked ? dmg * 0.15 : dmg;
       def.hp = Math.max(0, def.hp - d);
       def.kb = from * (blocked ? 110 : heavy ? 330 : 160);
-      fx(hx, hy, heavy, blocked);
+      fx(hx, hy, kind, blocked);
       if (blocked) {
         att.kb = -from * 70;
         def.fl = 0.12;
-        // A blocked heavy leaves its user open for a moment.
-        if (att.st === "kick") {
+        // A blocked pan leaves its user open for a moment.
+        if (att.st === "pan") {
           setSt(att, "stag");
           att.stun = 0.5;
+          api.sfx("boing", 1.3);
         }
         if (def.cpu && Math.random() < [0.3, 0.6, 0.9][lvl()]!) ai.counter = now + rand(0.04, 0.1);
-        api.sfx("block");
+        api.sfx(kind === 2 ? "splat" : "block");
       } else {
         setSt(def, "hit");
         def.stun = heavy ? 0.42 : 0.26;
@@ -536,9 +501,24 @@ export const game: Game = {
         def.vx = 0;
         if (heavy && def.y <= 0) def.vy = 150;
         def.fl = 0.1;
-        api.sfx(heavy ? "heavy" : "hit");
-        // The one who got hit says so: "oof" for a punch, "ouch!" for a kick.
-        api.sfx(heavy ? "ouch" : "oof", def.cpu ? 1.2 : 0.85);
+        def.sm = 1.6;
+        def.tom = kind === 2;
+        // The one who got hit says so: "oof" for a spoon, "ouch!" for a pan,
+        // and a tomato in the face is, after all, quite tasty.
+        if (kind === 2) {
+          api.sfx("splat");
+          api.sfx("mmm", voice(def));
+        } else if (kind) {
+          def.sq = 0.16; // flattened for a moment
+          api.sfx("heavy");
+          api.sfx("block");
+          api.sfx("boing", 1.6);
+          api.sfx("ouch", voice(def));
+        } else {
+          api.sfx("hit");
+          api.sfx("pop", 0.6);
+          api.sfx("oof", voice(def));
+        }
         if (!calm) {
           shake = heavy ? 0.22 : 0.1;
           camX = from * (heavy ? 9 : 5);
@@ -558,10 +538,11 @@ export const game: Game = {
       f.inv = Math.max(0, f.inv - dt);
       f.cd = Math.max(0, f.cd - dt);
       f.fl = Math.max(0, f.fl - dt);
+      f.sm = Math.max(0, f.sm - dt);
       f.sq -= Math.sign(f.sq) * Math.min(Math.abs(f.sq), dt);
       const ground = f.y <= 0;
-      const atk = f.st === "punch" || f.st === "kick" || f.st === "throw";
-      if ((atk && f.t >= ATK[f.st as "punch"][0]) || ((f.st === "hit" || f.st === "stag") && f.t >= f.stun)) setSt(f, "idle");
+      const atk = f.st === "spoon" || f.st === "pan" || f.st === "throw";
+      if ((atk && f.t >= ATK[f.st as "spoon"][0]) || ((f.st === "hit" || f.st === "stag") && f.t >= f.stun)) setSt(f, "idle");
       for (const k of ["c", "b", "a", "jump"] as const) {
         if (i[k]) {
           f.buf = k;
@@ -569,20 +550,20 @@ export const game: Game = {
         }
       }
       if (phase === "fight") {
-        if (f.st === "punch" || f.st === "kick") {
+        if (f.st === "spoon" || f.st === "pan") {
           const [, on, off, reach, dmg] = ATK[f.st];
           const dx = (o.x - f.x) * f.face;
           if (!f.done && f.t >= on && f.t <= off && dx > 0 && dx < reach + 16 && Math.abs(o.y - f.y) < 55) {
             f.done = true;
-            const heavy = f.st === "kick";
-            hurt(f, o, dmg, f.face, f.x + f.face * (reach - 4), f.y + (heavy ? 40 : 62), heavy);
+            // Both tools aim for the head.
+            hurt(f, o, dmg, f.face, o.x - f.face * 8, o.y + (o.cpu ? 66 : 92), f.st === "pan" ? 1 : 0);
           }
           if (ground) f.vx = 0;
         } else if (f.st === "throw") {
           if (ground) f.vx = 0;
           if (!f.done && f.t >= ATK.throw[1]) {
             f.done = true;
-            discs.push({ x: f.x + f.face * 30, vx: f.face * 230, owner: f, spin: 0 });
+            toms.push({ x: f.x + f.face * 30, vx: f.face * 230, owner: f, spin: 0 });
             api.sfx("whoosh");
           }
         } else if (f.st !== "hit" && f.st !== "stag") {
@@ -592,8 +573,8 @@ export const game: Game = {
           if (k === "c" && f.cd <= 0) {
             start(f, "throw");
             f.cd = 3;
-          } else if (k === "b") start(f, "kick");
-          else if (k === "a") start(f, "punch");
+          } else if (k === "b") start(f, "pan");
+          else if (k === "a") start(f, "spoon");
           else if (k === "jump" && ground) {
             f.vy = 430;
             f.vx = i.mv * WALK * 1.15;
@@ -636,12 +617,12 @@ export const game: Game = {
       const dx = P.x - B.x;
       const dist = Math.abs(dx);
       const dir = Math.sign(dx);
-      // React to what the guest started a moment ago: a kick still winding
+      // React to what the guest started a moment ago: a pan still winding
       // up can be blocked; a string of presses makes it hold its guard.
       if (ai.react && now >= ai.react) {
         ai.react = 0;
         const mash = ai.starts.filter((t) => now - t < 1.5).length >= 3;
-        const live = (P.st === "kick" || P.st === "punch") && P.t < ATK[P.st][2];
+        const live = (P.st === "pan" || P.st === "spoon") && P.t < ATK[P.st][2];
         const p = mash ? [0.12, 0.45, 0.9][l]! : live ? [0.15, 0.35, 0.55][l]! : 0;
         if (dist < 95 && Math.random() < p) ai.guard = now + (mash ? 0.7 : 0.35);
       }
@@ -662,7 +643,7 @@ export const game: Game = {
       ai.think = rand(0.42, 0.62) - l * 0.07;
       const r = Math.random();
       ai.mv = 0;
-      const threat = discs.some((d) => d.owner === P && Math.abs(d.x - B.x) < 130 && Math.sign(B.x - d.x) === Math.sign(d.vx));
+      const threat = toms.some((d) => d.owner === P && Math.abs(d.x - B.x) < 130 && Math.sign(B.x - d.x) === Math.sign(d.vx));
       if (threat && r < 0.25 + l * 0.2) {
         if (Math.random() < 0.5) out.jump = true;
         else ai.guard = now + 0.5;
@@ -707,18 +688,30 @@ export const game: Game = {
         phase = "fight";
         fightT = 0.6;
         api.sfx("whoosh");
+        api.sfx("hah", 0.85);
       }
-      if (phase === "ko" && phaseT > (over ? 2 : 1.9)) {
-        if (over) {
-          if (!reported) {
-            reported = true;
-            api.gameOver(score);
+      if (phase === "ko") {
+        // The pot lands on the loser's head.
+        if (!potDown && phaseT > 0.55) {
+          potDown = true;
+          const lo = P.st === "ko" ? P : B;
+          api.sfx("heavy");
+          api.sfx("boing", 0.9);
+          add(lo.x, 64, 1, 4, 120, 0.9, 7);
+          if (!calm) shake = 0.15;
+        }
+        if (phaseT > (over ? 2.4 : 2.2)) {
+          if (over) {
+            if (!reported) {
+              reported = true;
+              api.gameOver(score);
+            }
+            return;
           }
+          round++;
+          reset();
           return;
         }
-        round++;
-        reset();
-        return;
       }
       const idle: Intent = { mv: 0, block: false, jump: false, a: false, b: false, c: false };
       const fight = phase === "fight";
@@ -731,27 +724,34 @@ export const game: Game = {
         P.x = clamp(P.x - push, 28, ww - 28);
         B.x = clamp(B.x + push, 28, ww - 28);
       }
-      for (const d of discs) {
+      for (const d of toms) {
         d.x += d.vx * dt;
-        d.spin += dt * 14;
+        d.spin += dt * 10;
         const o = d.owner === P ? B : P;
-        if (Math.abs(o.x - d.x) < 20 && o.y < 38 && hurt(d.owner, o, 12, Math.sign(d.vx), d.x, 46, true)) d.x = -999;
+        if (Math.abs(o.x - d.x) < 20 && o.y < 38 && hurt(d.owner, o, 12, Math.sign(d.vx), d.x, TOM_Y, 2)) d.x = -999;
+        else if (d.x < 6 || d.x > ww - 6) {
+          // A miss goes splat on the wall.
+          splat(d.x, TOM_Y, 9);
+          api.sfx("splat", 0.8);
+          d.x = -999;
+        }
       }
-      if (discs.length === 2 && Math.abs(discs[0]!.x - discs[1]!.x) < 20) {
-        fx(discs[0]!.x, 46, true, false);
-        api.sfx("block");
-        discs = [];
+      if (toms.length === 2 && Math.abs(toms[0]!.x - toms[1]!.x) < 20) {
+        splat(toms[0]!.x, TOM_Y + 20, 16);
+        api.sfx("splat");
+        toms = [];
       }
-      discs = discs.filter((d) => d.x > -20 && d.x < ww + 20);
+      toms = toms.filter((d) => d.x > -20);
       for (const b of bits) {
         b.life += dt;
         b.x += b.vx * dt;
         b.y += b.vy * dt;
-        b.vy -= (b.k === 1 ? 300 : b.k ? 0 : 30) * dt;
+        b.vy -= [30, 300, 0, 0, 0, 800][b.k]! * dt;
         if (b.k === 2) {
           b.vx *= 0.85;
           b.vy *= 0.85;
         }
+        if (b.y < 0) b.y = b.vx = b.vy = 0;
       }
       bits = bits.filter((b) => b.life < b.max);
       if (fight) {
@@ -765,257 +765,288 @@ export const game: Game = {
 
     // --- Drawing -----------------------------------------------------------
 
-    // A head of radius 13 at 0,0 facing +x. mood: 0 calm, 1 hurt, 2 dizzy, 3 happy, 4 effort.
-    const head = (baker: boolean, mood: number) => {
-      if (!baker) {
-        // Toque behind the head: three puffs on a band.
-        for (const [x, y, r] of [[-8, -21, 7.5], [9, -21, 7.5], [0, -27, 9]] as const) ball(x, y, r, M.coat);
-        rr(-11, -19, 23, 10, 2, M.coat);
+    // A head at 0,0 facing +x (Chef r 12, Cook r 14).
+    // mood: 0 angry, 1 ouch, 2 dizzy, 3 happy, 4 yelling.
+    const head = (cook: boolean, mood: number, hat = true) => {
+      const r = cook ? 14 : 12;
+      if (!cook && hat) {
+        // The huge toque: a tall pleated column with a puffy crown.
+        rr(-10, -44, 20, 34, 4, M.coat);
+        for (const [x, y, s] of [[-9, -46, 9], [9, -46, 9], [0, -55, 11]] as const) ball(x, y, s, M.coat);
+        rr(-12, -17, 24, 9, 3, M.coat);
       }
-      ball(0, 0, 13, M.skin, 2.4);
+      ball(0, 0, r, M.skin, 2.4);
       ctx.strokeStyle = INK;
-      ctx.lineWidth = baker ? 2.6 : 1.8;
+      ctx.lineWidth = 1.9;
       ctx.beginPath();
       if (mood === 2) {
-        for (const ex of [2, 8]) {
-          ctx.moveTo(ex - 2, -5);
-          ctx.lineTo(ex + 2, -1);
-          ctx.moveTo(ex + 2, -5);
-          ctx.lineTo(ex - 2, -1);
-        }
+        // Spiral eyes.
+        for (let a = 0; a < 9; a += 0.5) ctx.lineTo(6 + Math.cos(a + now * 8) * a * 0.42, -3 + Math.sin(a + now * 8) * a * 0.42);
       } else if (mood === 1) {
-        ctx.moveTo(3, -6);
-        ctx.lineTo(7, -3);
-        ctx.lineTo(3, 0);
-      } else if (mood === 3) ctx.arc(6, -2, 2.6, Math.PI, 0);
+        ctx.moveTo(2, -7);
+        ctx.lineTo(7, -3.5);
+        ctx.lineTo(2, -0.5);
+      } else if (mood === 3) ctx.arc(6, -2, 3, Math.PI, 0);
       else {
-        ctx.moveTo(2, mood ? -9 : -8);
-        ctx.lineTo(10, mood ? -5 : -7);
+        // Angry brow: low towards the nose (the Cook's is a thick unibrow).
+        ctx.lineWidth = cook ? 3.6 : 2.4;
+        ctx.moveTo(cook ? -3 : 1, -10);
+        ctx.lineTo(11, -5.5);
       }
       ctx.stroke();
-      if (!mood || mood === 4) blob(ctx, 6, -2.5, 2.1, INK);
-      ball(12.5, 2, 3.4, M.skin, 1.4);
-      if (baker) {
-        ctx.fillStyle = "#4a2f1e";
+      if (!mood || mood === 4) blob(ctx, 6.5, -2.5, 2.2, INK);
+      // Mouth.
+      const my = cook ? 8 : 10;
+      ctx.lineWidth = 1.8;
+      if (mood === 1 || mood === 4) {
         ctx.beginPath();
-        ctx.ellipse(7, 7, 8, 3.2, -0.15, 0, TAU);
-        ctx.ellipse(-2, 6.5, 5, 2.6, 0.5, 0, TAU);
+        ctx.ellipse(7, my, 3, mood === 1 ? 3.8 : 2.6, 0, 0, TAU);
+        ctx.fillStyle = "#6b1f2e";
         ctx.fill();
-        // Flat cap with a short peak.
-        paint(() => {
-          ctx.beginPath();
-          ctx.ellipse(-1, -10, 16, 6.5, -0.08, 0, TAU);
-        }, M.shirt, -1, -10, 16);
-        paint(() => {
-          ctx.beginPath();
-          ctx.ellipse(12, -6.5, 7, 2.4, 0.25, 0, TAU);
-        }, M.wood, 12, -6, 7, 1.8);
-      } else {
-        blob(ctx, 4, 6, 2.4, "#f38f86");
+        ctx.stroke();
+      } else if (mood === 3) {
         ctx.beginPath();
-        if (mood === 1 || mood === 2) ctx.arc(8, 10, 2.4, 0, TAU);
-        else ctx.arc(8, 8, 3, 0.2, 2.2);
+        ctx.arc(6, my - 2, 4.5, 0.1, Math.PI - 0.3);
+        ctx.closePath();
+        ctx.fillStyle = "#6b1f2e";
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(3, my);
+        if (mood) ctx.bezierCurveTo(5, my - 3, 7, my + 3, 10, my);
+        else ctx.lineTo(10, my - 1);
+        ctx.stroke();
+      }
+      ball(r - 0.5, 2, cook ? 4.6 : 3.6, M.skin, 1.4);
+      if (cook) {
+        blob(ctx, 2, 5, 3.2, "rgba(243,110,110,0.6)");
+        // The bandana: a red cap with white dots and a knot at the back.
+        L = -L;
+        for (const s of [-1, 1]) ell(-15, -8 + s * 3, 6, 2.6, s * 0.5 + Math.sin(now * 7 + s) * (calm ? 0 : 0.15), M.band, 1.6);
+        L = -L;
+        paint(() => {
+          ctx.beginPath();
+          ctx.arc(0, -3, r + 1.5, Math.PI * 1.08, Math.PI * 1.95);
+          ctx.closePath();
+        }, M.band, 0, -10, r);
+        for (const [x, y] of [[-7, -12], [1, -15], [7, -11], [-2, -9]] as const) blob(ctx, x, y, 1.4, "#fff");
+      } else {
+        // A big curled moustache that droops when dizzy.
+        const d = mood === 2 ? -1 : 1;
+        ctx.strokeStyle = "#3b2416";
+        ctx.lineWidth = 3.4;
+        ctx.beginPath();
+        ctx.moveTo(1, 5 - 4 * d);
+        ctx.quadraticCurveTo(4, 5 + 4 * d, 11, 6);
+        ctx.quadraticCurveTo(18, 5 + 4 * d, 20, 5 - 4 * d);
         ctx.stroke();
       }
     };
 
     const fighter = (f: Fighter) => {
-      const baker = f.cpu;
+      const cook = f.cpu;
       L = f.face;
       const sx = ax + f.x * u;
-      // Soft cool floor shadow, cast a little away from the sun.
+      const sy = cook ? -21 : -31; // shoulder height in the hip frame
+      // Soft cool floor shadow, cast a little away from the light.
       const sh = 1 - Math.min(0.6, f.y / 160);
       ctx.fillStyle = "rgba(60,30,100,0.2)";
       for (const k of [1, 0.6]) {
         ctx.beginPath();
-        ctx.ellipse(sx - 6 * u, floorY + 2, (baker ? 31 : 26) * u * sh * k, 6 * u * sh * k, 0, 0, TAU);
+        ctx.ellipse(sx - 6 * u, floorY + 2, (cook ? 32 : 24) * u * sh * k, 6 * u * sh * k, 0, 0, TAU);
         ctx.fill();
       }
       ctx.save();
-      const hop = f.st === "win" && !calm ? Math.abs(Math.sin(now * 6)) * 8 : 0;
+      const w = calm ? 0 : Math.sin(now * 9);
+      const hop = f.st === "win" ? Math.abs(w) * 9 : 0;
       const jit = stop > 0 && f.st === "hit" ? rand(-1.5, 1.5) : 0;
       ctx.translate(sx + jit, floorY - (f.y + hop) * u);
       const q = (f.sq / 0.16) * 0.2;
       ctx.scale(f.face * u * (1 + q), u * (1 - q));
-      if (f.fl > 0 && !calm) ctx.filter = "brightness(1.7) saturate(0.5)";
-      const top = baker ? M.shirt : M.coat;
-      const pants = baker ? M.brown : M.navy;
+      if (f.fl > 0 && !calm) ctx.filter = "brightness(1.6) saturate(0.6)";
+      const top = cook ? M.shirt : M.coat;
+      const pants = cook ? M.brown : M.navy;
       const ko = f.st === "ko";
       const st = f.st;
-      let hipY = -34 + Math.sin(now * 4 + (baker ? 1.3 : 0)) * 1.2;
+      let hipY = (cook ? -27 : -42) + Math.sin(now * 4 + (cook ? 1.3 : 0)) * 1.2;
       let lean = 0;
       let ff = [7, 0];
       let bf = [-9, 0];
-      let knee: number[] | null = null;
-      let fh = [16, -12];
-      let bh = [-10, -10];
+      let fh = [16, sy + 12];
+      let bh = [-10, sy + 14];
       let mood = 0;
+      let tool = 0; // in the front hand: 0 spoon, 1 pan, 2 lid, 3 tomato, -1 nothing
       if (st === "walk") {
-        const w = Math.sin(f.t * 12);
-        ff = [7 + w * 9, -Math.max(0, w) * 4];
-        bf = [-9 - w * 9, -Math.max(0, -w) * 4];
-        hipY -= Math.abs(w) * 1.5;
-      } else if (st === "punch") {
-        const [, on, off] = ATK.punch;
-        const e = f.t < on ? 0.6 + (0.4 * f.t) / on : f.t < off ? 1 : Math.max(0, 1 - (f.t - off) / 0.11);
-        fh = [16 + 26 * e, -18 - 4 * e];
-        bh = [-4, -16];
+        const k = Math.sin(f.t * 12);
+        ff = [7 + k * 9, -Math.max(0, k) * 4];
+        bf = [-9 - k * 9, -Math.max(0, -k) * 4];
+        hipY -= Math.abs(k) * 1.5;
+      } else if (st === "spoon") {
+        // Bonk: up and over onto the head.
+        const [, on, off] = ATK.spoon;
+        const e = f.t < on ? (0.6 * f.t) / on : f.t < off ? 1 : Math.max(0, 1 - (f.t - off) / 0.11);
+        fh = [12 + 26 * e, sy - 14 + 12 * e];
+        bh = [-4, sy + 8];
         bf = [-13, 0];
-        lean = 0.16 * e;
+        lean = 0.18 * e;
         mood = 4;
       } else if (st === "throw") {
-        const w = f.t < ATK.throw[1];
-        const e = w ? 0 : Math.max(0, 1 - (f.t - 0.17) / 0.23);
-        fh = w ? [-16, -36] : [18 + 22 * e, -22];
-        lean = w ? -0.12 : 0.14 * e;
+        const k = f.t < ATK.throw[1];
+        const e = k ? 0 : Math.max(0, 1 - (f.t - 0.17) / 0.23);
+        fh = k ? [-14, sy - 14] : [18 + 20 * e, sy + 2];
+        lean = k ? -0.12 : 0.14 * e;
+        tool = k ? 3 : -1;
         mood = 4;
-      } else if (st === "kick") {
-        // Wind-up: knee chambered, body leaning back; then the leg snaps out.
-        const [d, on, off] = ATK.kick;
+      } else if (st === "pan") {
+        // Wind-up: the pan goes up behind the head; then it comes down, BONK.
+        const [d, on, off] = ATK.pan;
         const x = f.t < on ? 0 : f.t < off ? 1 : Math.max(0, 1 - (f.t - off) / (d - off));
         const c = f.t < off ? Math.min(1, f.t / on) : x;
-        knee = [6 + 10 * c + 14 * x, -14 - 14 * c - 4 * x];
-        ff = [6 + 4 * c + 40 * x, -2 - 8 * c - 30 * x];
-        bf = [-10 - 3 * c, 0];
-        fh = [10, -28];
-        bh = [-16, -24 + 4 * c];
-        lean = -0.12 * c - 0.18 * x;
+        fh = [8 - 18 * c + 40 * x, sy + 10 - 34 * c + 30 * x];
+        bh = [-14, sy + 4];
+        ff = [12 + 6 * x, 0];
+        bf = [-14, 0];
+        lean = -0.15 * c + 0.3 * x;
+        tool = 1;
         mood = 4;
       } else if (st === "block") {
-        hipY = -29;
-        fh = [15, -40];
-        bh = [12, -31];
+        hipY += 5;
+        fh = [17, sy + 2];
+        bh = [12, sy + 10];
         ff = [10, 0];
         bf = [-14, 0];
         lean = -0.1;
+        tool = 2;
         mood = 4;
       } else if (st === "hit") {
         lean = -0.35;
-        fh = [2, -40];
-        bh = [-16, -36];
+        fh = [2, sy - 14];
+        bh = [-16, sy - 10];
         mood = 1;
       } else if (st === "stag") {
-        lean = -0.2 + (calm ? 0 : Math.sin(f.t * 22) * 0.1);
-        fh = [12, -48];
-        bh = [-20, -42];
-        mood = 1;
+        lean = -0.2 + w * 0.1;
+        fh = [12, sy - 22];
+        bh = [-20, sy - 16];
+        mood = 2;
       } else if (st === "win") {
-        fh = [20, -50];
+        // A little victory dance: hop, sway, wave the spoon.
+        lean = w * 0.14;
+        fh = [16, sy - 22 - 6 * w];
+        bh = [-14, sy - 22 + 6 * w];
+        ff = [7, -Math.max(0, w) * 7];
+        bf = [-9, -Math.max(0, -w) * 7];
         mood = 3;
       } else if (ko) {
         hipY = -9;
         ff = [26, -2];
         bf = [18, 0];
-        lean = -0.3 + Math.sin(now * 3) * (calm ? 0 : 0.08);
-        fh = [12, 4];
-        bh = [-14, 6];
+        lean = -0.3 + w * 0.06;
+        fh = [14, 6];
+        bh = [-14, 8];
         mood = 2;
+        tool = -1;
       }
-      if (f.y > 0 && !ko && st !== "kick") {
+      if (f.y > 0 && !ko) {
         ff = [10, -16];
         bf = [-6, -10];
       }
-      const leg = (x0: number, p: number[], k: number[] | null) => {
-        if (k) {
-          limb(ctx, x0, hipY, k[0]!, k[1]!, 8.5, pants, L);
-          limb(ctx, k[0]!, k[1]!, p[0]!, p[1]! - 3, 8, pants, L);
-        } else limb(ctx, x0, hipY, p[0]!, p[1]! - 3, 8.5, pants, L);
-        paint(() => {
-          ctx.beginPath();
-          ctx.ellipse(p[0]! + 3, p[1]! - 2, 6, 4.2, 0, 0, TAU);
-        }, M.shoe, p[0]! + 3, p[1]!, 6, 1.6);
+      const leg = (x0: number, p: number[]) => {
+        limb(ctx, x0, hipY, p[0]!, p[1]! - 3, cook ? 9 : 7.5, pants, L);
+        ell(p[0]! + 3, p[1]! - 2, 6, 4.2, 0, M.shoe, 1.6);
       };
-      leg(-4, bf, null);
-      leg(4, ff, knee);
+      leg(-4, bf);
+      leg(4, ff);
       ctx.translate(0, hipY);
       ctx.rotate(lean);
       // Back arm, body, head, front arm with the tool.
-      limb(ctx, -2, -24, bh[0]!, bh[1]!, 7, top, L);
+      limb(ctx, -2, sy + 4, bh[0]!, bh[1]!, 7, top, L);
       ball(bh[0]!, bh[1]!, 4.2, M.skin, 1.6);
-      if (baker) {
-        rr(-20, -31, 40, 38, 18, top);
-        rr(-8, -18, 25, 25, 6, M.apron);
-        limb(ctx, 2, -18, 2, -30, 1.4, C.tarragon);
+      if (cook) {
+        rr(-22, -28, 44, 36, 18, top);
+        rr(-8, -16, 26, 24, 6, M.apron);
         ctx.fillStyle = "rgba(255,255,255,0.85)";
-        for (const [x, y] of [[-14, -22], [6, -8], [12, -2], [-4, -4], [10, -26], [-15, -8]]) ctx.fillRect(x!, y!, 2.2, 2.2);
+        for (const [x, y] of [[-14, -20], [6, -6], [12, 0], [-4, -2], [10, -24], [-15, -6]]) ctx.fillRect(x!, y!, 2.2, 2.2);
       } else {
-        rr(-14, -32, 28, 35, 9, top);
-        for (let k = 0; k < 3; k++) {
-          blob(ctx, 3, -22 + k * 7, 1.6, "#9aa6c0");
-          blob(ctx, 9, -22 + k * 7, 1.6, "#9aa6c0");
-        }
-        const flap = Math.sin(now * 9) * (calm ? 0 : 2);
-        paint(() => {
-          ctx.beginPath();
-          ctx.moveTo(-8, -30);
-          ctx.lineTo(-21, -24 + flap);
-          ctx.lineTo(-18, -17 + flap);
-          ctx.lineTo(-4, -26);
-          ctx.closePath();
-        }, M.scarf, -12, -24, 8, 2);
-        paint(() => {
-          ctx.beginPath();
-          ctx.ellipse(2, -30, 11, 4.5, 0, 0, TAU);
-        }, M.scarf, 2, -30, 11, 2);
+        rr(-11, -38, 22, 42, 8, top);
+        for (let k = 0; k < 4; k++) blob(ctx, 5, -28 + k * 7, 1.6, "#9aa6c0");
+        ell(2, -37, 10, 4.2, 0, M.scarf, 2);
       }
       ctx.save();
-      ctx.translate(3, -45);
-      head(baker, mood);
-      ctx.restore();
-      const ang = Math.atan2(fh[1]! + 24, fh[0]! - 4);
-      const cx = Math.cos(ang);
-      const cy = Math.sin(ang);
-      const [hx, hy] = [fh[0]!, fh[1]!];
-      limb(ctx, 4, -24, hx, hy, 7.5, top, L);
-      if (baker) {
-        limb(ctx, hx + cy * 13, hy - cx * 13, hx - cy * 13, hy + cx * 13, 7, M.wood, L);
-        limb(ctx, hx + cy * 17, hy - cx * 17, hx - cy * 17, hy + cx * 17, 2.5, M.wood, L);
-      } else {
-        limb(ctx, hx - cx * 3, hy - cy * 3, hx + cx * 15, hy + cy * 15, 2.2, M.steel, L);
-        ball(hx + cx * 20, hy + cy * 20, 5.8, M.steel, 1.8);
+      ctx.translate(3, cook ? -35 : -50);
+      head(cook, mood, !ko);
+      // A smear on the face for a moment: tomato or flour.
+      if (f.sm > 0) {
+        ctx.globalAlpha = Math.min(1, f.sm * 2);
+        const c = f.tom ? RED : "#ffffff";
+        for (const [x, y, s] of [[6, -1, 5.5], [10, 4, 3.8], [1, 3, 3.4], [3, -7, 2.6]] as const) blob(ctx, x, y, s, c);
+        ctx.fillStyle = c;
+        ctx.fillRect(8.5, 4, 2.6, 7 + (1.6 - f.sm) * 5);
+        if (f.tom) for (const [x, y] of [[5, -2], [8, 1], [2, 2]] as const) blob(ctx, x, y, 0.9, "#ffd86b");
+        ctx.globalAlpha = 1;
       }
-      ball(hx, hy, 4.6, M.skin, 1.6);
-      ctx.filter = "none";
-      if (st === "block") {
-        // The guard: a cool shimmer in front, brighter when it takes a blow.
-        ctx.strokeStyle = `rgba(190,232,255,${f.fl > 0 ? 0.95 : 0.5})`;
-        ctx.lineWidth = f.fl > 0 ? 5 : 3;
-        ctx.beginPath();
-        ctx.arc(14, -32, 30, -1, 1);
-        ctx.stroke();
+      if (ko) {
+        // A pot falls from above and lands on the head; stars circle it.
+        const d = clamp(1 - (phaseT - 0.3) / 0.25, 0, 1);
+        ctx.translate(0, -d * d * 240);
+        L = 1;
+        rr(-16, -24, 32, 22, 5, M.copper);
+        rr(-19, -5, 38, 6, 3, M.copper);
+        for (const s of [-1, 1]) limb(ctx, s * 16, -17, s * 23, -14, 3, M.iron);
+        if (!d) {
+          for (let k = 0; k < 4; k++) {
+            const a = now * 3 + (k * TAU) / 4;
+            star(ctx, Math.cos(a) * 22, -32 + Math.sin(a) * 6, 4.5, now * 4);
+          }
+        }
       }
-      if (ko || st === "stag") {
+      if (st === "stag") {
         for (let k = 0; k < 3; k++) {
           const a = now * 3 + (k * TAU) / 3;
-          star(ctx, 3 + Math.cos(a) * 16, -64 + Math.sin(a) * 5, 4.5, now * 4);
+          star(ctx, Math.cos(a) * 16, (cook ? -26 : -74) + Math.sin(a) * 5, 4.5, now * 4);
         }
       }
       ctx.restore();
-    };
-
-    const disc = (d: Disc) => {
-      const x = ax + d.x * u;
-      const y = floorY - 46 * u;
-      const r = 12 * u;
-      const s = Math.sign(d.vx);
-      ctx.strokeStyle = "rgba(255,250,235,0.75)";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      for (let k = 0; k < 3; k++) {
-        ctx.moveTo(x - s * (r + 4), y - r * 0.5 + k * r * 0.5);
-        ctx.lineTo(x - s * (r + 18 + k * 5), y - r * 0.5 + k * r * 0.5);
+      L = f.face;
+      const [hx, hy] = [fh[0]!, fh[1]!];
+      const ang = Math.atan2(hy - sy, hx - 4);
+      const cx = Math.cos(ang);
+      const cy = Math.sin(ang);
+      limb(ctx, 4, sy + 4, hx, hy, 7.5, top, L);
+      if (tool === 1) {
+        // The frying pan, with a swoosh while it swings.
+        if (f.t > ATK.pan[1] && f.t < ATK.pan[2] + 0.05) {
+          ctx.strokeStyle = "rgba(255,255,255,0.7)";
+          ctx.lineWidth = 7;
+          ctx.beginPath();
+          ctx.arc(4, sy, 44, -2.2, 0.4);
+          ctx.stroke();
+        }
+        limb(ctx, hx - cx * 2, hy - cy * 2, hx + cx * 14, hy + cy * 14, 3.4, M.wood, L);
+        ball(hx + cx * 25, hy + cy * 25, 11.5, M.iron, 2.2);
+        blob(ctx, hx + cx * 25, hy + cy * 25, 7.5, "#2a2f3c");
+      } else if (!tool) {
+        limb(ctx, hx - cx * 3, hy - cy * 3, hx + cx * 14, hy + cy * 14, 2.6, M.wood, L);
+        ell(hx + cx * 19, hy + cy * 19, 5.5, 3.8, ang, M.wood, 1.8);
+      } else if (tool === 3) tomato(hx + cx * 6, hy + cy * 6, 6.5, 0);
+      ball(hx, hy, 4.6, M.skin, 1.6);
+      if (tool === 2) {
+        // The pot lid guard, ringing when it takes a blow.
+        ell(hx + 6, hy, 4.5, 17, 0, M.steel, 2);
+        ball(hx + 11, hy, 2.8, M.iron, 1.4);
+        if (f.fl > 0) {
+          ctx.strokeStyle = "rgba(190,232,255,0.95)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(hx + 6, hy, 24, -1, 1);
+          ctx.stroke();
+        }
       }
-      ctx.stroke();
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(d.spin);
-      L = 1;
-      ball(0, 0, r, M.wood, 2);
-      for (let k = 0; k < 5; k++) blob(ctx, Math.cos(k * 1.3) * r * 0.55, Math.sin(k * 2.1) * r * 0.5, r * 0.13, "#a8642e");
+      ctx.filter = "none";
       ctx.restore();
     };
 
-    // Icons for the pad and the HUD, drawn (no emoji).
+    // Icons for the pad, drawn (no emoji).
     const icon = (id: PadButton, x: number, y: number, s: number) => {
       ctx.save();
       ctx.translate(x, y);
@@ -1024,45 +1055,23 @@ export const game: Game = {
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       if (id === "a") {
-        // Fist: knuckles, finger lines and the thumb across.
-        rr(-10, -9, 20, 17, 6, M.skin);
-        ctx.beginPath();
-        for (const fx2 of [-4, 1, 5.5]) {
-          ctx.moveTo(fx2, -9);
-          ctx.lineTo(fx2, -3);
-        }
-        ctx.stroke();
-        rr(-11, -1, 15, 7, 3.5, M.skin);
+        // Wooden spoon.
+        limb(ctx, -10, 11, 3, -2, 3.4, M.wood);
+        ell(6, -6, 7.5, 5, -0.8, M.wood);
       } else if (id === "b") {
-        // Boot.
+        // Frying pan.
+        limb(ctx, -12, 10, -3, 2, 4.4, M.wood);
+        ball(4, -4, 11, M.iron, 2.4);
+        blob(ctx, 4, -4, 7, "#2a2f3c");
+      } else if (id === "c") tomato(0, 1, 11, 0);
+      else if (id === "down") {
+        // Pot lid.
         paint(() => {
           ctx.beginPath();
-          ctx.moveTo(-8, -12);
-          ctx.lineTo(1, -12);
-          ctx.lineTo(1, -2);
-          ctx.quadraticCurveTo(12, -1, 12, 6);
-          ctx.lineTo(-8, 6);
+          ctx.ellipse(0, 4, 13, 9, 0, Math.PI, 0);
           ctx.closePath();
-        }, M.shoe, 0, -3, 12);
-        ctx.fillStyle = C.apricot;
-        ctx.fillRect(-7, 6, 18, 3);
-      } else if (id === "c") {
-        // Lavash: a flat, slightly wavy sheet with toasted spots.
-        paint(() => {
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 13, 9, -0.25, 0, TAU);
-        }, M.wood, 0, 0, 13);
-        for (const [px, py] of [[-5, -2], [3, -4], [5, 3], [-2, 4]] as const) blob(ctx, px, py, 1.6, "#a8642e");
-      } else if (id === "down") {
-        // Block: a shield.
-        paint(() => {
-          ctx.beginPath();
-          ctx.moveTo(0, -11);
-          ctx.lineTo(10, -7);
-          ctx.quadraticCurveTo(9, 6, 0, 11);
-          ctx.quadraticCurveTo(-9, 6, -10, -7);
-          ctx.closePath();
-        }, M.steel, 0, 0, 11);
+        }, M.steel, 0, 0, 13);
+        ball(0, -6, 3.5, M.iron, 1.6);
       } else {
         const rot = { left: Math.PI, right: 0, up: -Math.PI / 2 }[id as "up"];
         ctx.rotate(rot);
@@ -1107,10 +1116,11 @@ export const game: Game = {
       blob(ctx, ix, iy, 16, "rgba(14,22,18,0.72)");
       blob(ctx, ix, iy, 13.5, left ? C.tarragon : C.pomegranate);
       ctx.save();
-      ctx.translate(ix - (left ? 1 : -1) * 1.5, iy + 3);
-      ctx.scale((left ? 1 : -1) * 0.75, 0.75);
+      ctx.clip();
+      ctx.translate(ix - (left ? 1 : -1) * 1.5, iy + (f.cpu ? 4 : 8));
+      ctx.scale((left ? 1 : -1) * 0.72, 0.72);
       L = left ? 1 : -1;
-      head(f.cpu, f.st === "hit" || f.st === "stag" ? 1 : f.st === "ko" ? 2 : f.st === "win" ? 3 : 0);
+      head(f.cpu, f.st === "hit" ? 1 : f.st === "ko" || f.st === "stag" ? 2 : f.st === "win" ? 3 : 0);
       ctx.restore();
       for (let k = 0; k < 2; k++) {
         const mx = ix + (left ? 1 : -1) * (28 + k * 18);
@@ -1143,12 +1153,10 @@ export const game: Game = {
         ctx.translate(cx, cy);
         ctx.scale(k, k);
         star(ctx, 0, 0, ah * 0.16, 0.3, 9, 0.6, "#ffe14d");
-        // Crossed ladle and rolling pin.
-        L = 1;
-        const s = ah * 0.11;
-        limb(ctx, -s, s, s * 0.6, -s * 0.6, 3.5, M.steel, 1);
-        ball(s * 0.75, -s * 0.75, s * 0.28, M.steel);
-        limb(ctx, s, s, -s, -s, 9, M.wood, 1);
+        // A crossed spoon and pan.
+        ctx.scale(ah * 0.005, ah * 0.005);
+        icon("a", -5, 0, 20);
+        icon("b", 6, 0, 20);
         ctx.restore();
       }
     };
@@ -1173,6 +1181,59 @@ export const game: Game = {
       star(ctx, x, y - 6, 5, -Math.PI / 2);
     };
 
+    // The live parts of the kitchen: steam off the pots and the waiter who
+    // peeks through the porthole now and then (and always at a knockout).
+    const room = () => {
+      for (const [x, y] of steam) {
+        for (let k = 0; k < 3; k++) {
+          const p = (now * 0.45 + k / 3) % 1;
+          blob(ctx, x! + Math.sin(p * 6 + k) * 6, y! - p * ah * 0.13, ah * (0.012 + p * 0.03), `rgba(255,255,255,${0.55 * (1 - p)})`);
+        }
+      }
+      const t = now % 7;
+      const pk = phase === "ko" ? 1 : clamp(Math.min(t, 2.2 - t) * 4, 0, 1);
+      const [px, py, pr] = port as [number, number, number];
+      if (pk > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, TAU);
+        ctx.clip();
+        const x = px + (1 - pk) * pr * 2;
+        const y = py + pr * 0.3;
+        blob(ctx, x, y, pr * 0.78, "#f4bb92");
+        ctx.fillStyle = "#3a2a24";
+        ctx.beginPath();
+        ctx.arc(x, y - pr * 0.1, pr * 0.8, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.fill();
+        for (const s of [-1, 1]) {
+          blob(ctx, x + s * pr * 0.25 - pr * 0.12, y, pr * 0.2, "#fff");
+          blob(ctx, x + s * pr * 0.25 - pr * 0.2, y, pr * 0.09, INK);
+        }
+        blob(ctx, x - pr * 0.12, y + pr * 0.42, pr * (phase === "ko" ? 0.16 : 0.09), "#6b1f2e");
+        ctx.restore();
+      }
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(px, py, pr * 0.7, -2.6, -1.6);
+      ctx.stroke();
+      // Tomato stains: flat on the floor, splashed on the walls.
+      for (const s of stains) {
+        const x = ax + s.x * u;
+        const r = s.r * u;
+        const c = "#d24733";
+        if (s.y) {
+          const y = floorY - s.y * u;
+          for (let k = 0; k < 6; k++) blob(ctx, x + Math.cos(k * 2.4 + s.r) * r * 0.8, y + Math.sin(k * 2.4) * r * 0.8, k ? r * 0.3 : r * 0.7, c);
+          ctx.fillRect(x - u, y, 2.4 * u, r * 1.6);
+        } else {
+          ctx.beginPath();
+          ctx.ellipse(x, floorY + 3, r * 1.5, r * 0.35, 0, 0, TAU);
+          ctx.fill();
+        }
+      }
+    };
+
     const draw = (dt: number) => {
       const s = fit.size();
       shake = Math.max(0, shake - dt);
@@ -1192,10 +1253,25 @@ export const game: Game = {
       ctx.translate(fx0, floorY);
       ctx.scale(zoom, zoom);
       ctx.translate(-fx0 + camX + (shake > 0 ? rand(-4, 4) * shake * 5 : 0), -floorY + (shake > 0 ? rand(-3, 3) * shake * 5 : 0));
-      if (bg) ctx.drawImage(bg, 0, 0, canvas.width, (ah * canvas.height) / s.h, -10, -10, s.w + 20, ah + 20);
+      if (bg) ctx.drawImage(bg, 0, 0, canvas.width, (ah * canvas.height) / s.h, 0, 0, s.w, ah);
+      room();
       fighter(B);
       fighter(P);
-      for (const d of discs) disc(d);
+      for (const d of toms) {
+        const x = ax + d.x * u;
+        const y = floorY - TOM_Y * u;
+        const sg = Math.sign(d.vx);
+        ctx.strokeStyle = "rgba(255,250,235,0.75)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          ctx.moveTo(x - sg * 14 * u, y + (k - 1) * 5 * u);
+          ctx.lineTo(x - sg * (26 + k * 6) * u, y + (k - 1) * 5 * u);
+        }
+        ctx.stroke();
+        L = 1;
+        tomato(x, y, 9 * u, d.spin);
+      }
       for (const b of bits) {
         const k = 1 - b.life / b.max;
         const x = ax + b.x * u;
@@ -1216,13 +1292,13 @@ export const game: Game = {
           ctx.beginPath();
           ctx.arc(x, y, b.r * u * (1 + (1 - k) * 1.6), 0, TAU);
           ctx.stroke();
-        } else if (b.k === 4) star(ctx, x, y, b.r * u * (1.2 - k * 0.4), b.x, 8, 0.5, "#fff6c8");
-        else blob(ctx, x, y, b.r * u * (1.6 - k * 0.6), b.c);
+        } else if (b.k === 4) star(ctx, x, y, b.r * u * (1.2 - k * 0.4), b.x, 8, 0.5, b.c);
+        else blob(ctx, x, y, b.r * u * (b.k ? 1 : 1.6 - k * 0.6), b.c);
       }
       ctx.globalAlpha = 1;
       if (phase === "ko" && over) {
         const w = P.st === "win" ? P : B;
-        trophy(ax + w.x * u, floorY - (135 + (calm ? 0 : Math.sin(now * 5) * 4)) * u);
+        trophy(ax + w.x * u, floorY - ((w.cpu ? 110 : 165) + (calm ? 0 : Math.sin(now * 5) * 4)) * u);
       }
       ctx.restore();
       if (flash > 0) {
@@ -1242,7 +1318,7 @@ export const game: Game = {
       const tint: Partial<Record<PadButton, readonly [string, string]>> = {
         a: [C.apricot, C.apricotDeep],
         b: ["#e8455e", "#8e1a2f"],
-        c: ["#f5d48a", "#b8873e"],
+        c: ["#bfe3c8", "#5f9a72"],
       };
       for (const b of btns) {
         const on = pad.state[b.id];
@@ -1259,7 +1335,7 @@ export const game: Game = {
         icon(b.id, b.x, y, b.r * 0.62);
         ctx.globalAlpha = 1;
         if (b.id === "c") {
-          // Lavash cooldown ring.
+          // Tomato cooldown ring.
           ctx.lineWidth = 4;
           ctx.lineCap = "round";
           ctx.strokeStyle = P.cd > 0 ? C.apricot : C.tarragonLight;
