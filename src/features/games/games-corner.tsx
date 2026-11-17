@@ -22,26 +22,14 @@ function readSound(): boolean {
   }
 }
 
-export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boolean }) {
+// The bottom bar's Games item brings the guest back here (#games) while the
+// order cooks (ADR-052; it replaced the floating "back to the games" button).
+export function GamesCorner({ ready }: { ready: boolean; waiting?: boolean }) {
   const { t } = useGuestI18n();
   const [open, setOpen] = useState<GameId | null>(null);
-  // While the order is cooking and the games are scrolled out of sight, a
-  // floating button brings the guest back to them.
-  const section = useRef<HTMLElement>(null);
-  // Only while the games are still further down: once the guest has scrolled
-  // past them (to the bill buttons) the button would just be in the way.
-  const [below, setBelow] = useState(false);
-  useEffect(() => {
-    const el = section.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => e && setBelow(!e.isIntersecting && e.boundingClientRect.top > 0), { rootMargin: "0px 0px -15% 0px" });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   return (
     <>
-      <section ref={section} className="-mx-4 mt-2 mb-4 scroll-mt-4 bg-basalt px-4 pt-6 pb-5 text-slip md:mx-0 md:rounded-[20px] md:px-6 md:ring-1 md:ring-apricot-on-dark/25" aria-labelledby="games-title" data-testid="games">
+      <section id="games" className="-mx-4 mt-2 mb-4 scroll-mt-4 bg-basalt px-4 pt-6 pb-5 text-slip md:mx-0 md:rounded-feature md:px-6 md:ring-1 md:ring-apricot-on-dark/25" aria-labelledby="games-title" data-testid="games">
         <div className="flex items-center gap-3">
           <PadIcon className="size-9 flex-none text-apricot-on-dark" />
           <div>
@@ -66,28 +54,13 @@ export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boole
                 </span>
                 <span className="flex items-center justify-between gap-2 p-3">
                   <span className="min-w-0 leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-                  <span className="flex-none rounded-full bg-apricot px-3 py-1 text-sm font-semibold text-ink">{t("games.play")}</span>
+                  <span className="flex-none rounded-pill bg-deep-accent px-3 py-1 text-sm font-semibold text-on-deep-accent">{t("games.play")}</span>
                 </span>
               </button>
             </li>
           ))}
         </ul>
       </section>
-      {waiting && below && !open && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex justify-center px-4">
-          <button
-            type="button"
-            onClick={() => section.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
-            className={`${styles.fab} pointer-events-auto flex min-h-14 items-center gap-3 rounded-full bg-basalt py-2 pr-5 pl-3 font-semibold text-slip shadow-float`}
-            data-testid="games-fab"
-          >
-            <span className={`${styles.pad} grid size-10 place-items-center rounded-full bg-apricot text-ink`}>
-              <PadIcon className="size-6" />
-            </span>
-            {t("games.fab")}
-          </button>
-        </div>
-      )}
       {open && <GameLayer key={open} id={open} ready={ready} onClose={() => setOpen(null)} />}
     </>
   );

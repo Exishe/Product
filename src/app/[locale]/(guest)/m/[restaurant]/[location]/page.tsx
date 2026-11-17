@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { CallWaiterButton } from "@/features/menu/guest-menu/call-waiter-button";
-import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
+import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
+import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
+import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
 import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
 import { getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu } from "@/features/menu/guest-menu/view-model";
@@ -22,10 +23,18 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: menu?.restaurant.name ?? "Pativ" };
 }
 
+// The browser bar wears the café's page colour.
+export async function generateViewport({ params }: { params: Params }): Promise<Viewport> {
+  const { restaurant, location } = await params;
+  const menu = await getPublicMenu(restaurant, location).catch(() => null);
+  return { themeColor: themeColor(guestTheme(menu?.restaurant.guest_theme)) };
+}
+
 // The guest menu: server-rendered from the published snapshot, so it shows at
 // once; the cart, dish sheet and search run in the browser. The table token
 // (?t=) comes from the QR and is checked again here: a token of another café
 // or an old sticker turns ordering off with a notice, the menu still shows.
+// The café's theme and brand colour (ADR-052) wrap the whole page.
 export default async function GuestMenuPage({
   params,
   searchParams,
@@ -50,47 +59,42 @@ export default async function GuestMenuPage({
       ? { kind: "ok", id: resolved.table_id, label: resolved.table_label, token }
       : { kind: "invalid" };
 
-  const hrefFor = (l: Locale) =>
-    `/${l}/m/${restaurant}/${location}${token ? `?t=${encodeURIComponent(token)}` : ""}`;
+  const languagesFor = (offered: readonly string[]): LanguageLink[] =>
+    routing.locales
+      .filter((l) => offered.includes(l))
+      .map((l: Locale) => ({
+        locale: l,
+        href: `/${l}/m/${restaurant}/${location}${token ? `?t=${encodeURIComponent(token)}` : ""}`,
+      }));
+  const messages = (await getMessages()).guest as GuestMessages;
 
   if (!published) {
     // A valid sticker of a café that hasn't published its menu yet.
     if (!atThisCafe || !resolved) notFound();
     const t = await getTranslations({ locale, namespace: "guest.menu" });
     return (
-      <div className="flex min-h-dvh flex-col">
-        <GuestHeader
-          locale={locale}
-          cafeName={resolved.restaurant_name}
-          tableLabel={resolved.table_label}
-          locales={resolved.guest_locales}
-          hrefFor={hrefFor}
-        />
-        <p className="text-muted px-4 py-12 text-center text-xl">{t("notPublished")}</p>
-      </div>
+      <GuestThemeScope theme={DEFAULT_THEME}>
+        <GuestI18nProvider locale={locale} messages={messages}>
+          <GuestHeader
+            cafeName={resolved.restaurant_name}
+            logoUrl={null}
+            tableLabel={resolved.table_label}
+            languages={languagesFor(resolved.guest_locales)}
+          />
+          <p className="text-muted px-4 py-12 text-center text-xl">{t("notPublished")}</p>
+        </GuestI18nProvider>
+      </GuestThemeScope>
     );
   }
 
   const menu = buildGuestMenu(published, locale);
-  const messages = (await getMessages()).guest as GuestMessages;
   return (
-    <div className="flex min-h-dvh flex-col">
+    <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor}>
       <GuestI18nProvider locale={locale} messages={messages}>
-        <GuestHeader
-          locale={locale}
-          cafeName={menu.restaurantName}
-          tableLabel={table.kind === "ok" ? table.label : null}
-          locales={menu.locales}
-          hrefFor={hrefFor}
-          action={
-            menu.ordering && table.kind === "ok" ? (
-              <CallWaiterButton token={table.token} tableId={table.id} />
-            ) : undefined
-          }
-        />
         <GuestMenu
           menu={menu}
           table={table}
+          languages={languagesFor(menu.locales)}
           orderHref={
             table.kind === "ok"
               ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`
@@ -98,6 +102,6 @@ export default async function GuestMenuPage({
           }
         />
       </GuestI18nProvider>
-    </div>
+    </GuestThemeScope>
   );
 }

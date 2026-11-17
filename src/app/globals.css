@@ -41,32 +41,39 @@
   --shadow-float: 0 8px 24px rgb(19 36 27 / 0.16), 0 1px 3px rgb(19 36 27 / 0.12);
 }
 
-/* Guest palette names for utilities (bg-noir, text-gold-deep, …). The values
-   live in one place, the guest theme preset (.guest-lux, at the end of this
-   file); `inline` makes each utility read the preset's variable where it is
-   used. Outside the guest screens only `success` resolves: to tarragon. */
+/* Guest colour names for utilities (bg-page, text-accent-text, …). The values
+   live in the guest theme presets (.guest-lux, at the end of this file);
+   `inline` makes each utility read the preset's variable where it is used,
+   so the café's preset (and brand colour) set on a wrapper reach everything
+   inside. Outside the guest screens only `success` resolves: to tarragon. */
 @theme inline {
-  --color-ivory: var(--guest-ivory);
-  --color-paper: var(--guest-paper);
-  --color-noir: var(--guest-noir);
-  --color-noir-2: var(--guest-noir-2);
-  --color-noir-3: var(--guest-noir-3);
-  --color-champagne: var(--guest-champagne);
-  --color-champagne-light: var(--guest-champagne-light);
-  --color-gold-deep: var(--guest-gold-deep);
-  --color-gold-tint: var(--guest-gold-tint);
-  --color-wine: var(--guest-wine);
-  --color-wine-tint: var(--guest-wine-tint);
-  --color-hairline: var(--guest-hairline);
-  --color-taupe: var(--guest-taupe);
-  --color-ivory-dim: var(--guest-ivory-dim);
-  --color-band: var(--guest-band);
-  --color-band-ink: var(--guest-band-ink);
-  --color-band-accent: var(--guest-band-accent);
-  --color-band-muted: var(--guest-band-muted);
-  --color-band-line: var(--guest-band-line);
+  --color-page: var(--guest-page);
+  --color-surface: var(--guest-surface);
+  --color-chip: var(--guest-chip);
+  --color-plate: var(--guest-plate);
+  --color-accent: var(--guest-accent);
+  --color-on-accent: var(--guest-on-accent);
+  --color-accent-text: var(--guest-accent-text);
+  --color-glow: var(--guest-glow);
+  --color-soft: var(--guest-soft);
+  --color-dock: var(--guest-dock);
+  --color-dock-ink: var(--guest-dock-ink);
+  --color-dock-muted: var(--guest-dock-muted);
+  --color-deep: var(--guest-deep);
+  --color-deep-ink: var(--guest-deep-ink);
+  --color-deep-muted: var(--guest-deep-muted);
+  --color-deep-accent: var(--guest-deep-accent);
+  --color-on-deep-accent: var(--guest-on-deep-accent);
+  --color-alert: var(--guest-alert);
+  --color-alert-tint: var(--guest-alert-tint);
   --color-success: var(--guest-success, var(--color-tarragon));
   --color-success-tint: var(--guest-success-tint, var(--color-tarragon-tint));
+  --radius-card: var(--guest-r-card);
+  --radius-feature: var(--guest-r-feature);
+  --radius-pill: var(--guest-r-pill);
+  --radius-field: var(--guest-r-field);
+  --shadow-card: var(--guest-shadow-card);
+  --shadow-plate: var(--guest-shadow-plate);
 }
 
 @layer base {
@@ -226,150 +233,212 @@
   }
 }
 
-/* Guest theme preset "Noir & Champagne" (ADR-051; to become the "Evening"
-   preset). Every guest colour is defined here and only here. The guest layout
-   puts this class on its root, so the menu, cart and order pages get the
-   palette and the Stardom display face while staff, admin and kitchen screens
-   keep direction A. The older token names are mapped onto the palette, so
-   every utility inside (bg-matsoni, text-tarragon, …) follows. Contrast is
-   WCAG AA: the comments give the ratios. */
+/* Guest theme presets (ADR-051, ADR-052). Each café picks one in /admin
+   («Հյուրի էջի տեսքը»); the guest pages put it on a .guest-lux wrapper as
+   data-guest-theme. Every guest colour is a --guest-* custom property defined
+   here and only here; the older design tokens (matsoni, ink, muted, line,
+   tarragon, basalt, …) are mapped onto them, so every utility inside follows.
+   A café's brand colour overrides --guest-accent, --guest-on-accent,
+   --guest-glow and, when it keeps 4.5:1, --guest-accent-text (themes.ts).
+   Contrast is WCAG AA; the comments give the ratios. */
+
+/* "Evening": noir and champagne on ivory (the default). */
 .guest-lux {
-  /* palette */
-  --guest-ivory: #f6f1e7; /* page */
-  --guest-paper: #fffdf8; /* cards, inputs, dialogs */
-  --guest-noir: #1b1712; /* ink and the dark bands: 15.8:1 on ivory */
-  --guest-noir-2: #2a231c;
-  --guest-noir-3: #3b3229;
-  --guest-taupe: #6f655a; /* muted text: 5.1:1 on ivory */
-  --guest-hairline: #e4d9c6; /* dividers */
-  --guest-hairline-strong: #94866f; /* input borders: 3.2:1 on ivory */
-  --guest-mist: #ede5d6; /* skeletons, photo placeholders */
-  --guest-champagne: #a8844e; /* decoration and large text only: 3.1:1 on ivory */
-  --guest-champagne-light: #d2b27a; /* gold on noir: 8.8:1 */
-  --guest-gold-deep: #7f6135; /* small gold text: 5.1:1 on ivory, 4.6:1 on gold tint */
-  --guest-gold-tint: #efe6d4;
-  --guest-ivory-dim: #bfb29c; /* muted text on noir: 8.5:1 */
-  --guest-wine: #7a1e2c; /* tags and alerts: 9.1:1 on ivory */
-  --guest-wine-tint: #f4e6e4;
-  --guest-wine-on-dark: #f09aa5; /* 8.4:1 on noir */
-  --guest-success: #2e6a4a; /* 5.7:1 on ivory */
+  --guest-page: #f6f1e7;
+  --guest-surface: #fffdf8; /* cards, inputs, dialogs */
+  --guest-chip: #efe6d4; /* chips, quiet fills */
+  --guest-plate: #ede5d6; /* empty plates, skeletons */
+  --guest-ink: #1b1712; /* 15.8:1 on the page */
+  --guest-muted: #6f655a; /* 5.1:1 on the page */
+  --guest-line: #e4d9c6;
+  --guest-line-strong: #94866f; /* field borders: 3.2:1 */
+  --guest-accent: #1b1712; /* filled actions: noir */
+  --guest-on-accent: #f6f1e7; /* 15.8:1 on noir */
+  --guest-accent-text: #7f6135; /* small gold text: 5.1:1 on the page */
+  --guest-glow: #a8844e; /* champagne: active glow, decoration only */
+  --guest-star: #d2b27a; /* the StarBorder star on noir */
+  --guest-soft: #6f655a; /* inactive tabs */
+  --guest-dock: rgb(255 253 248 / 0.86);
+  --guest-dock-ink: #1b1712;
+  --guest-dock-muted: #6f655a; /* 5.3:1 on the dock */
+  --guest-deep: #1b1712; /* the games panel */
+  --guest-deep-2: #2a231c;
+  --guest-deep-3: #3b3229;
+  --guest-deep-ink: #f6f1e7;
+  --guest-deep-muted: #bfb29c; /* 8.5:1 on noir */
+  --guest-deep-accent: #d2b27a; /* 8.8:1 on noir */
+  --guest-on-deep-accent: #1b1712;
+  --guest-alert: #7a1e2c; /* 9.1:1 on the page */
+  --guest-alert-tint: #f4e6e4;
+  --guest-alert-on-deep: #f09aa5;
+  --guest-success: #2e6a4a; /* 5.7:1 on the page */
   --guest-success-tint: #e3ede6;
-  --guest-success-on-dark: #8cc9a5;
+  --guest-success-on-deep: #8cc9a5;
+  --guest-card-border: transparent;
+  --guest-shadow-card: 0 1px 2px rgb(27 23 18 / 0.05), 0 18px 36px -22px rgb(27 23 18 / 0.32);
+  --guest-shadow-plate: 0 16px 22px -14px rgb(27 23 18 / 0.55);
+  --guest-shadow-float: 0 12px 32px -8px rgb(27 23 18 / 0.28), 0 1px 3px rgb(27 23 18 / 0.1);
+  --guest-r-card: 22px;
+  --guest-r-feature: 30px;
+  --guest-r-pill: 999px;
+  --guest-r-field: 14px;
+  --guest-display-weight: 400;
+  --guest-display-stretch: 87.5%;
 
   /* the older tokens, mapped onto the palette */
-  --color-matsoni: var(--guest-ivory);
-  --color-white: var(--guest-paper);
-  --color-ink: var(--guest-noir);
-  --color-muted: var(--guest-taupe);
-  --color-mist: var(--guest-mist);
-  --color-line: var(--guest-hairline);
-  --color-line-strong: var(--guest-hairline-strong);
-  --color-tarragon: var(--guest-gold-deep);
-  --color-tarragon-tint: var(--guest-gold-tint);
-  --color-apricot: var(--guest-champagne);
-  --color-apricot-deep: var(--guest-gold-deep);
-  --color-pomegranate: var(--guest-wine);
-  --color-pom-tint: var(--guest-wine-tint);
-  --color-basalt: var(--guest-noir);
-  --color-basalt-2: var(--guest-noir-2);
-  --color-basalt-3: var(--guest-noir-3);
-  --color-slip: var(--guest-ivory);
-  --color-slip-dim: var(--guest-ivory-dim);
-  --color-apricot-on-dark: var(--guest-champagne-light);
-  --color-pom-on-dark: var(--guest-wine-on-dark);
-  --color-tarragon-on-dark: var(--guest-success-on-dark);
-  --shadow-float:
-    0 10px 30px color-mix(in srgb, var(--guest-noir) 14%, transparent),
-    0 1px 3px color-mix(in srgb, var(--guest-noir) 10%, transparent);
+  --color-matsoni: var(--guest-page);
+  --color-white: var(--guest-surface);
+  --color-ink: var(--guest-ink);
+  --color-muted: var(--guest-muted);
+  --color-mist: var(--guest-plate);
+  --color-line: var(--guest-line);
+  --color-line-strong: var(--guest-line-strong);
+  --color-tarragon: var(--guest-accent-text);
+  --color-tarragon-tint: var(--guest-chip);
+  --color-apricot: var(--guest-glow);
+  --color-apricot-deep: var(--guest-accent-text);
+  --color-pomegranate: var(--guest-alert);
+  --color-pom-tint: var(--guest-alert-tint);
+  --color-basalt: var(--guest-deep);
+  --color-basalt-2: var(--guest-deep-2);
+  --color-basalt-3: var(--guest-deep-3);
+  --color-slip: var(--guest-deep-ink);
+  --color-slip-dim: var(--guest-deep-muted);
+  --color-apricot-on-dark: var(--guest-deep-accent);
+  --color-pom-on-dark: var(--guest-alert-on-deep);
+  --color-tarragon-on-dark: var(--guest-success-on-deep);
+  --shadow-float: var(--guest-shadow-float);
 
-  /* Stardom (Latin only, from the Fontshare API) first; Armenian and Cyrillic
-     fall through per glyph to the Noto serifs. */
+  /* Stardom (Latin only, Fontshare) first; Armenian and Cyrillic fall
+     through per glyph to the Noto serifs. */
   --font-display: "Stardom", var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
   /* Switzer for Latin, Noto Sans Armenian for Armenian, Google Sans for Cyrillic */
   --font-ui: "Switzer", var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif;
   font-family: var(--font-ui);
-
-  /* the header band and the slim bar; dark in Evening and Coffee, light in Daylight */
-  --guest-band: var(--guest-noir);
-  --guest-band-ink: var(--guest-ivory);
-  --guest-band-accent: var(--guest-champagne-light);
-  --guest-band-muted: var(--guest-ivory-dim);
-  --guest-band-line: var(--guest-champagne);
-  background: var(--color-matsoni);
-  color: var(--color-ink);
+  background: var(--guest-page);
+  color: var(--guest-ink);
+  /* Glows (StarBorder) bleed past their buttons; clip sideways overflow so
+     they never widen the page (clip, unlike hidden, keeps sticky bars working). */
+  overflow-x: clip;
 }
 
-/* Stardom has one weight: no faux bold. The Noto serifs drop to 500 so
-   Armenian and Cyrillic sit next to Stardom's lighter colour. */
+/* "Wine": a wine-dark canvas, burgundy cards, black hairlines and one red
+   for every action; flat (no shadows), 15 px pills, 12 px cards and one
+   large-radius feature card (refero style reference; colours and shape only). */
+.guest-lux[data-guest-theme="wine"] {
+  --guest-page: #260212;
+  --guest-surface: #4f0423;
+  --guest-chip: #3a0219;
+  --guest-plate: #3a0219;
+  --guest-ink: #ffffff; /* 15.3:1 on burgundy, 18.6:1 on the page */
+  --guest-muted: #ffc7c6; /* blush: 10.4:1 on burgundy, 12.9:1 on the page */
+  --guest-line: #000000;
+  --guest-line-strong: #c98d93; /* field borders: 5.0:1 on burgundy */
+  --guest-accent: #e10600; /* white on it: 4.97:1, kept as is */
+  --guest-on-accent: #ffffff;
+  --guest-accent-text: #ffc7c6; /* red text would be 3.1:1 on burgundy: small accent text is blush */
+  --guest-glow: #e10600;
+  --guest-star: #ffc7c6;
+  --guest-soft: #ffc7c6;
+  --guest-dock: rgb(0 0 0 / 0.88);
+  --guest-dock-ink: #ffffff;
+  --guest-dock-muted: #ffc7c6;
+  --guest-deep: #000000;
+  --guest-deep-2: #1d0110;
+  --guest-deep-3: #3a0219;
+  --guest-deep-ink: #ffffff;
+  --guest-deep-muted: #ffc7c6;
+  --guest-deep-accent: #e10600; /* white on it: 4.97:1 */
+  --guest-on-deep-accent: #ffffff;
+  --guest-alert: #ff8a80; /* 8.4:1 on the page */
+  --guest-alert-tint: #3a0219;
+  --guest-alert-on-deep: #ff8a80;
+  --guest-success: #8cd3a8; /* 10.6:1 on the page */
+  --guest-success-tint: #12301f;
+  --guest-success-on-deep: #8cd3a8;
+  --guest-card-border: #000000;
+  --guest-shadow-card: none;
+  --guest-shadow-plate: none;
+  --guest-shadow-float: none;
+  --guest-r-card: 12px;
+  --guest-r-feature: 38px;
+  --guest-r-pill: 15px;
+  --guest-r-field: 12px;
+  --guest-display-weight: 500;
+  --guest-display-stretch: 75%;
+  color-scheme: dark;
+}
+
+/* "Soft": light grey canvas, white cards on very soft neumorphic shadows,
+   ink text, thin serif headings and the wine red as the one accent. */
+.guest-lux[data-guest-theme="soft"] {
+  --guest-page: #eceef1;
+  --guest-surface: #ffffff;
+  --guest-chip: #e3e6eb;
+  --guest-plate: #e3e6eb;
+  --guest-ink: #1d1f24; /* 14.2:1 on the page */
+  --guest-muted: #565c67; /* 5.8:1 on the page */
+  --guest-line: #dde0e6;
+  --guest-line-strong: #8a909a; /* field borders: 3.3:1 on white */
+  --guest-accent: #e10600; /* white on it: 4.97:1 */
+  --guest-on-accent: #ffffff;
+  --guest-accent-text: #c00500; /* small red text: 5.5:1 on the page, 6.4:1 on white */
+  --guest-glow: #e10600;
+  --guest-star: #ffd2d0;
+  --guest-soft: #565c67;
+  --guest-dock: rgb(255 255 255 / 0.9);
+  --guest-dock-ink: #1d1f24;
+  --guest-dock-muted: #565c67;
+  --guest-deep: #1d1f24;
+  --guest-deep-2: #2a2d33;
+  --guest-deep-3: #3a3e46;
+  --guest-deep-ink: #ffffff;
+  --guest-deep-muted: #c3c8d1;
+  --guest-deep-accent: #e10600;
+  --guest-on-deep-accent: #ffffff;
+  --guest-alert: #a3132a;
+  --guest-alert-tint: #fbe4e6;
+  --guest-alert-on-deep: #ff9aa6;
+  --guest-success: #26664a;
+  --guest-success-tint: #e1efe7;
+  --guest-success-on-deep: #8cd3a8;
+  --guest-card-border: transparent;
+  --guest-shadow-card: 10px 10px 24px -6px rgb(163 170 184 / 0.45), -10px -10px 24px -6px rgb(255 255 255 / 0.95);
+  --guest-shadow-plate: 0 14px 20px -12px rgb(29 31 36 / 0.45);
+  --guest-shadow-float: 0 14px 34px -10px rgb(120 128 142 / 0.5), 0 1px 2px rgb(29 31 36 / 0.08);
+  --guest-r-card: 24px;
+  --guest-r-feature: 32px;
+  --guest-r-pill: 999px;
+  --guest-r-field: 16px;
+  --guest-display-weight: 300;
+  --guest-display-stretch: 100%;
+}
+
+/* Stardom has one weight: no faux bold. The Noto serifs follow the preset
+   (thin in Soft, medium and condensed in Wine) to sit next to it. */
 .guest-lux .display-face {
-  font-weight: 500;
+  font-weight: var(--guest-display-weight);
+  font-stretch: var(--guest-display-stretch);
   font-synthesis: none;
   letter-spacing: 0.005em;
 }
 
-/* Glows (StarBorder) bleed past their buttons; clip sideways overflow so they
-   never widen the page (clip, unlike hidden, keeps sticky bars working). */
-.guest-lux {
-  overflow-x: clip;
-}
-
-/* Overscroll beyond the page shows the guest page colour too. */
+/* Overscroll beyond the page shows the café's page colour too. */
 body:has(.guest-lux) {
-  background: var(--color-matsoni);
+  background: #f6f1e7;
+}
+body:has([data-guest-theme="soft"]) {
+  background: #eceef1;
+}
+body:has([data-guest-theme="wine"]) {
+  background: #260212;
 }
 
 .guest-lux :focus-visible {
-  outline-color: var(--guest-gold-deep);
+  outline-color: var(--guest-accent-text);
 }
 
-.guest-lux .bg-noir :focus-visible {
-  outline-color: var(--guest-champagne-light);
-}
-
-/* Theme presets (design directions, see docs/03-design/themes.md). Evening is
-   the base .guest-lux palette above; a preset only re-points the palette. */
-.guest-lux[data-guest-theme="coffee"] {
-  /* "Coffee": warm cream, near-black ink, ember orange (refero, coffee & lifestyle direction) */
-  --guest-ivory: #e4dfd9;
-  --guest-paper: #ffffff;
-  --guest-noir: #171717; /* 14.2:1 on the cream */
-  --guest-noir-2: #262626;
-  --guest-noir-3: #383533;
-  --guest-taupe: #4b4b4b; /* 6.9:1 on the cream */
-  --guest-hairline: #cfc8c0;
-  --guest-hairline-strong: #857d74;
-  --guest-mist: #d6cfc7;
-  --guest-champagne: #ff6a1f; /* ember: decoration, large text */
-  --guest-champagne-light: #ff8a4c; /* ember on near-black: 7.9:1 */
-  --guest-gold-deep: #a83800; /* small ember text: 5.3:1 on the cream */
-  --guest-gold-tint: #f6dccb;
-  --guest-ivory-dim: #b9b2aa;
-  --guest-wine: #8f2d1f;
-  --guest-wine-tint: #f3dcd6;
-  --guest-wine-on-dark: #f5a291;
-}
-.guest-lux[data-guest-theme="daylight"] {
-  /* "Daylight": white with one red accent (refero, white with one accent direction) */
-  --guest-ivory: #f7f7f7;
-  --guest-paper: #ffffff;
-  --guest-noir: #222222; /* 15.0:1 on the page */
-  --guest-noir-2: #2f2f2f;
-  --guest-noir-3: #444444;
-  --guest-taupe: #6a6a6a; /* 5.1:1 on the page */
-  --guest-hairline: #ebebeb;
-  --guest-hairline-strong: #8c8c8c;
-  --guest-mist: #ececec;
-  --guest-champagne: #e00b41; /* the one accent */
-  --guest-champagne-light: #ff8fa6; /* accent on dark buttons: 7.4:1 */
-  --guest-gold-deep: #c00936; /* small accent text: 5.6:1 */
-  --guest-gold-tint: #fde7ec;
-  --guest-ivory-dim: #b3b3b3;
-  --guest-wine: #c00936;
-  --guest-wine-tint: #fde7ec;
-  --guest-wine-on-dark: #ff8fa6;
-  --guest-band: #ffffff;
-  --guest-band-ink: #222222;
-  --guest-band-accent: #c00936;
-  --guest-band-muted: #6a6a6a;
-  --guest-band-line: #ebebeb;
+.guest-lux .bg-deep :focus-visible,
+.guest-lux .bg-accent:focus-visible {
+  outline-color: var(--guest-deep-accent);
 }

@@ -14,6 +14,8 @@ import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
+import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
+import { ConciergeBell, Gamepad2, Receipt, UtensilsCrossed } from "lucide-react";
 import { displayStatus, isActive, STEPS, stepIndex, type DisplayStatus, type OrderState } from "./order-status";
 
 type Db = SupabaseClient<Database>;
@@ -268,7 +270,7 @@ export function OrderStatusView({
       <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-start gap-3 px-4 py-10 md:px-8 md:py-16">
         <h2 className="display-face text-3xl">{t("order.empty")}</h2>
         <p className="text-muted">{t("order.emptyHint")}</p>
-        <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
+        <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-accent-text">
           {t("order.toMenu")}
         </a>
       </main>
@@ -281,17 +283,54 @@ export function OrderStatusView({
   const latestStatus = latest ? displayStatus(latest) : null;
   const grand = orders.filter((o) => o.status !== "rejected" && o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-full border border-line-strong bg-white px-4 font-semibold disabled:opacity-60 aria-pressed:border-gold-deep aria-pressed:bg-gold-tint";
+    "min-h-[52px] rounded-pill border border-line-strong bg-surface px-4 font-semibold disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
+  const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
+  const smooth = (): ScrollBehavior => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+  // The bottom bar (ADR-052): back to the menu, this order, the games while
+  // waiting, and the waiter. Its Waiter item is the same request as the
+  // button below the order, so it reads «Մատուցող», not the button's words.
+  const dock: DockItem[] = [
+    { key: "menu", label: t("nav.menu"), icon: <UtensilsCrossed size={22} aria-hidden />, href: menuHref },
+    {
+      key: "order",
+      label: t("nav.order"),
+      icon: <Receipt size={22} aria-hidden />,
+      current: true,
+      onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
+    },
+    ...(showGames
+      ? [
+          {
+            key: "games",
+            label: t("nav.games"),
+            icon: <Gamepad2 size={22} aria-hidden />,
+            onClick: () => document.getElementById("games")?.scrollIntoView({ behavior: smooth(), block: "start" }),
+          },
+        ]
+      : []),
+    ...(!closed
+      ? [
+          {
+            key: "waiter",
+            label: t("nav.waiter"),
+            icon: <ConciergeBell size={22} aria-hidden />,
+            pressed: open.has("call_waiter"),
+            disabled: asking !== null,
+            onClick: () => void ask("call_waiter"),
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <main className="mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 pt-5 pb-12 md:pt-10">
+    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 pt-5 md:pt-10 ${DOCK_SPACE}`}>
       {latest && (
         <OrderCard
           order={latest}
           latest
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
-          below={closed || latestStatus === "rejected" || latestStatus === "cancelled" ? null : <GamesCorner ready={latestStatus === "ready"} waiting={latestStatus !== null && waiting.has(latestStatus)} />}
+          below={!showGames ? null : <GamesCorner ready={latestStatus === "ready"} waiting={latestStatus !== null && waiting.has(latestStatus)} />}
         />
       )}
       {channel === "down" && <p className="-mt-2 mb-2 text-sm text-muted">{t("order.reconnecting")}</p>}
@@ -363,6 +402,7 @@ export function OrderStatusView({
           </div>
         </section>
       )}
+      <GuestDock items={dock} />
     </main>
   );
 }

@@ -1,22 +1,27 @@
 "use client";
 
-import { StarBorder } from "@/features/guest-theme/star-border";
+import { ConciergeBell, Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RotatingText } from "@/features/guest-theme/motion/rotating-text";
+import { warmMotion } from "@/features/guest-theme/motion/motion";
+import { sparkFrom } from "@/features/guest-theme/motion/spark";
+import { SplitText } from "@/features/guest-theme/motion/split-text";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { OrderSender } from "@/features/ordering/order-sender";
-import { formatAmd } from "@/lib/format/money";
 import { normalizeForSearch } from "@/lib/format/search";
-import { CallWaiterButton } from "./call-waiter-button";
+import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
-import { CircularCarousel, type CarouselItem } from "./circular-carousel";
-import { DishRow } from "./dish-row";
+import { DishCard } from "./dish-card";
 import { DishSheet } from "./dish-sheet";
+import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
+import { GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
+import { CartBar, OrderPanel } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, Txt, dishPhotoUrl } from "./ui";
+import { Notice, dishPhotoUrl } from "./ui";
 import type { GuestItem, GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -28,32 +33,31 @@ const newId = () =>
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const CART_HASH = "#cart";
-const SIGNATURE_MAX = 10;
-const SIGNATURE_MIN = 3;
-
-// Dishes for the "signature" cylinder: those with a photo that can be had
-// today, popular ones first, up to ten. Fewer than three: no cylinder.
-function signatureDishes(menu: GuestMenuData): GuestItem[] {
-  const withPhoto = menu.categories.flatMap((c) => c.items).filter((i) => i.image && !i.soldOut);
-  const picked = [
-    ...withPhoto.filter((i) => i.tags.includes("popular")),
-    ...withPhoto.filter((i) => !i.tags.includes("popular")),
-  ].slice(0, SIGNATURE_MAX);
-  return picked.length >= SIGNATURE_MIN ? picked : [];
-}
+/** Category names short enough for the rotating line (graphemes, roughly). */
+const ROTATING_MAX = 22;
+const ROTATING_WORDS = 6;
 
 /** The guest pages' content column: full width on a phone, centred on a desktop. */
-const COLUMN = "mx-auto w-full max-w-[1200px] px-4 md:px-8";
+const COLUMN = "mx-auto w-full max-w-[1360px] px-4 md:px-8";
+
+const smooth = (): ScrollBehavior =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+
+// The featured card of a section: its first popular dish with a photo that
+// can be had today. It spans the row and breaks the grid's rhythm.
+const featuredOf = (items: GuestItem[]) => items.find((i) => i.image && !i.soldOut && i.tags.includes("popular"))?.id;
 
 export function GuestMenu({
   menu,
   table,
   orderHref,
+  languages,
 }: {
   menu: GuestMenuData;
   table: TableState;
   /** The order status page for this table. */
   orderHref: string | null;
+  languages: LanguageLink[];
 }) {
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
@@ -66,10 +70,12 @@ export function GuestMenu({
   // Dishes the database said sold out while sending (the menu was loaded earlier).
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
+  const search = useRef<HTMLInputElement>(null);
   // The big header has scrolled away: show the slim bar above the tabs.
   const sentinel = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const canOrder = menu.ordering && table.kind === "ok";
+  const waiter = useCallWaiter();
 
   const items = useMemo(
     () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
@@ -93,17 +99,12 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
-  const signature = useMemo(() => signatureDishes(menu), [menu]);
-  const signatureItems: CarouselItem[] = useMemo(
+  const rotating = useMemo(
     () =>
-      signature.map((i) => ({
-        src: dishPhotoUrl(i.image as string),
-        alt: i.name.text,
-        title: i.name.text,
-        subtitle: formatAmd(i.price, locale),
-        lang: i.name.lang === locale ? undefined : i.name.lang,
-      })),
-    [signature, locale],
+      menu.categories
+        .flatMap((c) => (c.name && Array.from(c.name.text).length <= ROTATING_MAX ? [c.name.text] : []))
+        .slice(0, ROTATING_WORDS),
+    [menu.categories],
   );
 
   const q = normalizeForSearch(query);
@@ -116,6 +117,8 @@ export function GuestMenu({
         : menu.categories,
     [menu.categories, q],
   );
+
+  useEffect(() => warmMotion(), []);
 
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
@@ -164,17 +167,28 @@ export function GuestMenu({
     [],
   );
   const clearCart = useCallback(() => updateCart(() => []), [updateCart]);
+  const changeQuantity = (id: string, quantity: number) => {
+    const next = setQuantity(lines, id, quantity);
+    updateCart(() => next);
+    return next;
+  };
 
   const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
-  const quickAdd = (item: GuestItem) =>
+  const quickAdd = (item: GuestItem, from: HTMLElement) => {
+    sparkFrom(from);
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
       quantity: 1,
       note: "",
     });
+  };
+  const findDish = () => {
+    search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
+    search.current?.focus({ preventScroll: true });
+  };
 
   const orderingNotice =
     table.kind === "invalid" ? (
@@ -185,106 +199,157 @@ export function GuestMenu({
       <Notice tone="calm">{t("menu.noTable")}</Notice>
     ) : null;
 
+  const count = summary.count;
+  const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
+  const iconButton =
+    "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
+  const tools = (
+    <span className="flex flex-none items-center gap-2">
+      <button type="button" className={iconButton} aria-label={t("menu.searchOpen")} onClick={findDish}>
+        <Search size={20} aria-hidden />
+      </button>
+      {(canOrder || lines.length > 0) && (
+        <button type="button" className={iconButton} aria-label={orderLabel} disabled={lines.length === 0} onClick={openCart}>
+          <ShoppingBag size={20} aria-hidden />
+          {count > 0 && (
+            <span className="num bg-accent text-on-accent absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-bold">
+              {count}
+            </span>
+          )}
+        </button>
+      )}
+    </span>
+  );
+  const header = (
+    <GuestHeader
+      cafeName={menu.restaurantName}
+      logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
+      tableLabel={table.kind === "ok" ? table.label : null}
+      languages={languages}
+      tools={view === "menu" ? tools : undefined}
+      below={
+        view === "menu" && rotating.length > 1 ? (
+          <p aria-hidden="true" className="text-muted mt-3 text-lg">
+            {t("menu.todayIn")}{" "}
+            <RotatingText words={rotating} className="display-face text-ink text-[1.375rem]" />
+          </p>
+        ) : null
+      }
+    />
+  );
+
+  const dockItems: DockItem[] =
+    table.kind === "ok"
+      ? [
+          {
+            key: "menu",
+            label: t("nav.menu"),
+            icon: <UtensilsCrossed size={22} aria-hidden />,
+            current: view === "menu",
+            onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
+          },
+          lines.length > 0 || !orderHref
+            ? {
+                key: "order",
+                label: t("nav.order"),
+                ariaLabel: orderLabel,
+                icon: <ShoppingBag size={22} aria-hidden />,
+                badge: count,
+                disabled: lines.length === 0,
+                onClick: openCart,
+              }
+            : { key: "order", label: t("nav.order"), icon: <ShoppingBag size={22} aria-hidden />, href: orderHref },
+          ...(canOrder
+            ? [
+                {
+                  key: "waiter",
+                  label: t("nav.waiter"),
+                  icon: <ConciergeBell size={22} aria-hidden />,
+                  pressed: waiter.state !== "idle",
+                  onClick: waiter.ask,
+                  testId: "call-waiter-nav",
+                },
+              ]
+            : []),
+        ]
+      : [];
+
   if (view === "cart" && lines.length > 0) {
     return (
-      <CartView
-        summary={summary}
-        items={items}
-        locked={locked}
-        notice={
-          orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
-        }
-        footer={
-          canOrder && table.kind === "ok" && orderHref ? (
-            <OrderSender
-              summary={summary}
-              locationId={menu.locationId}
-              table={table}
-              orderHref={orderHref}
-              onLocked={setLocked}
-              onSoldOut={onSoldOut}
-              onPlaced={clearCart}
-            />
-          ) : null
-        }
-        onQuantity={(id, quantity) => {
-          const next = setQuantity(lines, id, quantity);
-          updateCart(() => next);
-          if (next.length === 0) closeCart(); // removing the last line returns to the menu (screens.md)
-        }}
-        onBack={closeCart}
-      />
+      <>
+        {header}
+        <CartView
+          summary={summary}
+          items={items}
+          locked={locked}
+          notice={
+            orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
+          }
+          footer={
+            canOrder && table.kind === "ok" && orderHref ? (
+              <OrderSender
+                summary={summary}
+                locationId={menu.locationId}
+                table={table}
+                orderHref={orderHref}
+                onLocked={setLocked}
+                onSoldOut={onSoldOut}
+                onPlaced={clearCart}
+              />
+            ) : null
+          }
+          onQuantity={(id, quantity) => {
+            // removing the last line returns to the menu (screens.md)
+            if (changeQuantity(id, quantity).length === 0) closeCart();
+          }}
+          onBack={closeCart}
+        />
+      </>
     );
   }
 
   return (
     <>
+      {header}
       {/* Right under the header: once it has scrolled away, the slim bar shows. */}
       <div ref={sentinel} aria-hidden="true" />
-      {(orderingNotice || menu.kitchenBusy) && (
-        <div className={`${COLUMN} grid gap-2 pt-4`}>
-          {orderingNotice}
-          {menu.kitchenBusy && canOrder && (
-            <Notice tone="busy">
-              {menu.kitchenBusy.minutes
-                ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
-                : t("menu.kitchenBusyNoTime")}
-            </Notice>
-          )}
-        </div>
-      )}
-      {signature.length > 0 && (
-        <section aria-labelledby="signature-title" className={`${COLUMN} pt-6 md:pt-10`} data-testid="signature">
-          <h2 id="signature-title" className="display-face text-center text-[1.75rem] leading-tight md:text-[2.25rem]">
-            {t("menu.signature.title")}
-          </h2>
-          <span aria-hidden="true" className="bg-champagne mx-auto mt-3 block h-px w-12" />
-          <CircularCarousel
-            items={signatureItems}
-            preset="cylinder"
-            intro="rise"
-            cardWidth={240}
-            aspectRatio={1}
-            speed={14}
-            captions
-            className="h-[290px] sm:h-[330px] md:h-[380px] lg:h-[400px]"
-            label={t("menu.signature.title")}
-            hint={t("menu.signature.hint")}
-            roleDescription={t("menu.signature.carousel")}
-            onSelect={(i) => {
-              const item = signature[i];
-              if (item) setSheet(item);
-            }}
-          />
-        </section>
-      )}
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
       <div
-        className={`bg-band text-band-ink fixed inset-x-0 top-0 z-20 ${styles.slim}`}
+        className={`bg-page/92 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.slim}`}
         data-shown={scrolled}
         data-testid="slim-bar"
         inert={!scrolled}
       >
-        <div className={`${COLUMN} flex h-14 items-center gap-3`}>
-          <span className="display-face text-band-accent min-w-0 flex-1 truncate text-xl md:text-2xl">
-            {menu.restaurantName}
-          </span>
+        <div className={`${COLUMN} flex h-16 items-center gap-3`}>
+          <span className="display-face min-w-0 flex-1 truncate text-2xl">{menu.restaurantName}</span>
           {table.kind === "ok" && (
-            <span className="border-band-line/50 text-band-accent flex-none rounded-full border px-2.5 py-0.5 text-sm font-semibold">
+            <span className="border-line-strong/60 flex-none rounded-pill border px-2.5 py-0.5 text-sm font-semibold">
               {t("table", { label: table.label })}
             </span>
           )}
-          {canOrder && table.kind === "ok" && (
-            <CallWaiterButton token={table.token} tableId={table.id} compact />
-          )}
+          {tools}
         </div>
       </div>
-      <div className={`${COLUMN} flex-1 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-14`}>
-        <div className="pt-6 pb-3 lg:col-start-2 lg:row-start-1 lg:pt-10 lg:pb-0">
+      <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
+        {(orderingNotice || menu.kitchenBusy) && (
+          <div className="grid gap-2 pt-4">
+            {orderingNotice}
+            {menu.kitchenBusy && canOrder && (
+              <Notice tone="busy">
+                {menu.kitchenBusy.minutes
+                  ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
+                  : t("menu.kitchenBusyNoTime")}
+              </Notice>
+            )}
+          </div>
+        )}
+        <div className="relative pt-5 pb-2">
           <label className="sr-only" htmlFor="menu-search">
             {t("menu.search")}
           </label>
+          <Search size={18} aria-hidden className="text-muted pointer-events-none absolute top-1/2 left-4 mt-1.5 -translate-y-1/2" />
           <input
+            ref={search}
             id="menu-search"
             type="search"
             value={query}
@@ -292,73 +357,72 @@ export function GuestMenu({
             placeholder={t("menu.search")}
             autoComplete="off"
             enterKeyHint="search"
-            className="border-line-strong placeholder:text-muted focus:border-gold-deep min-h-12 w-full rounded-full border bg-white px-5 md:max-w-[420px]"
+            className="bg-surface border-line-strong/50 placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border pr-5 pl-11 md:max-w-[440px]"
           />
         </div>
         <CategoryNav categories={shown} belowBar={scrolled} />
-        <main className="pb-10 lg:col-start-2 lg:row-start-2">
-          {shown.length === 0 ? (
-            <p className="text-muted py-12 text-center" role="status">
-              {t("menu.noResults")}
-            </p>
-          ) : (
-            shown.map((c) => (
-              <section
-                key={c.id}
-                id={sectionId(c.id)}
-                aria-labelledby={`h-${c.id}`}
-                className="scroll-mt-32 pt-8 lg:scroll-mt-20"
-              >
-                {c.name && (
-                  <div className="mb-1 flex items-center gap-4">
-                    <Txt
-                      as="h2"
-                      id={`h-${c.id}`}
-                      value={c.name}
-                      locale={locale}
-                      className="display-face min-w-0 text-[1.875rem] leading-tight [overflow-wrap:anywhere] md:text-[2.125rem]"
-                    />
-                    <span aria-hidden="true" className="bg-line h-px min-w-6 flex-1 translate-y-1" />
-                  </div>
-                )}
-                <ul className="md:grid md:grid-cols-2 md:gap-x-10">
-                  {c.items.map((item) => (
-                    <DishRow
-                      key={item.id}
-                      item={item}
-                      canOrder={canOrder}
-                      onOpen={setSheet}
-                      onQuickAdd={quickAdd}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))
-          )}
-        </main>
-      </div>
-      {lines.length > 0 && (
-        <div className="from-matsoni sticky bottom-0 z-10 bg-linear-to-t from-60% to-transparent px-4 pt-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
-          <StarBorder
-            onClick={openCart}
-            color="var(--guest-champagne-light)"
-            trailColor="var(--guest-champagne)"
-            backgroundColor="var(--guest-noir)"
-            textColor="var(--guest-ivory)"
-            borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
-            radius={999}
-            glow={0.7}
-            duration={5}
-            className="shadow-float mx-auto flex min-h-14 w-full max-w-[560px] items-center justify-between gap-3 py-2 pr-6 pl-6 text-left font-semibold"
-          >
-            <span className="flex flex-col leading-tight">
-              {t("menu.viewOrder")}
-              <small className="text-ivory-dim text-sm font-normal">{t("menu.items", { count: summary.count })}</small>
-            </span>
-            <span className="num text-champagne-light text-lg whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
-          </StarBorder>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_23rem]">
+          <main className="min-w-0">
+            {shown.length === 0 ? (
+              <p className="text-muted py-12 text-center" role="status">
+                {t("menu.noResults")}
+              </p>
+            ) : (
+              shown.map((c) => {
+                const featured = featuredOf(c.items);
+                return (
+                  <section key={c.id} id={sectionId(c.id)} aria-labelledby={`h-${c.id}`} className="scroll-mt-36 pt-8">
+                    {c.name && (
+                      <SplitText
+                        as="h2"
+                        id={`h-${c.id}`}
+                        text={c.name.text}
+                        lang={c.name.lang === locale ? undefined : c.name.lang}
+                        className="display-face mb-5 block text-[2.125rem] leading-[1.02] [overflow-wrap:anywhere] md:text-[2.75rem]"
+                      />
+                    )}
+                    <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
+                      {c.items.map((item) => (
+                        <DishCard
+                          key={item.id}
+                          item={item}
+                          canOrder={canOrder}
+                          featured={item.id === featured}
+                          onOpen={setSheet}
+                          onQuickAdd={quickAdd}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })
+            )}
+          </main>
+          <div className="hidden pt-8 lg:block">
+            <div className="sticky top-36">
+              <OrderPanel
+                summary={summary}
+                items={items}
+                onOpen={openCart}
+                onRemove={(id) => changeQuantity(id, 0)}
+              />
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+      <GuestDock
+        items={dockItems}
+        above={
+          <>
+            {canOrder && table.kind === "ok" && <CallWaiterPrompt token={table.token} tableId={table.id} />}
+            {lines.length > 0 && (
+              <div className="lg:hidden">
+                <CartBar summary={summary} items={items} onOpen={openCart} />
+              </div>
+            )}
+          </>
+        }
+      />
       {sheet && (
         <DishSheet
           key={sheet.id}
@@ -375,7 +439,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-noir text-ivory shadow-float fixed bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-2xl px-5 py-3 text-center ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float fixed top-[calc(16px+env(safe-area-inset-top,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-card px-5 py-3 text-center ${styles.toast}`}
         >
           {toast.text}
         </p>

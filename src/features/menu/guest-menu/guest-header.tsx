@@ -1,72 +1,91 @@
+"use client";
+
 import type { ReactNode } from "react";
-import { getTranslations } from "next-intl/server";
+import { SplitText } from "@/features/guest-theme/motion/split-text";
+import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { routing, type Locale } from "@/i18n/routing";
 import { scriptLang } from "./ui";
 
-// Server component: café name, table chip and the language switch (Հայ, Рус,
-// Eng), which keeps the table token so the guest stays at their table.
-// Switching is a full page load: <html lang> lives in the root layout, which
-// a client-side navigation would keep.
-export async function GuestHeader({
-  locale,
+export type LanguageLink = { locale: Locale; href: string };
+
+// The top of every guest page: the café's logo, table chip and language
+// switch (Հայ, Рус, Eng, keeping the table token, so the guest stays at
+// their table) above the café name, set very large in the theme's display
+// face and rising in letter by letter at first paint (Split Text, in CSS).
+// Switching language is a full page load: <html lang> lives in the root
+// layout, which a client-side navigation would keep.
+export function GuestHeader({
   cafeName,
+  logoUrl,
   tableLabel,
-  locales,
-  hrefFor,
-  action,
+  languages,
+  tools,
+  below,
 }: {
-  locale: Locale;
   cafeName: string;
+  logoUrl: string | null;
   tableLabel: string | null;
-  locales: readonly string[];
-  hrefFor: (locale: Locale) => string;
-  /** Shown next to the table chip: the "call the waiter" button. */
-  action?: ReactNode;
+  languages: readonly LanguageLink[];
+  /** Small round buttons on the right of the top row (search, order). */
+  tools?: ReactNode;
+  /** Under the name: the rotating line on the menu. */
+  below?: ReactNode;
 }) {
-  const t = await getTranslations({ locale, namespace: "guest" });
-  const offered = routing.locales.filter((l) => locales.includes(l));
+  const { t, locale } = useGuestI18n();
+  const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
   const nameLang = scriptLang(cafeName);
   return (
-    <header className="bg-band text-band-ink border-band-line/40 border-b">
-      <div className="mx-auto grid w-full max-w-[1200px] min-w-0 grid-cols-1 gap-3 px-4 pt-5 pb-4 md:px-8 md:pt-9 md:pb-7">
-        <div className="flex items-start justify-between gap-4">
-          <h1
-            className="display-face text-band-accent min-w-0 text-[2rem] leading-[1.05] text-balance sm:text-[2.5rem] [overflow-wrap:anywhere] md:text-[3.25rem]"
-            lang={nameLang && nameLang !== locale ? nameLang : undefined}
-          >
-            {cafeName}
-          </h1>
-          {offered.length > 1 && (
-            <nav
-              aria-label={t("language.label")}
-              className="border-band-line/40 mt-1 flex flex-none overflow-hidden rounded-full border md:mt-3"
+    <header className="text-ink">
+      <div className="mx-auto grid w-full max-w-[1360px] min-w-0 gap-5 px-4 pt-4 pb-2 md:px-8 md:pt-7">
+        <div className="flex min-h-12 items-center gap-3">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
+            <img
+              src={logoUrl}
+              alt=""
+              width={44}
+              height={44}
+              decoding="async"
+              className="bg-surface shadow-plate size-11 flex-none rounded-full object-cover"
+            />
+          )}
+          {tableLabel && (
+            <span
+              className="border-line-strong/60 text-ink flex-none rounded-pill border px-3 py-1 text-sm font-semibold"
+              data-testid="table-chip"
             >
-              {offered.map((l) => (
+              {t("table", { label: tableLabel })}
+            </span>
+          )}
+          <span className="flex-1" />
+          {offered.length > 1 && (
+            <nav aria-label={t("language.label")} className="flex flex-none items-center">
+              {offered.map(({ locale: l, href }) => (
                 <a
                   key={l}
-                  href={hrefFor(l)}
+                  href={href}
                   lang={l}
                   hrefLang={l}
                   aria-current={l === locale ? "true" : undefined}
-                  className="text-band-muted hover:text-band-ink aria-[current=true]:bg-band-accent aria-[current=true]:text-band grid min-h-11 min-w-11 place-items-center px-2.5 text-sm font-semibold md:min-w-12 md:px-3"
+                  className="text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold aria-[current=true]:underline aria-[current=true]:decoration-2 aria-[current=true]:underline-offset-[6px] aria-[current=true]:decoration-[var(--guest-glow)]"
                 >
                   {t(`language.${l}`)}
                 </a>
               ))}
             </nav>
           )}
+          {tools}
         </div>
-        <div className="text-band-muted flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          {tableLabel && (
-            <span
-              className="border-band-line/50 text-band-accent rounded-full border px-3 py-0.5 font-semibold"
-              data-testid="table-chip"
-            >
-              {t("table", { label: tableLabel })}
-            </span>
-          )}
-          <span>{t("payHint")}</span>
-          {action && <span className="flex basis-full flex-wrap items-center gap-2 sm:basis-auto">{action}</span>}
+        <div className="min-w-0">
+          <SplitText
+            as="h1"
+            reveal="load"
+            text={cafeName}
+            lang={nameLang && nameLang !== locale ? nameLang : undefined}
+            className="display-face block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
+          />
+          {below}
+          <p className="text-muted mt-2 text-sm">{t("payHint")}</p>
         </div>
       </div>
     </header>

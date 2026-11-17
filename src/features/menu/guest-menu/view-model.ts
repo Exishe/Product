@@ -1,3 +1,4 @@
+import { guestTheme, type GuestTheme } from "@/features/guest-theme/themes";
 import type { Locale } from "@/i18n/routing";
 import { normalizeForSearch } from "@/lib/format/search";
 
@@ -22,7 +23,13 @@ type SnapshotItem = {
   image?: string | null;
 };
 export type PublicMenu = {
-  restaurant: { name: string };
+  restaurant: {
+    name: string;
+    logo?: string | null;
+    brand_color?: string | null;
+    /** Missing until migration 20261117120000_guest_theme is applied. */
+    guest_theme?: string | null;
+  };
   location: { id: string; name: string; locales: string[]; ordering: boolean };
   menu: {
     menus:
@@ -61,6 +68,11 @@ export type GuestItem = {
 export type GuestCategory = { id: string; name: Text | null; items: GuestItem[] };
 export type GuestMenuData = {
   restaurantName: string;
+  /** The café's guest theme preset (ADR-052). */
+  theme: GuestTheme;
+  brandColor: string | null;
+  /** Storage path of the café's logo in the menu-images bucket. */
+  logo: string | null;
   locationId: string;
   locales: string[];
   ordering: boolean;
@@ -132,6 +144,9 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
 
   return {
     restaurantName: data.restaurant.name,
+    theme: guestTheme(data.restaurant.guest_theme),
+    brandColor: data.restaurant.brand_color ?? null,
+    logo: data.restaurant.logo || null,
     locationId: data.location.id,
     locales: data.location.locales,
     ordering: data.location.ordering,

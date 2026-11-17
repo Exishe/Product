@@ -3,23 +3,31 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import styles from "./guest.module.css";
-import { BellIcon, CheckIcon } from "./ui";
+import { CheckIcon } from "./ui";
 
-// "Call the waiter" on the menu, before or without an order. It sits on the
-// noir header band and the noir slim bar, so it is drawn for a dark ground.
-// Shared state, so
-// the button in the header and the one in the bar that slides in on scroll
-// show the same thing. One tap asks, a second confirms: a stray tap never
-// sends a waiter over.
-type State = "idle" | "confirm" | "sending" | "called" | "failed";
+// "Call the waiter" on the menu, before or without an order: the Waiter item
+// of the bottom bar, with its question just above the bar. One tap asks, a
+// second confirms: a stray tap never sends a waiter over. Module state, so
+// the item and the question (rendered apart) show the same thing.
+export type CallState = "idle" | "confirm" | "sending" | "called" | "failed";
 
-let state: State = "idle";
+let state: CallState = "idle";
 let timer: ReturnType<typeof setTimeout> | undefined;
+// "Called" lasts 90 s on the bar item; the note above the bar only 4 s.
+let noteHidden = false;
+let noteTimer: ReturnType<typeof setTimeout> | undefined;
 const listeners = new Set<() => void>();
 
-function set(next: State, revertAfterMs?: number) {
+function set(next: CallState, revertAfterMs?: number) {
   state = next;
   clearTimeout(timer);
+  clearTimeout(noteTimer);
+  noteHidden = false;
+  if (next === "called")
+    noteTimer = setTimeout(() => {
+      noteHidden = true;
+      listeners.forEach((l) => l());
+    }, 4000);
   if (revertAfterMs) timer = setTimeout(() => set("idle"), revertAfterMs);
   listeners.forEach((l) => l());
 }
@@ -30,24 +38,25 @@ const subscribe = (l: () => void) => {
 
 const CALLED_FOR_MS = 90_000;
 
-export function CallWaiterButton({
-  token,
-  tableId,
-  compact = false,
-}: {
-  token: string;
-  tableId: string;
-  compact?: boolean;
-}) {
-  const { t, locale } = useGuestI18n();
+export function useCallWaiter() {
   const current = useSyncExternalStore(
     subscribe,
     () => state,
-    () => "idle" as State,
+    () => "idle" as CallState,
   );
-
-  // A guest who scrolls away mid-question shouldn't leave it hanging.
+  // A guest who leaves the page mid-question shouldn't leave it hanging.
   useEffect(() => () => void (state === "confirm" && set("idle")), []);
+  return {
+    state: current,
+    ask: () => (state === "confirm" ? set("idle") : state === "idle" || state === "failed" ? set("confirm", 8000) : undefined),
+    cancel: () => set("idle"),
+  };
+}
+
+/** The question and its answers, shown above the bottom bar. */
+export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: string }) {
+  const { t, locale } = useGuestI18n();
+  const { state: current, cancel } = useCallWaiter();
 
   const send = async () => {
     set("sending");
@@ -57,71 +66,38 @@ export function CallWaiterButton({
     else set("failed", 4000);
   };
 
-  const pill =
-    "inline-flex min-h-11 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-colors";
-
-  if (current === "confirm") {
-    return (
-      <span
-        role="group"
-        aria-label={t("menu.callConfirm")}
-        className={`inline-flex items-center gap-1.5 ${styles.pop}`}
-      >
-        {!compact && <span className="text-sm font-semibold">{t("menu.callConfirm")}</span>}
-        <button
-          type="button"
-          onClick={() => void send()}
-          className={`${pill} bg-band-accent text-band active:scale-95`}
-        >
-          {compact ? t("menu.callConfirm") : t("menu.callYes")}
-        </button>
-        <button
-          type="button"
-          onClick={() => set("idle")}
-          className={`${pill} border-band-muted/50 text-band-muted hover:text-band-ink border`}
-        >
-          {t("menu.callCancel")}
-        </button>
-      </span>
-    );
-  }
-
-  if (current === "called") {
-    return (
-      <span role="status" className={`${pill} bg-success text-white ${styles.pop}`}>
-        <CheckIcon />
-        {t("menu.waiterCalled")}
-      </span>
-    );
-  }
-
-  const sending = current === "sending";
+  const pill = "inline-flex min-h-12 items-center justify-center gap-2 rounded-pill px-4 text-sm font-semibold";
+  const hidden = useSyncExternalStore(
+    subscribe,
+    () => noteHidden,
+    () => false,
+  );
+  if (current === "idle" || (current === "called" && hidden)) return null;
   return (
-    <>
-      <button
-        type="button"
-        disabled={sending}
-        onClick={() => set("confirm", 8000)}
-        aria-label={compact ? t("order.callWaiter") : undefined}
-        className={`${pill} border-band-line/60 text-band-accent hover:border-band-accent relative border active:scale-95 disabled:opacity-80`}
-        data-testid={compact ? "call-waiter-compact" : "call-waiter"}
-      >
-        {sending && (
-          <span
-            aria-hidden="true"
-            className="border-band-accent absolute inset-0 animate-ping rounded-full border-2"
-          />
-        )}
-        <span className={sending ? styles.ringing : styles.bell}>
-          <BellIcon />
-        </span>
-        {!compact && t("order.callWaiter")}
-      </button>
-      {current === "failed" && (
-        <span role="alert" className="text-pom-on-dark text-sm font-semibold">
+    <div
+      className={`bg-surface text-ink shadow-float pointer-events-auto rounded-card border border-line p-3 ${styles.pop}`}
+      data-testid="call-waiter"
+    >
+      {current === "confirm" || current === "sending" ? (
+        <div role="group" aria-label={t("menu.callConfirm")} className="flex flex-wrap items-center gap-2">
+          <span className="min-w-0 flex-1 px-1 font-semibold">{t("menu.callConfirm")}</span>
+          <button type="button" disabled={current === "sending"} onClick={() => void send()} className={`${pill} bg-accent text-on-accent`}>
+            {t("menu.callYes")}
+          </button>
+          <button type="button" disabled={current === "sending"} onClick={cancel} className={`${pill} border-line-strong border`}>
+            {t("menu.callCancel")}
+          </button>
+        </div>
+      ) : current === "called" ? (
+        <p role="status" className="text-success flex items-center gap-2 px-1 font-semibold">
+          <CheckIcon />
+          {t("menu.waiterCalled")}
+        </p>
+      ) : (
+        <p role="alert" className="text-alert px-1 font-semibold">
           {t("order.requestFailed")}
-        </span>
+        </p>
       )}
-    </>
+    </div>
   );
 }

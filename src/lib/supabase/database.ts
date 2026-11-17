@@ -314,6 +314,15 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    set_guest_appearance: {
+      Args: {
+        p_restaurant_id: string;
+        p_theme: string;
+        p_brand_color: string;
+        p_logo_path: string;
+      };
+      Returns: undefined;
+    };
     set_kitchen_busy: {
       Args: {
         p_location_id: string;

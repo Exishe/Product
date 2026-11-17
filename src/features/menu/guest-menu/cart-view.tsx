@@ -5,7 +5,7 @@ import type { CartSummary, PricedLine } from "@/features/ordering/cart";
 import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { BackIcon, MinusIcon, PlusIcon, Txt } from "./ui";
+import { BackIcon, MinusIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 function LineRow({
@@ -26,7 +26,12 @@ function LineRow({
   const [open, close] = locale === "en" ? ["“", "”"] : ["«", "»"];
   const available = status === "ok";
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b border-line py-3" data-testid="cart-line">
+    <li className="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] gap-x-3 gap-y-1 border-b border-line py-4" data-testid="cart-line">
+      <span className="row-span-4">
+        {item && (
+          <Plate src={item.image ? dishPhotoUrl(item.image) : null} name={item.name.text} size={56} muted={!available} className="size-14" />
+        )}
+      </span>
       {item ? (
         <Txt
           value={item.name}
@@ -38,7 +43,7 @@ function LineRow({
       )}
       <span className="num text-right font-semibold whitespace-nowrap">{available ? formatAmd(priced.total, locale) : null}</span>
       {options.length > 0 && (
-        <span className="col-start-1 text-sm text-muted">
+        <span className="col-start-2 text-sm text-muted">
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -48,20 +53,20 @@ function LineRow({
         </span>
       )}
       {line.note && (
-        <span className="col-start-1 text-sm break-words text-muted">
+        <span className="col-start-2 text-sm break-words text-muted">
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className="col-start-1 text-sm font-semibold text-pomegranate" role="status">
+        <span className="col-start-2 text-sm font-semibold text-alert" role="status">
           {t("menu.soldOut")}
         </span>
       )}
-      <div className="col-start-1 mt-1 flex items-center gap-3">
+      <div className="col-start-2 mt-1 flex items-center gap-3">
         {available ? (
-          <span className="inline-flex items-center rounded-full border border-line-strong bg-white">
+          <span className="inline-flex items-center rounded-pill border border-line-strong bg-surface">
             <button
               type="button"
               className="grid size-12 place-items-center disabled:text-line-strong"
@@ -86,7 +91,7 @@ function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="min-h-12 rounded-full border border-line-strong bg-white px-5 font-semibold"
+            className="min-h-12 rounded-pill border border-line-strong bg-surface px-5 font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}
@@ -119,14 +124,14 @@ export function CartView({
 }) {
   const { t, locale } = useGuestI18n();
   return (
-    <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-10 md:px-8" data-testid="cart">
+    <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-12 md:px-8" data-testid="cart">
       <div className="pt-3 md:pt-6">
-        <button type="button" onClick={onBack} className="-ml-1 inline-flex min-h-12 items-center gap-1 font-semibold text-tarragon">
+        <button type="button" onClick={onBack} className="-ml-1 inline-flex min-h-12 items-center gap-1 font-semibold text-accent-text">
           <BackIcon />
           {t("cart.back")}
         </button>
       </div>
-      <h2 className="display-face mt-2 mb-1 text-display-38 leading-[1.05] md:text-[2.75rem]">{t("cart.title")}</h2>
+      <h2 className="display-face mt-2 mb-1 text-[2.75rem] leading-[1.02] md:text-[3.5rem]">{t("cart.title")}</h2>
       <ul className="mt-4 border-t border-line">
         {summary.lines.map((p) => (
           <LineRow key={p.line.id} priced={p} item={items[p.line.itemId]} locked={locked} onQuantity={onQuantity} />

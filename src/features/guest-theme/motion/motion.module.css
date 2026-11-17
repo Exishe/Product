@@ -1,0 +1,63 @@
+/* Split Text: words stay whole, letters move. */
+.word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.char {
+  display: inline-block;
+}
+
+.long {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Below the fold, waiting to be seen (set by the component, so a page
+   without JavaScript never hides anything). */
+.split[data-split="wait"] .char {
+  opacity: 0;
+  transform: translateY(0.5em);
+}
+
+/* The café name: rises at first paint, in CSS. */
+.load .char {
+  animation: rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(80ms + var(--i, 0) * 32ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5em);
+  }
+}
+
+/* Rotating Text: every word in one grid cell, so the box is as wide as the
+   widest word and the line never reflows. */
+.rotator {
+  display: inline-grid;
+  vertical-align: bottom;
+  overflow: clip;
+  overflow-clip-margin: 0.25em;
+  padding-block: 0.1em;
+}
+
+.rotator > * {
+  grid-area: 1 / 1;
+}
+
+.rotator > [data-current="false"] {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load .char {
+    animation: none;
+  }
+  .split[data-split="wait"] .char {
+    opacity: 1;
+    transform: none;
+  }
+}

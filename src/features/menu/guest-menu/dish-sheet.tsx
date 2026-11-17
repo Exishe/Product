@@ -1,6 +1,7 @@
 "use client";
 
-import { StarBorder } from "@/features/guest-theme/star-border";
+import { sparkFrom } from "@/features/guest-theme/motion/spark";
+import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useEffect, useRef, useState } from "react";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -14,7 +15,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, MinusIcon, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { CloseIcon, MinusIcon, Plate, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -65,33 +66,29 @@ export function DishSheet({
       onClick={(e) => {
         if (e.target === dialog.current) onClose(); // a tap on the backdrop
       }}
-      className={`rounded-t-bottom-sheet bg-matsoni text-ink backdrop:bg-noir/55 mx-auto mt-auto mb-0 max-h-[88dvh] w-full max-w-[560px] overflow-hidden border-0 p-0 md:m-auto md:max-h-[86dvh] md:w-[calc(100%-4rem)] md:rounded-[20px] md:shadow-float ${styles.sheet}`}
+      className={`rounded-t-feature bg-page text-ink mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[600px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:rounded-feature md:shadow-float md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
-      <div className="max-h-[88dvh] overflow-y-auto overscroll-contain px-5 pt-6 md:max-h-[86dvh] md:px-8 md:pt-8">
-        {item.image && (
-          // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
-          <img
-            src={dishPhotoUrl(item.image)}
-            alt=""
-            width={430}
-            height={300}
-            decoding="async"
-            className="bg-mist -mx-5 -mt-6 mb-5 block aspect-[4/3] w-[calc(100%+2.5rem)] max-w-none object-cover md:-mx-8 md:-mt-8 md:aspect-[16/10] md:w-[calc(100%+4rem)]"
-          />
-        )}
+      <div className="max-h-[90dvh] overflow-y-auto overscroll-contain px-5 pt-7 md:max-h-[88dvh] md:px-9 md:pt-9">
+        <Plate
+          src={item.image ? dishPhotoUrl(item.image) : null}
+          name={item.name.text}
+          size={440}
+          lazy={false}
+          className="mx-auto mb-5 block w-[min(62%,15rem)]"
+        />
         <div className="flex items-start justify-between gap-3">
           <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
             <Txt
               value={item.name}
               locale={locale}
-              className="display-face block text-3xl leading-[1.1] [overflow-wrap:anywhere] md:text-[2.25rem]"
+              className="display-face block text-[2.25rem] leading-[1.05] [overflow-wrap:anywhere] md:text-[2.75rem]"
             />
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={t("sheet.close")}
-            className="text-muted -mt-2 -mr-2 grid size-12 flex-none place-items-center rounded-full"
+            className="text-muted bg-surface shadow-card -mt-1 -mr-1 grid size-12 flex-none place-items-center rounded-full"
           >
             <CloseIcon />
           </button>
@@ -100,7 +97,7 @@ export function DishSheet({
           <Txt value={item.description} locale={locale} as="p" className="text-muted mt-2" />
         )}
         <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="num text-gold-deep text-base font-semibold">{formatAmd(item.price, locale)}</span>
+          <span className="num text-accent-text text-lg font-semibold">{formatAmd(item.price, locale)}</span>
           {item.portion && (
             <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
           )}
@@ -123,7 +120,7 @@ export function DishSheet({
               <legend className="mb-2 flex w-full items-baseline justify-between gap-3 font-semibold">
                 {group.name ? <Txt value={group.name} locale={locale} /> : <span />}
                 <span
-                  className={`text-sm ${group.min > 0 ? "text-pomegranate font-semibold" : "text-muted font-normal"}`}
+                  className={`text-sm ${group.min > 0 ? "text-alert font-semibold" : "text-muted font-normal"}`}
                 >
                   {hint}
                 </span>
@@ -142,7 +139,7 @@ export function DishSheet({
                       checked={on}
                       disabled={!on && group.max > 1 && chosen.length >= group.max}
                       onChange={() => setSelection((s) => toggleOption(s, group, m.id))}
-                      className="accent-tarragon size-[22px] flex-none"
+                      className="accent-accent size-[22px] flex-none"
                     />
                     <Txt value={m.name} locale={locale} className="min-w-0 flex-1" />
                     {m.delta !== 0 && (
@@ -168,7 +165,7 @@ export function DishSheet({
               rows={2}
               placeholder={t("sheet.notePlaceholder")}
               onChange={(e) => setNote(e.target.value)}
-              className="rounded-input border-line-strong min-h-[72px] resize-y border bg-white p-3 font-normal"
+              className="rounded-field border-line-strong bg-surface min-h-[72px] resize-y border p-3 font-normal"
             />
             {note.length >= NOTE_COUNTER_FROM && (
               <span className="num text-muted justify-self-end text-sm font-normal" aria-live="polite">
@@ -181,13 +178,13 @@ export function DishSheet({
         <div
           className={
             canOrder
-              ? "bg-matsoni border-line sticky bottom-0 -mx-5 mt-6 border-t px-5 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:-mx-8 md:px-8 md:pb-6"
+              ? "bg-page border-line sticky bottom-0 -mx-5 mt-6 border-t px-5 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:-mx-9 md:px-9 md:pb-7"
               : "pb-[calc(24px+env(safe-area-inset-bottom,0px))]"
           }
         >
           {canOrder ? (
             <div className="flex gap-3">
-              <span className="border-line-strong inline-flex flex-none items-center rounded-full border bg-white">
+              <span className="border-line-strong bg-surface rounded-pill inline-flex flex-none items-center border">
                 <button
                   type="button"
                   className="disabled:text-line-strong grid size-12 place-items-center"
@@ -210,22 +207,17 @@ export function DishSheet({
                   <PlusIcon />
                 </button>
               </span>
-              <StarBorder
+              <ThemedStarBorder
                 disabled={!valid}
-                onClick={() => onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note })}
-                color="var(--guest-champagne-light)"
-                trailColor="var(--guest-champagne)"
-                backgroundColor="var(--guest-noir)"
-                textColor="var(--guest-ivory)"
-                borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
-                radius={999}
-                glow={0.7}
-                duration={5}
+                onClick={(e) => {
+                  sparkFrom(e.currentTarget);
+                  onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
+                }}
                 className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"
               >
                 <span>{t("sheet.add")}</span>
-                <span className={`num whitespace-nowrap ${valid ? "text-champagne-light" : ""}`}>{formatAmd(price, locale)}</span>
-              </StarBorder>
+                <span className="num whitespace-nowrap">{formatAmd(price, locale)}</span>
+              </ThemedStarBorder>
             </div>
           ) : null}
         </div>

@@ -2754,6 +2754,7 @@ export type Database = {
           created_by: string | null
           currency: string
           default_locale: Database["public"]["Enums"]["app_locale"]
+          guest_theme: string
           id: string
           logo_path: string | null
           name: string
@@ -2769,6 +2770,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           default_locale?: Database["public"]["Enums"]["app_locale"]
+          guest_theme?: string
           id?: string
           logo_path?: string | null
           name: string
@@ -2784,6 +2786,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           default_locale?: Database["public"]["Enums"]["app_locale"]
+          guest_theme?: string
           id?: string
           logo_path?: string | null
           name?: string

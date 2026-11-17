@@ -1,6 +1,6 @@
 "use client";
 
-import { StarBorder } from "@/features/guest-theme/star-border";
+import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/routing";
@@ -123,10 +123,10 @@ export function OrderSender({
         : null;
 
   const primary =
-    "flex min-h-14 w-full items-center justify-center rounded-full bg-noir px-6 font-semibold text-ivory ring-1 ring-champagne/60 shadow-float disabled:bg-mist disabled:text-muted disabled:shadow-none disabled:ring-0";
+    "flex min-h-14 w-full items-center justify-center rounded-pill bg-accent px-6 font-semibold text-on-accent shadow-float disabled:bg-mist disabled:text-muted disabled:shadow-none";
   return (
     <div className="grid gap-3">
-      <p role="status" aria-live="polite" className={message ? "rounded-sheet border border-pomegranate bg-pom-tint px-4 py-3" : "sr-only"}>
+      <p role="status" aria-live="polite" className={message ? "rounded-card border border-alert bg-alert-tint px-4 py-3" : "sr-only"}>
         {message}
       </p>
       {phase.name === "error" && phase.why.kind === "menu_changed" ? (
@@ -138,21 +138,13 @@ export function OrderSender({
           {t("cart.retry")}
         </button>
       ) : (
-        <StarBorder
+        <ThemedStarBorder
           className="shadow-float flex min-h-14 w-full items-center justify-center px-6 font-semibold"
-          color="var(--guest-champagne-light)"
-          trailColor="var(--guest-champagne)"
-          backgroundColor="var(--guest-noir)"
-          textColor="var(--guest-ivory)"
-          borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
-          radius={999}
-          glow={0.7}
-          duration={5}
           disabled={phase.name === "sending" || summary.blocked || summary.count === 0}
           onClick={start}
         >
           {phase.name === "sending" ? t("cart.sending") : t("cart.send")}
-        </StarBorder>
+        </ThemedStarBorder>
       )}
     </div>
   );
