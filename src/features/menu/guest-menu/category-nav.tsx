@@ -25,6 +25,10 @@ export function CategoryNav({
   const { t, locale } = useGuestI18n();
   const nav = useRef<HTMLElement>(null);
   const [active, setActive] = useState(categories[0]?.id ?? null);
+  // After a tap on a tab, its section stays current while the page scrolls
+  // there, even when the menu ends too soon to bring it to the top (the
+  // last, short sections in two columns).
+  const holdUntil = useRef(0);
   const current = categories.some((c) => c.id === active) ? active : (categories[0]?.id ?? null);
 
   useEffect(() => {
@@ -44,12 +48,18 @@ export function CategoryNav({
       setActive(id);
     };
     const onScroll = () => {
+      if (performance.now() < holdUntil.current) return;
       if (!frame) frame = requestAnimationFrame(update);
+    };
+    const onScrollEnd = () => {
+      holdUntil.current = 0;
     };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scrollend", onScrollEnd);
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scrollend", onScrollEnd);
       cancelAnimationFrame(frame);
     };
   }, [categories]);
@@ -87,6 +97,7 @@ export function CategoryNav({
           onClick={(e) => {
             e.preventDefault();
             setActive(c.id);
+            holdUntil.current = performance.now() + 1500;
             document.getElementById(sectionId(c.id))?.scrollIntoView({ behavior: smooth(), block: "start" });
           }}
           className="text-muted hover:text-ink aria-[current=true]:bg-noir aria-[current=true]:text-ivory lg:aria-[current=true]:border-champagne lg:aria-[current=true]:text-ink flex min-h-11 flex-none items-center rounded-full px-4 font-semibold whitespace-nowrap lg:-ml-px lg:min-h-10 lg:rounded-none lg:border-l-2 lg:border-transparent lg:px-4 lg:whitespace-normal lg:aria-[current=true]:bg-transparent"

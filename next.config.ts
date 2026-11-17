@@ -26,7 +26,9 @@ function contentSecurityPolicy(): string {
     "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
     `img-src 'self' data: blob: ${supabase}`,
     "font-src 'self' data: https://cdn.fontshare.com",
-    `connect-src 'self' ${supabase} ${realtime}${dev ? " ws:" : ""}`,
+    // Fontshare in connect-src too: tools that read the page's stylesheets
+    // (axe in our e2e tests, devtools) fetch them.
+    `connect-src 'self' ${supabase} ${realtime} https://api.fontshare.com${dev ? " ws:" : ""}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "media-src 'self'",
