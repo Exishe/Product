@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
+import styles from "./games.module.css";
 import { GAMES, type GameId } from "./registry";
 
 // "Play while you wait" on the order status page: five small games in a
@@ -21,35 +22,85 @@ function readSound(): boolean {
   }
 }
 
-export function GamesCorner({ ready }: { ready: boolean }) {
+export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boolean }) {
   const { t } = useGuestI18n();
   const [open, setOpen] = useState<GameId | null>(null);
+  // While the order is cooking and the games are scrolled out of sight, a
+  // floating button brings the guest back to them.
+  const section = useRef<HTMLElement>(null);
+  // Only while the games are still further down: once the guest has scrolled
+  // past them (to the bill buttons) the button would just be in the way.
+  const [below, setBelow] = useState(false);
+  useEffect(() => {
+    const el = section.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => e && setBelow(!e.isIntersecting && e.boundingClientRect.top > 0), { rootMargin: "0px 0px -15% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <section className="mt-8" aria-labelledby="games-title">
-      <h2 id="games-title" className="display-face text-2xl">
-        {t("games.title")}
-      </h2>
-      <p className="mt-1 text-sm text-muted">{t("games.subtitle")}</p>
-      <ul className="mt-3 grid grid-cols-2 gap-3 min-[400px]:grid-cols-3">
-        {GAMES.map((g) => (
-          <li key={g.id}>
-            <button
-              type="button"
-              onClick={() => setOpen(g.id)}
-              data-testid={`game-${g.id}`}
-              className="flex min-h-24 w-full flex-col items-start justify-between gap-2 rounded-sheet border border-line bg-white p-3 text-left transition-transform hover:border-tarragon hover:bg-tarragon-tint active:scale-[0.97]"
-            >
-              <span aria-hidden="true" className="text-3xl leading-none">
-                {g.icon}
-              </span>
-              <span className="text-sm leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+    <>
+      <section ref={section} className="-mx-4 mt-2 mb-4 scroll-mt-4 bg-basalt px-4 pt-6 pb-5 text-slip" aria-labelledby="games-title" data-testid="games">
+        <div className="flex items-center gap-3">
+          <PadIcon className="size-9 flex-none text-apricot-on-dark" />
+          <div>
+            <h2 id="games-title" className="display-face text-2xl leading-tight">
+              {t("games.title")}
+            </h2>
+            <p className="text-sm text-slip-dim">{t("games.subtitle")}</p>
+          </div>
+        </div>
+        <ul className="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {GAMES.map((g) => (
+            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start">
+              <button
+                type="button"
+                onClick={() => setOpen(g.id)}
+                data-testid={`game-${g.id}`}
+                className="group block w-full overflow-hidden rounded-sheet bg-basalt-2 text-left ring-1 ring-basalt-3 transition-transform hover:ring-apricot-on-dark active:scale-[0.97]"
+              >
+                <span className="relative block aspect-[4/3] overflow-hidden bg-basalt-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- small static thumbnails, no optimizer needed */}
+                  <img src={`/games/${g.id}.webp`} alt="" width={480} height={360} loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                </span>
+                <span className="flex items-center justify-between gap-2 p-3">
+                  <span className="min-w-0 leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
+                  <span className="flex-none rounded-full bg-apricot px-3 py-1 text-sm font-semibold text-ink">{t("games.play")}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+      {waiting && below && !open && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex justify-center px-4">
+          <button
+            type="button"
+            onClick={() => section.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
+            className={`${styles.fab} pointer-events-auto flex min-h-14 items-center gap-3 rounded-full bg-basalt py-2 pr-5 pl-3 font-semibold text-slip shadow-float`}
+            data-testid="games-fab"
+          >
+            <span className={`${styles.pad} grid size-10 place-items-center rounded-full bg-apricot text-ink`}>
+              <PadIcon className="size-6" />
+            </span>
+            {t("games.fab")}
+          </button>
+        </div>
+      )}
       {open && <GameLayer key={open} id={open} ready={ready} onClose={() => setOpen(null)} />}
-    </section>
+    </>
+  );
+}
+
+function PadIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" fill="currentColor">
+      <path d="M9.5 8h13a7.5 7.5 0 0 1 7.3 9.2l-1.4 6.2a3.6 3.6 0 0 1-6.3 1.4L19.6 22h-7.2l-2.5 2.8a3.6 3.6 0 0 1-6.3-1.4l-1.4-6.2A7.5 7.5 0 0 1 9.5 8Z" />
+      <path d="M10 12.5v5M7.5 15h5" stroke="var(--color-basalt, #0e1612)" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="22.5" cy="13.5" r="1.6" fill="var(--color-basalt, #0e1612)" />
+      <circle cx="19.5" cy="16.5" r="1.6" fill="var(--color-basalt, #0e1612)" />
+    </svg>
   );
 }
 

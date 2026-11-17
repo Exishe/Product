@@ -714,6 +714,8 @@
         "howTo": "◀ ▶ walk, ⤒ jump. Collect apricots, jump on pigeons and reach the café door. Three levels."
       },
       "sound": "Sound",
+      "play": "Play",
+      "fab": "Play while you wait",
       "soundOff": "Turn sound on",
       "soundOn": "Sound is on"
     }

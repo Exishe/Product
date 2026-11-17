@@ -1,7 +1,7 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import { CheckIcon, Notice, Txt } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
@@ -114,7 +114,7 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   );
 }
 
-function OrderCard({ order, latest }: { order: Order; latest: boolean }) {
+function OrderCard({ order, latest, below }: { order: Order; latest: boolean; below?: ReactNode }) {
   const { t, locale } = useGuestI18n();
   const status = displayStatus(order);
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
@@ -140,6 +140,7 @@ function OrderCard({ order, latest }: { order: Order; latest: boolean }) {
       ) : latest ? (
         <Tracker order={order} status={status} />
       ) : null}
+      {below}
       <ul className="mt-2">
         {lines.map((l) => {
           const name = localized(l.name_i18n, locale as Locale);
@@ -284,7 +285,15 @@ export function OrderStatusView({
 
   return (
     <main className="flex-1 px-4 pt-3 pb-10">
-      {latest && <OrderCard order={latest} latest />}
+      {latest && (
+        <OrderCard
+          order={latest}
+          latest
+          // The games sit right under the status while the guest waits: the
+          // moment they have nothing to do but watch the tracker.
+          below={closed || latestStatus === "rejected" || latestStatus === "cancelled" ? null : <GamesCorner ready={latestStatus === "ready"} waiting={latestStatus !== null && waiting.has(latestStatus)} />}
+        />
+      )}
       {channel === "down" && <p className="-mt-2 mb-2 text-sm text-muted">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {latestStatus ? t(`order.steps.${latestStatus === "rejected" || latestStatus === "cancelled" ? "received" : latestStatus}`) : null}
@@ -337,7 +346,6 @@ export function OrderStatusView({
               {t("order.orderMore")}
             </a>
           </p>
-          <GamesCorner ready={latestStatus === "ready"} />
         </>
       )}
 
