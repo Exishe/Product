@@ -24,7 +24,7 @@ export type GameApi = {
 };
 
 /** Cartoon voices and noises, synthesized like the rest (see VOICES). */
-export type VoiceKind = "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
+export type VoiceKind = "eek" | "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
 
 export type SfxKind =
   | VoiceKind
@@ -40,7 +40,9 @@ export type SfxKind =
   | "merge"
   | "bad"
   | "win"
-  | "lose";
+  | "lose"
+  | "clang"
+  | "smash";
 
 /** A game mounts into the host's canvas and returns its cleanup. */
 export type Game = { mount(api: GameApi): () => void };
@@ -374,7 +376,7 @@ export function saveBest(gameId: string, score: number): number {
 
 // --- Sound: tiny synthesized effects, no audio files ------------------------
 
-type Note = { f: number; to?: number; t: number; type?: OscillatorType; v?: number; noise?: boolean };
+type Note = { f: number; to?: number; t: number; type?: OscillatorType; v?: number; noise?: boolean; with?: boolean };
 
 // Cartoon voices: a buzzy tone through two band-pass filters at the formants
 // of a vowel, gliding from vowel to vowel ("u-ə-u" + a breathy "f" = "oof").
@@ -405,6 +407,7 @@ const VOWEL: Record<string, [number, number, number]> = {
   m: [260, 900, 0.12],
 };
 const VOICES: Record<VoiceKind, Seg[]> = {
+  eek: [{ dur: 0.13, p: [950, 1350, 1150], vw: "ii", v: 0.8 }],
   oof: [{ dur: 0.2, p: [240, 205, 150], vw: "uhu", post: [1300, 0.07] }],
   ouch: [{ dur: 0.32, p: [330, 480, 250], vw: "aaou", post: [3600, 0.09] }],
   hah: [{ dur: 0.16, p: [300, 340, 240], vw: "iaa", pre: [1700, 0.05] }],
@@ -445,6 +448,23 @@ const SFX: Record<Exclude<SfxKind, VoiceKind>, Note[]> = {
     { f: 659, t: 0.1, type: "square", v: 0.07 },
     { f: 784, t: 0.1, type: "square", v: 0.07 },
     { f: 1047, t: 0.25, type: "square", v: 0.07 },
+  ],
+  // A struck frying pan: inharmonic partials ringing together (metal, not a chord)
+  clang: [
+    { f: 0, t: 0.04, noise: true, v: 0.3 },
+    { f: 540, to: 520, t: 0.7, type: "sine", v: 0.16, with: true },
+    { f: 1385, to: 1360, t: 0.5, type: "sine", v: 0.1, with: true },
+    { f: 2290, t: 0.35, type: "sine", v: 0.07, with: true },
+    { f: 3170, t: 0.2, type: "sine", v: 0.05, with: true },
+  ],
+  // Porcelain breaking: a bright crash, then shards tinkling down
+  smash: [
+    { f: 0, t: 0.2, noise: true, v: 0.4 },
+    { f: 2900, t: 0.05, type: "triangle", v: 0.09 },
+    { f: 3700, t: 0.04, type: "triangle", v: 0.07 },
+    { f: 2500, t: 0.06, type: "triangle", v: 0.08 },
+    { f: 3400, t: 0.05, type: "triangle", v: 0.06 },
+    { f: 4100, t: 0.08, type: "triangle", v: 0.05 },
   ],
   lose: [
     { f: 392, t: 0.15, type: "triangle", v: 0.12 },
@@ -584,8 +604,8 @@ export function createSfx(isOn: () => boolean): { play: (kind: SfxKind, pitch?: 
           osc.connect(gain);
           osc.start(at);
           osc.stop(at + n.t);
-          // Notes of one sound play in sequence, except noise layered under a tone.
-          at += n.t * 0.85;
+          // Notes of one sound play in sequence, unless marked to sound together.
+          if (!n.with) at += n.t * 0.85;
         }
       } catch {
         // no audio on this device: games stay silent

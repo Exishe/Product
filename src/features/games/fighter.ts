@@ -425,7 +425,7 @@ export const game: Game = {
       if (kind === 2) return splat(x, y, blocked ? 6 : 14);
       add(x, y, 2, blocked ? 5 : kind ? 11 : 7, kind ? 340 : 260, 0.2, 0, blocked ? "#dff3ff" : "#fff0a0");
       if (blocked) return;
-      add(x, y, 4, 1, 0, 0.13, kind ? 30 : 19, "#fff6c8");
+      add(x, y, 4, 1, 0, 0.13, kind ? 24 : 17, "#fff6c8");
       add(x, y, 0, kind ? 5 : 8, kind ? 90 : 70, 0.55, kind ? 8 : 9);
       add(x, y, 1, kind ? 4 : 2, kind ? 130 : 100, 0.75, 6);
     };
@@ -458,6 +458,7 @@ export const game: Game = {
       setSt(loser, "ko");
       setSt(winner, "win");
       winner.wins++;
+      winner.kb = (winner.x > loser.x ? 1 : -1) * 160; // room to dance
       toms = [];
       add(loser.x, 60, 4, 1, 0, 0.2, 36, "#fff6c8");
       add(loser.x, 60, 0, 8, 120, 0.8, 10);
@@ -511,8 +512,7 @@ export const game: Game = {
         } else if (kind) {
           def.sq = 0.16; // flattened for a moment
           api.sfx("heavy");
-          api.sfx("block");
-          api.sfx("boing", 1.6);
+          api.sfx("clang");
           api.sfx("ouch", voice(def));
         } else {
           api.sfx("hit");
@@ -695,7 +695,7 @@ export const game: Game = {
         if (!potDown && phaseT > 0.55) {
           potDown = true;
           const lo = P.st === "ko" ? P : B;
-          api.sfx("heavy");
+          api.sfx("clang");
           api.sfx("boing", 0.9);
           add(lo.x, 64, 1, 4, 120, 0.9, 7);
           if (!calm) shake = 0.15;
@@ -932,7 +932,7 @@ export const game: Game = {
       } else if (st === "win") {
         // A little victory dance: hop, sway, wave the spoon.
         lean = w * 0.14;
-        fh = [16, sy - 22 - 6 * w];
+        fh = [24, sy - 20 - 6 * w];
         bh = [-14, sy - 22 + 6 * w];
         ff = [7, -Math.max(0, w) * 7];
         bf = [-9, -Math.max(0, -w) * 7];
@@ -1187,7 +1187,7 @@ export const game: Game = {
       for (const [x, y] of steam) {
         for (let k = 0; k < 3; k++) {
           const p = (now * 0.45 + k / 3) % 1;
-          blob(ctx, x! + Math.sin(p * 6 + k) * 6, y! - p * ah * 0.13, ah * (0.012 + p * 0.03), `rgba(255,255,255,${0.55 * (1 - p)})`);
+          blob(ctx, x! + Math.sin(p * 6 + k) * 6, y! - p * ah * 0.1, ah * (0.01 + p * 0.022), `rgba(255,255,255,${0.55 * (1 - p)})`);
         }
       }
       const t = now % 7;

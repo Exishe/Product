@@ -698,16 +698,16 @@
         "howTo": "Swipe in any direction. Two of the same dish merge into the next one, from herbs all the way to cake."
       },
       "slice": {
-        "name": "Chef's Knife",
-        "howTo": "Swipe across the flying vegetables to slice them. Don't touch the hot coals, and don't let vegetables drop."
+        "name": "Salad Panic",
+        "howTo": "Swipe to slice the panicking veggies before they fall. Don't break grandma's teapot! The golden pomegranate scores ×10."
       },
       "runner": {
         "name": "Waiter Run",
         "howTo": "Tap to jump, tap again in the air to jump higher. Clear the chairs and cats, collect the coffee cups."
       },
       "fighter": {
-        "name": "Yard Fighters",
-        "howTo": "◀ ▶ move, ▲ jump, ▼ block, ✊ punch, 🦶 kick, 🫓 throw a lavash. Win two rounds out of three."
+        "name": "Kitchen Clash",
+        "howTo": "◀ ▶ walk, ▲ jump, ▼ hide behind a pot lid. Bonk with the spoon, whack with the pan, throw a tomato! Win two rounds to become head chef."
       },
       "platformer": {
         "name": "Rooftop Cat",

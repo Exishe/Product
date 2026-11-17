@@ -49,7 +49,7 @@ type Kind = {
 /** pan: panic, eased 0..1; v0: launch speed. */
 type Item = { x: number; y: number; vx: number; vy: number; g: number; rot: number; vr: number; e: number; ph: number; v0: number; pan: number };
 type Half = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; e: number; cut: number; side: number };
-/** k: 0–2 porcelain shard colours, 3 the lid. */
+/** k: 0–2 porcelain shard colours, 3 the lid, 4 the handle. */
 type Shard = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; s: number; k: number };
 type Drop = { x: number; y: number; vx: number; vy: number; life: number; max: number; col: string; r: number };
 type Stain = { x: number; y: number; col: string; life: number; b: number[] };
@@ -117,17 +117,19 @@ const leaf = (g: G, x: number, y: number, a: number, s = 1) => {
   F(g, "#5a9a3a");
   S(g, OUT, 1.6);
 };
-const star = (g: G, x: number, y: number, r: number, col: string) => {
+// A sparkle (4 points) or a comic crash burst (more points, fatter).
+const star = (g: G, x: number, y: number, r: number, col: string, n = 4, k = 0.3) => {
   const p: number[] = [];
-  for (let i = 0; i < 8; i++) p.push(x + Math.cos((i * TAU) / 8) * r * (i % 2 ? 0.3 : 1), y + Math.sin((i * TAU) / 8) * r * (i % 2 ? 0.3 : 1));
+  for (let i = 0; i < n * 2; i++) p.push(x + Math.cos((i * Math.PI) / n) * r * (i % 2 ? k : 1), y + Math.sin((i * Math.PI) / n) * r * (i % 2 ? k : 1));
   poly(g, p);
   F(g, col);
 };
-const sleeve = (g: G, ...p: number[]) => {
-  for (const [c, w] of [[OUT, 0.46], ["#fff", 0.38]] as const) {
+// A thick outlined stroke (an arm, a finger), widths in sprite units.
+const tube = (g: G, col: string, w: number, ...p: number[]) => {
+  for (const [c, lw] of [[OUT, w + 0.08], [col, w]] as const) {
     line(g, ...p);
     g.strokeStyle = c;
-    g.lineWidth = w;
+    g.lineWidth = lw;
     g.stroke();
   }
 };
@@ -143,6 +145,12 @@ const POM_SEEDS = (g: G) => {
     E(g, x - 0.03, y - 0.03, 0.035, 0.025);
     F(g, "#ff9aa8");
   }
+};
+const HANDLE = (g: G) => {
+  g.beginPath();
+  g.arc(-0.82, 0.16, 0.36, 1.4, 4.9);
+  S(g, OUT, 9);
+  S(g, "#f6f8fc", 5);
 };
 const LID = (g: G) => {
   E(g, 0, -0.46, 0.5, 0.17);
@@ -389,10 +397,7 @@ const POT = KINDS.push({
     S(g, COBALT, 3);
   },
   t: (g) => {
-    g.beginPath();
-    g.arc(-0.82, 0.16, 0.36, 1.4, 4.9);
-    S(g, OUT, 9);
-    S(g, "#f6f8fc", 5);
+    HANDLE(g);
     g.beginPath();
     g.moveTo(0.62, -0.05);
     g.quadraticCurveTo(1, 0, 1.2, -0.56);
@@ -515,8 +520,8 @@ function face(g: G, e: number, m: number, lx: number, ly: number) {
 
 /** The chef, in units of his head radius. k: 0 chef's kiss, 1 facepalm, 2 horror. */
 function drawChef(g: G, k: number, t: number) {
-  if (k === 2) sleeve(g, -0.9, 1.6, -1.2, 1.1, -0.95, 0.45);
-  sleeve(g, 0.9, 1.6, k === 1 ? 0.75 : 1.2, k === 1 ? 0.4 : 1.1, k === 1 ? 0.35 : k ? 0.95 : 0.55, k === 1 ? -0.1 : k ? 0.45 : 0.7);
+  if (k === 2) tube(g, "#fff", 0.38, -0.9, 1.6, -1.2, 1.1, -0.95, 0.45);
+  if (k !== 1) tube(g, "#fff", 0.38, 0.9, 1.6, 1.2, 1.1, k ? 0.95 : 0.55, k ? 0.45 : 0.7);
   E(g, 0, 1.5, 1.2, 0.68);
   F(g, "#fff");
   S(g, OUT, 2.2);
@@ -570,13 +575,12 @@ function drawChef(g: G, k: number, t: number) {
   }
   // hands
   if (k === 1) {
-    E(g, 0.06, -0.2, 0.6, 0.3, -0.12);
+    // facepalm: the arm comes up in front, four fingers over the eyes
+    tube(g, "#fff", 0.38, 1.05, 1.8, 0.95, 0.75, 0.5, 0.12);
+    for (let i = 0; i < 4; i++) tube(g, SKIN, 0.13, 0.3, -0.44 + i * 0.13, -0.56 + i * 0.05, -0.5 + i * 0.15);
+    E(g, 0.4, -0.18, 0.27, 0.3);
     F(g, SKIN);
     S(g, OUT, 2.2);
-    for (let i = 0; i < 3; i++) {
-      line(g, -0.32 + i * 0.22, -0.42, -0.36 + i * 0.22, -0.02);
-      S(g, "rgba(150,80,50,0.5)", 1.6);
-    }
   } else
     for (const s of k ? [-1, 1] : [1]) {
       E(g, k ? s * 0.92 : 0.5, k ? 0.42 : 0.66, 0.22, 0.24);
@@ -829,6 +833,7 @@ export const game: Game = {
     let last = { x: 0, y: 0 };
     const combo = { n: 0, t: 0, x: 0, y: 0 };
     const chef = { k: 0, t: CHEF };
+    let boom = { x: 0, y: 0, t: 9 }; // the comic crash burst
     const mult = () => Math.min(5, 1 + Math.floor(streak / 4));
     api.setScore(0);
 
@@ -865,8 +870,7 @@ export const game: Game = {
       if (!still) flash = shake = pot ? 1 : 0.5;
       setChef(pot ? 2 : 1);
       if (pot) {
-        sfx("heavy");
-        sfx("block");
+        sfx("smash");
       }
       if (lives <= 0) {
         over = true;
@@ -881,7 +885,7 @@ export const game: Game = {
     const finishCombo = () => {
       if (combo.n >= 3 && !over) {
         addScore(combo.n);
-        pop(combo.x, combo.y - R * 1.4, `+${combo.n}`, C.matsoni, 40);
+        pop(combo.x, combo.y - R * 2.4, `+${combo.n}`, C.matsoni, 40);
         sfx(combo.n >= 5 ? "yay" : "mmm");
         setChef(0);
       }
@@ -915,9 +919,10 @@ export const game: Game = {
         for (let i = 0; i < (still ? 8 : 16); i++) {
           const a = rand(0, TAU);
           const sp = rand(90, 330);
-          shards.push({ x: it.x, y: it.y, vx: it.vx * 0.3 + Math.cos(a) * sp * (i ? 1 : 0.3), vy: it.vy * 0.3 + Math.sin(a) * sp - (i ? 120 : 520), rot: rand(0, TAU), vr: rand(-12, 12), s: rand(0.18, 0.42) * R, k: i ? i % 3 : 3 });
+          shards.push({ x: it.x, y: it.y, vx: it.vx * 0.3 + Math.cos(a) * sp * (i ? 1 : 0.3), vy: it.vy * 0.3 + Math.sin(a) * sp - (i ? 120 : 520), rot: rand(0, TAU), vr: rand(-12, 12), s: rand(0.18, 0.42) * R, k: i > 1 ? i % 3 : 3 + i });
         }
         burst(it.x, it.y, it.vx, it.vy, [TEA, "#c89058"], 12);
+        boom = { x: it.x, y: it.y, t: 0 };
         stain(it.x, it.y, TEA, ang);
         hurt(true);
         return;
@@ -938,7 +943,7 @@ export const game: Game = {
         sfx("coin");
         sfx("yay");
         setChef(0);
-      } else if (Math.random() < 0.3) sfx(Math.random() < 0.5 ? "oof" : "hah", rand(1.6, 1.9)); // a tiny squeak
+      } else if (Math.random() < 0.3) sfx(Math.random() < 0.5 ? "eek" : "oof", rand(1.1, 1.6)); // a tiny squeak
       const before = mult();
       streak++;
       streakT = 0;
@@ -1061,6 +1066,7 @@ export const game: Game = {
       if (combo.n > 0 && (combo.t += dtReal) > COMBO_GAP) finishCombo();
       if (streak > 0 && (streakT += dtReal) > STREAK_GAP) streak = 0;
       chef.t += dtReal;
+      boom.t += dtReal;
       safe = Math.max(0, safe - dtReal);
       flash = Math.max(0, flash - dtReal * 2.5);
       shake = Math.max(0, shake - dtReal * 3);
@@ -1137,7 +1143,7 @@ export const game: Game = {
         ctx.restore();
         // The cut face, tilted toward us: the cross-section squashed onto the cut line.
         ctx.rotate(h.cut);
-        ctx.scale(1, 0.42);
+        ctx.scale(1, 0.34);
         ctx.rotate(-h.cut);
         blit(ctx, h.e, 1, R);
         ctx.restore();
@@ -1188,14 +1194,26 @@ export const game: Game = {
         }
         ctx.restore();
       }
+      if (boom.t < 0.3) {
+        const a = boom.t / 0.3;
+        ctx.globalAlpha = 1 - a;
+        star(ctx, boom.x, boom.y, R * (1.5 + a), "#fff", 9, 0.55);
+        star(ctx, boom.x, boom.y, R * (0.9 + a * 0.6), "#ffe9a0", 7, 0.5);
+        ctx.globalAlpha = 1;
+      }
       for (const p of shards) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         if (p.k > 2) {
           ctx.scale(R, R);
-          ctx.translate(0, 0.5);
-          LID(ctx);
+          if (p.k > 3) {
+            ctx.translate(0.82, -0.16);
+            HANDLE(ctx);
+          } else {
+            ctx.translate(0, 0.5);
+            LID(ctx);
+          }
         } else {
           ctx.scale(p.s, p.s);
           px = 1 / p.s;
