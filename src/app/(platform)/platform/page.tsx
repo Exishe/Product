@@ -1,4 +1,8 @@
+import { clsx } from "clsx";
+import { CircleAlert, CircleCheck, MailWarning, ScanText, WifiOff } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
+import { AdminPage, Notice } from "@/features/admin-ui/page";
+import { button, chip, input, table } from "@/features/admin-ui/styles";
 import { setPlan } from "@/features/platform/actions";
 import { parseCafes, parseProblems } from "@/features/platform/model";
 import { requirePlatformAdmin } from "@/features/platform/require-admin.server";
@@ -30,151 +34,219 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
     iso ? `${formatDate(new Date(iso), locale)} ${formatTime(new Date(iso))}` : t("never");
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
-      <h1 className="display-face text-display-38 leading-tight">{t("title")}</h1>
-      {search.error && (
-        <p role="alert" className="rounded-sheet bg-pom-tint text-pomegranate px-4 py-3 font-semibold">
-          {t("error")}
-        </p>
-      )}
+    <div className="admin-shell bg-staff-bg text-ink min-h-dvh">
+      <AdminPage title={t("title")} width="xl">
+        {search.error && (
+          <Notice tone="alert" role="alert" icon={<CircleAlert aria-hidden="true" />}>
+            <p className="m-0 font-semibold">{t("error")}</p>
+          </Notice>
+        )}
 
-      <ul className="flex flex-col gap-3">
-        {cafes.map((c) => (
-          <li
-            key={c.location_id}
-            data-testid="platform-cafe"
-            data-slug={c.slug}
-            className="rounded-sheet border-line flex flex-col gap-3 border bg-white p-4"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-xl font-semibold break-words">
-                {c.restaurant_name}{" "}
-                <span className="text-muted text-base font-normal">· {c.location_name}</span>
-              </h2>
-              <span className="text-muted text-sm">{c.slug}</span>
-            </div>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
-              <Fact
-                label={t("plan")}
-                value={c.plan === "menu" || c.plan === "service" ? billing(c.plan) : (c.plan ?? "")}
-              />
-              <Fact label={t("status")} value={c.status ? t(`statuses.${c.status}`) : ""} />
-              <Fact
-                label={t("trialEnds")}
-                value={c.trial_ends_at ? formatDate(new Date(c.trial_ends_at), locale) : "—"}
-              />
-              <Fact label={t("lastOrder")} value={when(c.last_order_at)} />
-              <Fact label={t("devices")} value={String(c.devices_online)} />
-              <Fact
-                label={`${t("ordersPerDay")} / ${t("qrShare")}`}
-                value={`${c.orders_per_open_day ?? "—"} / ${c.qr_share_pct === null ? "—" : `${c.qr_share_pct} %`}`}
-              />
-            </dl>
-            <form action={setPlan} className="border-line flex flex-wrap items-end gap-2 border-t pt-3">
-              <input type="hidden" name="locationId" value={c.location_id} />
-              <label className="text-muted flex flex-col text-sm font-semibold">
-                {t("plan")}
-                <select
-                  name="plan"
-                  defaultValue={c.plan ?? "service"}
-                  className="rounded-input border-line-strong text-ink h-11 border bg-white px-2 text-base"
-                >
-                  <option value="menu">{billing("menu")}</option>
-                  <option value="service">{billing("service")}</option>
-                </select>
-              </label>
-              <label className="text-muted flex flex-col text-sm font-semibold">
-                {t("status")}
-                <select
-                  name="status"
-                  defaultValue={c.status ?? "trialing"}
-                  className="rounded-input border-line-strong text-ink h-11 border bg-white px-2 text-base"
-                >
-                  {(["trialing", "active", "past_due", "canceled"] as const).map((s) => (
-                    <option key={s} value={s}>
-                      {t(`statuses.${s}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit" className="rounded-input bg-tarragon h-11 px-4 font-semibold text-white">
-                {t("save")}
-              </button>
-              {search.saved === c.location_id && (
-                <span role="status" className="text-tarragon self-center font-semibold">
-                  {t("saved")}
-                </span>
-              )}
-            </form>
-          </li>
-        ))}
-      </ul>
+        {/* Many columns: the table scrolls sideways inside its card on narrow screens. */}
+        <div className={clsx(table.wrap, "overflow-x-auto")}>
+          <table className={clsx(table.table, "min-w-[68rem]")}>
+            <thead className={table.head}>
+              <tr>
+                <th scope="col" className={table.th}>
+                  {t("cafe")}
+                </th>
+                <th scope="col" className={table.th}>
+                  {t("plan")}
+                </th>
+                <th scope="col" className={table.th}>
+                  {t("trialEnds")}
+                </th>
+                <th scope="col" className={table.th}>
+                  {t("lastOrder")}
+                </th>
+                <th scope="col" className={clsx(table.th, "text-right")}>
+                  {t("devices")}
+                </th>
+                <th scope="col" className={clsx(table.th, "text-right")}>
+                  {t("ordersPerDay")} / {t("qrShare")}
+                </th>
+                <th scope="col" className={table.th}>
+                  {t("changePlan")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {cafes.map((c) => (
+                <tr key={c.location_id} data-testid="platform-cafe" data-slug={c.slug} className={table.row}>
+                  <td className={clsx(table.td, "align-top")}>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-semibold break-words">{c.restaurant_name}</span>
+                      <span className="text-staff-label2 text-[0.8125rem]">
+                        {c.location_name} · {c.slug}
+                      </span>
+                    </span>
+                  </td>
+                  <td className={clsx(table.td, "align-top")}>
+                    <span className="flex flex-col items-start gap-1">
+                      <span className="font-semibold">
+                        {c.plan === "menu" || c.plan === "service" ? billing(c.plan) : (c.plan ?? "—")}
+                      </span>
+                      {c.status && (
+                        <span className={clsx(chip.base, STATUS_TONE[c.status])}>
+                          {t(`statuses.${c.status}`)}
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className={clsx(table.td, "num align-top")}>
+                    {c.trial_ends_at ? formatDate(new Date(c.trial_ends_at), locale) : "—"}
+                  </td>
+                  <td className={clsx(table.td, "num align-top")}>{when(c.last_order_at)}</td>
+                  <td className={clsx(table.td, "num text-right align-top")}>{c.devices_online}</td>
+                  <td className={clsx(table.td, "num text-right align-top")}>
+                    {c.orders_per_open_day ?? "—"} / {c.qr_share_pct === null ? "—" : `${c.qr_share_pct} %`}
+                  </td>
+                  <td className={clsx(table.td, "align-top")}>
+                    <form action={setPlan} className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="locationId" value={c.location_id} />
+                      <label className="flex flex-col gap-1">
+                        <span className="text-staff-label2 text-[0.8125rem] font-semibold">{t("plan")}</span>
+                        <select
+                          name="plan"
+                          defaultValue={c.plan ?? "service"}
+                          className={clsx(input, "h-11 w-auto text-[0.9375rem]")}
+                        >
+                          <option value="menu">{billing("menu")}</option>
+                          <option value="service">{billing("service")}</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-staff-label2 text-[0.8125rem] font-semibold">
+                          {t("status")}
+                        </span>
+                        <select
+                          name="status"
+                          defaultValue={c.status ?? "trialing"}
+                          className={clsx(input, "h-11 w-auto text-[0.9375rem]")}
+                        >
+                          {(["trialing", "active", "past_due", "canceled"] as const).map((s) => (
+                            <option key={s} value={s}>
+                              {t(`statuses.${s}`)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button type="submit" className={button("primary", "min-h-11 text-[0.9375rem]")}>
+                        {t("save")}
+                      </button>
+                      {search.saved === c.location_id && (
+                        <span
+                          role="status"
+                          className="text-tarragon flex min-h-11 items-center gap-1 font-semibold"
+                        >
+                          <CircleCheck aria-hidden="true" className="size-4" />
+                          {t("saved")}
+                        </span>
+                      )}
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <section className="flex flex-col gap-4" aria-labelledby="problems">
-        <h2 id="problems" className="display-face text-3xl">
-          {t("problems")}
-        </h2>
-        <ProblemList testId="dead-letters" title={t("deadLetters")} empty={t("none")}>
-          {problems.dead_letters.map((m) => (
-            <li key={m.id} className="border-line flex flex-col border-t py-2 first:border-0">
-              <span className="font-semibold">
-                {m.restaurant_name} · {m.event} · {t("attempts", { count: m.attempts })}
-              </span>
-              <span className="text-muted text-sm break-words">
-                {when(m.created_at)} · {m.last_error ?? t("noError")}
-              </span>
-            </li>
-          ))}
-        </ProblemList>
-        <ProblemList testId="failed-imports" title={t("failedImports")} empty={t("none")}>
-          {problems.failed_imports.map((i) => (
-            <li key={i.id} className="border-line flex flex-col border-t py-2 first:border-0">
-              <span className="font-semibold">{i.restaurant_name}</span>
-              <span className="text-muted text-sm break-words">
-                {when(i.created_at)} · {i.error ?? t("noError")}
-              </span>
-            </li>
-          ))}
-        </ProblemList>
-        <ProblemList testId="offline-devices" title={t("offlineDevices")} empty={t("none")}>
-          {problems.offline_devices.map((d) => (
-            <li key={d.id} className="border-line flex flex-col border-t py-2 first:border-0">
-              <span className="font-semibold">
-                {d.restaurant_name} · {d.display_name}
-              </span>
-              <span className="text-muted text-sm">{when(d.last_seen_at)}</span>
-            </li>
-          ))}
-        </ProblemList>
-      </section>
-    </main>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 flex-col">
-      <dt className="text-muted">{label}</dt>
-      <dd className="num font-semibold break-words">{value}</dd>
+        <section className="flex flex-col gap-3" aria-labelledby="problems">
+          <h2 id="problems" className="m-0 px-1 text-[1.5rem] font-bold">
+            {t("problems")}
+          </h2>
+          <div className="grid items-start gap-3 lg:grid-cols-3">
+            <ProblemList
+              testId="dead-letters"
+              title={t("deadLetters")}
+              empty={t("none")}
+              icon={<MailWarning aria-hidden="true" />}
+            >
+              {problems.dead_letters.map((m) => (
+                <li key={m.id} className="border-staff-sep flex flex-col border-t py-2 first:border-0">
+                  <span className="font-semibold break-words">
+                    {m.restaurant_name} · {m.event} · {t("attempts", { count: m.attempts })}
+                  </span>
+                  <span className="text-staff-label2 text-[0.9375rem] break-words">
+                    {when(m.created_at)} · {m.last_error ?? t("noError")}
+                  </span>
+                </li>
+              ))}
+            </ProblemList>
+            <ProblemList
+              testId="failed-imports"
+              title={t("failedImports")}
+              empty={t("none")}
+              icon={<ScanText aria-hidden="true" />}
+            >
+              {problems.failed_imports.map((i) => (
+                <li key={i.id} className="border-staff-sep flex flex-col border-t py-2 first:border-0">
+                  <span className="font-semibold break-words">{i.restaurant_name}</span>
+                  <span className="text-staff-label2 text-[0.9375rem] break-words">
+                    {when(i.created_at)} · {i.error ?? t("noError")}
+                  </span>
+                </li>
+              ))}
+            </ProblemList>
+            <ProblemList
+              testId="offline-devices"
+              title={t("offlineDevices")}
+              empty={t("none")}
+              icon={<WifiOff aria-hidden="true" />}
+            >
+              {problems.offline_devices.map((d) => (
+                <li key={d.id} className="border-staff-sep flex flex-col border-t py-2 first:border-0">
+                  <span className="font-semibold break-words">
+                    {d.restaurant_name} · {d.display_name}
+                  </span>
+                  <span className="text-staff-label2 text-[0.9375rem]">{when(d.last_seen_at)}</span>
+                </li>
+              ))}
+            </ProblemList>
+          </div>
+        </section>
+      </AdminPage>
     </div>
   );
 }
+
+const STATUS_TONE = {
+  trialing: chip.ok,
+  active: chip.ok,
+  past_due: chip.wait,
+  canceled: chip.alert,
+} as const;
 
 function ProblemList({
   title,
   empty,
   testId,
+  icon,
   children,
 }: {
   title: string;
   empty: string;
   testId: string;
+  icon: React.ReactNode;
   children: React.ReactNode[];
 }) {
   return (
-    <div data-testid={testId} className="rounded-sheet border-line flex flex-col gap-2 border bg-white p-4">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      {children.length === 0 ? <p className="text-muted">{empty}</p> : <ul>{children}</ul>}
+    <div data-testid={testId} className="flex flex-col gap-2 rounded-2xl bg-white p-4 sm:p-5">
+      <h3 className="[&>svg]:text-staff-label2 m-0 flex items-center gap-2 text-[1.125rem] font-bold [&>svg]:size-5 [&>svg]:shrink-0">
+        {icon}
+        {title}
+        {children.length > 0 && (
+          <span className={clsx(chip.base, chip.alert, "num ml-auto")}>{children.length}</span>
+        )}
+      </h3>
+      {children.length === 0 ? (
+        <p className="text-staff-label2 m-0 flex items-center gap-2">
+          <CircleCheck aria-hidden="true" className="text-tarragon size-4" />
+          {empty}
+        </p>
+      ) : (
+        <ul className="m-0 list-none p-0">{children}</ul>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import { ExternalLink, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { button } from "@/features/admin-ui/styles";
 import { useActionState } from "react";
 import { createTelegramLink, type LinkState } from "./actions";
 import { telegramLink } from "./events";
@@ -20,14 +22,13 @@ export function TelegramConnect({
   const t = useTranslations("telegram");
   const [state, action, pending] = useActionState(createTelegramLink, initial);
   return (
-    <form action={action} className="rounded-sheet border-line flex flex-col gap-3 border bg-white p-4">
-      <h2 className="text-lg font-semibold">{t("connectTitle")}</h2>
-      <p className="text-muted">{t("connectHint")}</p>
-      <button
-        type="submit"
-        disabled={pending || !botReady}
-        className="rounded-input bg-tarragon h-12 px-4 font-semibold text-white disabled:opacity-60"
-      >
+    <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
+      <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
+        <Send aria-hidden="true" className="text-tarragon size-5 shrink-0" />
+        {t("connectTitle")}
+      </h2>
+      <p className="text-staff-label2 m-0">{t("connectHint")}</p>
+      <button type="submit" disabled={pending || !botReady} className={button("primary", "self-start")}>
         {t("connect")}
       </button>
       {state.code && (
@@ -38,32 +39,34 @@ export function TelegramConnect({
                 href={telegramLink(botUsername, state.code)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-input border-tarragon text-tarragon flex h-12 items-center justify-center border px-4 font-semibold"
+                className={button("tinted")}
               >
+                <ExternalLink aria-hidden="true" />
                 {t("openChat")}
               </a>
               <a
                 href={telegramLink(botUsername, state.code, true)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-input border-line-strong flex h-12 items-center justify-center border px-4 font-semibold"
+                className={button("secondary")}
               >
+                <ExternalLink aria-hidden="true" />
                 {t("openGroup")}
               </a>
-              <p className="text-muted">{t("linkHint")}</p>
+              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("linkHint")}</p>
             </>
           ) : (
             <>
-              <code className="num rounded-input bg-mist p-3 text-lg break-all">
+              <code className="num bg-staff-bg rounded-xl p-3 text-lg break-all">
                 {startCommand(state.code)}
               </code>
-              <p className="text-muted">{t("commandHint")}</p>
+              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("commandHint")}</p>
             </>
           )}
         </div>
       )}
       {state.error && (
-        <p role="alert" className="text-pomegranate">
+        <p role="alert" className="text-pomegranate m-0 font-semibold">
           {state.error === "rate_limited" ? t("rateLimited") : t("error")}
         </p>
       )}

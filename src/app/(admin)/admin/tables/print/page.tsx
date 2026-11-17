@@ -1,3 +1,4 @@
+import { CircleAlert, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -25,7 +26,9 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
     supabase.from("restaurants").select("name").eq("id", me.restaurantId).single(),
     Promise.all(
       tables.map(async (x): Promise<QrCard> => {
-        const { data: token, error } = await supabase.schema("api").rpc("table_qr_token", { p_table_id: x.id });
+        const { data: token, error } = await supabase
+          .schema("api")
+          .rpc("table_qr_token", { p_table_id: x.id });
         if (error || !token) throw new Error(`No QR token for table ${x.id}: ${error?.message}`);
         return { tableId: x.id, label: x.label, url: new URL(`/t/${token}`, baseUrl).toString() };
       }),
@@ -41,24 +44,34 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
   );
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 print:block print:max-w-none print:p-0">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 pt-6 pb-12 sm:px-6 lg:px-8 lg:pt-10 print:block print:max-w-none print:p-0">
       <div className="flex flex-wrap items-end justify-between gap-4 print:hidden">
-        <div className="flex flex-col gap-2">
-          <Link href="/admin/tables" className="inline-flex min-h-12 items-center font-semibold text-tarragon">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Link
+            href="/admin/tables"
+            className="text-tarragon -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
+          >
+            <ChevronLeft aria-hidden="true" className="size-5" />
             {t("print.back")}
           </Link>
-          <h1 className="display-face text-display-38 leading-tight">{t("print.title")}</h1>
-          <p className="text-muted">{t("print.hint")}</p>
+          <h1 className="m-0 text-[1.75rem] leading-tight font-bold sm:text-[2.125rem]">
+            {t("print.title")}
+          </h1>
+          <p className="text-staff-label2 m-0 max-w-prose text-[1.0625rem]">{t("print.hint")}</p>
         </div>
         {cards.length > 0 && <PrintButton label={t("print.print")} />}
       </div>
       {!floor.menuPublished && (
-        <p role="status" className="rounded-sheet border border-apricot-deep bg-white p-4 print:hidden">
+        <p
+          role="status"
+          className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem] print:hidden"
+        >
+          <CircleAlert aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
           {t("print.notPublished")}
         </p>
       )}
       {cards.length === 0 ? (
-        <p className="text-muted">{t("print.empty")}</p>
+        <p className="text-staff-label2 m-0">{t("print.empty")}</p>
       ) : (
         <PrintSheets
           cafeName={restaurant.data?.name ?? ""}

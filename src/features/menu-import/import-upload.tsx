@@ -1,6 +1,8 @@
 "use client";
 
+import { Camera, CircleAlert, ScanText, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { button } from "@/features/admin-ui/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -64,17 +66,23 @@ export function ImportUpload() {
   const busy = phase === "uploading" || phase === "reading";
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <ImportSteps current={busy && phase === "reading" ? "reading" : "photo"} />
-      <div className="flex max-w-2xl flex-col gap-3">
-        <p className="text-lg">{t("intro")}</p>
-        <p className="text-muted text-sm">{t("privacy")}</p>
+      <div className="flex max-w-2xl flex-col gap-2">
+        <p className="m-0 text-[1.0625rem]">{t("intro")}</p>
+        <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("privacy")}</p>
       </div>
 
       {!busy && (
-        <label className="rounded-sheet border-line-strong hover:border-tarragon focus-within:ring-tarragon flex cursor-pointer flex-col items-start gap-2 border-2 border-dashed bg-white p-6 focus-within:ring-2 focus-within:ring-offset-2 sm:p-8">
-          <span className="display-face text-2xl">{t("choosePhotos")}</span>
-          <span className="text-muted">{t("choosePhotosHint")}</span>
+        <label className="border-staff-field focus-within:outline-tarragon hover:border-tarragon flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed bg-white p-6 text-center focus-within:outline-3 focus-within:outline-offset-2 sm:p-10">
+          <span
+            aria-hidden="true"
+            className="bg-tarragon-tint text-tarragon grid size-14 place-items-center rounded-2xl"
+          >
+            <Camera className="size-7" />
+          </span>
+          <span className="text-[1.25rem] font-bold">{t("choosePhotos")}</span>
+          <span className="text-staff-label2 max-w-md">{t("choosePhotosHint")}</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic"
@@ -91,11 +99,11 @@ export function ImportUpload() {
 
       {files.length > 0 && (
         <section aria-live="polite" className="flex flex-col gap-4">
-          <p className="font-semibold">{t("chosen", { count: files.length })}</p>
-          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+          <p className="m-0 font-semibold">{t("chosen", { count: files.length })}</p>
+          <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-4 lg:grid-cols-6">
             {files.map((f, i) => (
               <li key={f.preview} className="flex flex-col gap-2">
-                <div className="rounded-chip border-line relative overflow-hidden border bg-white">
+                <div className="ring-staff-sep relative overflow-hidden rounded-xl bg-white ring-1">
                   {/* eslint-disable-next-line @next/next/no-img-element -- a local preview of the owner's own photo */}
                   <img
                     src={f.preview}
@@ -104,15 +112,16 @@ export function ImportUpload() {
                   />
                   {phase === "reading" && <span aria-hidden="true" className="import-scan" />}
                 </div>
-                <div className="flex items-center justify-between gap-2 text-sm">
+                <div className="flex items-center justify-between gap-2 text-[0.9375rem]">
                   <span>{t("page", { page: i + 1 })}</span>
                   {!busy && (
                     <button
                       type="button"
                       onClick={() => remove(i)}
                       aria-label={t("removePage", { page: i + 1 })}
-                      className="text-pomegranate hover:bg-pom-tint min-h-10 rounded-full px-3"
+                      className="text-pomegranate hover:bg-pom-tint inline-flex min-h-11 items-center gap-1 rounded-full px-3 font-semibold"
                     >
+                      <X aria-hidden="true" className="size-4" />
                       {t("remove")}
                     </button>
                   )}
@@ -128,21 +137,23 @@ export function ImportUpload() {
           type="button"
           onClick={run}
           disabled={files.length === 0 || busy}
-          className="rounded-input bg-tarragon h-12 px-6 font-semibold text-white disabled:opacity-50"
+          className={button("primary")}
         >
+          <ScanText aria-hidden="true" />
           {t("read")}
         </button>
-        <p role="status" className="text-muted">
+        <p role="status" className="text-staff-label2 m-0">
           {phase === "uploading" ? t("uploading") : phase === "reading" ? t("reading") : ""}
         </p>
       </div>
       {phase === "failed" && (
         <div
           role="alert"
-          className="rounded-chip bg-pom-tint text-pomegranate flex flex-wrap items-center gap-3 px-4 py-3"
+          className="bg-pom-tint text-pomegranate flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3"
         >
-          <p className="flex-1">{t("errors.upload")}</p>
-          <Link href="/admin/menu" className="underline">
+          <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+          <p className="m-0 flex-1">{t("errors.upload")}</p>
+          <Link href="/admin/menu" className="inline-flex min-h-11 items-center font-semibold underline">
             {t("fillByHand")}
           </Link>
         </div>

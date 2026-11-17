@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { AuthShell } from "@/features/admin-ui/auth-shell";
 import { CreateCafeForm } from "@/features/onboarding/create-cafe-form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,13 +9,12 @@ export default async function NewCafePage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data || data.claims.is_anonymous) redirect("/login");
-  const t = await getTranslations("onboarding");
+  const [t, brand] = await Promise.all([getTranslations("onboarding"), getTranslations("brand")]);
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-6">
-      <h1 className="display-face text-display-38">{t("title")}</h1>
+    <AuthShell brand={brand("name")} title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
       <NextIntlClientProvider>
         <CreateCafeForm />
       </NextIntlClientProvider>
-    </main>
+    </AuthShell>
   );
 }

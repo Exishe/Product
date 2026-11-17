@@ -1,22 +1,26 @@
+import { clsx } from "clsx";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { button, fieldLabel, input } from "@/features/admin-ui/styles";
 import { addDays, MAX_DAYS, PRESETS, type Range } from "./range";
 
-// Presets as links and a custom range as a plain GET form: works without JS.
+// Presets as a segmented control of links and a custom range as a plain GET
+// form: works without JS.
 export async function RangePicker({ range, today }: { range: Range; today: string }) {
   const t = await getTranslations("dashboard");
   return (
     <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-      <nav aria-label={t("rangeLabel")}>
-        <ul className="rounded-input bg-mist flex flex-wrap gap-1 p-1">
+      <nav aria-label={t("rangeLabel")} className="w-full sm:w-auto">
+        <ul className="bg-staff-fill m-0 grid list-none auto-cols-fr grid-flow-col gap-1 rounded-xl p-1">
           {PRESETS.map((p) => (
             <li key={p}>
               <Link
                 href={p === "today" ? "/admin/dashboard" : `/admin/dashboard?range=${p}`}
                 aria-current={range.preset === p ? "page" : undefined}
-                className={`rounded-chip flex min-h-11 items-center px-3 font-semibold ${
-                  range.preset === p ? "text-ink bg-white shadow-sm" : "text-muted hover:text-ink"
-                }`}
+                className={clsx(
+                  "flex min-h-11 items-center justify-center rounded-[0.625rem] px-3 text-center text-[0.9375rem] font-semibold",
+                  range.preset === p ? "text-ink bg-white shadow-sm" : "text-staff-label2",
+                )}
               >
                 {t(`ranges.${p}`)}
               </Link>
@@ -25,31 +29,28 @@ export async function RangePicker({ range, today }: { range: Range; today: strin
         </ul>
       </nav>
       <form method="get" action="/admin/dashboard" className="flex flex-wrap items-end gap-2">
-        <label className="text-muted flex flex-col text-sm font-semibold">
-          {t("from")}
+        <label className="flex flex-col gap-1">
+          <span className={fieldLabel}>{t("from")}</span>
           <input
             type="date"
             name="from"
             defaultValue={range.from}
             min={addDays(today, -(MAX_DAYS * 4))}
             max={today}
-            className="num rounded-input border-line-strong text-ink h-11 border bg-white px-2 text-base"
+            className={clsx(input, "num h-11 w-auto")}
           />
         </label>
-        <label className="text-muted flex flex-col text-sm font-semibold">
-          {t("to")}
+        <label className="flex flex-col gap-1">
+          <span className={fieldLabel}>{t("to")}</span>
           <input
             type="date"
             name="to"
             defaultValue={range.to}
             max={today}
-            className="num rounded-input border-line-strong text-ink h-11 border bg-white px-2 text-base"
+            className={clsx(input, "num h-11 w-auto")}
           />
         </label>
-        <button
-          type="submit"
-          className="rounded-input border-line-strong h-11 border bg-white px-4 font-semibold"
-        >
+        <button type="submit" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
           {t("apply")}
         </button>
       </form>

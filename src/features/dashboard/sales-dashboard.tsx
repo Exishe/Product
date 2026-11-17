@@ -1,4 +1,7 @@
+import { clsx } from "clsx";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { chip } from "@/features/admin-ui/styles";
 import { formatAmd, formatInteger } from "@/lib/format/money";
 import type { Locale } from "@/i18n/routing";
 import { HourlyChart } from "./hourly-chart";
@@ -104,37 +107,37 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
 
       <div className="grid gap-3 lg:grid-cols-3">
         <Card testId="sources">
-          <h2 className="text-xl font-semibold">{t("sources")}</h2>
+          <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("sources")}</h2>
           <ShareRow label={t("qr")} count={s.qr_orders} pct={qrPct} tone="bg-tarragon" locale={locale} />
           <ShareRow
             label={t("waiter")}
             count={s.waiter_orders}
             pct={qrPct === null ? null : sharePercent(s.waiter_orders, s.orders)}
-            tone="bg-line-strong"
+            tone="bg-staff-label2"
             locale={locale}
           />
         </Card>
 
         <Card testId="kitchen-time">
           <div>
-            <h2 className="text-xl font-semibold">{t("kitchen")}</h2>
-            <p className="text-muted text-sm">{t("kitchenHint")}</p>
+            <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("kitchen")}</h2>
+            <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("kitchenHint")}</p>
           </div>
           {data.kitchen.length === 0 ? (
-            <p className="text-muted">{t("noKitchen")}</p>
+            <p className="text-staff-label2 m-0">{t("noKitchen")}</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {data.kitchen.map((k) => (
                 <li
                   key={k.station}
-                  className="border-line flex flex-col border-t pt-2 first:border-0 first:pt-0"
+                  className="border-staff-sep flex flex-col border-t pt-2 first:border-0 first:pt-0"
                 >
                   <span className="font-semibold break-words">
                     {k.is_default && k.station === "Kitchen" ? t("defaultStation") : k.station}
                   </span>
                   <span className="num">{t("kitchenAvg", { minutes: toMinutes(k.avg_seconds) })}</span>
                   <span
-                    className={`num text-sm ${k.over_limit > 0 ? "text-pomegranate font-semibold" : "text-muted"}`}
+                    className={`num text-[0.9375rem] ${k.over_limit > 0 ? "text-pomegranate font-semibold" : "text-staff-label2"}`}
                   >
                     {t("kitchenOver", { over: k.over_limit, tickets: k.tickets })}
                   </span>
@@ -145,19 +148,19 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         </Card>
 
         <Card testId="cancellations">
-          <h2 className="text-xl font-semibold">{t("cancellations")}</h2>
+          <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("cancellations")}</h2>
           {data.cancellations.items === 0 && data.cancellations.rejected_orders === 0 ? (
-            <p className="text-muted">{t("noCancellations")}</p>
+            <p className="text-staff-label2 m-0">{t("noCancellations")}</p>
           ) : (
             <>
-              <p className="num">{t("cancelledItems", { count: data.cancellations.items })}</p>
-              <p className="num">{t("rejectedOrders", { count: data.cancellations.rejected_orders })}</p>
+              <p className="num m-0">{t("cancelledItems", { count: data.cancellations.items })}</p>
+              <p className="num m-0">{t("rejectedOrders", { count: data.cancellations.rejected_orders })}</p>
               {data.cancellations.reasons.length > 0 && (
-                <ul className="flex flex-col gap-1 text-sm">
+                <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[0.9375rem]">
                   {data.cancellations.reasons.map((r) => (
-                    <li key={r.reason} className="border-line flex justify-between gap-3 border-t pt-1">
+                    <li key={r.reason} className="border-staff-sep flex justify-between gap-3 border-t pt-1">
                       <span className="min-w-0 break-words">{r.reason}</span>
-                      <span className="num text-muted shrink-0">{r.count}</span>
+                      <span className="num text-staff-label2 shrink-0">{r.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -172,10 +175,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
 
 function Card({ children, testId }: { children: React.ReactNode; testId?: string }) {
   return (
-    <section
-      data-testid={testId}
-      className="rounded-sheet border-line flex min-w-0 flex-col gap-3 border bg-white p-4 sm:p-5"
-    >
+    <section data-testid={testId} className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5">
       {children}
     </section>
   );
@@ -201,16 +201,18 @@ function Kpi({
   return (
     <div
       data-testid={testId}
-      className={`rounded-sheet flex min-w-0 flex-col gap-1 border p-4 ${hero ? "border-tarragon bg-tarragon-tint" : "border-line bg-white"}`}
+      className={`flex min-w-0 flex-col gap-1 rounded-2xl p-4 sm:p-5 ${hero ? "bg-tarragon-tint" : "bg-white"}`}
     >
-      <span className={`font-semibold ${hero ? "text-tarragon" : "text-muted"}`}>{label}</span>
+      <span className={`text-[0.9375rem] font-semibold ${hero ? "text-tarragon" : "text-staff-label2"}`}>
+        {label}
+      </span>
       <span
         data-testid={`${testId}-value`}
-        className={`num leading-tight font-bold break-words ${small ? "text-2xl" : hero ? "display-face text-[2.75rem]" : "text-[2rem]"}`}
+        className={`num leading-tight font-bold break-words ${small ? "text-[1.5rem]" : "text-[2rem]"}`}
       >
         {value}
       </span>
-      {hint && <span className="text-muted text-sm">{hint}</span>}
+      {hint && <span className="text-staff-label2 text-[0.9375rem]">{hint}</span>}
       {children}
     </div>
   );
@@ -218,16 +220,21 @@ function Kpi({
 
 function Delta({ t, now, before, label }: { t: T; now: number; before: number; label: string }) {
   const pct = deltaPercent(now, before);
-  if (pct === null) return <span className="text-muted text-sm">{t("noCompare")}</span>;
-  const [text, tone] =
+  if (pct === null) return <span className="text-staff-label2 text-[0.9375rem]">{t("noCompare")}</span>;
+  // The word (↑ 12 %), an icon and the colour together, never colour alone.
+  const [text, tone, Icon] =
     pct > 0
-      ? [t("deltaUp", { pct }), "text-tarragon"]
+      ? [t("deltaUp", { pct }), chip.ok, TrendingUp]
       : pct < 0
-        ? [t("deltaDown", { pct: Math.abs(pct) }), "text-pomegranate"]
-        : [t("deltaSame"), "text-muted"];
+        ? [t("deltaDown", { pct: Math.abs(pct) }), chip.alert, TrendingDown]
+        : [t("deltaSame"), chip.plain, Minus];
   return (
-    <span className="text-sm">
-      <span className={`num font-semibold ${tone}`}>{text}</span> <span className="text-muted">{label}</span>
+    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+      <span className={clsx(chip.base, tone, "num")}>
+        <Icon aria-hidden="true" />
+        {text}
+      </span>
+      <span className="text-staff-label2">{label}</span>
     </span>
   );
 }
@@ -250,20 +257,22 @@ function DishList({
   return (
     <Card testId={testId}>
       <div>
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <p className="text-muted text-sm">{hint}</p>
+        <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{title}</h2>
+        <p className="text-staff-label2 m-0 text-[0.9375rem]">{hint}</p>
       </div>
-      <ol className="flex flex-col">
+      <ol className="m-0 flex list-none flex-col p-0">
         {dishes.map((d, i) => (
-          <li key={i} className="border-line flex items-baseline gap-3 border-t py-2 first:border-0">
-            <span className="num text-muted w-5 shrink-0 text-right">{i + 1}</span>
+          <li key={i} className="border-staff-sep flex items-center gap-3 border-t py-2.5 first:border-0">
+            <span className="num bg-staff-fill text-staff-label2 grid size-7 shrink-0 place-items-center rounded-full text-[0.8125rem] font-bold">
+              {i + 1}
+            </span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="font-semibold break-words" lang={dishNameLocale(d.name, locale)}>
                 {dishName(d.name, locale)}
               </span>
-              <span className="num text-muted text-sm">{t("sold", { count: d.qty })}</span>
+              <span className="num text-staff-label2 text-[0.9375rem]">{t("sold", { count: d.qty })}</span>
             </span>
-            <span className="num shrink-0 text-right">{formatAmd(d.revenue, locale)}</span>
+            <span className="num shrink-0 text-right font-semibold">{formatAmd(d.revenue, locale)}</span>
           </li>
         ))}
       </ol>
@@ -290,10 +299,10 @@ function ShareRow({
         <span className="font-semibold">{label}</span>
         <span className="num">
           {formatInteger(count, locale)}
-          {pct !== null && <span className="text-muted"> · {pct}%</span>}
+          {pct !== null && <span className="text-staff-label2"> · {pct}%</span>}
         </span>
       </div>
-      <div className="bg-mist h-2 overflow-hidden rounded-full">
+      <div className="bg-staff-fill h-2 overflow-hidden rounded-full">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct ?? 0}%` }} />
       </div>
     </div>

@@ -1,4 +1,6 @@
+import { Info } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
+import { AdminPage, Section } from "@/features/admin-ui/page";
 import { getTranslations } from "next-intl/server";
 import { ChannelCard, type ChannelView } from "@/features/notifications/channel-card";
 import { PushSubscribe } from "@/features/notifications/push-subscribe";
@@ -46,47 +48,41 @@ export default async function TelegramPage() {
   const mine = channels.filter((c) => c.kind === "web_push");
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="display-face text-display-38">{t("title")}</h1>
-        <p className="text-muted">{t("intro")}</p>
-      </header>
+    <AdminPage title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
       <NextIntlClientProvider>
         {!botReady && (
           <p
             role="status"
-            className="rounded-input border-apricot border bg-white p-3"
+            className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]"
             data-testid="bot-not-ready"
           >
+            <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
             {t("botNotReady")}
           </p>
         )}
         <TelegramConnect botReady={botReady} botUsername={env.TELEGRAM_BOT_USERNAME ?? null} />
-        <section className="flex flex-col gap-3" aria-labelledby="chats-title">
-          <h2 id="chats-title" className="text-xl font-semibold">
-            {t("chats")}
-          </h2>
+        <Section title={t("chats")} id="chats-title" bare>
           {chats.length === 0 ? (
-            <p className="text-muted" data-testid="no-chats">
+            <p className="text-staff-label2 m-0 rounded-2xl bg-white px-4 py-5" data-testid="no-chats">
               {t("noChats")}
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
               {chats.map((c) => (
                 <ChannelCard key={c.id} channel={c} />
               ))}
             </ul>
           )}
-        </section>
+        </Section>
         <PushSubscribe vapidPublicKey={env.VAPID_PUBLIC_KEY ?? null} />
         {mine.length > 0 && (
-          <ul className="flex flex-col gap-3">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {mine.map((c) => (
               <ChannelCard key={c.id} channel={c} />
             ))}
           </ul>
         )}
       </NextIntlClientProvider>
-    </main>
+    </AdminPage>
   );
 }

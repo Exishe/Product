@@ -33,7 +33,8 @@
   },
   "admin": {
     "home": {
-      "welcome": "Welcome, {name}"
+      "welcome": "Welcome, {name}",
+      "sections": "Sections"
     }
   },
   "forbidden": {
@@ -47,7 +48,8 @@
     "submit": "Create",
     "pending": "Creating…",
     "slugTaken": "This address is taken. Try another.",
-    "error": "Couldn't create it. Try again."
+    "error": "Couldn't create it. Try again.",
+    "intro": "Enter the café name. We fill in the page address for guests."
   },
   "staff": {
     "title": "Staff and devices",
@@ -76,7 +78,15 @@
     "inactive": "Disconnected",
     "lastSeen": "Last seen {time}",
     "neverSeen": "Not connected yet",
-    "error": "That didn't work. Try again."
+    "error": "That didn't work. Try again.",
+    "colName": "Name",
+    "colStatus": "Status",
+    "colAction": "Action",
+    "active": "Active",
+    "noDevices": "No devices are connected. Get a code below and enter it on the kitchen screen or the waiter tablet.",
+    "inviteRole": "Role",
+    "copy": "Copy the link",
+    "copied": "The link is copied"
   },
   "pair": {
     "title": "Connect this device",
@@ -425,7 +435,12 @@
     "published": "Published. Guests already see the new menu.",
     "unreviewed": "Before publishing, check the translations of the dishes marked “Check”.",
     "publishFailed": "Couldn't publish. Try again.",
-    "emptyPhoto": "Photograph the paper menu"
+    "emptyPhoto": "Photograph the paper menu",
+    "namesDish": "Name and description",
+    "namesSection": "Name",
+    "photoAfterSave": "Save the dish first. Then add a photo.",
+    "priceAndKitchen": "Price and kitchen",
+    "edit": "Edit"
   },
   "optionGroups": {
     "title": "Options",
@@ -522,7 +537,9 @@
     "removeDishNamed": "Remove “{name}”",
     "sizeNumber": "Size {number}",
     "sizePrice": "Size {number}, price",
-    "remove": "Remove"
+    "remove": "Remove",
+    "dishesTab": "Dishes",
+    "viewLabel": "Show"
   },
   "tables": {
     "title": "Tables and QR codes",
@@ -846,7 +863,9 @@
         "test": "Test",
         "closedAt": "Closed",
         "payments": "Payments"
-      }
+      },
+      "colData": "Data",
+      "colFile": "File"
     }
   },
   "dashboard": {

@@ -1,4 +1,7 @@
+import { ExternalLink, Info } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
+import { AdminPage } from "@/features/admin-ui/page";
+import { button } from "@/features/admin-ui/styles";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppearanceForm } from "@/features/guest-theme/appearance-form";
 import { guestTheme } from "@/features/guest-theme/themes";
@@ -10,8 +13,18 @@ export default async function LookPage() {
   const me = await requireMember(["owner", "manager"]);
   const supabase = await createClient();
   const [withTheme, location, t, locale] = await Promise.all([
-    supabase.from("restaurants").select("slug, brand_color, logo_path, guest_theme").eq("id", me.restaurantId).single(),
-    supabase.from("locations").select("slug").eq("restaurant_id", me.restaurantId).order("created_at").limit(1).maybeSingle(),
+    supabase
+      .from("restaurants")
+      .select("slug, brand_color, logo_path, guest_theme")
+      .eq("id", me.restaurantId)
+      .single(),
+    supabase
+      .from("locations")
+      .select("slug")
+      .eq("restaurant_id", me.restaurantId)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle(),
     getTranslations("look"),
     getLocale(),
   ]);
@@ -19,22 +32,40 @@ export default async function LookPage() {
   const ready = !withTheme.error;
   const row = ready
     ? withTheme.data
-    : (await supabase.from("restaurants").select("slug, brand_color, logo_path").eq("id", me.restaurantId).single()).data;
+    : (
+        await supabase
+          .from("restaurants")
+          .select("slug, brand_color, logo_path")
+          .eq("id", me.restaurantId)
+          .single()
+      ).data;
   const menuHref = row && location.data ? `/${locale}/m/${row.slug}/${location.data.slug}` : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="display-face text-display-38">{t("title")}</h1>
-        <p className="text-muted">{t("intro")}</p>
-        {menuHref && (
-          <a href={menuHref} target="_blank" rel="noreferrer" className="text-tarragon inline-flex min-h-11 items-center self-start font-semibold underline underline-offset-4">
+    <AdminPage
+      title={t("title")}
+      subtitle={<p className="m-0">{t("intro")}</p>}
+      actions={
+        menuHref && (
+          <a
+            href={menuHref}
+            target="_blank"
+            rel="noreferrer"
+            className={button("secondary", "min-h-11 text-[0.9375rem]")}
+          >
+            <ExternalLink aria-hidden="true" className="!size-4" />
             {t("openMenu")}
           </a>
-        )}
-      </header>
+        )
+      }
+    >
       {!ready && (
-        <p role="status" className="rounded-input border-apricot border bg-white p-3" data-testid="look-pending">
+        <p
+          role="status"
+          className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]"
+          data-testid="look-pending"
+        >
+          <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
           {t("pending")}
         </p>
       )}
@@ -49,6 +80,6 @@ export default async function LookPage() {
           }}
         />
       </NextIntlClientProvider>
-    </main>
+    </AdminPage>
   );
 }

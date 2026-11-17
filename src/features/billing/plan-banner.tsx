@@ -1,15 +1,17 @@
+import { BookOpen, CircleAlert, Gift, Hourglass, type LucideIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { formatAmd } from "@/lib/format/money";
 import { createClient } from "@/lib/supabase/server";
 import type { Locale } from "@/i18n/routing";
 import { planState, SERVICE_PRICE_AMD, type PlanState } from "./plan";
 
-const TONE: Record<Exclude<PlanState["kind"], "active">, string> = {
-  trial: "border-tarragon bg-tarragon-tint",
-  past_due: "border-apricot-deep bg-[#fce8c8]",
-  trial_ended: "border-pomegranate bg-pom-tint",
-  ordering_off: "border-pomegranate bg-pom-tint",
-  menu: "border-line-strong bg-mist",
+// Colour, icon and words together (ADR-055): never colour alone.
+const TONE: Record<Exclude<PlanState["kind"], "active">, { box: string; icon: LucideIcon }> = {
+  trial: { box: "bg-tarragon-tint [&>svg]:text-tarragon", icon: Gift },
+  past_due: { box: "bg-[#fdf0dc] [&>svg]:text-amber-text", icon: Hourglass },
+  trial_ended: { box: "bg-pom-tint [&>svg]:text-pomegranate", icon: CircleAlert },
+  ordering_off: { box: "bg-pom-tint [&>svg]:text-pomegranate", icon: CircleAlert },
+  menu: { box: "bg-white [&>svg]:text-staff-label2", icon: BookOpen },
 };
 
 // What the owner needs to know about the plan (ADR-036). Subscriptions are
@@ -38,16 +40,22 @@ export async function PlanBanner({ restaurantId, locale }: { restaurantId: strin
           ? t("menu", { price })
           : t(state.kind === "trial_ended" ? "trialEnded" : "orderingOff");
   const urgent = state.kind !== "trial" || state.daysLeft <= 5;
+  const tone = TONE[state.kind];
 
   return (
     <div
       role={urgent ? "status" : undefined}
       data-testid="plan-banner"
       data-plan={state.kind}
-      className={`rounded-sheet flex flex-col gap-1 border-l-4 px-4 py-3 ${TONE[state.kind]}`}
+      className={`text-ink flex items-start gap-3 rounded-2xl px-4 py-3 ${tone.box}`}
     >
-      <p className="font-semibold">{text}</p>
-      {state.kind !== "trial" || urgent ? <p className="text-muted text-sm">{t("howToPay")}</p> : null}
+      <tone.icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="m-0 text-[1.0625rem] font-semibold">{text}</p>
+        {state.kind !== "trial" || urgent ? (
+          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("howToPay")}</p>
+        ) : null}
+      </div>
     </div>
   );
 }

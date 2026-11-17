@@ -34,6 +34,8 @@
   --color-amber-text: #8a5300;
   --color-basalt-4: #31423a;
   --color-late-on-dark: #d0384a;
+  /* Owner admin (ADR-055): field and control borders, 3.4:1 on white. */
+  --color-staff-field: #858c97;
   --font-display: var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
   --font-ui: var(--font-google-sans), system-ui, sans-serif;
 
@@ -239,6 +241,47 @@
   }
 }
 
+/* Owner admin (ADR-055): sheets and toasts appear in 200 ms, from the side
+   they belong to; under reduced motion the global rule cuts it to 1 ms. */
+@keyframes admin-rise {
+  from {
+    translate: 0 1.5rem;
+    opacity: 0;
+  }
+}
+@keyframes admin-slide {
+  from {
+    translate: 1.5rem 0;
+    opacity: 0;
+  }
+}
+@keyframes admin-fade {
+  from {
+    opacity: 0;
+  }
+}
+.admin-rise {
+  animation: admin-rise 200ms ease-out;
+}
+.admin-fade {
+  animation: admin-fade 150ms ease-out;
+}
+@media (min-width: 48rem) {
+  .admin-sheet-side {
+    animation-name: admin-slide;
+  }
+}
+body:has(.admin-shell) {
+  background: var(--color-staff-bg);
+}
+/* A row of tabs that scrolls sideways shows no scroll bar. */
+.admin-scroll-row {
+  scrollbar-width: none;
+}
+.admin-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
 /* Waiter floor map: a table with a new order pulses once (design/waiter.html). */
 @keyframes nudge {
   0% {
@@ -424,7 +467,8 @@
   --guest-success-tint: #e1efe7;
   --guest-success-on-deep: #8cd3a8;
   --guest-card-border: transparent;
-  --guest-shadow-card: 10px 10px 24px -6px rgb(163 170 184 / 0.45), -10px -10px 24px -6px rgb(255 255 255 / 0.95);
+  --guest-shadow-card:
+    10px 10px 24px -6px rgb(163 170 184 / 0.45), -10px -10px 24px -6px rgb(255 255 255 / 0.95);
   --guest-shadow-plate: 0 14px 20px -12px rgb(29 31 36 / 0.45);
   --guest-shadow-float: 0 14px 34px -10px rgb(120 128 142 / 0.5), 0 1px 2px rgb(29 31 36 / 0.08);
   --guest-r-card: 24px;

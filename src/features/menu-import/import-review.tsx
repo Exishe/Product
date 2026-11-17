@@ -1,6 +1,16 @@
 "use client";
 
+import {
+  CircleAlert,
+  CircleCheck,
+  Image as ImageIcon,
+  ListChecks,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Tabs, tabPanel } from "@/features/admin-ui/tabs";
+import { button, check, field as baseField } from "@/features/admin-ui/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -10,7 +20,7 @@ import { ImportSteps } from "./steps";
 
 type Props = { importId: string; initial: MenuDraft; photos: { page: number; url: string }[] };
 
-const field = "w-full rounded-input border border-line-strong bg-white px-3";
+const field = baseField;
 const OTHER_LOCALES = IMPORT_LOCALES.filter((l) => l !== "hy");
 
 function digits(raw: string): number | null {
@@ -28,6 +38,8 @@ export function ImportReview({ importId, initial, photos }: Props) {
   const router = useRouter();
   const [draft, setDraft] = useState(initial);
   const [photo, setPhoto] = useState(0);
+  // Below 1024 px the photo and the dishes share the screen as two tabs.
+  const [view, setView] = useState<"dishes" | "photo">("dishes");
   const [result, setResult] = useState<ApplyResult | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -75,18 +87,15 @@ export function ImportReview({ importId, initial, photos }: Props) {
     return (
       <div className="flex flex-col gap-8">
         <ImportSteps current="publish" />
-        <section
-          role="status"
-          className="rounded-sheet border-line flex flex-col items-start gap-4 border bg-white p-8"
-        >
-          <h2 className="display-face text-3xl">
+        <section role="status" className="flex flex-col items-start gap-4 rounded-2xl bg-white p-6 sm:p-8">
+          <CircleCheck aria-hidden="true" className="text-tarragon size-10" />
+          <h2 className="m-0 text-[1.75rem] leading-tight font-bold">
             {result.published ? t("doneTitle") : t("addedTitle", { count: result.dishes })}
           </h2>
-          <p className="max-w-2xl">{result.published ? t("doneText") : t("addedText")}</p>
-          <Link
-            href="/admin/menu"
-            className="rounded-input bg-tarragon flex h-12 items-center px-6 font-semibold text-white"
-          >
+          <p className="m-0 max-w-2xl text-[1.0625rem]">
+            {result.published ? t("doneText") : t("addedText")}
+          </p>
+          <Link href="/admin/menu" className={button("primary")}>
             {t("openEditor")}
           </Link>
         </section>
@@ -97,20 +106,62 @@ export function ImportReview({ importId, initial, photos }: Props) {
   const current = photos[photo];
 
   return (
-    <div className="flex flex-col gap-6 pb-40">
+    <div className="flex flex-col gap-5 pb-56 sm:pb-44">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <ImportSteps current="review" />
-        <button type="button" onClick={discard} disabled={pending} className="text-muted min-h-12 underline">
+        <button
+          type="button"
+          onClick={discard}
+          disabled={pending}
+          className={button("danger", "min-h-11 text-[0.9375rem]")}
+        >
+          <Trash2 aria-hidden="true" className="!size-4" />
           {t("discard")}
         </button>
       </div>
-      <p className="rounded-chip bg-apricot/20 max-w-3xl px-4 py-3">{t("reviewNotice")}</p>
+      <p className="m-0 flex max-w-3xl items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]">
+        <TriangleAlert aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
+        {t("reviewNotice")}
+      </p>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      {current && (
+        <Tabs
+          id="import-view"
+          label={t("viewLabel")}
+          value={view}
+          onChange={setView}
+          items={[
+            {
+              key: "dishes",
+              label: (
+                <>
+                  <ListChecks aria-hidden="true" />
+                  {t("dishesTab")}
+                </>
+              ),
+            },
+            {
+              key: "photo",
+              label: (
+                <>
+                  <ImageIcon aria-hidden="true" />
+                  {t("photos")}
+                </>
+              ),
+            },
+          ]}
+          className="sticky top-14 z-20 lg:hidden"
+        />
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {current && (
-          <details open className="group lg:sticky lg:top-6 lg:self-start" data-testid="photos">
-            <summary className="mb-3 cursor-pointer font-semibold lg:hidden">{t("photos")}</summary>
-            <figure className="flex flex-col gap-3">
+          <div
+            {...tabPanel("import-view", "photo")}
+            className={`lg:sticky lg:top-6 lg:self-start ${view === "photo" ? "" : "max-lg:hidden"}`}
+            data-testid="photos"
+          >
+            <figure className="m-0 flex flex-col gap-3">
               {photos.length > 1 && (
                 <div className="flex flex-wrap gap-2">
                   {photos.map((p, i) => (
@@ -119,7 +170,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
                       type="button"
                       onClick={() => setPhoto(i)}
                       aria-pressed={i === photo}
-                      className={`min-h-10 rounded-full border px-4 ${i === photo ? "border-tarragon bg-tarragon text-white" : "border-line-strong"}`}
+                      className={`min-h-11 rounded-full px-4 font-semibold ${i === photo ? "bg-ink text-white" : "text-ink bg-white"}`}
                     >
                       {t("page", { page: p.page })}
                     </button>
@@ -131,23 +182,26 @@ export function ImportReview({ importId, initial, photos }: Props) {
                 <img
                   src={current.url}
                   alt={t("photoOf", { page: current.page, total: photos.length })}
-                  className="rounded-chip border-line max-h-[75vh] w-full border bg-white object-contain"
+                  className="max-h-[75vh] w-full rounded-2xl bg-white object-contain"
                 />
               </a>
-              <figcaption className="text-muted text-sm">
+              <figcaption className="text-staff-label2 text-[0.9375rem]">
                 {t("photoOf", { page: current.page, total: photos.length })}
               </figcaption>
             </figure>
-          </details>
+          </div>
         )}
 
-        <div className="flex flex-col gap-10">
+        <div
+          {...(current ? tabPanel("import-view", "dishes") : {})}
+          className={`flex min-w-0 flex-col gap-8 ${view === "dishes" ? "" : "max-lg:hidden"}`}
+        >
           {draft.categories.map((category, ci) => {
             if (category.items.length === 0) return null;
             const sectionChecked = category.items.every((i) => i.reviewed);
             return (
               <section key={ci} aria-labelledby={`section-${ci}`} className="flex flex-col gap-4">
-                <div className="border-ink flex flex-wrap items-end gap-3 border-b-2 pb-3">
+                <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-white p-3">
                   <label className="flex min-w-0 flex-1 flex-col gap-1">
                     <span id={`section-${ci}`} className="sr-only">
                       {t("sectionName")}
@@ -158,7 +212,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
                       onChange={(e) =>
                         editCategory(ci, (c) => ({ ...c, names: { ...c.names, hy: e.target.value } }))
                       }
-                      className="display-face border-line-strong rounded-input hover:border-line w-full border border-transparent bg-transparent px-2 py-1 text-3xl focus:bg-white"
+                      className="border-staff-field w-full rounded-xl border bg-white px-3 py-1.5 text-[1.5rem] font-bold"
                     />
                   </label>
                   <button
@@ -170,28 +224,29 @@ export function ImportReview({ importId, initial, photos }: Props) {
                         items: c.items.map((it) => ({ ...it, reviewed: true })),
                       }))
                     }
-                    className={`min-h-12 rounded-full px-4 font-semibold ${sectionChecked ? "bg-tarragon-tint text-tarragon" : "border-tarragon text-tarragon border"}`}
+                    className={button(sectionChecked ? "tinted" : "secondary", "min-h-11 text-[0.9375rem]")}
                   >
+                    {sectionChecked && <CircleCheck aria-hidden="true" className="!size-4" />}
                     {sectionChecked ? t("sectionDone") : t("approveSection")}
                   </button>
                   <div className="grid w-full gap-2 sm:grid-cols-2">
                     {OTHER_LOCALES.map((l) => (
                       <label key={l} className="flex items-center gap-2 text-sm">
-                        <span className="text-muted w-20 shrink-0">{t(`lang.${l}`)}</span>
+                        <span className="text-staff-label2 w-20 shrink-0">{t(`lang.${l}`)}</span>
                         <input
                           lang={l}
                           value={category.names[l]}
                           onChange={(e) =>
                             editCategory(ci, (c) => ({ ...c, names: { ...c.names, [l]: e.target.value } }))
                           }
-                          className={`${field} h-10`}
+                          className={`${field} h-11`}
                         />
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <ul className="flex flex-col gap-3">
+                <ul className="m-0 flex list-none flex-col gap-3 p-0">
                   {category.items.map((item, ii) => (
                     <DishRow
                       key={ii}
@@ -209,18 +264,18 @@ export function ImportReview({ importId, initial, photos }: Props) {
         </div>
       </div>
 
-      <footer className="border-line fixed inset-x-0 bottom-0 z-10 border-t bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
+      <footer className="border-staff-sep fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur lg:left-64">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
           <div className="flex min-w-48 flex-1 flex-col gap-2">
-            <p className="num font-semibold">{t("progress", { done: checked, total: items.length })}</p>
-            <div className="bg-mist h-2 overflow-hidden rounded-full" aria-hidden="true">
+            <p className="num m-0 font-semibold">{t("progress", { done: checked, total: items.length })}</p>
+            <div className="bg-staff-fill h-2 overflow-hidden rounded-full" aria-hidden="true">
               <div
-                className="bg-tarragon h-full transition-[width]"
+                className="bg-tarragon h-full transition-[width] duration-200"
                 style={{ width: `${items.length ? (checked / items.length) * 100 : 0}%` }}
               />
             </div>
           </div>
-          <p role="status" className="text-muted flex-1">
+          <p role="status" className="text-staff-label2 m-0 flex-1 text-[0.9375rem]">
             {missing > 0
               ? t("missingPrices", { count: missing })
               : allChecked
@@ -239,8 +294,9 @@ export function ImportReview({ importId, initial, photos }: Props) {
                   })),
                 }))
               }
-              className="text-tarragon min-h-12 px-2 font-semibold underline"
+              className={button("plain")}
             >
+              <ListChecks aria-hidden="true" />
               {t("markAll")}
             </button>
           )}
@@ -249,7 +305,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
               type="button"
               onClick={() => apply(true)}
               disabled={pending || missing > 0}
-              className="rounded-input bg-tarragon h-12 px-6 font-semibold text-white disabled:opacity-50"
+              className={button("primary")}
             >
               {pending ? t("working") : t("publish")}
             </button>
@@ -259,14 +315,16 @@ export function ImportReview({ importId, initial, photos }: Props) {
               onClick={() => apply(false)}
               disabled={pending || missing > 0 || items.length === 0}
               title={t("addToMenuHint")}
-              className="rounded-input border-tarragon text-tarragon h-12 border-2 bg-white px-6 font-semibold disabled:opacity-50"
+              className={button("tinted")}
             >
               {pending ? t("working") : t("addToMenu")}
             </button>
           )}
-          {!allChecked && <p className="text-muted w-full text-sm">{t("addToMenuHint")}</p>}
+          {!allChecked && (
+            <p className="text-staff-label2 m-0 w-full text-[0.8125rem]">{t("addToMenuHint")}</p>
+          )}
           {result && !result.ok && (
-            <p role="alert" className="text-pomegranate w-full">
+            <p role="alert" className="text-pomegranate m-0 w-full font-semibold">
               {t(`errors.${result.error}`)}
             </p>
           )}
@@ -293,27 +351,27 @@ function DishRow({
   return (
     <li
       data-testid="import-dish"
-      className={`rounded-chip flex flex-col gap-3 border-l-4 p-4 ${
+      className={`flex flex-col gap-3 rounded-2xl border-l-4 p-4 ${
         item.reviewed
           ? "border-tarragon bg-tarragon-tint/60"
           : doubtful
             ? "border-apricot bg-white"
-            : "border-line bg-white"
+            : "border-transparent bg-white"
       }`}
     >
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-48 flex-[3] flex-col gap-1">
-          <span className="text-muted text-sm">{t("lang.hy")}</span>
+          <span className="text-staff-label2 text-[0.9375rem]">{t("lang.hy")}</span>
           <input
             lang="hy"
             value={item.names.hy}
             aria-label={t("nameIn.hy")}
             onChange={(e) => onChange({ names: { ...item.names, hy: e.target.value } })}
-            className={`${field} display-face h-12 text-xl`}
+            className={`${field} h-12 font-semibold`}
           />
         </label>
         <label className="flex w-32 flex-col gap-1">
-          <span className="text-muted text-sm">{t("price")}</span>
+          <span className="text-staff-label2 text-[0.9375rem]">{t("price")}</span>
           <input
             inputMode="numeric"
             value={item.price_amd ?? ""}
@@ -327,7 +385,7 @@ function DishRow({
             type="checkbox"
             checked={item.reviewed}
             onChange={(e) => onChange({ reviewed: e.target.checked })}
-            className="accent-tarragon size-6"
+            className={check}
           />
           {t("correct")}
         </label>
@@ -335,17 +393,21 @@ function DishRow({
           type="button"
           onClick={onRemove}
           aria-label={t("removeDishNamed", { name: label })}
-          className="text-pomegranate hover:bg-pom-tint ml-auto min-h-12 rounded-full px-3 text-sm font-semibold"
+          className="text-pomegranate hover:bg-pom-tint ml-auto inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-[0.9375rem] font-semibold"
         >
+          <Trash2 aria-hidden="true" className="size-4" />
           {t("remove")}
         </button>
       </div>
 
       {doubtful && (
-        <p className="text-apricot-deep text-sm font-semibold">
+        <p className="text-amber-text m-0 flex flex-wrap items-center gap-x-1.5 text-[0.9375rem] font-semibold">
+          <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
           {item.price_amd === null ? t("priceMissing") : t("checkDish")}
           {item.price_text && (
-            <span className="text-muted ml-2 font-normal">{t("printed", { text: item.price_text })}</span>
+            <span className="text-staff-label2 ml-1 font-normal">
+              {t("printed", { text: item.price_text })}
+            </span>
           )}
         </p>
       )}
@@ -353,13 +415,13 @@ function DishRow({
       <div className="grid gap-2 sm:grid-cols-2">
         {OTHER_LOCALES.map((l: ImportLocale) => (
           <label key={l} className="flex items-center gap-2 text-sm">
-            <span className="text-muted w-20 shrink-0">{t(`lang.${l}`)}</span>
+            <span className="text-staff-label2 w-20 shrink-0">{t(`lang.${l}`)}</span>
             <input
               lang={l}
               value={item.names[l]}
               aria-label={t(`nameIn.${l}`)}
               onChange={(e) => onChange({ names: { ...item.names, [l]: e.target.value } })}
-              className={`${field} h-10`}
+              className={`${field} h-11`}
             />
           </label>
         ))}
@@ -367,7 +429,7 @@ function DishRow({
 
       {item.variants.length > 0 && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-muted mb-1 text-sm font-semibold">{t("sizes")}</legend>
+          <legend className="text-staff-label2 mb-1 text-[0.9375rem] font-semibold">{t("sizes")}</legend>
           {item.variants.map((v, vi) => (
             <div key={vi} className="flex flex-wrap items-center gap-2">
               <input
@@ -381,7 +443,7 @@ function DishRow({
                     ),
                   })
                 }
-                className={`${field} h-10 w-40`}
+                className={`${field} h-11 w-40`}
               />
               <input
                 inputMode="numeric"
@@ -395,7 +457,7 @@ function DishRow({
                     ),
                   })
                 }
-                className={`${field} num h-10 w-28 text-right`}
+                className={`${field} num h-11 w-28 text-right`}
               />
             </div>
           ))}
@@ -404,16 +466,18 @@ function DishRow({
 
       {hasDescription && (
         <details>
-          <summary className="text-muted cursor-pointer text-sm">{t("descriptions")}</summary>
+          <summary className="text-tarragon inline-flex min-h-11 cursor-pointer items-center rounded-lg text-[0.9375rem] font-semibold">
+            {t("descriptions")}
+          </summary>
           <div className="mt-2 grid gap-2">
             {IMPORT_LOCALES.map((l) => (
               <label key={l} className="flex items-center gap-2 text-sm">
-                <span className="text-muted w-20 shrink-0">{t(`lang.${l}`)}</span>
+                <span className="text-staff-label2 w-20 shrink-0">{t(`lang.${l}`)}</span>
                 <input
                   lang={l}
                   value={item.descriptions[l]}
                   onChange={(e) => onChange({ descriptions: { ...item.descriptions, [l]: e.target.value } })}
-                  className={`${field} h-10`}
+                  className={`${field} h-11`}
                 />
               </label>
             ))}

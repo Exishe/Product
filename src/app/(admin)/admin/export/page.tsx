@@ -1,38 +1,79 @@
+import { clsx } from "clsx";
+import { Download, FileSpreadsheet, ReceiptText, ShoppingBag, BookOpen } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { AdminPage } from "@/features/admin-ui/page";
+import { button, table } from "@/features/admin-ui/styles";
 import { EXPORT_KINDS } from "@/features/export/load.server";
 import { requireMember } from "@/lib/auth/require-member";
+
+// The file format is a technical name, the same in every language.
+const FORMAT = "CSV";
+const ICONS = { menu: BookOpen, orders: ShoppingBag, bills: ReceiptText } as const;
 
 export default async function ExportPage() {
   await requireMember(["owner", "manager"]);
   const t = await getTranslations("billing.export");
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="display-face text-display-38 leading-tight">{t("title")}</h1>
-        <p className="text-muted max-w-prose">{t("intro")}</p>
+    <AdminPage title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
+      <div className={table.wrap}>
+        <table className={table.table}>
+          <thead className={table.head}>
+            <tr>
+              <th scope="col" className={table.th}>
+                {t("colData")}
+              </th>
+              <th scope="col" className={clsx(table.th, "max-sm:hidden")}>
+                {t("colFile")}
+              </th>
+              <th scope="col" className={clsx(table.th, "w-0")}>
+                <span className="sr-only">{t("download")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {EXPORT_KINDS.map((kind) => {
+              const Icon = ICONS[kind];
+              return (
+                <tr key={kind} className={table.row}>
+                  <td className={table.td}>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="bg-tarragon-tint text-tarragon grid size-10 shrink-0 place-items-center rounded-xl"
+                      >
+                        <Icon className="size-5" />
+                      </span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-[1.0625rem] font-semibold">{t(kind)}</span>
+                        <span className="text-staff-label2 text-[0.9375rem]">{t(`${kind}Hint`)}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td className={clsx(table.td, "text-staff-label2 whitespace-nowrap max-sm:hidden")}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <FileSpreadsheet aria-hidden="true" className="size-4" />
+                      {FORMAT}
+                    </span>
+                  </td>
+                  <td className={clsx(table.td, "text-right")}>
+                    {/* A plain link: the browser downloads the file, no client JS. */}
+                    <a
+                      href={`/admin/export/${kind}`}
+                      download
+                      data-testid={`export-${kind}`}
+                      className={button("tinted", "min-h-11 px-3 text-[0.9375rem] whitespace-nowrap")}
+                    >
+                      <Download aria-hidden="true" className="!size-4" />
+                      {t("download")}
+                      <span className="sr-only">: {t(kind)}</span>
+                    </a>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-      <ul className="flex flex-col gap-3">
-        {EXPORT_KINDS.map((kind) => (
-          <li
-            key={kind}
-            className="rounded-sheet border-line flex flex-wrap items-center justify-between gap-3 border bg-white p-4"
-          >
-            <div className="flex min-w-0 flex-col">
-              <span className="text-lg font-semibold">{t(kind)}</span>
-              <span className="text-muted text-sm">{t(`${kind}Hint`)}</span>
-            </div>
-            {/* A plain link: the browser downloads the file, no client JS. */}
-            <a
-              href={`/admin/export/${kind}`}
-              download
-              data-testid={`export-${kind}`}
-              className="rounded-input bg-apricot text-ink inline-flex min-h-12 items-center px-5 font-semibold"
-            >
-              {t("download")}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </main>
+    </AdminPage>
   );
 }

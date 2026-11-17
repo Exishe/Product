@@ -1,6 +1,8 @@
 "use client";
 
+import { Send, Unlink } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { button, check, fieldLabel, input } from "@/features/admin-ui/styles";
 import { useActionState } from "react";
 import { updateChannel, type ChannelState } from "./actions";
 import { ALERT_EVENTS, eventKey } from "./events";
@@ -23,37 +25,33 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
   const [state, action, pending] = useActionState(updateChannel, initial);
   const name = channel.kind === "web_push" ? t("pushChannel") : (channel.title ?? t("kindTelegram"));
   return (
-    <li className="rounded-sheet border-line border bg-white p-4" data-testid="channel-card">
-      <form action={action} className="flex flex-col gap-3">
+    <li className="rounded-2xl bg-white p-4 sm:p-5" data-testid="channel-card">
+      <form action={action} className="flex flex-col gap-4">
         <input type="hidden" name="channelId" value={channel.id} />
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="min-w-0 text-lg font-semibold break-words">{name}</h3>
-          <span className="text-muted text-sm">
+          <h3 className="m-0 min-w-0 text-[1.125rem] font-bold break-words">{name}</h3>
+          <span className="text-staff-label2 text-[0.9375rem]">
             {channel.kind === "web_push" ? t("kindPush") : t("kindTelegram")}
           </span>
         </div>
-        <fieldset className="flex flex-col gap-1">
-          <legend className="text-muted mb-1 text-sm font-semibold">{t("eventsLegend")}</legend>
+        <fieldset className="m-0 flex flex-col gap-0.5 border-0 p-0">
+          <legend className={`${fieldLabel} mb-1`}>{t("eventsLegend")}</legend>
           {ALERT_EVENTS.map((e) => (
-            <label key={e} className="flex min-h-12 items-center gap-3">
+            <label key={e} className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
               <input
                 type="checkbox"
                 name="events"
                 value={e}
                 defaultChecked={channel.events.includes(e)}
-                className="accent-tarragon size-6"
+                className={check}
               />
               <span>{t(`events.${eventKey(e)}`)}</span>
             </label>
           ))}
         </fieldset>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted text-sm font-semibold">{t("language")}</span>
-          <select
-            name="locale"
-            defaultValue={channel.locale}
-            className="rounded-input border-line-strong h-12 border bg-white px-3"
-          >
+        <label className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>{t("language")}</span>
+          <select name="locale" defaultValue={channel.locale} className={input}>
             {LOCALES.map((l) => (
               <option key={l} value={l} lang={l}>
                 {t(`languages.${l}`)}
@@ -62,22 +60,11 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
           </select>
         </label>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            name="intent"
-            value="save"
-            disabled={pending}
-            className="rounded-input bg-tarragon h-12 px-4 font-semibold text-white disabled:opacity-60"
-          >
+          <button type="submit" name="intent" value="save" disabled={pending} className={button("primary")}>
             {t("save")}
           </button>
-          <button
-            type="submit"
-            name="intent"
-            value="test"
-            disabled={pending}
-            className="rounded-input border-tarragon text-tarragon h-12 border px-4 font-semibold disabled:opacity-60"
-          >
+          <button type="submit" name="intent" value="test" disabled={pending} className={button("secondary")}>
+            <Send aria-hidden="true" />
             {t("sendTest")}
           </button>
           <button
@@ -85,12 +72,13 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
             name="intent"
             value="disconnect"
             disabled={pending}
-            className="rounded-input border-pomegranate text-pomegranate h-12 border px-4 font-semibold disabled:opacity-60"
+            className={button("danger")}
           >
+            <Unlink aria-hidden="true" />
             {t("disconnect")}
           </button>
         </div>
-        <p aria-live="polite" className="min-h-6 text-sm">
+        <p aria-live="polite" className="m-0 min-h-6 text-[0.9375rem] font-semibold">
           {state.saved && <span className="text-tarragon">{t("saved")}</span>}
           {state.tested && <span className="text-tarragon">{t("testQueued")}</span>}
           {state.error && (

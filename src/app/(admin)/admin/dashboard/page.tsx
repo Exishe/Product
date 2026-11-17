@@ -1,6 +1,9 @@
+import { CircleAlert, Download, Receipt } from "lucide-react";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { AdminPage, Notice } from "@/features/admin-ui/page";
+import { button } from "@/features/admin-ui/styles";
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { parseDashboard } from "@/features/dashboard/model";
 import { businessDate, resolveRange } from "@/features/dashboard/range";
@@ -47,37 +50,37 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const empty = data && data.summary.orders === 0 && data.summary.bills === 0 && data.open_tables.count === 0;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="display-face text-display-38 leading-tight">{t("title")}</h1>
-          <p className="num text-muted" data-testid="period">
-            {period}
-          </p>
-        </div>
-        <Link
-          href="/admin/export"
-          className="rounded-input border-line-strong inline-flex min-h-11 items-center border bg-white px-4 font-semibold"
-        >
+    <AdminPage
+      title={t("title")}
+      subtitle={
+        <p className="num m-0" data-testid="period">
+          {period}
+        </p>
+      }
+      width="lg"
+      actions={
+        <Link href="/admin/export" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
+          <Download aria-hidden="true" className="!size-4" />
           {t("export")}
         </Link>
-      </div>
+      }
+    >
       {me.role === "owner" && <PlanBanner restaurantId={me.restaurantId} locale={locale} />}
       <RangePicker range={range} today={today} />
       {!data ? (
-        <p role="alert" className="rounded-sheet bg-pom-tint text-pomegranate px-4 py-3 font-semibold">
-          {t("error")}
-        </p>
+        <Notice tone="alert" role="alert" icon={<CircleAlert aria-hidden="true" />}>
+          <p className="m-0 font-semibold">{t("error")}</p>
+        </Notice>
       ) : empty ? (
-        <p
-          data-testid="dashboard-empty"
-          className="rounded-sheet border-line-strong text-muted border border-dashed px-4 py-10 text-center text-lg"
-        >
-          {range.preset === "today" ? t("empty") : t("emptyRange")}
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-4 py-12 text-center">
+          <Receipt aria-hidden="true" className="text-staff-label2 size-8" />
+          <p data-testid="dashboard-empty" className="text-staff-label2 m-0 text-[1.0625rem]">
+            {range.preset === "today" ? t("empty") : t("emptyRange")}
+          </p>
+        </div>
       ) : (
         <SalesDashboard data={data} locale={locale} />
       )}
-    </main>
+    </AdminPage>
   );
 }

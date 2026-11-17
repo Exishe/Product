@@ -1,6 +1,8 @@
 "use client";
 
+import { BellOff, BellRing, CircleCheck, Smartphone } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { button } from "@/features/admin-ui/styles";
 import { useEffect, useState } from "react";
 import { deletePushSubscription, isPushSubscribed, savePushSubscription } from "./actions";
 import {
@@ -86,46 +88,44 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
 
   return (
     <section
-      className="rounded-sheet border-line flex flex-col gap-3 border bg-white p-4"
+      className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5"
       aria-labelledby="push-title"
       data-testid="push-section"
     >
-      <h2 id="push-title" className="text-lg font-semibold">
+      <h2 id="push-title" className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
+        <Smartphone aria-hidden="true" className="text-tarragon size-5 shrink-0" />
         {t("title")}
       </h2>
-      <p className="text-muted">{t("hint")}</p>
+      <p className="text-staff-label2 m-0">{t("hint")}</p>
       {note[status] && (
-        <p role="status" className="rounded-input bg-mist p-3" data-testid="push-status">
+        <p role="status" className="bg-staff-bg m-0 rounded-xl px-4 py-3" data-testid="push-status">
           {note[status]}
         </p>
       )}
       {status === "off" && (
-        <button
-          type="button"
-          onClick={turnOn}
-          disabled={busy}
-          className="rounded-input bg-tarragon h-12 px-4 font-semibold text-white disabled:opacity-60"
-        >
+        <button type="button" onClick={turnOn} disabled={busy} className={button("primary")}>
+          <BellRing aria-hidden="true" />
           {t("turnOn")}
         </button>
       )}
       {status === "on" && (
         <>
-          <p role="status" className="text-tarragon font-semibold" data-testid="push-status">
+          <p
+            role="status"
+            className="text-tarragon m-0 flex items-center gap-2 font-semibold"
+            data-testid="push-status"
+          >
+            <CircleCheck aria-hidden="true" className="size-5 shrink-0" />
             {t("on")}
           </p>
-          <button
-            type="button"
-            onClick={turnOff}
-            disabled={busy}
-            className="rounded-input border-pomegranate text-pomegranate h-12 border px-4 font-semibold disabled:opacity-60"
-          >
+          <button type="button" onClick={turnOff} disabled={busy} className={button("danger")}>
+            <BellOff aria-hidden="true" />
             {t("turnOff")}
           </button>
         </>
       )}
       {error && (
-        <p role="alert" className="text-pomegranate">
+        <p role="alert" className="text-pomegranate m-0 font-semibold">
           {t("error")}
         </p>
       )}

@@ -1,9 +1,29 @@
 "use client";
 
+import { clsx } from "clsx";
+import {
+  Ban,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  CircleCheck,
+  ImagePlus,
+  Pencil,
+  Plus,
+  ScanText,
+  TriangleAlert,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { Notice } from "@/features/admin-ui/page";
+import { Sheet, useMediaQuery } from "@/features/admin-ui/sheet";
+import { button, check, chip, fieldLabel, field, iconButton, input } from "@/features/admin-ui/styles";
 import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -22,7 +42,7 @@ import { DISH_TAGS, parsePriceInput } from "./schema";
 import { emptyNames, type EditorCategory, type EditorData, type EditorDish, type Names } from "./types";
 
 const LOCALES = ["hy", "ru", "en"] as const;
-const field = "w-full rounded-input border border-line-strong bg-white px-3";
+const FORM_ID = "menu-editor-form";
 
 type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
   id?: string;
@@ -42,13 +62,21 @@ function nameFor(names: Names, locale: Locale): string {
   return names[locale] || names.hy;
 }
 
+// The menu editor (ADR-055). From 1024 px: sections on the left, dishes in the
+// middle and the editor as an inspector column on the right. Below 1024 px the
+// editor is a sheet; after a dish is saved the sheet shrinks to a bar at the
+// bottom (saved, add a photo, edit again, close), so the list and "Add dish"
+// are free to use at once. A full-screen panel that stayed open after saving
+// used to cover the whole list on phones and tablets.
 export function MenuEditor({ data }: { data: EditorData }) {
   const t = useTranslations("menu");
   const locale = useLocale() as Locale;
   const router = useRouter();
+  const wide = useMediaQuery("(min-width: 64rem)");
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string | null>(data.categories[0]?.id ?? null);
   const [panel, setPanel] = useState<Panel>(null);
+  const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [publishStatus, setPublishStatus] = useState<
     "idle" | "publishing" | "published" | "unreviewed" | "failed"
@@ -60,6 +88,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
 
   function open(next: Panel) {
     setPanel(next);
+    setCollapsed(false);
     setStatus("idle");
   }
 
@@ -139,6 +168,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
           kind: "dish",
           draft: { ...d, id: result.id, needsReview: d.needsReview && !d.markReviewed },
         });
+        // On a phone or tablet the sheet steps aside; the inspector stays.
+        setCollapsed(true);
       }
       setStatus("saved");
       router.refresh();
@@ -190,446 +221,658 @@ export function MenuEditor({ data }: { data: EditorData }) {
     });
   }
 
+  const bar = panel?.kind === "dish" && collapsed && !wide;
+  // Escape closes the saved bar, as it closes the sheet.
+  useEffect(() => {
+    if (!bar) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanel(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [bar]);
+
   if (data.categories.length === 0 && panel === null) {
     return (
-      <section className="rounded-sheet border-line flex flex-col items-start gap-4 border bg-white p-8">
-        <h2 className="display-face text-3xl">{t("emptyTitle")}</h2>
-        <p className="text-muted">{t("emptyHint")}</p>
-        <button
-          type="button"
-          onClick={() => openCategory()}
-          className="rounded-input bg-tarragon h-12 px-6 font-semibold text-white"
-        >
-          {t("emptyManual")}
-        </button>
+      <section className="flex flex-col items-start gap-4 rounded-2xl bg-white p-6 sm:p-8">
+        <span className="bg-tarragon-tint text-tarragon grid size-12 place-items-center rounded-2xl">
+          <BookOpen aria-hidden="true" className="size-6" />
+        </span>
+        <h2 className="m-0 text-[1.75rem] leading-tight font-bold">{t("emptyTitle")}</h2>
+        <p className="text-staff-label2 m-0 max-w-prose text-[1.0625rem]">{t("emptyHint")}</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/menu/import" className={button("primary")}>
+            <ScanText aria-hidden="true" />
+            {t("emptyPhoto")}
+          </Link>
+          <button type="button" onClick={() => openCategory()} className={button("secondary")}>
+            <Pencil aria-hidden="true" />
+            {t("emptyManual")}
+          </button>
+        </div>
       </section>
     );
   }
 
   const banner =
     publishStatus === "published" ? (
-      <p role="status" className="rounded-chip bg-tarragon-tint text-tarragon px-4 py-3">
-        {t("published")}
-      </p>
+      <Notice tone="ok" role="status" icon={<CircleCheck aria-hidden="true" />}>
+        <p className="m-0">{t("published")}</p>
+      </Notice>
     ) : data.publish.hasChanges || publishStatus === "unreviewed" || publishStatus === "failed" ? (
-      <div role="status" className="rounded-chip bg-apricot/20 flex flex-wrap items-center gap-3 px-4 py-3">
-        <p className="flex-1">
-          {publishStatus === "unreviewed"
-            ? t("unreviewed")
-            : publishStatus === "failed"
-              ? t("publishFailed")
-              : data.publish.published
-                ? t("unpublished")
-                : t("neverPublished")}
-        </p>
-        <button
-          type="button"
-          onClick={publish}
-          disabled={pending}
-          className="rounded-input bg-tarragon h-12 px-5 font-semibold text-white disabled:opacity-60"
-        >
-          {publishStatus === "publishing" ? t("publishing") : t("publish")}
-        </button>
-      </div>
+      <Notice
+        tone={publishStatus === "failed" ? "alert" : "wait"}
+        role="status"
+        icon={
+          publishStatus === "failed" ? (
+            <CircleAlert aria-hidden="true" />
+          ) : (
+            <TriangleAlert aria-hidden="true" />
+          )
+        }
+      >
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <p className="m-0 min-w-0 flex-1 basis-56">
+            {publishStatus === "unreviewed"
+              ? t("unreviewed")
+              : publishStatus === "failed"
+                ? t("publishFailed")
+                : data.publish.published
+                  ? t("unpublished")
+                  : t("neverPublished")}
+          </p>
+          <button type="button" onClick={publish} disabled={pending} className={button("primary")}>
+            {publishStatus === "publishing" ? t("publishing") : t("publish")}
+          </button>
+        </div>
+      </Notice>
     ) : null;
 
-  return (
-    <div className="flex flex-col gap-6">
-      {banner}
-      <div className={`grid gap-6 ${panel ? "lg:grid-cols-[220px_minmax(0,1fr)_minmax(340px,420px)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
-        <nav aria-label={t("categories")} className="flex flex-col gap-1">
-          <h2 className="text-muted mb-1 text-sm font-semibold">{t("categories")}</h2>
-          <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-            {data.categories.map((c) => (
-              <li key={c.id} className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelected(c.id);
-                    setPanel(null);
-                  }}
-                  aria-current={c.id === selected ? "true" : undefined}
-                  className={`rounded-chip min-h-12 flex-1 px-3 text-left ${c.id === selected ? "bg-tarragon text-white" : "hover:bg-mist"}`}
-                >
-                  {nameFor(c.names, locale)}
-                </button>
-                <span className="hidden lg:flex">
-                  <button
-                    type="button"
-                    aria-label={t("moveUp")}
-                    disabled={pending}
-                    onClick={() => move(data.categories, c.id, -1, "categories")}
-                    className="rounded-chip text-muted hover:bg-mist size-8"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={t("moveDown")}
-                    disabled={pending}
-                    onClick={() => move(data.categories, c.id, 1, "categories")}
-                    className="rounded-chip text-muted hover:bg-mist size-8"
-                  >
-                    ↓
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={() => openCategory()}
-            className="rounded-chip border-line-strong text-tarragon mt-2 min-h-12 border border-dashed px-3 text-left"
+  const panelTitle = panel
+    ? panel.kind === "dish"
+      ? panel.draft.id
+        ? nameFor(panel.draft.names, locale) || t("newDish")
+        : t("newDish")
+      : panel.draft.id
+        ? t("editCategory")
+        : t("newCategory")
+    : "";
+
+  const message = (
+    <p
+      aria-live="polite"
+      className={clsx(
+        "m-0 text-[0.9375rem] font-semibold",
+        status === "saved" ? "text-tarragon" : "text-pomegranate",
+      )}
+    >
+      {status === "saved" && t("saved")}
+      {status === "failed" && t("saveFailed")}
+      {status === "priceInvalid" && t("priceInvalid")}
+      {status === "nameRequired" && t("nameRequired")}
+    </p>
+  );
+
+  const actions = panel && (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <button
+        type="submit"
+        form={FORM_ID}
+        disabled={pending}
+        className={button("primary", "min-w-32 flex-1 sm:flex-none")}
+      >
+        {status === "saving" ? t("saving") : t("save")}
+      </button>
+      {panel.kind === "dish" && panel.draft.id && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => remove(panel.draft.id as string)}
+          className={button("danger")}
+        >
+          {t("delete")}
+        </button>
+      )}
+      <div className="basis-full">{message}</div>
+    </div>
+  );
+
+  const photo =
+    panel?.kind === "dish" && panel.draft.id ? (
+      <PhotoPicker
+        path={panel.draft.imagePath}
+        status={photoStatus}
+        onPick={(file) => panel.draft.id && void uploadPhoto(panel.draft.id, file)}
+      />
+    ) : null;
+
+  const form = panel && (
+    <form
+      id={FORM_ID}
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+      className="flex flex-col gap-4"
+    >
+      <Group title={t(panel.kind === "dish" ? "namesDish" : "namesSection")}>
+        {LOCALES.map((l) => (
+          <div key={l} className="border-staff-sep flex flex-col gap-3 border-b pb-4 last:border-0 last:pb-0">
+            <label className="flex flex-col gap-1.5">
+              <span className={clsx(fieldLabel, "flex flex-wrap items-center gap-x-2")}>
+                {t(`name.${l}`)}
+                {l !== "hy" && !panel.draft.names[l] && (
+                  <span className="text-pomegranate inline-flex items-center gap-1">
+                    <CircleAlert aria-hidden="true" className="size-4" />
+                    {t("languageMissing")}
+                  </span>
+                )}
+              </span>
+              <input
+                lang={l}
+                value={panel.draft.names[l]}
+                maxLength={panel.kind === "dish" ? 120 : 80}
+                onChange={(e) => {
+                  const names = { ...panel.draft.names, [l]: e.target.value };
+                  setPanel(
+                    panel.kind === "dish"
+                      ? { kind: "dish", draft: { ...panel.draft, names } }
+                      : { kind: "category", draft: { ...panel.draft, names } },
+                  );
+                }}
+                className={input}
+              />
+            </label>
+            {panel.kind === "dish" && (
+              <label className="flex flex-col gap-1.5">
+                <span className={fieldLabel}>{t(`description.${l}`)}</span>
+                <textarea
+                  lang={l}
+                  rows={2}
+                  maxLength={600}
+                  value={panel.draft.descriptions[l]}
+                  onChange={(e) =>
+                    setPanel({
+                      kind: "dish",
+                      draft: {
+                        ...panel.draft,
+                        descriptions: { ...panel.draft.descriptions, [l]: e.target.value },
+                      },
+                    })
+                  }
+                  className={clsx(field, "py-2.5")}
+                />
+              </label>
+            )}
+          </div>
+        ))}
+      </Group>
+
+      {panel.kind === "dish" && (
+        <Group title={t("photo")}>
+          {photo ?? <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("photoAfterSave")}</p>}
+        </Group>
+      )}
+
+      <Group title={panel.kind === "dish" ? t("priceAndKitchen") : t("prepArea")}>
+        {panel.kind === "dish" && (
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>{t("price")}</span>
+            <input
+              inputMode="numeric"
+              value={panel.draft.priceText}
+              onChange={(e) =>
+                setPanel({ kind: "dish", draft: { ...panel.draft, priceText: e.target.value } })
+              }
+              className={clsx(input, "num")}
+            />
+          </label>
+        )}
+        <label className="flex flex-col gap-1.5">
+          <span className={panel.kind === "dish" ? fieldLabel : "sr-only"}>{t("prepArea")}</span>
+          <select
+            value={panel.draft.prepAreaId ?? ""}
+            onChange={(e) => {
+              const prepAreaId = e.target.value || null;
+              setPanel(
+                panel.kind === "dish"
+                  ? { kind: "dish", draft: { ...panel.draft, prepAreaId } }
+                  : { kind: "category", draft: { ...panel.draft, prepAreaId } },
+              );
+            }}
+            className={input}
           >
-            + {t("addCategory")}
-          </button>
+            <option value="">{t("prepAreaDefault")}</option>
+            {data.prepAreas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Group>
+
+      {panel.kind === "dish" && (
+        <>
+          <fieldset className="m-0 flex min-w-0 flex-col gap-1 rounded-2xl border-0 bg-white p-4">
+            <legend className="float-left mb-1 w-full text-[0.9375rem] font-bold">{t("optionGroups")}</legend>
+            {data.groups.map((g) => (
+              <label key={g.id} className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+                <input
+                  type="checkbox"
+                  className={check}
+                  checked={panel.draft.modifierGroupIds.includes(g.id)}
+                  onChange={(e) => {
+                    const ids = e.target.checked
+                      ? [...panel.draft.modifierGroupIds, g.id]
+                      : panel.draft.modifierGroupIds.filter((x) => x !== g.id);
+                    setPanel({ kind: "dish", draft: { ...panel.draft, modifierGroupIds: ids } });
+                  }}
+                />
+                {nameFor(g.names, locale)}
+              </label>
+            ))}
+            <Link href="/admin/menu/options" className={button("plain", "self-start")}>
+              {t("manageOptions")}
+            </Link>
+          </fieldset>
+
+          <fieldset className="m-0 flex min-w-0 flex-wrap gap-2 rounded-2xl border-0 bg-white p-4">
+            <legend className="float-left mb-1 w-full text-[0.9375rem] font-bold">{t("tags")}</legend>
+            {DISH_TAGS.map((tag) => {
+              const on = panel.draft.tags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    setPanel({
+                      kind: "dish",
+                      draft: {
+                        ...panel.draft,
+                        tags: on ? panel.draft.tags.filter((x) => x !== tag) : [...panel.draft.tags, tag],
+                      },
+                    })
+                  }
+                  className={clsx(
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[0.9375rem] font-semibold",
+                    on ? "bg-tarragon text-white" : "bg-staff-fill text-ink",
+                  )}
+                >
+                  {on && <Check aria-hidden="true" className="size-4" />}
+                  {t(`tag.${tag}`)}
+                </button>
+              );
+            })}
+          </fieldset>
+
+          {panel.draft.needsReview && (
+            <label className="flex min-h-12 items-center gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-2 text-[1.0625rem]">
+              <input
+                type="checkbox"
+                className={check}
+                checked={panel.draft.markReviewed}
+                onChange={(e) =>
+                  setPanel({
+                    kind: "dish",
+                    draft: { ...panel.draft, markReviewed: e.target.checked },
+                  })
+                }
+              />
+              {t("markReviewed")}
+            </label>
+          )}
+        </>
+      )}
+    </form>
+  );
+
+  return (
+    <div className={clsx("flex flex-col gap-5", bar && "pb-48")}>
+      {banner}
+      <div
+        className={clsx(
+          "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5",
+          panel && wide
+            ? "lg:grid-cols-[13rem_minmax(0,1fr)_minmax(22rem,26rem)]"
+            : "lg:grid-cols-[15rem_minmax(0,1fr)]",
+        )}
+      >
+        <nav aria-label={t("categories")} className="flex min-w-0 flex-col gap-2 lg:self-start">
+          <h2 className="text-staff-label2 m-0 px-1 text-[0.8125rem] font-semibold tracking-wide uppercase">
+            {t("categories")}
+          </h2>
+          <ul className="relative flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:bg-white lg:p-2">
+            {data.categories.map((c) => {
+              const current = c.id === selected;
+              return (
+                <li key={c.id} className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelected(c.id);
+                      setPanel(null);
+                    }}
+                    aria-current={current ? "true" : undefined}
+                    className={clsx(
+                      "min-h-11 flex-1 rounded-full px-4 text-left text-[0.9375rem] font-semibold whitespace-nowrap lg:rounded-[0.625rem] lg:px-3 lg:whitespace-normal",
+                      current
+                        ? "bg-ink lg:bg-tarragon-tint lg:text-tarragon text-white lg:font-bold"
+                        : "text-ink bg-white lg:bg-transparent",
+                    )}
+                  >
+                    {nameFor(c.names, locale)}
+                  </button>
+                  <span className="hidden lg:flex">
+                    <button
+                      type="button"
+                      aria-label={t("moveUp")}
+                      disabled={pending}
+                      onClick={() => move(data.categories, c.id, -1, "categories")}
+                      className={iconButton("size-9")}
+                    >
+                      <ChevronUp aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("moveDown")}
+                      disabled={pending}
+                      onClick={() => move(data.categories, c.id, 1, "categories")}
+                      className={iconButton("size-9")}
+                    >
+                      <ChevronDown aria-hidden="true" />
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+            <li className="flex shrink-0">
+              <button
+                type="button"
+                onClick={() => openCategory()}
+                className="border-staff-field text-tarragon inline-flex min-h-11 flex-1 items-center gap-2 rounded-full border border-dashed px-4 text-[0.9375rem] font-semibold whitespace-nowrap lg:rounded-[0.625rem] lg:border-0 lg:px-3"
+              >
+                <Plus aria-hidden="true" className="size-[1.125rem]" />
+                <span className="sr-only">+ </span>
+                {t("addCategory")}
+              </button>
+            </li>
+          </ul>
         </nav>
 
-        <section aria-labelledby="dishes-heading" className="min-w-0">
+        <section aria-labelledby="dishes-heading" className="flex min-w-0 flex-col gap-3">
           {category && (
-            <header className="mb-4 flex flex-wrap items-center gap-3">
-              <h2 id="dishes-heading" className="display-face text-3xl">
+            <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2
+                id="dishes-heading"
+                className="m-0 min-w-0 flex-1 basis-48 text-[1.5rem] leading-tight font-bold break-words"
+              >
                 {nameFor(category.names, locale)}
               </h2>
               <button
                 type="button"
                 onClick={() => openCategory(category)}
-                className="rounded-chip text-tarragon min-h-12 px-3 underline underline-offset-4"
+                className={button("secondary", "min-h-11 text-[0.9375rem]")}
               >
+                <Pencil aria-hidden="true" className="!size-4" />
                 {t("editCategory")}
               </button>
               <button
                 type="button"
                 onClick={() => openDish()}
-                className="rounded-input bg-tarragon ml-auto h-12 px-5 font-semibold text-white"
+                className={button("primary", "min-h-11 text-[0.9375rem]")}
               >
-                + {t("addDish")}
+                <Plus aria-hidden="true" />
+                <span className="sr-only">+ </span>
+                {t("addDish")}
               </button>
             </header>
           )}
-          {category && dishes.length === 0 && <p className="text-muted">{t("emptyCategory")}</p>}
-          <ul className="flex flex-col">
-            {dishes.map((d) => (
-              <li key={d.id} className="border-line flex flex-wrap items-stretch gap-x-2 border-b">
-                <button
-                  type="button"
-                  onClick={() => openDish(d)}
-                  className={`flex min-h-14 min-w-[min(100%,16rem)] flex-1 items-baseline gap-2 py-3 text-left ${data.soldOut.includes(d.id) ? "text-muted" : ""}`}
-                  data-testid="dish-row"
-                >
-                  <span className="display-face truncate text-xl" lang={d.names[locale] ? locale : "hy"}>
-                    {nameFor(d.names, locale)}
-                  </span>
-                  <span
-                    aria-hidden
-                    className="border-line-strong mb-1 min-w-6 flex-1 border-b-2 border-dotted"
-                  />
-                  <span className="num shrink-0 font-semibold">{formatAmd(d.price, locale)}</span>
-                </button>
-                <span className="ml-auto flex items-center gap-1 pb-2 text-xs sm:pb-0">
-                  {LOCALES.map((l) => (
-                    <span
-                      key={l}
-                      title={d.names[l] ? l : `${l}: ${t("languageMissing")}`}
-                      className={`rounded-full px-1.5 py-0.5 ${d.names[l] ? "bg-tarragon-tint text-tarragon" : "bg-pom-tint text-pomegranate"}`}
+          {category && dishes.length === 0 && (
+            <p className="text-staff-label2 m-0 flex items-center gap-3 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
+              <UtensilsCrossed aria-hidden="true" className="size-5 shrink-0" />
+              {t("emptyCategory")}
+            </p>
+          )}
+          {dishes.length > 0 && (
+            <ul className="m-0 flex list-none flex-col overflow-hidden rounded-2xl bg-white p-0">
+              {dishes.map((d) => {
+                const soldOut = data.soldOut.includes(d.id);
+                const editing = panel?.kind === "dish" && panel.draft.id === d.id;
+                return (
+                  <li
+                    key={d.id}
+                    className={clsx(
+                      "border-staff-sep flex flex-col gap-1 border-b px-3 py-2 last:border-0 sm:px-4",
+                      editing && "bg-tarragon-tint/50",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => openDish(d)}
+                      className={clsx(
+                        "flex min-h-14 w-full items-center gap-3 rounded-xl text-left",
+                        soldOut ? "text-staff-label2" : "text-ink",
+                      )}
+                      data-testid="dish-row"
                     >
-                      {l}
-                    </span>
-                  ))}
-                  {d.needsReview && (
-                    <span className="bg-apricot/25 text-apricot-deep rounded-full px-2 py-0.5 font-semibold">
-                      {t("review")}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    aria-pressed={data.soldOut.includes(d.id)}
-                    disabled={pending}
-                    onClick={() => toggleSoldOut(d.id, !data.soldOut.includes(d.id))}
-                    className={`min-h-8 rounded-full border px-2 ${data.soldOut.includes(d.id) ? "border-pomegranate bg-pom-tint text-pomegranate" : "border-line-strong text-muted"}`}
-                  >
-                    {t("soldOut")}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={t("moveUp")}
-                    disabled={pending}
-                    onClick={() => move(dishes, d.id, -1, "items")}
-                    className="rounded-chip text-muted hover:bg-mist size-8"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={t("moveDown")}
-                    disabled={pending}
-                    onClick={() => move(dishes, d.id, 1, "items")}
-                    className="rounded-chip text-muted hover:bg-mist size-8"
-                  >
-                    ↓
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
+                      {d.imagePath ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- already a 600 px WebP from Storage
+                        <img
+                          src={photoUrl(d.imagePath)}
+                          alt=""
+                          width={44}
+                          height={44}
+                          className="size-11 shrink-0 rounded-[0.625rem] object-cover"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className="bg-staff-fill text-staff-label2 grid size-11 shrink-0 place-items-center rounded-[0.625rem]"
+                        >
+                          <UtensilsCrossed className="size-5" />
+                        </span>
+                      )}
+                      <span
+                        className="min-w-0 flex-1 text-[1.0625rem] leading-snug font-semibold break-words"
+                        lang={d.names[locale] ? locale : "hy"}
+                      >
+                        {nameFor(d.names, locale)}
+                      </span>
+                      <span className="num shrink-0 text-[1.0625rem] font-semibold">
+                        {formatAmd(d.price, locale)}
+                      </span>
+                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:pl-14">
+                      {LOCALES.map((l) =>
+                        d.names[l] ? (
+                          <span key={l} title={l} className={clsx(chip.base, chip.plain)}>
+                            {l}
+                          </span>
+                        ) : (
+                          <span
+                            key={l}
+                            title={`${l}: ${t("languageMissing")}`}
+                            className={clsx(chip.base, chip.alert)}
+                          >
+                            <CircleAlert aria-hidden="true" />
+                            {l}
+                            <span className="sr-only">: {t("languageMissing")}</span>
+                          </span>
+                        ),
+                      )}
+                      {d.needsReview && (
+                        <span className={clsx(chip.base, chip.wait)}>
+                          <TriangleAlert aria-hidden="true" />
+                          {t("review")}
+                        </span>
+                      )}
+                      <span className="ml-auto flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-pressed={soldOut}
+                          disabled={pending}
+                          onClick={() => toggleSoldOut(d.id, !soldOut)}
+                          className={clsx(
+                            "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-semibold",
+                            soldOut ? "bg-pom-tint text-pomegranate" : "text-staff-label2",
+                          )}
+                        >
+                          <Ban aria-hidden="true" className="size-4" />
+                          {t("soldOut")}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={t("moveUp")}
+                          disabled={pending}
+                          onClick={() => move(dishes, d.id, -1, "items")}
+                          className={iconButton()}
+                        >
+                          <ChevronUp aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={t("moveDown")}
+                          disabled={pending}
+                          onClick={() => move(dishes, d.id, 1, "items")}
+                          className={iconButton()}
+                        >
+                          <ChevronDown aria-hidden="true" />
+                        </button>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
 
-        {panel && (
+        {panel && wide && (
           <aside
-            aria-label={
-              panel.kind === "dish"
-                ? panel.draft.id
-                  ? nameFor(panel.draft.names, locale)
-                  : t("newDish")
-                : t("editCategory")
-            }
-            className="bg-matsoni shadow-float lg:rounded-sheet lg:border-line fixed inset-0 z-20 overflow-y-auto p-5 lg:static lg:z-auto lg:border lg:bg-white lg:shadow-none"
+            aria-label={panelTitle}
+            className="admin-fade bg-staff-fill/60 ring-staff-sep flex min-w-0 flex-col self-start overflow-hidden rounded-2xl ring-1 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-8.5rem)]"
           >
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submit();
-              }}
-              className="flex flex-col gap-4"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                  {panel.kind === "dish"
-                    ? panel.draft.id
-                      ? nameFor(panel.draft.names, locale)
-                      : t("newDish")
-                    : panel.draft.id
-                      ? t("editCategory")
-                      : t("newCategory")}
-                </h2>
-                <button type="button" onClick={() => setPanel(null)} className="text-muted min-h-12 px-3">
-                  {t("close")}
-                </button>
-              </div>
-
-              {LOCALES.map((l) => (
-                <fieldset key={l} className="flex flex-col gap-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-muted text-sm font-semibold">
-                      {t(`name.${l}`)}
-                      {l !== "hy" && !panel.draft.names[l] && (
-                        <span className="text-pomegranate ml-2">● {t("languageMissing")}</span>
-                      )}
-                    </span>
-                    <input
-                      lang={l}
-                      value={panel.draft.names[l]}
-                      maxLength={panel.kind === "dish" ? 120 : 80}
-                      onChange={(e) => {
-                        const names = { ...panel.draft.names, [l]: e.target.value };
-                        setPanel(
-                          panel.kind === "dish"
-                            ? { kind: "dish", draft: { ...panel.draft, names } }
-                            : { kind: "category", draft: { ...panel.draft, names } },
-                        );
-                      }}
-                      className={`${field} h-12`}
-                    />
-                  </label>
-                  {panel.kind === "dish" && (
-                    <label className="flex flex-col gap-1">
-                      <span className="text-muted text-sm">{t(`description.${l}`)}</span>
-                      <textarea
-                        lang={l}
-                        rows={2}
-                        maxLength={600}
-                        value={panel.draft.descriptions[l]}
-                        onChange={(e) =>
-                          setPanel({
-                            kind: "dish",
-                            draft: {
-                              ...panel.draft,
-                              descriptions: { ...panel.draft.descriptions, [l]: e.target.value },
-                            },
-                          })
-                        }
-                        className={`${field} py-2`}
-                      />
-                    </label>
-                  )}
-                </fieldset>
-              ))}
-
-              {panel.kind === "dish" && panel.draft.id && (
-                <div className="flex items-center gap-4">
-                  {panel.draft.imagePath && (
-                    // eslint-disable-next-line @next/next/no-img-element -- already a 600 px WebP from Storage
-                    <img
-                      src={photoUrl(panel.draft.imagePath)}
-                      alt=""
-                      width={96}
-                      height={72}
-                      className="rounded-chip h-18 w-24 object-cover"
-                    />
-                  )}
-                  <label className="rounded-input border-tarragon text-tarragon focus-within:ring-tarragon flex min-h-12 cursor-pointer items-center border px-4 font-semibold focus-within:ring-2 focus-within:ring-offset-2">
-                    {photoStatus === "uploading"
-                      ? t("uploading")
-                      : panel.draft.imagePath
-                        ? t("changePhoto")
-                        : t("addPhoto")}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      data-testid="photo-input"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file && panel.draft.id) void uploadPhoto(panel.draft.id, file);
-                      }}
-                    />
-                  </label>
-                  {photoStatus === "failed" && (
-                    <p role="alert" className="text-pomegranate">
-                      {t("photoFailed")}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {panel.kind === "dish" && (
-                <label className="flex flex-col gap-1">
-                  <span className="text-muted text-sm font-semibold">{t("price")}</span>
-                  <input
-                    inputMode="numeric"
-                    value={panel.draft.priceText}
-                    onChange={(e) =>
-                      setPanel({ kind: "dish", draft: { ...panel.draft, priceText: e.target.value } })
-                    }
-                    className={`${field} num h-12`}
-                  />
-                </label>
-              )}
-
-              <label className="flex flex-col gap-1">
-                <span className="text-muted text-sm font-semibold">{t("prepArea")}</span>
-                <select
-                  value={panel.draft.prepAreaId ?? ""}
-                  onChange={(e) => {
-                    const prepAreaId = e.target.value || null;
-                    setPanel(
-                      panel.kind === "dish"
-                        ? { kind: "dish", draft: { ...panel.draft, prepAreaId } }
-                        : { kind: "category", draft: { ...panel.draft, prepAreaId } },
-                    );
-                  }}
-                  className={`${field} h-12`}
-                >
-                  <option value="">{t("prepAreaDefault")}</option>
-                  {data.prepAreas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {panel.kind === "dish" && (
-                <>
-                  <fieldset className="flex flex-col gap-2">
-                    <legend className="text-muted text-sm font-semibold">{t("optionGroups")}</legend>
-                    {data.groups.map((g) => (
-                      <label key={g.id} className="flex min-h-12 items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="accent-tarragon size-5"
-                          checked={panel.draft.modifierGroupIds.includes(g.id)}
-                          onChange={(e) => {
-                            const ids = e.target.checked
-                              ? [...panel.draft.modifierGroupIds, g.id]
-                              : panel.draft.modifierGroupIds.filter((x) => x !== g.id);
-                            setPanel({ kind: "dish", draft: { ...panel.draft, modifierGroupIds: ids } });
-                          }}
-                        />
-                        {nameFor(g.names, locale)}
-                      </label>
-                    ))}
-                    <Link href="/admin/menu/options" className="text-tarragon underline underline-offset-4">
-                      {t("manageOptions")}
-                    </Link>
-                  </fieldset>
-
-                  <fieldset className="flex flex-wrap gap-2">
-                    <legend className="text-muted mb-1 text-sm font-semibold">{t("tags")}</legend>
-                    {DISH_TAGS.map((tag) => {
-                      const on = panel.draft.tags.includes(tag);
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() =>
-                            setPanel({
-                              kind: "dish",
-                              draft: {
-                                ...panel.draft,
-                                tags: on
-                                  ? panel.draft.tags.filter((x) => x !== tag)
-                                  : [...panel.draft.tags, tag],
-                              },
-                            })
-                          }
-                          className={`min-h-10 rounded-full border px-3 ${on ? "border-tarragon bg-tarragon text-white" : "border-line-strong"}`}
-                        >
-                          {t(`tag.${tag}`)}
-                        </button>
-                      );
-                    })}
-                  </fieldset>
-
-                  {panel.draft.needsReview && (
-                    <label className="rounded-chip bg-apricot/15 flex min-h-12 items-center gap-3 px-3">
-                      <input
-                        type="checkbox"
-                        className="accent-tarragon size-5"
-                        checked={panel.draft.markReviewed}
-                        onChange={(e) =>
-                          setPanel({
-                            kind: "dish",
-                            draft: { ...panel.draft, markReviewed: e.target.checked },
-                          })
-                        }
-                      />
-                      {t("markReviewed")}
-                    </label>
-                  )}
-                </>
-              )}
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={pending}
-                  className="rounded-input bg-tarragon h-12 px-6 font-semibold text-white disabled:opacity-60"
-                >
-                  {status === "saving" ? t("saving") : t("save")}
-                </button>
-                {panel.kind === "dish" && panel.draft.id && (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => remove(panel.draft.id as string)}
-                    className="rounded-input border-pomegranate text-pomegranate h-12 border px-4"
-                  >
-                    {t("delete")}
-                  </button>
-                )}
-                <p aria-live="polite" className={status === "saved" ? "text-tarragon" : "text-pomegranate"}>
-                  {status === "saved" && t("saved")}
-                  {status === "failed" && t("saveFailed")}
-                  {status === "priceInvalid" && t("priceInvalid")}
-                  {status === "nameRequired" && t("nameRequired")}
-                </p>
-              </div>
-            </form>
+            <header className="border-staff-sep flex min-h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
+              <h2 className="m-0 min-w-0 flex-1 truncate text-[1.0625rem] font-bold">{panelTitle}</h2>
+              <button
+                type="button"
+                onClick={() => setPanel(null)}
+                aria-label={t("close")}
+                className="bg-staff-fill text-staff-label2 inline-grid size-11 shrink-0 place-items-center rounded-full"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">{form}</div>
+            <footer className="border-staff-sep shrink-0 border-t bg-white px-4 py-3">{actions}</footer>
           </aside>
         )}
       </div>
+
+      {panel && !wide && !bar && (
+        <Sheet title={panelTitle} closeLabel={t("close")} onClose={() => setPanel(null)} footer={actions}>
+          {form}
+        </Sheet>
+      )}
+
+      {bar && panel.kind === "dish" && (
+        <div
+          role="region"
+          aria-label={panelTitle}
+          className="admin-rise shadow-float ring-staff-sep fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto flex max-w-xl flex-col gap-3 rounded-2xl bg-white p-3 ring-1"
+        >
+          <div className="flex items-center gap-2">
+            <CircleCheck aria-hidden="true" className="text-tarragon size-6 shrink-0" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              {message}
+              <span className="truncate text-[1.0625rem] font-semibold">{panelTitle}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className={button("secondary", "min-h-11 px-3 text-[0.9375rem]")}
+            >
+              <Pencil aria-hidden="true" className="!size-4" />
+              {t("edit")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPanel(null)}
+              aria-label={t("close")}
+              className="bg-staff-fill text-staff-label2 inline-grid size-11 shrink-0 place-items-center rounded-full"
+            >
+              <X aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+          {photo}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl bg-white p-4">
+      <h3 className="m-0 text-[0.9375rem] font-bold">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+// The dish photo: a thumbnail and a button-like label around the file input.
+function PhotoPicker({
+  path,
+  status,
+  onPick,
+}: {
+  path: string | null;
+  status: "idle" | "uploading" | "failed";
+  onPick: (file: File) => void;
+}) {
+  const t = useTranslations("menu");
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {path && (
+        // eslint-disable-next-line @next/next/no-img-element -- already a 600 px WebP from Storage
+        <img
+          src={photoUrl(path)}
+          alt=""
+          width={64}
+          height={48}
+          className="h-12 w-16 rounded-[0.625rem] object-cover"
+        />
+      )}
+      <label
+        className={button(
+          "tinted",
+          "has-[:focus-visible]:outline-tarragon min-h-11 cursor-pointer text-[0.9375rem] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
+        )}
+      >
+        <ImagePlus aria-hidden="true" />
+        {status === "uploading" ? t("uploading") : path ? t("changePhoto") : t("addPhoto")}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="sr-only"
+          data-testid="photo-input"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onPick(file);
+          }}
+        />
+      </label>
+      {status === "failed" && (
+        <p
+          role="alert"
+          className="text-pomegranate m-0 flex items-center gap-1.5 text-[0.9375rem] font-semibold"
+        >
+          <CircleAlert aria-hidden="true" className="size-4" />
+          {t("photoFailed")}
+        </p>
+      )}
     </div>
   );
 }

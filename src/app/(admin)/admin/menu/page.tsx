@@ -1,5 +1,9 @@
+import { SlidersHorizontal } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
+import { AdminPage } from "@/features/admin-ui/page";
+import { button } from "@/features/admin-ui/styles";
 import { loadMenuEditor } from "@/features/menu/load.server";
 import { MenuEditor } from "@/features/menu/menu-editor";
 import { requireMember } from "@/lib/auth/require-member";
@@ -9,11 +13,21 @@ export default async function MenuPage() {
   const data = await loadMenuEditor(me.restaurantId);
   const t = await getTranslations("menu");
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <h1 className="display-face text-display-38">{t("title")}</h1>
+    <AdminPage
+      title={t("title")}
+      width="xl"
+      actions={
+        data.categories.length > 0 && (
+          <Link href="/admin/menu/options" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
+            <SlidersHorizontal aria-hidden="true" className="!size-4" />
+            {t("manageOptions")}
+          </Link>
+        )
+      }
+    >
       <NextIntlClientProvider>
         <MenuEditor data={data} />
       </NextIntlClientProvider>
-    </main>
+    </AdminPage>
   );
 }

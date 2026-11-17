@@ -13,8 +13,8 @@ export type HourlyText = {
 
 const pad = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
 
-// Orders per hour as columns (tarragon), with the comparison period as a grey
-// level mark in each column. Plain HTML, no chart library and no client JS:
+// Orders per hour as columns (tarragon), with the comparison period as a dark
+// level mark in each column (a bar and a line: two shapes, not two colours). Plain HTML, no chart library and no client JS:
 // the native tooltip and the table below carry the exact numbers.
 export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: HourlyText }) {
   const max = Math.max(1, ...rows.map((r) => Math.max(r.orders, r.compare_orders)));
@@ -25,47 +25,47 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
   return (
     <figure className="flex flex-col gap-3" aria-labelledby="hourly-title">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 id="hourly-title" className="text-xl font-semibold">
+        <h2 id="hourly-title" className="m-0 text-[1.25rem] leading-tight font-bold">
           {text.title}
         </h2>
-        <ul className="text-muted flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <ul className="text-staff-label2 m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[0.9375rem]">
           <li className="flex items-center gap-2">
             <span aria-hidden className="bg-tarragon inline-block h-3 w-3 rounded-[3px]" />
             {text.seriesNow}
           </li>
           <li className="flex items-center gap-2">
-            <span aria-hidden className="bg-line-strong inline-block h-0.5 w-4" />
+            <span aria-hidden className="bg-ink inline-block h-1 w-4 rounded-full" />
             {text.seriesBefore}
           </li>
         </ul>
       </figcaption>
 
       <div className="grid grid-cols-[auto_1fr] gap-x-2" aria-hidden>
-        <div className="num text-muted flex h-44 flex-col justify-between text-right text-xs">
+        <div className="num text-staff-label2 flex h-48 flex-col justify-between text-right text-[0.8125rem]">
           {ticks.map((v, i) => (
             <span key={i} className="-translate-y-1/2 first:translate-y-0 last:translate-y-0">
               {v}
             </span>
           ))}
         </div>
-        <div className="border-line relative h-44 border-b">
-          <div className="border-mist absolute inset-x-0 top-0 border-t" />
-          <div className="border-mist absolute inset-x-0 top-1/2 border-t" />
+        <div className="border-staff-field relative h-48 border-b">
+          <div className="border-staff-sep absolute inset-x-0 top-0 border-t border-dashed" />
+          <div className="border-staff-sep absolute inset-x-0 top-1/2 border-t border-dashed" />
           <div className="absolute inset-0 flex">
             {rows.map((r) => (
               <div
                 key={r.hour}
                 title={text.tip(r, pad(r.hour), pad(r.hour + 1))}
                 data-testid="hour-column"
-                className="group hover:bg-mist/60 relative flex h-full flex-1 items-end justify-center px-px"
+                className="group hover:bg-staff-fill/70 relative flex h-full flex-1 items-end justify-center rounded-t-md px-px"
               >
                 <div
-                  className="bg-tarragon w-full max-w-6 rounded-t-[4px]"
+                  className="bg-tarragon w-full max-w-7 rounded-t-md"
                   style={{ height: `${(r.orders / top) * 100}%` }}
                 />
                 {r.compare_orders > 0 && (
                   <div
-                    className="bg-line-strong absolute inset-x-1 h-0.5 rounded-full ring-2 ring-white"
+                    className="bg-ink absolute inset-x-1 h-1 rounded-full ring-2 ring-white"
                     style={{ bottom: `calc(${(r.compare_orders / top) * 100}% - 1px)` }}
                   />
                 )}
@@ -74,7 +74,7 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
           </div>
         </div>
         <span />
-        <div className="num text-muted flex pt-1 text-xs">
+        <div className="num text-staff-label2 flex pt-1 text-[0.8125rem]">
           {rows.map((r, i) => (
             <span key={r.hour} className="flex-1 text-center">
               {i % labelEvery === 0 ? String(r.hour).padStart(2, "0") : ""}
@@ -83,12 +83,12 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
         </div>
       </div>
 
-      <details className="text-sm">
-        <summary className="text-tarragon inline-flex min-h-11 cursor-pointer items-center font-semibold">
+      <details>
+        <summary className="text-tarragon inline-flex min-h-11 cursor-pointer items-center rounded-lg font-semibold">
           {text.showTable}
         </summary>
-        <table className="num mt-2 w-full max-w-md text-left">
-          <thead className="text-muted">
+        <table className="num mt-2 w-full max-w-md border-collapse text-left text-[0.9375rem]">
+          <thead className="text-staff-label2">
             <tr>
               <th className="py-1 font-semibold">{text.colHour}</th>
               <th className="py-1 text-right font-semibold">{text.colNow}</th>
@@ -97,7 +97,7 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.hour} className="border-line border-t">
+              <tr key={r.hour} className="border-staff-sep border-t">
                 <td className="py-1">
                   {pad(r.hour)}–{pad(r.hour + 1)}
                 </td>
