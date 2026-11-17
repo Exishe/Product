@@ -717,7 +717,7 @@ export const game: Game = {
       if (mult() > before) multBump = 1;
       const m = mult();
       addScore(m);
-      pop(it.x, it.y - R * 0.6, `+${m}`);
+      pop(it.x, it.y - R * 1.4, `+${m}`);
       combo.n++;
       combo.t = 0;
       combo.x = it.x;
@@ -857,7 +857,7 @@ export const game: Game = {
       ctx.save();
       if (shake > 0) ctx.translate(rand(-1, 1) * shake * 10, rand(-1, 1) * shake * 10);
       for (const s of stains) {
-        ctx.globalAlpha = 0.42 * Math.min(1, s.life / 1.5);
+        ctx.globalAlpha = 0.5 * Math.min(1, s.life / 1.5);
         ctx.beginPath();
         for (let i = 0; i < s.b.length; i += 3) {
           ctx.moveTo(s.x + s.b[i]! + s.b[i + 2]!, s.y + s.b[i + 1]!);
@@ -877,7 +877,7 @@ export const game: Game = {
         blit(ctx, h.e, 0, R);
         // The cut face, tilted toward us: the cross-section squashed onto the cut line.
         ctx.rotate(h.cut);
-        ctx.scale(1, 0.5);
+        ctx.scale(1, 0.62);
         ctx.rotate(-h.cut);
         blit(ctx, h.e, 1, R);
         ctx.restore();
