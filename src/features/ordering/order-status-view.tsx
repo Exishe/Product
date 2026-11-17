@@ -13,6 +13,7 @@ import type { Database } from "@/lib/supabase/database";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { NotifyReady } from "./notify-ready";
+import { GamesCorner } from "@/features/games/games-corner";
 import { displayStatus, isActive, STEPS, stepIndex, type DisplayStatus, type OrderState } from "./order-status";
 
 type Db = SupabaseClient<Database>;
@@ -336,6 +337,7 @@ export function OrderStatusView({
               {t("order.orderMore")}
             </a>
           </p>
+          <GamesCorner ready={latestStatus === "ready"} />
         </>
       )}
 
