@@ -5,7 +5,13 @@ import { normalizeForSearch } from "@/lib/format/search";
 // plus today's stop list and the kitchen-busy notice).
 type I18n = Partial<Record<string, string | null>> | null;
 type SnapshotModifier = { id: string; price_delta: number; is_default: boolean; name: I18n };
-type SnapshotGroup = { id: string; min: number; max: number; name: I18n; modifiers: SnapshotModifier[] | null };
+type SnapshotGroup = {
+  id: string;
+  min: number;
+  max: number;
+  name: I18n;
+  modifiers: SnapshotModifier[] | null;
+};
 type SnapshotItem = {
   name: I18n;
   description: I18n;
@@ -13,12 +19,15 @@ type SnapshotItem = {
   portion: { amount: number; unit: string } | null;
   tags: string[] | null;
   groups: SnapshotGroup[] | null;
+  image?: string | null;
 };
 export type PublicMenu = {
   restaurant: { name: string };
   location: { id: string; name: string; locales: string[]; ordering: boolean };
   menu: {
-    menus: { id: string; name: I18n; categories: { id: string; name: I18n; item_ids: string[] }[] | null }[] | null;
+    menus:
+      | { id: string; name: I18n; categories: { id: string; name: I18n; item_ids: string[] }[] | null }[]
+      | null;
     items: Record<string, SnapshotItem>;
   };
   sold_out: string[] | null;
@@ -28,7 +37,13 @@ export type PublicMenu = {
 /** A piece of menu text and the language it is actually in. */
 export type Text = { text: string; lang: Locale };
 export type GuestModifier = { id: string; name: Text; delta: number; isDefault: boolean };
-export type GuestGroup = { id: string; min: number; max: number; name: Text | null; modifiers: GuestModifier[] };
+export type GuestGroup = {
+  id: string;
+  min: number;
+  max: number;
+  name: Text | null;
+  modifiers: GuestModifier[];
+};
 export type GuestItem = {
   id: string;
   name: Text;
@@ -38,6 +53,8 @@ export type GuestItem = {
   tags: GuestTag[];
   soldOut: boolean;
   groups: GuestGroup[];
+  /** Storage path of the dish photo in the menu-images bucket. */
+  image: string | null;
   /** Every language's name, normalized for cross-script search (one per line). */
   search: string;
 };
@@ -91,6 +108,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
       portion: raw.portion && unit ? { amount: raw.portion.amount, unit } : null,
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
       soldOut: soldOut.has(id),
+      image: typeof raw.image === "string" && raw.image ? raw.image : null,
       groups: (raw.groups ?? []).map((g) => ({
         id: g.id,
         min: g.min,

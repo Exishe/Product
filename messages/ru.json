@@ -590,7 +590,11 @@
         "spicy": "острое",
         "new": "новинка",
         "popular": "популярное"
-      }
+      },
+      "callConfirm": "Позвать официанта?",
+      "callYes": "Да, позвать",
+      "callCancel": "Нет",
+      "waiterCalled": "Официант вызван"
     },
     "sheet": {
       "required": "Обязательно",

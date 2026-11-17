@@ -7,6 +7,7 @@ import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { OrderSender } from "@/features/ordering/order-sender";
 import { formatAmd } from "@/lib/format/money";
 import { normalizeForSearch } from "@/lib/format/search";
+import { CallWaiterButton } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
 import { DishRow } from "./dish-row";
@@ -16,10 +17,13 @@ import { initialSelection, selectedIds } from "./selection";
 import { Notice, Txt } from "./ui";
 import type { GuestItem, GuestMenuData } from "./view-model";
 
-export type TableState = { kind: "ok"; id: string; label: string; token: string } | { kind: "none" } | { kind: "invalid" };
+export type TableState =
+  { kind: "ok"; id: string; label: string; token: string } | { kind: "none" } | { kind: "invalid" };
 
 const newId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const CART_HASH = "#cart";
 
@@ -44,15 +48,28 @@ export function GuestMenu({
   // Dishes the database said sold out while sending (the menu was loaded earlier).
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
+  // The big header has scrolled away: show the slim bar above the tabs.
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
   const canOrder = menu.ordering && table.kind === "ok";
 
-  const items = useMemo(() => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))), [menu]);
+  const items = useMemo(
+    () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
+    [menu],
+  );
   const cartMenu: CartMenu = useMemo(
     () =>
       Object.fromEntries(
         Object.values(items).map((i) => [
           i.id,
-          { price: i.price, soldOut: i.soldOut || soldOutNow.includes(i.id), groups: i.groups.map((g) => ({ ...g, modifiers: g.modifiers.map((m) => ({ id: m.id, delta: m.delta })) })) },
+          {
+            price: i.price,
+            soldOut: i.soldOut || soldOutNow.includes(i.id),
+            groups: i.groups.map((g) => ({
+              ...g,
+              modifiers: g.modifiers.map((m) => ({ id: m.id, delta: m.delta })),
+            })),
+          },
         ]),
       ),
     [items, soldOutNow],
@@ -61,7 +78,12 @@ export function GuestMenu({
 
   const q = normalizeForSearch(query);
   const shown = useMemo(
-    () => (q ? menu.categories.map((c) => ({ ...c, items: c.items.filter((i) => i.search.includes(q)) })).filter((c) => c.items.length) : menu.categories),
+    () =>
+      q
+        ? menu.categories
+            .map((c) => ({ ...c, items: c.items.filter((i) => i.search.includes(q)) }))
+            .filter((c) => c.items.length)
+        : menu.categories,
     [menu.categories, q],
   );
 
@@ -92,12 +114,25 @@ export function GuestMenu({
   }, [view]);
 
   useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => entry && setScrolled(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [view]);
+
+  useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2400);
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const onSoldOut = useCallback((itemId: string) => setSoldOutNow((ids) => (ids.includes(itemId) ? ids : [...ids, itemId])), []);
+  const onSoldOut = useCallback(
+    (itemId: string) => setSoldOutNow((ids) => (ids.includes(itemId) ? ids : [...ids, itemId])),
+    [],
+  );
   const clearCart = useCallback(() => updateCart(() => []), [updateCart]);
 
   const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
@@ -105,7 +140,11 @@ export function GuestMenu({
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
   const quickAdd = (item: GuestItem) =>
-    add(item, { modifierIds: selectedIds(item.groups, initialSelection(item.groups)), quantity: 1, note: "" });
+    add(item, {
+      modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
+      quantity: 1,
+      note: "",
+    });
 
   const orderingNotice =
     table.kind === "invalid" ? (
@@ -122,7 +161,9 @@ export function GuestMenu({
         summary={summary}
         items={items}
         locked={locked}
-        notice={orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)}
+        notice={
+          orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
+        }
         footer={
           canOrder && table.kind === "ok" && orderHref ? (
             <OrderSender
@@ -153,7 +194,9 @@ export function GuestMenu({
           {orderingNotice}
           {menu.kitchenBusy && canOrder && (
             <Notice tone="busy">
-              {menu.kitchenBusy.minutes ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes }) : t("menu.kitchenBusyNoTime")}
+              {menu.kitchenBusy.minutes
+                ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
+                : t("menu.kitchenBusyNoTime")}
             </Notice>
           )}
         </div>
@@ -170,22 +213,61 @@ export function GuestMenu({
           placeholder={t("menu.search")}
           autoComplete="off"
           enterKeyHint="search"
-          className="min-h-12 w-full rounded-input border border-line-strong bg-white px-4 placeholder:text-muted"
+          className="rounded-input border-line-strong placeholder:text-muted min-h-12 w-full border bg-white px-4"
         />
       </div>
-      <CategoryNav categories={shown} />
+      <div ref={sentinel} aria-hidden="true" />
+      {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
+      <div
+        className={`bg-matsoni fixed inset-x-0 top-0 z-20 mx-auto max-w-[430px] ${styles.slim}`}
+        data-shown={scrolled}
+        data-testid="slim-bar"
+        inert={!scrolled}
+      >
+        <div className="flex h-14 items-center gap-2 px-4">
+          <span className="display-face min-w-0 flex-1 truncate text-xl">{menu.restaurantName}</span>
+          {table.kind === "ok" && (
+            <span className="bg-tarragon-tint text-tarragon flex-none rounded-full px-2.5 py-0.5 text-sm font-semibold">
+              {t("table", { label: table.label })}
+            </span>
+          )}
+          {canOrder && table.kind === "ok" && (
+            <CallWaiterButton token={table.token} tableId={table.id} compact />
+          )}
+        </div>
+      </div>
+      <CategoryNav categories={shown} belowBar={scrolled} />
       <main className="flex-1 px-4 pb-8">
         {shown.length === 0 ? (
-          <p className="py-12 text-center text-muted" role="status">
+          <p className="text-muted py-12 text-center" role="status">
             {t("menu.noResults")}
           </p>
         ) : (
           shown.map((c) => (
-            <section key={c.id} id={sectionId(c.id)} aria-labelledby={`h-${c.id}`} className="scroll-mt-20 pt-6">
-              {c.name && <Txt as="h2" id={`h-${c.id}`} value={c.name} locale={locale} className="display-face mb-2 text-3xl text-tarragon" />}
+            <section
+              key={c.id}
+              id={sectionId(c.id)}
+              aria-labelledby={`h-${c.id}`}
+              className="scroll-mt-32 pt-6"
+            >
+              {c.name && (
+                <Txt
+                  as="h2"
+                  id={`h-${c.id}`}
+                  value={c.name}
+                  locale={locale}
+                  className="display-face text-tarragon mb-2 text-3xl"
+                />
+              )}
               <ul>
                 {c.items.map((item) => (
-                  <DishRow key={item.id} item={item} canOrder={canOrder} onOpen={setSheet} onQuickAdd={quickAdd} />
+                  <DishRow
+                    key={item.id}
+                    item={item}
+                    canOrder={canOrder}
+                    onOpen={setSheet}
+                    onQuickAdd={quickAdd}
+                  />
                 ))}
               </ul>
             </section>
@@ -193,11 +275,11 @@ export function GuestMenu({
         )}
       </main>
       {lines.length > 0 && (
-        <div className="sticky bottom-0 z-10 bg-linear-to-t from-matsoni from-70% to-transparent px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
+        <div className="from-matsoni sticky bottom-0 z-10 bg-linear-to-t from-70% to-transparent px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
           <button
             type="button"
             onClick={openCart}
-            className="flex min-h-14 w-full items-center justify-between gap-3 rounded-sheet bg-apricot px-4 text-left font-semibold text-ink shadow-float"
+            className="rounded-sheet bg-apricot text-ink shadow-float flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left font-semibold"
           >
             <span className="flex flex-col leading-tight">
               {t("menu.viewOrder")}
@@ -223,7 +305,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`fixed bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-sheet bg-ink px-4 py-3 text-matsoni shadow-float ${styles.toast}`}
+          className={`rounded-sheet bg-ink text-matsoni shadow-float fixed bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-1/2 z-30 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-4 py-3 ${styles.toast}`}
         >
           {toast.text}
         </p>

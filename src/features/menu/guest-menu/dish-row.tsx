@@ -2,11 +2,13 @@
 
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { PlusIcon, Txt } from "./ui";
+import { PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
-// One dish as a line of a printed menu: name, dotted leader, price, a line of
-// description, portion and tags, and the round apricot "+" (design/guest.html).
+// One dish as a line of a printed menu: name, dotted leader and price, a line
+// or two of description, portion and tag chips. On the right, the photo (when
+// the café added one) with the round apricot "+" on its corner, so a dish
+// takes one compact row.
 export function DishRow({
   item,
   canOrder,
@@ -24,10 +26,14 @@ export function DishRow({
   const showAdd = canOrder && !item.soldOut;
   const hasFacts = item.portion !== null || item.tags.length > 0;
   return (
-    <li className="grid grid-cols-1 gap-0.5 border-b border-line py-3" data-testid="dish" data-dish-id={item.id}>
+    <li
+      className="border-line flex items-center gap-3 border-b py-3"
+      data-testid="dish"
+      data-dish-id={item.id}
+    >
       <button
         type="button"
-        className="block min-w-0 text-left disabled:cursor-default"
+        className="block min-w-0 flex-1 text-left disabled:cursor-default"
         disabled={item.soldOut}
         onClick={() => onOpen(item)}
       >
@@ -35,43 +41,74 @@ export function DishRow({
           <Txt
             value={item.name}
             locale={locale}
-            className={`display-face min-w-0 text-2xl leading-[1.15] [overflow-wrap:anywhere] ${muted}`}
+            className={`display-face min-w-0 text-[1.375rem] leading-[1.15] [overflow-wrap:anywhere] ${muted}`}
           />
-          <span aria-hidden="true" className="min-w-4 flex-1 -translate-y-[0.3em] border-b-2 border-dotted border-line-strong" />
-          <span className={`num font-semibold whitespace-nowrap ${muted}`}>{formatAmd(item.price, locale)}</span>
+          <span
+            aria-hidden="true"
+            className="border-line-strong min-w-4 flex-1 -translate-y-[0.3em] border-b-2 border-dotted"
+          />
+          <span className={`num font-semibold whitespace-nowrap ${muted}`}>
+            {formatAmd(item.price, locale)}
+          </span>
         </span>
         {item.description && (
-          <Txt value={item.description} locale={locale} as="span" className="mt-0.5 block max-w-[34ch] text-sm text-muted" />
+          <Txt
+            value={item.description}
+            locale={locale}
+            as="span"
+            className="text-muted mt-0.5 line-clamp-2 block text-sm"
+          />
+        )}
+        {(hasFacts || item.soldOut) && (
+          <span className="text-muted mt-1.5 flex flex-wrap items-center gap-1.5 text-sm">
+            {item.soldOut && <span className="text-pomegranate font-semibold">{t("menu.soldOut")}</span>}
+            {item.portion && (
+              <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
+            )}
+            {item.tags.map((tag) => (
+              <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+            ))}
+          </span>
         )}
       </button>
-      <div
-        className={`flex items-center justify-between gap-2 ${showAdd ? "min-h-12" : "mt-1"}`}
-        hidden={!showAdd && !hasFacts && !item.soldOut}
-      >
-        <span className="flex flex-wrap gap-x-2 text-sm text-muted">
-          {item.portion && <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>}
-          {item.tags.map((tag) => (
-            <span key={tag} className="font-semibold text-tarragon">
-              {t(`menu.tags.${tag}`)}
-            </span>
-          ))}
-        </span>
-        {item.soldOut ? (
-          <span className="text-sm font-semibold text-pomegranate">{t("menu.soldOut")}</span>
-        ) : (
-          showAdd && (
+      {(item.image || showAdd) && (
+        <div className="relative flex-none">
+          {item.image && (
             <button
               type="button"
-              className="grid size-12 flex-none place-items-center rounded-full bg-apricot text-ink active:bg-apricot-deep"
+              tabIndex={-1}
+              aria-hidden="true"
+              disabled={item.soldOut}
+              onClick={() => onOpen(item)}
+              className="block"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp */}
+              <img
+                src={dishPhotoUrl(item.image)}
+                alt=""
+                width={88}
+                height={88}
+                loading="lazy"
+                decoding="async"
+                className={`rounded-input bg-mist size-[88px] object-cover ${item.soldOut ? "opacity-50 grayscale" : ""}`}
+              />
+            </button>
+          )}
+          {showAdd && (
+            <button
+              type="button"
+              className={`bg-apricot text-ink hover:bg-apricot-deep grid size-12 place-items-center rounded-full transition-transform active:scale-90 ${
+                item.image ? "ring-matsoni absolute -right-1.5 -bottom-1.5 ring-4" : ""
+              }`}
               aria-label={t("menu.add", { name: item.name.text })}
               aria-haspopup={needsChoice ? "dialog" : undefined}
               onClick={() => (needsChoice ? onOpen(item) : onQuickAdd(item))}
             >
               <PlusIcon />
             </button>
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </li>
   );
 }

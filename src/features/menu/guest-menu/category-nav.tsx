@@ -12,7 +12,13 @@ const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matc
 
 // Sticky section tabs. The tab of the section under the bar is highlighted
 // while scrolling and kept in view inside the bar.
-export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
+export function CategoryNav({
+  categories,
+  belowBar = false,
+}: {
+  categories: GuestCategory[];
+  /** The slim bar is showing above. */ belowBar?: boolean;
+}) {
   const { t, locale } = useGuestI18n();
   const nav = useRef<HTMLElement>(null);
   const [active, setActive] = useState(categories[0]?.id ?? null);
@@ -57,7 +63,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
     <nav
       ref={nav}
       aria-label={t("menu.categories")}
-      className={`sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-line bg-matsoni px-4 py-2 ${styles.tabs}`}
+      className={`sticky z-10 flex gap-2 transition-[top] duration-200 motion-reduce:transition-none ${belowBar ? "top-14" : "top-0"} border-line bg-matsoni overflow-x-auto border-b px-4 py-2 ${styles.tabs}`}
     >
       {categories.map((c) => (
         <a
@@ -70,7 +76,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
             setActive(c.id);
             document.getElementById(sectionId(c.id))?.scrollIntoView({ behavior: smooth(), block: "start" });
           }}
-          className="flex min-h-12 flex-none items-center rounded-chip px-3 font-semibold whitespace-nowrap text-muted aria-[current=true]:bg-tarragon aria-[current=true]:text-white"
+          className="rounded-chip text-muted aria-[current=true]:bg-tarragon flex min-h-12 flex-none items-center px-3 font-semibold whitespace-nowrap aria-[current=true]:text-white"
         >
           {c.name ? <Txt value={c.name} locale={locale} /> : null}
         </a>

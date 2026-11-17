@@ -590,7 +590,11 @@
         "spicy": "կծու",
         "new": "նոր",
         "popular": "սիրված"
-      }
+      },
+      "callConfirm": "Կանչե՞լ մատուցողին",
+      "callYes": "Այո, կանչել",
+      "callCancel": "Ոչ",
+      "waiterCalled": "Մատուցողը կանչված է"
     },
     "sheet": {
       "required": "Պարտադիր է",

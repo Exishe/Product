@@ -590,7 +590,11 @@
         "spicy": "spicy",
         "new": "new",
         "popular": "popular"
-      }
+      },
+      "callConfirm": "Call the waiter?",
+      "callYes": "Yes, call",
+      "callCancel": "No",
+      "waiterCalled": "Waiter called"
     },
     "sheet": {
       "required": "Required",
