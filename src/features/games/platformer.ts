@@ -1,79 +1,87 @@
-// "Rooftop Cat": a ginger cat runs across Yerevan rooftops at sunset, jumps
-// gaps, stomps pigeons, picks apricots and reaches the café door. Three short
-// hand-made levels. No words on the canvas.
+// "Café Cat": the café's cheeky ginger cat sneaks through the kitchen, the
+// pantry and the closed café hall to steal the chef's plate of fish. It hops
+// over counters, stoves, crates and tables, snacks on fish and sausages,
+// flattens mice, swats flies, dodges hot burners and the chef's broom. Three
+// short hand-made levels. No words on the canvas.
 //
 // Art direction (docs/games/reference/art-direction.md)
-// - Mood: a warm Yerevan evening; a ginger cat trots home over pink tufa roofs
-//   towards a low sun. Unhurried, golden, a little cosy.
-// - Camera and scale: side view, 2.5D in layers: sky, Ararat, three city
-//   layers with parallax, then the play layer. 10 tile rows fill the top 65%
-//   of the screen; vector shapes scale with the tile, no pixel grid.
-// - Shapes: the cat round and soft (ovals, a curved tail); the walking pigeon
-//   a plump upright blob, the flying pigeon a wide wing V; the world blocky
-//   (tufa blocks, tin ribs, straight poles).
-// - Values: the cat and pigeons carry the strongest contrast (dark outline,
-//   saturated fill); sky and far city stay pale in a narrow range; roofs mid.
-// - Palette: cat ginger #e8873a (player), slate pigeons #8d98a8 / #5d6680
-//   (threat), tufa #d98c6a (ground), apricot and gold (reward), tarragon door
-//   (goal). Warm key light from the sun on the right (#ffd2a0 on right edges
-//   and roof tops); cool violet shadow on left and under edges. Far layers
-//   paler and cooler, near layers darker and warmer.
-// - Detail: faces, the apricots, the café door and its cup sign; far layers
-//   are flat shapes with window dots, nothing busy behind play.
+// - Mood: a cartoon caper; a smug cat on a fish heist through a cosy
+//   Yerevan café after hours. Mischief, not danger.
+// - Camera and scale: side view, 2.5D in layers: the back wall with windows
+//   (Ararat in them) and lamps at half parallax, then the furniture you play
+//   on. 10 tile rows fill the top 65% of the screen; figures and furniture are
+//   drawn in tile units, so everything scales with the tile, no pixel grid.
+// - Shapes: the cat round and soft (ovals, a curved tail); the mouse a low
+//   pear with a long tail, the fly a dot with glassy wings, the chef a tall
+//   white pear under a toque with a broom out in front: three silhouettes
+//   that never mix. The world is blocky furniture: counters, stoves, crates,
+//   sacks, barrels, tables, racks and chandeliers.
+// - Values: the cat (ginger with a dark outline) and the chef's white coat are
+//   the strongest contrasts; flames are the brightest hot spots; the back wall
+//   stays in a narrow, soft range per level (cream kitchen, brown cellar, deep
+//   blue hall at night).
+// - Palette: cat ginger #e8873a (player); mouse grey, fly black, chef white
+//   with a broom of straw (threats); burners orange-yellow when lit, blue when
+//   low (hazard timing); wood, steel and tufa for furniture (ground); silver
+//   fish, red sausages, gold plates (reward). Warm lamp light from above,
+//   cool shade underneath.
+// - Detail: the cat's face (smug grin, wide eyes when hurt, happy squint and
+//   tail up when winning), the chef's moustache, the fish; walls stay plain.
 // - Rules: one vector style; dark outline on characters only, never on the
-//   world; flat fills with one warm key and cool shade, haze for distance.
-// - Signature: window lights across the far city as the sun sinks behind
-//   Ararat, and chimneys that start smoking once the cat passes them.
+//   world; flat fills, one warm key light from the lamps, cool shade below.
+// - Signature: Ararat in every window, and pans that swing and clang when the
+//   cat lands on the pot rack.
 import { C, clamp, createPad, fitCanvas, label, loop, pick, rand, roundRect, type Game, type PadButton, type Size } from "./engine";
 
 // Tile maps, 10 rows each (falling below the last row costs a life).
-// Solid: # tufa, = tin roof, W water tank, H chimney.
-// One-way (jump up through): - plank, ~ laundry line. Decor: A antenna.
-// Things: P start, o apricot, G golden apricot, p pigeon, f flying pigeon,
-// K checkpoint, D café door.
+// Solid: # floor, C counter, O stove, X crate, S flour sack, B barrel, = bar.
+// One-way (jump up through): - shelf, ~ pot rack, t table, Y chandelier.
+// Hazards: ^ burner (on a stove), _ soapy puddle. Decor: h chair.
+// Things: P start, o fish or sausage, G fish on a plate, m mouse, f fly,
+// c chef, K checkpoint (a milk saucer), D the chef's plate of fish.
 const LEVELS: string[][] = [
   [
     "",
     "",
     "",
-    "",
-    "                    oooo               ooo                                    oo     oooo",
-    "                    ----             ~~~~~~~  o         G                 p          ----",
-    "               oo                 H  K                                 ######    K H",
-    "  P  ooo  A              p       ############      p    W  oo      A   ######   #############    oo p   A   D",
-    "###############  ==============  ############   ###############  ======######   #############  =================",
-    "###############  ##############  ############   ###############  ############   #############  #################",
+    "            oo   ooo       ooo        o o o G       oo  oo                          G",
+    "                 ---      ~~~~~      --------                       f             ~~~~~",
+    "          oo^^                                      ^^  ^^                      oo",
+    "          CCOOCC       CC         CC          CC  CCOOCCOOCC            ooo     CC",
+    "  P  ooo  CCOOCC    m  CC       K CC    c     CC  CCOOCCOOCC  K  __    m        CC      m    D",
+    "###########################   ##############################################  ####################",
+    "###########################   ##############################################  ####################",
   ],
   [
     "",
     "",
-    "",
-    "                                                               G",
-    "                  ooo                                     p           ooo",
-    "                 -----       oooo       o               ======       ------     o  o  o",
-    "             oo  H  p       ~~~~~~                  oop ######    K   p    p   ~~~~~~~                oo",
-    "  P   oo A     ============         K   W         ############   #############          pA W         ######     oop  H   D",
-    "############   ############        ############   ############   #############         ===========   ######   ################",
-    "############   ############        ############   ############   #############         ###########   ######   ################",
+    "                                                                ooo",
+    "                     oooo                                       ---",
+    "             oo      ----        ooo       G                 XX             oooo    f",
+    "           ooXX                           ---                XX   f         ----        oo",
+    "           SSXX   BB           BB   XX                     BBXX         XX              BB",
+    "  P  ooo SSSSXX   BB      m  K BB   XX   m   S   m __   K  BBXX         XXS     m       BB     D",
+    "###############   ###############   ###########################     ################################",
+    "###############   ###############   ###########################     ################################",
   ],
   [
     "",
     "",
-    "                                                                                f",
-    "              f                      Goo                                                                         f",
-    "                    o                ----                               p     ooo                 f",
-    "                                      p              ooo              ###### ~~~~~                          oo             G",
-    "              o  p  W               ###### ~~~~     -----     o   H   ######         K p W        oo      #####          ----",
-    "  P   ooo       ==========      K   ######       K  p  A        ############        ============       p  #####     K   p     p   A  D",
-    "#############   ##########    ############      =============   ############        ############    ###########    =======================",
-    "#############   ##########    ############      #############   ############        ############    ###########    #######################",
+    "                                     G",
+    "            ooo                  ooo   ooo                            ooo",
+    "            YYY                  YYY   YYY                            YYY     f",
+    "        oho         h                         oooo                h         G            oo",
+    "        ttt        ttt        ==              ====               ttt       ttt           ==",
+    "  P oooh   h    m h   h     K ==      c       ====  __ m      K h   h     h   h  ooom    ==    D",
+    "########################  ################################  ########################################",
+    "########################  ################################  ########################################",
   ],
 ];
 
 const ROWS = 10;
 // Physics in tiles and seconds. A full jump rises 3.3 tiles; falling pulls
 // 1.25x harder than rising, so a full-run jump clears about 4.6 tiles of
-// flat gap. The maps never ask for more than a 4-tile gap or a 2-tile step.
+// flat gap. The maps never ask for more than a 3-tile gap or a 2-tile step.
 const RUN = 7;
 const ACC = 48;
 const AIR = 34;
@@ -88,28 +96,29 @@ const HW = 0.35; // cat half width (against walls and floors)
 const CH = 0.8; // cat height
 const HARD = 16; // landing speed that thuds
 const RESPAWN = 0.5; // seconds from a fall or hit to the checkpoint
+const LIVES = 5;
 const TAU = Math.PI * 2;
 
-type Foe = { x: number; y: number; vx: number; fly: boolean; bx: number; by: number; t: number; dead: boolean; dt: number };
-type Item = { x: number; y: number; gold: boolean; got: boolean };
-// k: 0 debris, 1 feather, 2 score pop, 3 dust, 4 sparkle, 5 confetti
+// k: 0 mouse, 1 fly, 2 chef. dt: time since stomped (chef: since his hat was).
+type Foe = { x: number; y: number; vx: number; k: number; bx: number; by: number; t: number; dead: boolean; dt: number };
+type Item = { x: number; y: number; gold: boolean; sau: boolean; got: boolean };
+// k: 0 debris, 1 heart, 2 score pop, 3 dust and steam, 4 sparkle, 5 confetti
 type Spark = { x: number; y: number; vx: number; vy: number; life: number; max: number; col: string; k: number; rot: number; txt?: string };
 
 const ORANGE = "#e8873a";
 const ORANGE_DARK = "#b85f1e";
 const GOLD = "#ffd23f";
-const CLOTHES = [C.pomegranate, C.matsoni, C.tarragonLight, C.apricot, "#6b8fd6"];
+const FRIED = "#f0a23a";
 const CONFETTI = [C.apricot, C.pomegranate, C.tarragonLight, GOLD, "#6b8fd6", C.matsoni];
-const RIM = "rgba(255,210,160,0.6)"; // the sun's key light
-const SHADE = "rgba(70,40,100,0.22)"; // cool shadow
-// Far to near: parallax, colour, min/max height (tiles), seed, rim strength
-const CITY = [
-  [0.1, "#d2b4cf", 2.6, 5, 11, 0.2],
-  [0.25, "#ba8c9b", 1.6, 3.8, 57, 0.3],
-  [0.5, "#8e5f68", 0.8, 3, 93, 0.45],
+// Per level: wall top, wall bottom, wainscot, floor tones A and B, floor body,
+// sky top and bottom (in the windows), window frame
+const THEME = [
+  ["#f8ecd6", "#ecd5b4", "#3f7a62", "#efe7d8", "#3c3b44", "#4e4040", "#f19a7a", "#ffd9a0", "#fdf7ee"],
+  ["#6c4b3d", "#4b332b", "#3a2620", "#9a8673", "#857161", "#43342e", "#26315c", "#55639a", "#2b1d18"],
+  ["#2f385c", "#222946", "#5b3626", "#a8703f", "#8c5a30", "#40261a", "#141c44", "#34457e", "#6b4630"],
 ] as const;
 
-// Stable pseudo-random 0..1 per number (skylines, windows, laundry).
+// Stable pseudo-random 0..1 per number (jars, pans, chairs).
 const hash = (i: number) => {
   const s = Math.sin(i * 127.1 + 311.7) * 43758.5453;
   return s - Math.floor(s);
@@ -150,7 +159,7 @@ export const game: Game = {
       ctx.fillStyle = over ?? col;
       ctx.fillRect(x, y, w, h);
     };
-    const oval = (col: string, x: number, y: number, rx: number, ry = rx, rot = 0) => {
+    const oval = (col: string | CanvasGradient, x: number, y: number, rx: number, ry = rx, rot = 0) => {
       ctx.fillStyle = over ?? col;
       ctx.beginPath();
       ctx.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot, 0, TAU);
@@ -191,6 +200,20 @@ export const game: Game = {
       over = null;
       fn();
     };
+    // Draw in tile units: origin at (px, py), one unit = k pixels
+    const put = (px: number, py: number, k: number, fn: () => void) => {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(k, k);
+      fn();
+      ctx.restore();
+    };
+    const glow = (x: number, y: number, r: number, col: string) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, col);
+      g.addColorStop(1, "rgba(255,200,120,0)");
+      box(g, x - r, y - r, r * 2, r * 2);
+    };
     const star = (col: string, x: number, y: number, r: number) => {
       ctx.fillStyle = col;
       ctx.beginPath();
@@ -204,7 +227,7 @@ export const game: Game = {
 
     // Run state
     let level = 0;
-    let lives = 3;
+    let lives = LIVES;
     let score = 0;
     let fruit = 0;
     let state: "play" | "dead" | "win" | "end" = "play";
@@ -216,12 +239,17 @@ export const game: Game = {
     let hitDeath = false;
     let deadX = 0;
     let deadY = 0;
+    let deadV = 0;
+    let joyT = 0; // a happy squint after a stomp or a gold plate
+    let slick = false; // on soap
+    let rackT = -9; // when the cat last landed on a rack or chandelier
 
     // Level state
     let map: string[] = [];
     let W = 0;
     let foes: Foe[] = [];
     let items: Item[] = [];
+    let burners: [number, number][] = [];
     let checks: { x: number; y: number; t: number }[] = []; // t: time reached, -1 not yet
     let door = { x: 0, y: 0 };
     let sparks: Spark[] = [];
@@ -245,8 +273,14 @@ export const game: Game = {
     let sqv = 0;
 
     const at = (c: number, r: number) => (c < 0 || c >= W ? "#" : (map[r]?.[c] ?? " "));
-    const solid = (c: number, r: number) => "#=WH".includes(at(c, r));
-    const oneWay = (c: number, r: number) => "-~".includes(at(c, r));
+    const solid = (c: number, r: number) => "#COXSB=".includes(at(c, r));
+    const oneWay = (c: number, r: number) => "-~tY".includes(at(c, r));
+    // Burner flame height in tiles: lit, then low and blue, then a short
+    // warning flicker as it climbs again. Each stove keeps its own beat.
+    const flame = (c: number) => {
+      const p = (time / 3 + hash(c >> 1)) % 1;
+      return p < 0.45 ? 0.8 : p < 0.85 ? 0.2 : 0.2 + (p - 0.85) * 4;
+    };
 
     const many = (n: number) => Math.max(1, Math.round(calm ? n * 0.35 : n));
     const emit = (k: number, px: number, py: number, pvx: number, pvy: number, max: number, col: string, txt?: string) =>
@@ -255,7 +289,7 @@ export const game: Game = {
       for (let i = many(n); i--; ) {
         const a = rand(0, TAU);
         const v = rand(speed * 0.3, speed);
-        emit(k, px, py, Math.cos(a) * v, Math.sin(a) * v - (k === 5 ? 4 : k === 0 ? 1 : 0), rand(0.4, 0.8) * (k === 5 ? 2.5 : k === 1 ? 1.8 : 1), col);
+        emit(k, px, py, Math.cos(a) * v, Math.sin(a) * v - (k === 5 ? 4 : k === 0 ? 1 : 0), rand(0.4, 0.8) * (k === 5 ? 2.5 : 1), col);
       }
     };
     const dust = (px: number, py: number, n: number, spread: number) => {
@@ -289,17 +323,21 @@ export const game: Game = {
       items = [];
       checks = [];
       sparks = [];
+      burners = [];
       map = rows.map((row, r) =>
         [...row.padEnd(W)]
           .map((ch, c) => {
             const cx = c + 0.5;
+            const k = "mfc".indexOf(ch);
             if (ch === "P") cp = { x: cx, y: r + 1 };
-            else if (ch === "o" || ch === "G") items.push({ x: cx, y: r + 0.5, gold: ch === "G", got: false });
-            else if (ch === "p" || ch === "f")
-              foes.push({ x: cx, y: r + 1, vx: -1.4, fly: ch === "f", bx: cx, by: r + 0.6, t: rand(0, 6), dead: false, dt: 0 });
+            else if (ch === "o" || ch === "G") items.push({ x: cx, y: r + 0.5, gold: ch === "G", sau: hash(c * 1.7 + r) > 0.62, got: false });
+            else if (k >= 0) foes.push({ x: cx, y: r + 1, vx: k ? -1.1 : -1.6, k, bx: cx, by: r + 0.6, t: rand(0, 6), dead: false, dt: 9 });
             else if (ch === "K") checks.push({ x: cx, y: r + 1, t: -1 });
             else if (ch === "D") door = { x: cx, y: r + 1 };
-            else return ch;
+            else {
+              if (ch === "^") burners.push([c, r]);
+              return ch;
+            }
             return " ";
           })
           .join(""),
@@ -312,18 +350,21 @@ export const game: Game = {
       camX = calm ? 0 : 6;
     };
     // Instant retry: a fall or a hit costs a life and puts the cat back at the
-    // last checkpoint about half a second later.
-    const loseLife = (fell: boolean) => {
+    // last checkpoint about half a second later. why: 0 fell, 1 bitten or
+    // stung, 2 burnt, 3 swept by the broom (dir: which way it flies).
+    const loseLife = (why: number, dir = 0) => {
       lives--;
-      hitDeath = !fell;
+      hitDeath = why > 0;
       deadX = x;
       deadY = y;
+      deadV = dir * 5;
       stateT = 0;
-      api.sfx(fell ? "bad" : "hit");
-      api.sfx(fell ? "whoa" : "meow", fell ? 1.4 : 1.25);
-      if (!fell) {
+      api.sfx(why ? (why > 2 ? "whoosh" : "hit") : "bad");
+      if (why === 2) api.sfx("ouch", 1.4);
+      else api.sfx(why ? "meow" : "whoa", why ? 1.25 : 1.4);
+      if (why) {
         if (!calm) shake = 0.25;
-        burst(x, y - 0.4, 8, "#fff", 4, 3);
+        burst(x, y - 0.4, 8, why === 2 ? "#6a6a72" : "#fff", why === 2 ? 3 : 4, 3);
       }
       if (lives > 0) state = "dead";
       else {
@@ -335,12 +376,20 @@ export const game: Game = {
     const updateCat = (dt: number) => {
       const s = pad.state;
       const dir = (s.right ? 1 : 0) - (s.left ? 1 : 0);
+      // Soap: hardly any grip, so the cat skates on
+      const soap = ground && at(Math.floor(x), Math.floor(y - 0.01)) === "_";
+      if (soap && !slick) {
+        api.sfx("slip");
+        api.sfx("whoa", 1.5);
+        dust(x, y, 4, 1.5);
+      }
+      slick = soap;
       if (dir) {
         face = dir;
         // Turning around bites harder than speeding up
-        vx += dir * (ground ? ACC : AIR) * dt * (Math.sign(vx) === -dir ? 1.8 : 1);
+        vx += dir * (ground ? ACC : AIR) * dt * (Math.sign(vx) === -dir ? 1.8 : 1) * (soap ? 0.3 : 1);
       } else if (ground) {
-        vx -= Math.sign(vx) * Math.min(Math.abs(vx), FRICTION * dt);
+        vx -= Math.sign(vx) * Math.min(Math.abs(vx), (soap ? 2 : FRICTION) * dt);
       }
       vx = clamp(vx, -RUN, RUN);
       if (pad.consume("a") || pad.consume("up")) buffer = BUFFER;
@@ -388,8 +437,13 @@ export const game: Game = {
       if (ground) {
         coyote = COYOTE;
         if (!was) {
-          // Landing: a squash always, a thud and a dust puff when it was hard
+          // Landing: a squash always, a thud and a dust puff when it was hard;
+          // the pans on a rack swing and clang
           squash(-clamp(fallV / 55, 0.08, 0.36));
+          if ("~Y".includes(at(Math.floor(x), y))) {
+            rackT = time;
+            api.sfx("block");
+          }
           if (fallV > HARD) {
             api.sfx("land");
             dust(x - 0.2, y, 4, 2.6);
@@ -398,43 +452,69 @@ export const game: Game = {
         }
       }
       runT += Math.abs(vx) * dt;
-      if (y > ROWS + 1.5) loseLife(true);
+      if (y > ROWS + 1.5) loseLife(0);
+      // Burners: only a lit one bites, and only near the stove top
+      for (let c = Math.floor(x - HW + 0.1); c <= Math.floor(x + HW - 0.1); c++)
+        for (const r of [Math.floor(y - 0.05), Math.floor(y - CH)])
+          if (state === "play" && hurtT <= 0 && at(c, r) === "^" && flame(c) > 0.45 && y > r + 0.4) loseLife(2);
     };
 
     const updateWorld = (dt: number) => {
       for (const f of foes) {
+        f.t += dt;
+        f.dt += dt;
         if (f.dead) {
-          f.dt += dt;
+          // A fly drops; a flat mouse pops back up after a beat and runs off
+          if (f.k) f.y += dt * 5;
+          else if (f.dt > 0.5) {
+            if (f.dt - dt <= 0.5) {
+              api.sfx("pop");
+              f.vx = f.x < x ? -5 : 5;
+            }
+            f.x += f.vx * dt;
+          }
           continue;
         }
-        f.t += dt;
-        if (f.fly) {
-          // Back and forth along a sine wave
+        if (f.k === 1) {
+          // Buzzes back and forth in loops
           f.x = f.bx + Math.sin(f.t * 0.9) * 2.2;
           f.vx = Math.cos(f.t * 0.9);
-          f.y = f.by + Math.sin(f.t * 2.6) + 0.3;
+          f.y = f.by + Math.sin(f.t * 2.6) * 0.8 + Math.sin(f.t * 9) * 0.08 + 0.3;
         } else {
-          // Walk; turn at walls and at roof edges
+          // Walk; turn at walls and at edges
           const nx = f.x + f.vx * dt;
-          const ahead = Math.floor(nx + Math.sign(f.vx) * 0.35);
+          const ahead = Math.floor(nx + Math.sign(f.vx) * (f.k ? 0.5 : 0.35));
           const row = Math.floor(f.y - 0.5);
           if (solid(ahead, row) || !(solid(ahead, row + 1) || oneWay(ahead, row + 1))) f.vx = -f.vx;
           else f.x = nx;
         }
         if (state !== "play") continue;
         const dx = Math.abs(f.x - x);
-        if (vy > 0 && dx < 0.7 && y > f.y - 0.9 && y < f.y - 0.2) {
-          // Stomped from above (a generous box): bounce and a feather puff
-          f.dead = true;
-          vy = pad.state.a || pad.state.up ? -JUMP * 0.85 : -11;
+        const chef = f.k > 1;
+        const top = f.y - (chef ? 2.05 : f.k ? 0.55 : 0.42);
+        if (vy > 0 && dx < 0.7 && y > top - 0.35 && y < top + 0.35) {
+          // Stomped from above (a generous box). The chef can't be beaten:
+          // his hat squashes and bounces the cat high.
+          vy = pad.state.a || pad.state.up ? -JUMP * (chef ? 1.05 : 0.85) : chef ? -15 : -11;
           squash(0.3);
           api.sfx("boing");
-          api.sfx("oof", 1.6);
-          burst(f.x, f.y - 0.35, 12, f.fly ? "#c9cfdc" : "#eef1f5", 1, 3);
-          addScore(50, f.x, f.y - 1);
-        } else if (hurtT <= 0 && dx < 0.42 && y - CH + 0.2 < f.y - 0.12 && y - 0.05 > f.y - 0.55) {
-          // Fair hurtbox: only the cat's body against the pigeon's body
-          loseLife(false);
+          if (chef) {
+            f.dt = 0;
+            api.sfx("hah", 0.75);
+          } else {
+            f.dead = true;
+            f.dt = 0;
+            joyT = 0.5;
+            api.sfx(f.k ? "splat" : "oof", f.k ? 1 : 1.8);
+            burst(f.x, f.y - 0.3, 8, f.k ? "#3a3a44" : GOLD, f.k ? 0 : 4, 3);
+            addScore(50, f.x, f.y - 1);
+          }
+        } else if (hurtT <= 0) {
+          // Fair hurtbox: only the cat's body against the foe's body, plus the
+          // chef's broom out in front of him
+          const bx = f.x + Math.sign(f.vx) * (0.95 + Math.sin(f.t * 6) * 0.12);
+          if (dx < (chef ? 0.5 : 0.42) && y - CH + 0.2 < f.y - 0.1 && y - 0.05 > top + 0.12) loseLife(1);
+          else if (chef && Math.abs(bx - x) < 0.5 && y > f.y - 0.5) loseLife(3, Math.sign(f.vx));
         }
       }
       for (const it of items) {
@@ -442,6 +522,10 @@ export const game: Game = {
           it.got = true;
           fruit++;
           api.sfx("coin");
+          if (it.gold) {
+            api.sfx("mmm", 1.3);
+            joyT = 0.6;
+          }
           addScore(it.gold ? 100 : 10, it.x, it.y - 0.5);
           burst(it.x, it.y, it.gold ? 12 : 6, it.gold ? GOLD : "#fff4c8", 4, 3);
         }
@@ -450,56 +534,92 @@ export const game: Game = {
         if (k.t < 0 && state === "play" && Math.abs(k.x - x) < 0.8 && Math.abs(k.y - y) < 1.5) {
           k.t = time;
           cp = { x: k.x, y: k.y };
-          api.sfx("meow", 0.95);
-          burst(k.x + 0.4, k.y - 1.6, 8, C.apricot, 4, 2.5);
+          api.sfx("mmm", 1.2);
         }
+        // Hearts float up from the saucer for a while once it's reached
+        if (k.t >= 0 && time - k.t < 1.6 && Math.random() < (calm ? 0.04 : 0.12)) emit(1, k.x + rand(-0.3, 0.3), k.y - 0.4, rand(-0.3, 0.3), -1.4, 1, C.pomegranate);
       }
-      if (state === "play" && Math.abs(door.x - x) < 0.7 && y > door.y - 2 && y <= door.y + 0.1) {
+      // Lit burners send up a puff of steam now and then
+      for (const [c, r] of burners) if (!calm && flame(c) > 0.45 && Math.random() < 0.03) emit(3, c + rand(0.3, 0.7), r + 0.2, rand(-0.2, 0.2), -1.6, 0.9, "rgba(255,255,255,0.55)");
+      if (state === "play" && Math.abs(door.x - x) < 1.1 && y > door.y - 2 && y <= door.y + 0.1) {
         state = "win";
         stateT = 0;
         vx = 0;
+        face = 1;
         api.sfx("win");
-        api.sfx("yay", 1.3);
-        burst(door.x, door.y - 2.6, 40, C.apricot, 5, 6);
+        api.sfx("meow", 1.45);
+        burst(door.x, door.y - 1.6, 40, C.apricot, 5, 6);
         for (const p of sparks) if (p.k === 5) p.col = pick(CONFETTI);
-        addScore(500 + Math.max(0, Math.round(90 - levelT)) * 5, door.x, door.y - 3.6);
+        addScore(500 + Math.max(0, Math.round(90 - levelT)) * 5, door.x, door.y - 2.6);
       }
       for (const p of sparks) {
         p.life += dt;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        const drag = [0, 1.5, 3, 4, 5, 1.5][p.k]! * dt;
+        const drag = [0, 1, 3, 4, 5, 1.5][p.k]! * dt;
         p.vx *= 1 - drag;
-        p.vy = p.vy * (1 - (p.k === 2 ? drag : 0)) + [8, 1.5, 0, 0, 0, 5][p.k]! * dt;
+        p.vy = p.vy * (1 - (p.k === 2 ? drag : 0)) + [8, 0, 0, 0, 0, 5][p.k]! * dt;
         if (p.k === 3 || p.k === 4) p.vy *= 1 - drag;
       }
       sparks = sparks.filter((p) => p.life < p.max);
     };
 
-    // --- Drawing (positions in CSS px; s = tile size) -----------------------
+    // --- Drawing (figures and tiles in tile units) --------------------------
 
-    const catHead = (cx: number, cy: number, s: number) => {
+    // mood: 0 smug, 1 alarmed, 2 delighted
+    const catHead = (cx: number, cy: number, s: number, mood: number) => {
       shape(ORANGE, [cx - s * 0.9, cy - s * 0.2, cx - s * 0.7, cy - s * 1.15, cx - s * 0.15, cy - s * 0.7, cx + s * 0.15, cy - s * 0.7, cx + s * 0.7, cy - s * 1.15, cx + s * 0.9, cy - s * 0.2]);
       oval(ORANGE, cx, cy, s * 0.85);
       shape("#f6b9a0", [cx - s * 0.62, cy - s * 0.55, cx - s * 0.62, cy - s * 0.95, cx - s * 0.3, cy - s * 0.68]);
       shape("#f6b9a0", [cx + s * 0.62, cy - s * 0.55, cx + s * 0.62, cy - s * 0.95, cx + s * 0.3, cy - s * 0.68]);
       oval("#fbe3cc", cx, cy + s * 0.35, s * 0.42, s * 0.3);
-      oval(C.ink, cx - s * 0.33, cy - s * 0.08, s * 0.12, s * 0.15);
-      oval(C.ink, cx + s * 0.33, cy - s * 0.08, s * 0.12, s * 0.15);
-      oval("#fff", cx - s * 0.29, cy - s * 0.13, s * 0.04);
-      oval("#fff", cx + s * 0.37, cy - s * 0.13, s * 0.04);
+      if (mood === 2) {
+        // Happy squint and a wide open grin
+        lines(C.ink, s * 0.1, [-1, 1].flatMap((d) => [cx + d * s * 0.45, cy, cx + d * s * 0.33, cy - s * 0.15, cx + d * s * 0.33, cy - s * 0.15, cx + d * s * 0.21, cy]));
+        oval("#8a1c2e", cx, cy + s * 0.36, s * 0.2, s * 0.16);
+        oval("#f07a8a", cx, cy + s * 0.44, s * 0.11, s * 0.07);
+      } else if (mood) {
+        // Saucer eyes, tiny pupils, an "O" of a mouth
+        for (const d of [-1, 1]) {
+          oval("#fff", cx + d * s * 0.33, cy - s * 0.1, s * 0.2, s * 0.25);
+          oval(C.ink, cx + d * s * 0.3, cy - s * 0.08, s * 0.07);
+        }
+        oval(C.ink, cx, cy + s * 0.4, s * 0.09, s * 0.12);
+      } else {
+        // Half-lidded and smug, with a lopsided grin
+        oval(C.ink, cx - s * 0.33, cy - s * 0.06, s * 0.13, s * 0.15);
+        oval(C.ink, cx + s * 0.33, cy - s * 0.06, s * 0.13, s * 0.15);
+        box(ORANGE, cx - s * 0.5, cy - s * 0.24, s, s * 0.15);
+        lines(ORANGE_DARK, s * 0.06, [cx - s * 0.5, cy - s * 0.1, cx - s * 0.18, cy - s * 0.1, cx + s * 0.18, cy - s * 0.1, cx + s * 0.5, cy - s * 0.1]);
+        lines(C.ink, s * 0.07, [cx - s * 0.14, cy + s * 0.36, cx + s * 0.06, cy + s * 0.42, cx + s * 0.06, cy + s * 0.42, cx + s * 0.32, cy + s * 0.26]);
+      }
       oval("#e0707a", cx, cy + s * 0.2, s * 0.12, s * 0.08);
     };
 
-    const catBody = (s: number, air: boolean, b: number, step: number, running: boolean) => {
-      // Tail sways; it points up in the air
+    // A fish facing right, centred on (0, 0)
+    const fish = (col: string, r: number) => {
+      shape(col, [-r * 0.8, 0, -r * 1.55, -r * 0.62, -r * 1.35, 0, -r * 1.55, r * 0.62]);
+      oval(col, 0, 0, r, r * 0.56);
+      oval("rgba(255,255,255,0.4)", -r * 0.15, -r * 0.22, r * 0.55, r * 0.14);
+      lines("rgba(60,40,40,0.3)", r * 0.08, [r * 0.28, -r * 0.4, r * 0.22, r * 0.4]);
+      oval("#fff", r * 0.55, -r * 0.12, r * 0.17);
+      oval(C.ink, r * 0.6, -r * 0.12, r * 0.08);
+    };
+    const plate = (r: number) => {
+      oval("#c9d2c8", 0, r * 0.5, r * 1.6, r * 0.42);
+      oval(C.matsoni, 0, r * 0.45, r * 1.35, r * 0.3);
+    };
+
+    const catBody = (air: boolean, b: number, step: number, running: boolean, mood: number) => {
+      // Tail sways; it points up in the air and stands straight up for joy
       const sway = calm ? 0 : Math.sin(time * (running ? 9 : 3)) * 0.25;
       ctx.strokeStyle = over ?? ORANGE;
-      ctx.lineWidth = s * 0.11;
+      ctx.lineWidth = 0.11;
       ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(-s * 0.28, -s * 0.38 + b);
-      ctx.quadraticCurveTo(-s * 0.62, -s * (air ? 0.6 : 0.35), -s * (0.55 + sway * 0.3), -s * (air ? 0.95 : 0.75 + sway));
+      ctx.moveTo(-0.28, -0.38 + b);
+      if (mood === 2) ctx.bezierCurveTo(-0.45, -0.6, -0.3, -0.9, -0.42 + sway * 0.2, -1.1);
+      else ctx.quadraticCurveTo(-0.62, air ? -0.6 : -0.35, -0.55 - sway * 0.3, -(air ? 0.95 : 0.75 + sway));
       ctx.stroke();
       // Legs: tucked going up, reaching going down, 3 run frames, idle
       const legs = air
@@ -513,21 +633,28 @@ export const game: Game = {
             [-0.22, 0, -0.1, 0, 0.12, 0, 0.24, 0],
           ][step]!;
       const seg: number[] = [];
-      for (let i = 0; i < 8; i += 2) seg.push(legs[i]! * s * 0.7, -s * 0.3 + b, legs[i]! * s, (legs[i + 1]! - 0.04) * s);
-      lines(ORANGE_DARK, s * 0.1, seg);
-      // Body with stripes, a pale belly and a warm rim from the sun
-      oval(ORANGE, 0, -s * 0.36 + b, s * 0.36, s * 0.2);
-      oval("#ffb070", s * 0.06, -s * 0.47 + b, s * 0.26, s * 0.07);
-      lines(ORANGE_DARK, s * 0.04, [-0.14, 0, 0.14].flatMap((sx) => [sx * s, -s * 0.54 + b, sx * s - s * 0.03, -s * 0.42 + b]));
-      oval("#fbe3cc", s * 0.12, -s * 0.27 + b, s * 0.15, s * 0.08);
-      const hx = s * 0.3;
-      const hy = -s * (air ? 0.63 : 0.6) + b;
-      catHead(hx, hy, s * 0.22);
-      if (!over) lines("rgba(19,36,27,0.5)", 1, [hx + s * 0.1, hy + s * 0.07, hx + s * 0.32, hy + s * 0.03, hx + s * 0.1, hy + s * 0.1, hx + s * 0.32, hy + s * 0.13]);
+      for (let i = 0; i < 8; i += 2) seg.push(legs[i]! * 0.7, -0.3 + b, legs[i]!, legs[i + 1]! - 0.04);
+      lines(ORANGE_DARK, 0.1, seg);
+      // Body with stripes, a pale belly and a warm rim from the lamps
+      oval(ORANGE, 0, -0.36 + b, 0.36, 0.2);
+      oval("#ffb070", 0.06, -0.47 + b, 0.26, 0.07);
+      lines(ORANGE_DARK, 0.04, [-0.14, 0, 0.14].flatMap((sx) => [sx, -0.54 + b, sx - 0.03, -0.42 + b]));
+      oval("#fbe3cc", 0.12, -0.27 + b, 0.15, 0.08);
+      const hx = 0.3;
+      const hy = (air ? -0.63 : -0.6) + b;
+      catHead(hx, hy, 0.22, mood);
+      if (!over) lines("rgba(19,36,27,0.5)", 1 / T, [hx + 0.1, hy + 0.07, hx + 0.32, hy + 0.03, hx + 0.1, hy + 0.1, hx + 0.32, hy + 0.13]);
+      // The prize, held in the mouth
+      if (state === "win") {
+        ctx.save();
+        ctx.translate(hx + 0.12, hy + 0.12);
+        ctx.rotate(0.25);
+        fish(FRIED, 0.14);
+        ctx.restore();
+      }
     };
 
-    const drawCat = (px: number, py: number, rot = 0, alpha = 1) => {
-      const s = T;
+    const drawCat = (px: number, py: number, mood: number, rot = 0, alpha = 1) => {
       const blink = hurtT > 0 && state === "play";
       if (alpha <= 0 || (blink && !calm && Math.floor(hurtT * 12) % 2 === 0)) return;
       const air = !ground;
@@ -537,282 +664,371 @@ export const game: Game = {
       ctx.globalAlpha = alpha * (blink ? 0.6 : 1);
       ctx.translate(px, py);
       if (rot) {
-        ctx.translate(0, -s * 0.4);
+        ctx.translate(0, -T * 0.4);
         ctx.rotate(rot);
-        ctx.translate(0, s * 0.4);
+        ctx.translate(0, T * 0.4);
       }
       // Squash and stretch about the feet
-      ctx.scale(face * (1 - sq * 0.6), 1 + sq);
-      outlined("#4a2418", Math.max(1, s * 0.035), () => catBody(s, air, step === 1 ? -s * 0.04 : 0, step, running));
+      ctx.scale(T * face * (1 - sq * 0.6), T * (1 + sq));
+      outlined("#4a2418", 0.035, () => catBody(air, step === 1 ? -0.04 : 0, step, running, mood));
       ctx.restore();
     };
 
-    // Walker: plump and upright, head bobbing. Flyer: a wide wing V.
-    const walker = (t: number) => {
-      const bob = Math.sin(t * 8);
-      lines("#d46a4a", 0.05, [-0.05, -0.15, -0.08 + bob * 0.05, 0, 0.07, -0.15, 0.1 - bob * 0.05, 0]);
-      shape("#6c7686", [-0.2, -0.32, -0.5, -0.22, -0.46, -0.14, -0.16, -0.2]);
-      oval("#9aa3b3", 0, -0.3, 0.27, 0.2, -0.2);
-      oval("#7f8899", -0.06, -0.31, 0.17, 0.1, -0.25);
-      lines("#4e5566", 0.03, [-0.14, -0.33, -0.02, -0.29, -0.16, -0.27, -0.04, -0.23]);
-      const hx = 0.2 + Math.max(0, bob) * 0.07;
-      oval("#5f9a8c", 0.13, -0.45, 0.1, 0.11);
-      oval("#7a8494", hx, -0.58, 0.11);
-      shape("#f0b25a", [hx + 0.09, -0.6, hx + 0.19, -0.56, hx + 0.09, -0.53]);
-      oval("#ff8a3c", hx + 0.04, -0.6, 0.035);
-      oval(C.ink, hx + 0.045, -0.6, 0.017);
+    // Mouse: a low grey pear on pink feet, long tail; flattened when stomped,
+    // then dizzy with stars as it runs off.
+    const mouse = (f: Foe) => {
+      const st = calm ? 0 : Math.sin(f.t * 22) * 0.05;
+      lines("#d98f96", 0.035, [-0.22, -0.12, -0.42, -0.06, -0.42, -0.06, -0.55, -0.2]);
+      oval("#e8a0a8", -0.1 + st, -0.03, 0.07, 0.035);
+      oval("#e8a0a8", 0.12 - st, -0.03, 0.07, 0.035);
+      oval("#8e909e", 0, -0.18, 0.26, 0.16);
+      oval("#c9cad3", 0.06, -0.12, 0.15, 0.07);
+      oval("#8e909e", 0.24, -0.21, 0.13, 0.1);
+      oval("#8e909e", 0.12, -0.36, 0.11);
+      oval("#f2b6bf", 0.12, -0.36, 0.065);
+      oval("#e86a7a", 0.37, -0.22, 0.04);
+      if (f.dead) lines(C.ink, 0.025, [0.2, -0.29, 0.28, -0.22, 0.28, -0.29, 0.2, -0.22]);
+      else oval(C.ink, 0.25, -0.26, 0.032);
     };
-    const flyer = (t: number) => {
-      const flap = calm ? 0.3 : Math.sin(t * 14);
-      shape("#3f455a", [-0.02, -0.42, -0.1, -0.5 - flap * 0.42, -0.34, -0.42 - flap * 0.5, -0.22, -0.36]);
-      shape("#4c5268", [-0.42, -0.36, -0.62, -0.46, -0.62, -0.26]);
-      oval("#5d6680", 0, -0.36, 0.33, 0.11);
-      oval("#e9ecf2", -0.24, -0.35, 0.07, 0.08);
-      oval("#4f8f86", 0.2, -0.39, 0.08, 0.08);
-      oval("#6a7290", 0.32, -0.42, 0.1, 0.09);
-      shape("#f0b25a", [0.4, -0.44, 0.5, -0.41, 0.4, -0.38]);
-      oval("#ff8a3c", 0.35, -0.44, 0.03);
-      shape("#7d86a4", [0.04, -0.38, 0.0, -0.46 - flap * 0.5, -0.24, -0.4 - flap * 0.6, -0.42, -0.4 - flap * 0.48, -0.16, -0.32]);
-      lines("#2f3446", 0.04, [-0.24, -0.4 - flap * 0.6, -0.42, -0.4 - flap * 0.48]);
+    // Fly: a black dot with glassy flapping wings and a big red eye
+    const fly = (f: Foe) => {
+      const flap = calm ? 0 : Math.sin(f.t * 60) * 0.5;
+      oval("rgba(225,240,255,0.75)", -0.08, -0.5, 0.15, 0.07, -0.7 + flap);
+      oval("#2a2a33", 0, -0.36, 0.15, 0.11);
+      lines("#2a2a33", 0.025, [-0.05, -0.28, -0.1, -0.18, 0.05, -0.28, 0.08, -0.18]);
+      oval("#2a2a33", 0.15, -0.38, 0.08);
+      oval("#c0303a", 0.18, -0.4, 0.05);
+      oval("rgba(225,240,255,0.75)", 0.02, -0.5, 0.15, 0.07, -0.4 - flap);
     };
-    const drawPigeon = (f: Foe, px: number, py: number) => {
-      const s = T;
+    // Chef: a round white coat, a curly moustache and a tall toque, sweeping
+    // a straw broom out in front of him
+    const chef = (f: Foe) => {
+      const w = calm ? 0 : Math.sin(f.t * 7) * 0.08;
+      const bx = 0.95 + Math.sin(f.t * 6) * 0.12;
+      lines("#33333d", 0.13, [-0.12, -0.5, -0.12 + w, -0.05, 0.12, -0.5, 0.12 - w, -0.05]);
+      oval("#1e1e22", -0.06 + w, -0.04, 0.14, 0.06);
+      oval("#1e1e22", 0.18 - w, -0.04, 0.14, 0.06);
+      lines("#8a5a32", 0.06, [0.2, -1.05, bx, -0.12]);
+      shape("#d9b25a", [bx - 0.18, -0.2, bx + 0.18, -0.2, bx + 0.3, 0, bx - 0.3, 0]);
+      box("#b0213a", bx - 0.18, -0.24, 0.36, 0.06);
+      oval(C.matsoni, 0, -0.95, 0.42, 0.52);
+      box("#e2e6e0", -0.32, -0.75, 0.64, 0.5);
+      for (const yy of [-1.2, -1.0, -0.8]) oval("#c9d2c8", 0.12, yy, 0.035);
+      lines(C.matsoni, 0.16, [-0.1, -1.2, 0.3, -0.95, 0.3, -0.95, 0.2, -0.95]);
+      oval("#f2c29a", 0.24, -0.98, 0.08);
+      oval("#f2c29a", 0.05, -1.55, 0.25);
+      oval("#e8957a", 0.27, -1.52, 0.09, 0.08);
+      oval("#3a2418", 0.12, -1.42, 0.13, 0.05, 0.3);
+      oval("#3a2418", 0.34, -1.42, 0.13, 0.05, -0.3);
+      oval(C.ink, 0.16, -1.63, 0.035);
+      lines("#3a2418", 0.04, [0.07, -1.73, 0.22, -1.69]);
+      // The toque squashes when the cat lands on it
+      const h = 1 - Math.max(0, 0.3 - f.dt) * 1.6;
       ctx.save();
-      ctx.globalAlpha = f.dead ? Math.max(0, 1 - f.dt * 4) : 1;
-      ctx.translate(px, py - (f.fly || f.dead ? 0 : Math.abs(Math.sin(f.t * 8)) * s * 0.04));
-      ctx.scale(f.vx > 0 ? s : -s, s * (f.dead ? 1 - Math.min(1, f.dt * 6) * 0.6 : 1));
-      outlined("#2a2838", 0.035, () => (f.fly ? flyer(f.t) : walker(f.t)));
+      ctx.translate(0, -1.75);
+      ctx.scale(1 + (1 - h) * 0.5, h);
+      box(C.matsoni, -0.2, -0.32, 0.44, 0.34);
+      oval(C.matsoni, -0.1, -0.33, 0.16);
+      oval(C.matsoni, 0.14, -0.35, 0.17);
+      oval(C.matsoni, 0.02, -0.46, 0.18);
+      box("#e2e6e0", -0.21, -0.06, 0.46, 0.08);
       ctx.restore();
     };
-
-    const drawFruit = (gold: boolean, px: number, py: number, r: number) => {
-      if (gold) oval("rgba(255,226,120,0.35)", px, py, r * (1.9 + (calm ? 0 : Math.sin(time * 5) * 0.2)));
-      oval(C.apricotDeep, px, py, r + 1);
-      oval(gold ? GOLD : C.apricot, px, py, r);
-      oval(gold ? "#f2b820" : "#ea8a2a", px + r * 0.3, py + r * 0.28, r * 0.6);
-      oval(gold ? "#fff6c2" : "#ffd28a", px - r * 0.38, py - r * 0.35, r * 0.28);
-      ctx.strokeStyle = C.apricotDeep;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(px + r * 0.9, py, r * 0.9, Math.PI * 0.8, Math.PI * 1.2);
-      ctx.stroke();
-      lines("#6b4a2a", Math.max(1, r * 0.15), [px, py - r * 0.85, px + r * 0.1, py - r * 1.15]);
-      oval(C.tarragon, px + r * 0.4, py - r * 1.05, r * 0.42, r * 0.18, -0.5);
+    const drawFoe = (f: Foe, px: number, py: number) => {
+      ctx.save();
+      ctx.globalAlpha = f.dead ? Math.max(0, 1 - Math.max(0, f.dt - (f.k ? 0.2 : 1.6)) * 3) : 1;
+      ctx.translate(px, py - (f.k || f.dead ? 0 : Math.abs(Math.sin(f.t * 10)) * T * 0.04));
+      // Flat as a pancake for half a second after a stomp
+      const flat = f.dead && !f.k && f.dt < 0.5;
+      ctx.scale((f.vx > 0 ? T : -T) * (flat ? 1.5 : f.k === 1 ? 1.3 : 1), T * (flat ? 0.25 : f.k === 1 ? 1.3 : 1));
+      if (f.dead && f.k) ctx.rotate(f.dt * 9);
+      outlined("#2a2838", 0.035, () => (f.k > 1 ? chef(f) : f.k ? fly(f) : mouse(f)));
+      ctx.restore();
+      // Dizzy stars over a mouse that's running off
+      if (f.dead && !f.k && f.dt > 0.5)
+        for (let i = 0; i < 3; i++) {
+          const a = time * 6 + (i * TAU) / 3;
+          star(GOLD, px + (Math.cos(a) * 0.25 + 0.1 * Math.sign(f.vx)) * T, py - (0.55 + Math.sin(a) * 0.08) * T, T * 0.09);
+        }
     };
 
-    const drawTile = (ch: string, c: number, r: number, px: number, py: number) => {
-      const s = T;
-      const t = s + 0.5;
-      const top = !solid(c, r - 1) && !"HW".includes(ch);
-      if (ch === "#" || ch === "=") {
-        // Tufa blocks in slightly varied stones, mortar, then light: warm on
-        // the sun side (right) and on top, cool on the left and below.
-        const h = hash(c * 3.1 + r * 17);
-        box(h > 0.66 ? "#d6896a" : h > 0.33 ? C.tufa : "#db8f6e", px, py, t, t);
-        const o = r % 2 ? s * 0.25 : s * 0.75;
-        const o2 = px + ((o + s / 2) % s);
-        lines("rgba(150,80,70,0.55)", 1, [px, py + s / 2, px + s, py + s / 2, px + o, py, px + o, py + s / 2, o2, py + s / 2, o2, py + s]);
-        if (r > 7) box(`rgba(70,40,90,${(r - 7) * 0.12})`, px, py, t, t);
-        if (!solid(c + 1, r)) box(RIM, px + s * 0.9, py, s * 0.1, t);
-        if (!solid(c - 1, r)) box(SHADE, px, py, s * 0.14, t);
-        if (!solid(c, r + 1)) box("rgba(60,30,70,0.35)", px, py + s * 0.78, t, s * 0.22);
+    const drawItem = (it: Item) => {
+      if (it.gold) {
+        oval("rgba(255,226,120,0.35)", 0, 0, 0.5 + (calm ? 0 : Math.sin(time * 5) * 0.06));
+        plate(0.25);
+        fish(FRIED, 0.24);
+        oval("#ffe14a", 0.3, 0.12, 0.08, 0.05);
+      } else if (it.sau) {
+        ctx.rotate(-0.4);
+        lines("#e8d8b0", 0.03, [-0.22, 0, -0.3, -0.07, 0.22, 0, 0.3, -0.07]);
+        oval("#b44a36", -0.1, 0, 0.12);
+        oval("#b44a36", 0.1, 0, 0.12);
+        box("#b44a36", -0.1, -0.12, 0.2, 0.24);
+        box("rgba(255,255,255,0.35)", -0.12, -0.07, 0.24, 0.04);
+      } else fish("#9cc0d6", 0.2);
+    };
+
+    const drawTile = (ch: string, c: number, r: number) => {
+      const th = THEME[level]!;
+      const top = !solid(c, r - 1);
+      const h = hash(c * 3.1 + r * 17);
+      const swing = calm ? 0 : Math.sin((time - rackT) * 9 + c) * Math.exp((rackT - time) * 2.5) * 0.5;
+      if (ch === "#") {
+        // Floor: kitchen checks, cellar flags, hall parquet
+        box(th[5], 0, 0, 1.02, 1.02);
+        lines("rgba(0,0,0,0.2)", 0.03, [0, 0.55, 1, 0.55, (r % 2) * 0.5, 0.55, (r % 2) * 0.5, 1]);
         if (top) {
-          if (ch === "=") {
-            // Tin roof cap with ribs, slightly overhanging
-            box("#7f9196", px - 1, py - s * 0.08, t + 2, s * 0.34);
-            box("#a9babd", px - 1, py - s * 0.08, t + 2, s * 0.07);
-            for (let i = 0; i < 4; i++) box("#c7d4d6", px + (i + 0.3) * (s / 4), py - s * 0.02, 2, s * 0.26);
-            box("rgba(60,30,70,0.3)", px, py + s * 0.26, t, s * 0.06);
-          } else {
-            // Coping stone: a lit top face and a shadow line under its lip
-            box("#eeaa86", px - 1, py - s * 0.1, t + 2, s * 0.2);
-            box("#ffd2aa", px - 1, py - s * 0.1, t + 2, s * 0.05);
-            box("rgba(80,40,70,0.28)", px, py + s * 0.1, t, s * 0.07);
-          }
-          if (!solid(c + 1, r)) box("#ffe2c0", px + s * 0.85, py - s * 0.1, s * 0.15 + 1, s * 0.2);
+          box(c % 2 ? th[3] : th[4], 0, 0, 0.51, 0.24);
+          box(c % 2 ? th[4] : th[3], 0.5, 0, 0.52, 0.24);
+          box("rgba(255,255,255,0.3)", 0, 0, 1.02, 0.04);
+          box("rgba(0,0,0,0.3)", 0, 0.24, 1.02, 0.06);
         }
-      } else if (ch === "W") {
-        // Water tank on two legs, lit on the right
-        box("#5d6b72", px + s * 0.2, py + s * 0.7, s * 0.08, s * 0.3);
-        box("#5d6b72", px + s * 0.72, py + s * 0.7, s * 0.08, s * 0.3);
-        ctx.fillStyle = "#94abb4";
-        roundRect(ctx, px + s * 0.06, py + s * 0.06, s * 0.88, s * 0.68, s * 0.12);
-        ctx.fill();
-        box("#7e979f", px + s * 0.06, py + s * 0.28, s * 0.88, s * 0.05);
-        box("#7e979f", px + s * 0.06, py + s * 0.5, s * 0.88, s * 0.05);
-        box(RIM, px + s * 0.8, py + s * 0.1, s * 0.1, s * 0.6);
-        box(SHADE, px + s * 0.06, py + s * 0.1, s * 0.12, s * 0.6);
-        box("#d4e0e2", px + s * 0.06, py, s * 0.88, s * 0.08);
-      } else if (ch === "H") {
-        box("#b9705a", px + s * 0.15, py + s * 0.15, s * 0.7, s * 0.85);
-        box(RIM, px + s * 0.72, py + s * 0.15, s * 0.13, s * 0.85);
-        box(SHADE, px + s * 0.15, py + s * 0.15, s * 0.12, s * 0.85);
-        box("#8f5038", px + s * 0.08, py, s * 0.84, s * 0.18);
-        box("#e7a27f", px + s * 0.08, py, s * 0.84, s * 0.05);
+        if (!solid(c - 1, r)) box("rgba(0,0,0,0.25)", 0, 0, 0.12, 1.02);
+        if (!solid(c + 1, r)) box("rgba(0,0,0,0.25)", 0.88, 0, 0.12, 1.02);
+        if (r > 8) box("rgba(20,10,20,0.35)", 0, 0, 1.02, 1.02);
+      } else if (ch === "C") {
+        // Wooden cabinet under a steel worktop
+        box("#c08552", 0, 0, 1.02, 1.02);
+        box("#a8703f", 0.1, top ? 0.32 : 0.06, 0.82, top ? 0.62 : 0.84);
+        oval("#f3d27a", c % 2 ? 0.2 : 0.82, top ? 0.6 : 0.4, 0.05);
+        if (top) {
+          box("#c9d0d6", -0.04, 0, 1.1, 0.22);
+          box("#f4f7f8", -0.04, 0, 1.1, 0.05);
+          box("rgba(40,20,20,0.3)", 0, 0.22, 1.02, 0.05);
+        }
+      } else if (ch === "O") {
+        // Stove: black hob and knobs on top, a glowing oven door below
+        box("#aab3bb", 0, 0, 1.02, 1.02);
+        box("rgba(255,255,255,0.35)", 0, 0, 0.08, 1.02);
+        if (top) {
+          box("#2c2c33", -0.03, 0, 1.08, 0.16);
+          for (const kx of [0.3, 0.7]) oval("#2c2c33", kx, 0.38, 0.08);
+          box("#e8eef2", 0.1, 0.62, 0.82, 0.06);
+          box("#3a2a2a", 0.12, 0.78, 0.78, 0.3);
+        } else {
+          box("#3a2a2a", 0.12, 0, 0.78, 0.62);
+          box(`rgba(255,140,60,${0.45 + (calm ? 0 : Math.sin(time * 4 + c) * 0.1)})`, 0.18, 0.06, 0.66, 0.5);
+        }
+      } else if (ch === "X") {
+        // Crate: plank frame and a diagonal brace
+        box("#c79358", 0, 0, 1.02, 1.02);
+        lines("rgba(110,60,30,0.35)", 0.02, [0.1, 0.36, 0.9, 0.36, 0.1, 0.66, 0.9, 0.66]);
+        lines("#8a5a30", 0.08, [0.06, 0.06, 0.94, 0.06, 0.06, 0.94, 0.94, 0.94, 0.06, 0.06, 0.06, 0.94, 0.94, 0.06, 0.94, 0.94, 0.12, 0.88, 0.88, 0.12]);
+      } else if (ch === "S") {
+        // Flour sack: tied at the top, a wheat ear on the front, dusty
+        box("#d8c9a8", 0.02, 0.45, 0.98, 0.57);
+        oval("#d8c9a8", 0.5, 0.5, 0.5, 0.48);
+        oval("rgba(255,255,255,0.45)", 0.3, 0.45, 0.14, 0.08);
+        lines("#c9a24a", 0.04, [0.5, 0.88, 0.5, 0.5]);
+        for (const d of [-1, 1]) for (const yy of [0.56, 0.66, 0.76]) oval("#c9a24a", 0.5 + d * 0.06, yy, 0.05, 0.03, d * 0.6);
+        if (top) {
+          oval("#e4d7b8", 0.5, 0.06, 0.16, 0.1);
+          lines("#8a6a3a", 0.05, [0.38, 0.14, 0.62, 0.14]);
+        }
+      } else if (ch === "B") {
+        // Barrel with staves and iron hoops; a brass tap on some
+        box("#8f5530", 0.06, 0, 0.9, 1.02);
+        oval("#a8683a", 0.4, 0.5, 0.16, 0.5);
+        lines("rgba(50,25,10,0.35)", 0.03, [0.28, 0, 0.28, 1, 0.72, 0, 0.72, 1]);
+        box("#3f3a3a", 0.04, 0.16, 0.94, 0.08);
+        box("#3f3a3a", 0.04, 0.78, 0.94, 0.08);
+        if (top) oval("#b7774a", 0.51, 0.04, 0.45, 0.07);
+        else if (h > 0.5) box("#d9b25a", 0.42, 0.42, 0.2, 0.1);
+      } else if (ch === "=") {
+        // Bar counter: dark wood panels, a brass foot rail
+        box("#5a3322", 0, 0, 1.02, 1.02);
+        box("#4a2a1b", 0.12, top ? 0.32 : 0.06, 0.78, top ? 0.6 : 0.6);
+        if (top) {
+          box("#2e1a12", -0.04, 0, 1.1, 0.2);
+          box("#8a5a3f", -0.04, 0, 1.1, 0.05);
+        } else box("#d9b25a", -0.02, 0.8, 1.06, 0.07);
       } else if (ch === "-") {
-        // Plank, with a post at each end
-        box("#8a5a3a", px, py, t, s * 0.22);
-        box("#c8956a", px, py, t, s * 0.06);
-        box("rgba(60,30,40,0.3)", px, py + s * 0.22, t, s * 0.05);
-        if (at(c - 1, r) !== "-" || at(c + 1, r) !== "-") box("#5c3a24", px + s * 0.42, py + s * 0.22, s * 0.12, s * 0.78);
-      } else if (ch === "~") {
-        // Laundry line between two poles, one piece of washing per tile
-        ctx.strokeStyle = "#f3eee4";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, py + 2);
-        ctx.quadraticCurveTo(px + s / 2, py + s * 0.12, px + s, py + 2);
-        ctx.stroke();
-        if (at(c - 1, r) !== "~") box("#5c4a3c", px, py - s * 0.1, 3, s * 1.1);
-        if (at(c + 1, r) !== "~") box("#5c4a3c", px + s - 3, py - s * 0.1, 3, s * 1.1);
-        const h = hash(c * 7 + r);
-        const col = CLOTHES[Math.floor(h * CLOTHES.length)]!;
-        const sw = px + (calm ? 0 : Math.sin(time * 2 + c) * s * 0.03);
-        if (h > 0.5) {
-          box(col, sw + s * 0.2, py + s * 0.1, s * 0.55, s * 0.45);
-          box(col, sw + s * 0.08, py + s * 0.1, s * 0.8, s * 0.14);
-        } else box(col, sw + s * 0.25, py + s * 0.1, s * 0.45, s * 0.6);
-        box("rgba(70,40,100,0.2)", sw + s * 0.2, py + s * 0.1, s * 0.1, s * 0.45);
-      } else if (ch === "A") {
-        const m = px + s / 2;
-        lines("#4b4250", 2, [m, py + s, m, py - s * 0.9, m - s * 0.45, py - s * 0.8, m + s * 0.45, py - s * 0.8, m - s * 0.33, py - s * 0.5, m + s * 0.33, py - s * 0.5, m - s * 0.2, py - s * 0.2, m + s * 0.2, py - s * 0.2]);
-        oval(calm || Math.sin(time * 3) > 0 ? "#ff6a4a" : "#a04a3a", m, py - s * 0.92, 2.5);
+        // Wall shelf with a bracket; jars of pickles, jam and cherries on it
+        box("#9a6a3c", -0.02, 0, 1.04, 0.16);
+        box("#c08a52", -0.02, 0, 1.04, 0.04);
+        shape("#7a4a28", [0.4, 0.16, 0.6, 0.16, 0.5, 0.48]);
+        if (h > 0.3 && !items.some((i) => !i.got && Math.floor(i.x) === c && Math.floor(i.y) === r - 1)) {
+          box(["#6aa04a", C.apricot, C.pomegranate][Math.floor(h * 3)]!, 0.28, -0.4, 0.4, 0.4);
+          box("#d9b25a", 0.24, -0.48, 0.48, 0.1);
+          box("rgba(255,255,255,0.4)", 0.33, -0.34, 0.06, 0.26);
+        }
+      } else if (ch === "~" || ch === "Y") {
+        // Pot rack or chandelier: a bar hung on chains, things dangling below
+        const ch2 = ch === "Y";
+        const L = at(c - 1, r) !== ch;
+        const R = at(c + 1, r) !== ch;
+        const cx = ch2 ? (L || R ? -1 : 0.5) : L ? 0.15 : R ? 0.85 : -1;
+        if (cx >= 0) lines(ch2 ? "#b08a3a" : "#555a63", 0.04, [cx, 0, cx, -r - 1]);
+        box(ch2 ? "#c9a24a" : "#6b707a", -0.02, 0, 1.04, 0.12);
+        box(ch2 ? "#f3d27a" : "#a9afb8", -0.02, 0, 1.04, 0.03);
+        ctx.save();
+        ctx.translate(0.5, 0.12);
+        ctx.rotate(swing);
+        if (ch2) {
+          glow(0, 0.38, 0.9, "rgba(255,226,150,0.45)");
+          lines("#b08a3a", 0.04, [0, 0, 0, 0.25]);
+          oval("#fff2c0", 0, 0.36, 0.1, 0.13);
+          oval("#dff2ff", -0.3, 0.16, 0.035, 0.07);
+          oval("#dff2ff", 0.3, 0.16, 0.035, 0.07);
+        } else {
+          lines("#555a63", 0.03, [0, 0, 0, 0.16]);
+          const k = Math.floor(h * 3);
+          if (k === 0) {
+            // A copper pot
+            oval("#c46a3a", 0, 0.42, 0.28, 0.22);
+            box("#c46a3a", -0.3, 0.2, 0.6, 0.12);
+            box("rgba(255,255,255,0.3)", -0.18, 0.3, 0.06, 0.2);
+          } else if (k === 1) {
+            // A frying pan
+            lines("#2f3238", 0.07, [0, 0.16, 0, 0.4]);
+            oval("#2f3238", 0, 0.62, 0.24);
+            oval("#4a4e57", -0.05, 0.58, 0.14);
+          } else {
+            // A ladle
+            lines("#a9afb8", 0.05, [0, 0.16, 0, 0.55]);
+            oval("#a9afb8", 0, 0.62, 0.13, 0.1);
+          }
+        }
+        ctx.restore();
+      } else if (ch === "t") {
+        // Café table: a white cloth and legs down to the floor
+        const left = at(c - 1, r) !== "t";
+        const right = at(c + 1, r) !== "t";
+        const g = groundBelow(c + 0.5, r + 1);
+        for (const lx of [left ? 0.2 : -1, right ? 0.8 : -1]) if (lx > 0 && g > 0) box("#6b4630", lx - 0.05, 0.3, 0.1, g - r - 0.3);
+        box("#f4efe6", -0.03, 0, 1.06, 0.22);
+        box("#ddd5c6", -0.03, 0.22, 1.06, 0.12);
+        if (left) shape("#ddd5c6", [-0.03, 0, -0.15, 0.4, -0.03, 0.34]);
+        if (right) shape("#ddd5c6", [1.03, 0, 1.15, 0.4, 1.03, 0.34]);
+      } else if (ch === "h") {
+        // Bistro chair; after closing some stand upside down on the tables
+        if (at(c, r + 1) === "t") {
+          ctx.translate(0, 1.5);
+          ctx.scale(1, -1);
+        }
+        const d = h > 0.5 ? 0.2 : 0.8;
+        lines("#7a4a2a", 0.07, [0.2, 0.55, 0.2, 1, 0.8, 0.55, 0.8, 1, d, 0.55, d, -0.1, d, 0.05, 1 - d + (d - 0.5) * 0.6, 0.05]);
+        box("#b0213a", 0.12, 0.48, 0.76, 0.1);
+      } else if (ch === "^") {
+        // Gas burner: tall orange flames when lit, a low blue ring between
+        const fh = flame(c);
+        const on = fh > 0.45;
+        const fl = calm ? 0 : Math.sin(time * 31 + c * 2) * 0.06;
+        box("#1a1a1f", 0.12, 0.92, 0.76, 0.08);
+        if (on) glow(0.5, 0.75, 0.8, "rgba(255,150,60,0.4)");
+        for (const [dx, k] of [[-0.18, 0.7], [0.18, 0.75], [0, 1]] as const) {
+          shape(on ? "#ff6a1a" : "#3d7bff", [0.5 + dx - 0.16, 0.95, 0.5 + dx + fl * k, 0.95 - fh * k, 0.5 + dx + 0.16, 0.95]);
+          shape(on ? GOLD : "#a8d0ff", [0.5 + dx - 0.07, 0.95, 0.5 + dx - fl, 0.95 - fh * k * 0.55, 0.5 + dx + 0.07, 0.95]);
+        }
+      } else if (ch === "_") {
+        // Soapy puddle with bubbles rising off it
+        oval("rgba(190,228,248,0.8)", 0.5, 0.97, 0.62, 0.08);
+        oval("rgba(255,255,255,0.8)", 0.32, 0.95, 0.2, 0.025);
+        ctx.strokeStyle = "rgba(255,255,255,0.85)";
+        ctx.lineWidth = 0.025;
+        for (const i of [0.2, 0.55, 0.85]) {
+          const p = calm ? 0.3 : (time * 0.5 + i + c * 0.37) % 1;
+          ctx.globalAlpha = 1 - p;
+          ctx.beginPath();
+          ctx.arc(i + Math.sin(p * 6) * 0.05, 0.9 - p * 0.7, 0.05 + p * 0.04, 0, TAU);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
       }
     };
 
     const drawBackground = (w: number) => {
+      const th = THEME[level]!;
       const v = viewH;
       const g = ctx.createLinearGradient(0, 0, 0, v);
-      g.addColorStop(0, "#8f95cf");
-      g.addColorStop(0.42, "#ebbac2");
-      g.addColorStop(0.72, "#ffd39e");
-      g.addColorStop(1, "#ffb97c");
+      g.addColorStop(0, th[0]);
+      g.addColorStop(1, th[1]);
       box(g, 0, 0, w, v);
-      // The low sun and its glow
-      const sx = w * 0.76;
-      const sy = v * 0.44;
-      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, v * 0.6);
-      glow.addColorStop(0, "rgba(255,240,200,1)");
-      glow.addColorStop(0.12, "rgba(255,214,150,0.6)");
-      glow.addColorStop(1, "rgba(255,190,140,0)");
-      box(glow, 0, 0, w, v);
-      oval("#fff4d8", sx, sy, T * 0.95);
-      // Long thin clouds, lit from below
-      for (let i = 0; i < 4; i++) {
-        const span = w + T * 8;
-        const cx = ((((hash(i + 3) * span - camX * T * 0.03 - (calm ? 0 : time * 3)) % span) + span) % span) - T * 4;
-        const cy = v * (0.1 + hash(i + 9) * 0.26);
-        oval("rgba(240,200,215,0.6)", cx, cy, T * (1.4 + hash(i) * 1.5), T * 0.16);
-        oval("rgba(255,232,200,0.75)", cx + T * 0.3, cy + T * 0.08, T * (0.9 + hash(i + 1)), T * 0.08);
+      const off = camX * T * 0.5;
+      // The wall: kitchen tiles, cellar bricks, hall wallpaper stripes
+      const bw = T * [0.7, 1.3, 0.6][level]!;
+      const bh = T * [0.45, 0.65, 40][level]!;
+      const seg: number[] = [];
+      for (let yy = 0, i = 0; yy < v; yy += bh, i++) {
+        seg.push(0, yy, w, yy);
+        for (let xx = -((off + (i % 2) * bw * 0.5) % bw); xx < w; xx += bw) seg.push(xx, yy, xx, yy + bh);
       }
-      // Ararat: the palest, coolest layer, warm on the sun side
-      const mx = w * 0.28 - camX * T * 0.04;
-      shape("#dcc3db", [mx - v * 0.9, v * 0.8, mx, v * 0.28, mx + v * 0.38, v * 0.55, mx + v * 0.6, v * 0.47, mx + v * 1.1, v * 0.8]);
-      shape("#ecd0d6", [mx, v * 0.28, mx + v * 0.38, v * 0.55, mx + v * 0.6, v * 0.47, mx + v * 1.1, v * 0.8, mx + v * 0.25, v * 0.8, mx + v * 0.1, v * 0.5]);
-      shape("#fdf3ee", [mx - v * 0.12, v * 0.36, mx, v * 0.28, mx + v * 0.1, v * 0.34, mx + v * 0.04, v * 0.37, mx - v * 0.04, v * 0.345]);
-      shape("#fdf3ee", [mx + v * 0.53, v * 0.5, mx + v * 0.6, v * 0.47, mx + v * 0.66, v * 0.5]);
-      const haze = ctx.createLinearGradient(0, v * 0.45, 0, v);
-      haze.addColorStop(0, "rgba(255,214,190,0)");
-      haze.addColorStop(1, "rgba(255,214,190,0.55)");
-      // Three city layers: each nearer one darker, warmer and faster, with a
-      // sunlit right edge and windows lighting up.
-      CITY.forEach(([par, col, lo, hi, seed, rim], li) => {
-        const bw = T * (1.2 + par);
-        const off = camX * T * par;
-        for (let i = Math.floor(off / bw) - 1; i * bw - off < w; i++) {
-          const h = hash(i + seed);
-          const bh = (lo + h * (hi - lo)) * T;
-          const ww = bw * (0.72 + hash(i * 3.7 + seed) * 0.3);
-          const bx = i * bw - off;
-          const top = v - bh;
-          box(col, bx, top, ww, bh);
-          if (h > 0.8) {
-            // A church: drum and cone
-            box(col, bx + ww * 0.3, top - T * 0.45, ww * 0.4, T * 0.46);
-            shape(col, [bx + ww * 0.24, top - T * 0.45, bx + ww / 2, top - T * 1.2, bx + ww * 0.76, top - T * 0.45]);
-          }
-          box(`rgba(255,205,160,${rim})`, bx + ww - T * 0.07, top, T * 0.07, bh);
-          const ws = T * (0.07 + li * 0.05);
-          for (let a = 0; top + T * (0.35 + a * 0.5) < v - T * 0.3; a++)
-            for (let b = 0; bx + T * (0.18 + b * 0.36) < bx + ww - T * 0.2; b++)
-              if (hash(i * 31 + a * 7 + b * 13 + seed) > 0.6)
-                box(li ? "#ffd98a" : "rgba(255,236,170,0.9)", bx + T * (0.18 + b * 0.36), top + T * (0.35 + a * 0.5), ws, ws * 1.4);
+      lines(level ? "rgba(0,0,0,0.18)" : "rgba(170,130,90,0.3)", level > 1 ? T * 0.14 : 1, seg);
+      // Windows with Ararat in them (dusk, then moonlit), and between them
+      // pendant lamps, bare bulbs or paintings
+      const [ww, wh, wy] = ([[2.6, 2, 1.2], [1.4, 0.8, 0.7], [2.2, 3.4, 1]] as const)[level]!.map((n) => n * T) as [number, number, number];
+      const sp = T * 9;
+      for (let i = Math.floor(off / sp) - 1; i * sp - off < w + sp; i++) {
+        const x0 = i * sp - off + T * 1.5;
+        const fr = th[8];
+        if (level === 1) shape("rgba(190,210,255,0.1)", [x0, wy + wh, x0 + ww, wy + wh, x0 + ww + T * 2.5, v, x0 + T * 1.5, v]);
+        box(fr, x0 - T * 0.15, wy - T * 0.15, ww + T * 0.3, wh + T * 0.3);
+        if (level > 1) oval(fr, x0 + ww / 2, wy, ww / 2 + T * 0.15);
+        const sky = ctx.createLinearGradient(0, wy - ww / 2, 0, wy + wh);
+        sky.addColorStop(0, th[6]);
+        sky.addColorStop(1, th[7]);
+        box(sky, x0, wy, ww, wh);
+        if (level > 1) oval(sky, x0 + ww / 2, wy, ww / 2);
+        if (level) oval("#fff6d8", x0 + ww * 0.72, wy + wh * 0.22, T * 0.22);
+        shape(level ? "rgba(20,20,50,0.45)" : "rgba(170,90,110,0.45)", [x0, wy + wh, x0 + ww * 0.35, wy + wh * 0.5, x0 + ww * 0.6, wy + wh * 0.75, x0 + ww * 0.75, wy + wh * 0.66, x0 + ww, wy + wh]);
+        shape("rgba(255,255,255,0.6)", [x0 + ww * 0.26, wy + wh * 0.59, x0 + ww * 0.35, wy + wh * 0.5, x0 + ww * 0.44, wy + wh * 0.59]);
+        lines(fr, T * 0.08, level === 1 ? [x0 + ww * 0.33, wy, x0 + ww * 0.33, wy + wh, x0 + ww * 0.66, wy, x0 + ww * 0.66, wy + wh] : [x0 + ww / 2, wy - (level ? ww / 2 : 0), x0 + ww / 2, wy + wh, x0, wy + wh * 0.5, x0 + ww, wy + wh * 0.5]);
+        box(fr, x0 - T * 0.3, wy + wh + T * 0.1, ww + T * 0.6, T * 0.15);
+        const lx = x0 + T * 4.8;
+        if (level > 1) {
+          // A framed painting: a pomegranate
+          box("#c9a24a", lx - T * 0.7, T * 1.6, T * 1.4, T * 1.1);
+          box("#24402f", lx - T * 0.58, T * 1.72, T * 1.16, T * 0.86);
+          oval(C.pomegranate, lx, T * 2.2, T * 0.28);
+          shape(C.pomegranate, [lx - T * 0.1, T * 1.95, lx, T * 1.82, lx + T * 0.1, T * 1.95]);
+        } else {
+          lines("#3a3a3a", 1.5, [lx, 0, lx, T * 1.3]);
+          glow(lx, T * 1.6, T * 2.4, "rgba(255,222,150,0.35)");
+          if (!level) shape(C.tarragon, [lx - T * 0.45, T * 1.62, lx - T * 0.15, T * 1.25, lx + T * 0.15, T * 1.25, lx + T * 0.45, T * 1.62]);
+          oval("#fff2c0", lx, T * 1.62, T * 0.13);
         }
-        if (li < 2) box(haze, 0, v * 0.45, w, v * 0.55);
-      });
+      }
+      // A lower band behind the furniture: green tiles, dark bricks, wood panels
+      const by = v - T * 3.4;
+      box(th[2], 0, by, w, v - by);
+      box("rgba(255,255,255,0.18)", 0, by, w, T * 0.08);
+      const pan: number[] = [];
+      for (let xx = -(off % (T * 1.6)); xx < w; xx += T * 1.6) pan.push(xx, by, xx, v);
+      lines("rgba(0,0,0,0.18)", 1, pan);
     };
 
-    const drawDoor = (px: number, py: number) => {
-      const s = T;
-      const open = state === "win" || (state === "end" && lives > 0) ? clamp(stateT * 3, 0, 1) : 0;
-      box("#b9725a", px - s * 0.8, py - s * 2.35, s * 1.6, s * 2.35);
-      box(RIM, px + s * 0.7, py - s * 2.35, s * 0.1, s * 2.35);
-      box(SHADE, px - s * 0.8, py - s * 2.35, s * 0.14, s * 2.35);
-      // Warm light from inside, brighter as the door opens
-      const gl = ctx.createRadialGradient(px, py - s * 0.9, 0, px, py - s * 0.9, s * (1.6 + open * 1.2));
-      gl.addColorStop(0, `rgba(255,214,140,${0.35 + open * 0.4})`);
-      gl.addColorStop(1, "rgba(255,200,120,0)");
-      box(gl, px - s * 3, py - s * 4, s * 6, s * 4);
-      ctx.fillStyle = "#ffd88e";
-      roundRect(ctx, px - s * 0.45, py - s * 1.8, s * 0.9, s * 1.8, s * 0.4);
-      ctx.fill();
-      const dw = s * 0.9 * (1 - open * 0.8);
-      ctx.fillStyle = C.tarragon;
-      roundRect(ctx, px - s * 0.45, py - s * 1.8, dw, s * 1.8, Math.min(s * 0.4, dw / 2));
-      ctx.fill();
-      if (open < 0.4) {
-        box("#ffe2a8", px - s * 0.3, py - s * 1.45, s * 0.6, s * 0.5);
-        box(C.tarragon, px - s * 0.02, py - s * 1.45, s * 0.04, s * 0.5);
-        oval(GOLD, px + s * 0.28, py - s * 0.8, s * 0.06);
-      }
-      // Striped apricot awning with scalloped edge
-      for (let i = 0; i < 6; i++) {
-        const ax = px - s * 0.9 + i * s * 0.3;
-        const col = i % 2 ? C.matsoni : C.apricot;
-        box(col, ax, py - s * 2.25, s * 0.3, s * 0.3);
-        oval(col, ax + s * 0.15, py - s * 1.95, s * 0.15);
-      }
-      box("rgba(70,40,100,0.18)", px - s * 0.9, py - s * 1.85, s * 1.8, s * 0.08);
-      // Cup sign with steam (a lot more of it when the cat arrives)
-      ctx.fillStyle = C.matsoni;
-      roundRect(ctx, px - s * 0.45, py - s * 3.05, s * 0.9, s * 0.7, s * 0.15);
-      ctx.fill();
-      box(C.apricotDeep, px - s * 0.2, py - s * 2.85, s * 0.32, s * 0.3);
-      lines(C.apricotDeep, 3, [px + s * 0.12, py - s * 2.8, px + s * 0.22, py - s * 2.7]);
-      box(C.apricotDeep, px - s * 0.28, py - s * 2.53, s * 0.48, s * 0.04);
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
-      ctx.lineWidth = 2;
+    // The chef's plate of fish on a little pedestal table, glowing; empty
+    // once the cat has it.
+    const drawGoal = () => {
+      const won = state === "win" || (state === "end" && lives > 0);
+      glow(0, -1.3, 1.8 + (calm ? 0 : Math.sin(time * 4) * 0.1), "rgba(255,226,150,0.5)");
+      lines("#6b4630", 0.12, [0, -1, 0, 0, -0.35, 0, 0.35, 0]);
+      box("#8a5a3a", -0.65, -1.08, 1.3, 0.12);
+      plate(0.42);
+      if (won) return;
+      ctx.save();
+      ctx.translate(0, -1.32);
+      fish(FRIED, 0.42);
+      lines("rgba(120,50,20,0.5)", 0.04, [-0.2, -0.15, -0.1, 0.15, 0, -0.18, 0.1, 0.15]);
+      ctx.restore();
+      oval("#ffe14a", 0.5, -1.22, 0.13, 0.08);
+      oval(C.tarragonLight, -0.45, -1.2, 0.1, 0.06, 0.4);
+      ctx.strokeStyle = "rgba(255,255,255,0.8)";
+      ctx.lineWidth = 0.05;
       ctx.beginPath();
-      const tall = 0.3 + open * 0.5;
-      for (const dx of open ? [-0.16, -0.03, 0.1] : [-0.1, 0.03]) {
-        const wv = calm ? 0 : Math.sin(time * (4 + open * 4) + dx * 20) * s * 0.06;
-        ctx.moveTo(px + dx * s, py - s * 3.1);
-        ctx.quadraticCurveTo(px + dx * s + s * 0.1 + wv, py - s * (3.1 + tall / 2), px + dx * s - wv, py - s * (3.1 + tall));
+      for (const dx of [-0.2, 0.1]) {
+        const wv = calm ? 0 : Math.sin(time * 4 + dx * 20) * 0.08;
+        ctx.moveTo(dx, -1.65);
+        ctx.quadraticCurveTo(dx + 0.12 + wv, -1.9, dx - wv, -2.15);
       }
       ctx.stroke();
     };
 
-    // Checkpoint: a chimney stub with a flag; once reached the flag runs up
-    // and the chimney starts smoking.
-    const drawCheck = (k: { t: number }, px: number, py: number) => {
-      const s = T;
-      const on = k.t >= 0;
-      const since = time - k.t;
-      if (on) {
-        for (let i = 0; i < 4; i++) {
-          if (since < i * 0.4) continue;
-          const p = (since * 0.45 + i / 4) % 1;
-          oval(`rgba(150,132,150,${0.55 * (1 - p)})`, px - s * 0.05 + Math.sin(p * 5 + i) * s * 0.12 + p * s * 0.4, py - s * (0.95 + p * 1.7), s * (0.12 + p * 0.24));
-        }
-      }
-      box("#b56f55", px - s * 0.28, py - s * 0.78, s * 0.56, s * 0.78);
-      box(RIM, px + s * 0.18, py - s * 0.78, s * 0.1, s * 0.78);
-      box("#8f5038", px - s * 0.34, py - s * 0.9, s * 0.68, s * 0.16);
-      box("#4b4250", px + s * 0.24, py - s * 1.9, 2, s * 1.05);
-      const up = on ? Math.min(1, since * 3) : 0;
-      const fy = py - s * (1.1 + up * 0.75);
-      const wv = calm ? 0 : Math.sin(time * 6) * s * 0.05;
-      shape(on ? C.apricot : "#9a8f95", [px + s * 0.24 + 2, fy, px + s * (0.72 - (1 - up) * 0.2), fy + s * 0.13 + wv, px + s * 0.24 + 2, fy + s * 0.28]);
+    // Checkpoint: the cat's milk saucer; it fills once reached
+    const drawCheck = (k: { t: number }) => {
+      oval("#8a1c2e", 0, -0.1, 0.4, 0.12);
+      box(C.pomegranate, -0.4, -0.2, 0.8, 0.12);
+      oval(k.t >= 0 ? C.matsoni : "#5a1424", 0, -0.2, 0.36, 0.08);
     };
 
     const groundBelow = (gx: number, gy: number) => {
@@ -823,6 +1039,7 @@ export const game: Game = {
 
     const draw = () => {
       const s = fit.size();
+      const th = THEME[level]!;
       ctx.save();
       if (shake > 0) ctx.translate(rand(-1, 1) * shake * 10, rand(-1, 1) * shake * 10);
       ctx.beginPath();
@@ -831,19 +1048,19 @@ export const game: Game = {
       drawBackground(s.w);
       const ox = -camX * T;
       const oy = viewH - ROWS * T;
-      // Cool dusk down in the streets, so gaps read as drops
+      // Dark down in the gaps, so they read as drops
       const haze = ctx.createLinearGradient(0, oy + T * 7.3, 0, viewH);
-      haze.addColorStop(0, "rgba(60,35,75,0)");
-      haze.addColorStop(1, "rgba(60,35,75,0.65)");
+      haze.addColorStop(0, "rgba(30,15,25,0)");
+      haze.addColorStop(1, "rgba(30,15,25,0.75)");
       box(haze, 0, oy + T * 7.3, s.w, T * 2.7);
       for (let r = 0; r < ROWS; r++) {
         for (let c = Math.max(0, Math.floor(camX) - 1); c <= Math.min(W - 1, camX + s.w / T + 1); c++) {
           const ch = at(c, r);
-          if (ch !== " ") drawTile(ch, c, r, ox + c * T, oy + r * T);
+          if (ch !== " ") put(ox + c * T, oy + r * T, T, () => drawTile(ch, c, r));
         }
       }
-      for (const k of checks) drawCheck(k, ox + k.x * T, oy + k.y * T);
-      drawDoor(ox + door.x * T, oy + door.y * T);
+      for (const k of checks) put(ox + k.x * T, oy + k.y * T, T, () => drawCheck(k));
+      put(ox + door.x * T, oy + door.y * T, T, drawGoal);
       // Soft contact shadows: they shrink as the cat rises
       if (state === "play" || state === "win") {
         const gr = groundBelow(x, y - 0.01);
@@ -854,16 +1071,20 @@ export const game: Game = {
         }
       }
       ctx.globalAlpha = 0.25;
-      for (const f of foes) if (!f.dead && !f.fly) oval("#3c1e32", ox + f.x * T, oy + f.y * T, T * 0.24, T * 0.06);
+      for (const f of foes) if (!f.dead && f.k !== 1) oval("#3c1e32", ox + f.x * T, oy + f.y * T, T * (f.k ? 0.45 : 0.24), T * 0.06);
       ctx.globalAlpha = 1;
-      for (const it of items) if (!it.got) drawFruit(it.gold, ox + it.x * T, oy + it.y * T + (calm ? 0 : Math.sin(time * 3 + it.x) * T * 0.06), T * 0.22);
-      for (const f of foes) if (!f.dead || f.dt < 0.3) drawPigeon(f, ox + f.x * T, oy + f.y * T);
-      if (state === "play") drawCat(ox + x * T, oy + y * T);
-      else if (state === "win") drawCat(ox + x * T, oy + y * T, 0, 1 - clamp((stateT - 0.25) * 3, 0, 1));
-      else if (hitDeath && stateT < 0.9) {
+      for (const it of items) if (!it.got) put(ox + it.x * T, oy + it.y * T + (calm ? 0 : Math.sin(time * 3 + it.x) * T * 0.06), T, () => drawItem(it));
+      for (const f of foes) if (!f.dead || f.dt < 2.2) drawFoe(f, ox + f.x * T, oy + f.y * T);
+      const mood = state === "win" || joyT > 0 ? 2 : slick ? 1 : 0;
+      if (state === "play") drawCat(ox + x * T, oy + y * T, mood);
+      else if (state === "win" || (state === "end" && lives > 0)) {
+        // Prize in the mouth, hopping for joy
+        const hop = calm || stateT < 0.3 ? 0 : Math.abs(Math.sin(stateT * 9)) * 0.35;
+        drawCat(ox + x * T, oy + (y - hop) * T, 2);
+      } else if (hitDeath && stateT < 0.9) {
         // Knocked off: a little tumble up and down, fading
         const t = stateT;
-        drawCat(ox + deadX * T, oy + (deadY - 4 * t + 9 * t * t) * T, (calm ? 0.5 : t * 9) * -face, 1 - t);
+        drawCat(ox + (deadX + deadV * t) * T, oy + (deadY - 4 * t + 9 * t * t) * T, 1, (calm ? 0.5 : t * 9) * -face, 1 - t);
       }
       for (const p of sparks) {
         const a = 1 - p.life / p.max;
@@ -883,8 +1104,13 @@ export const game: Game = {
           ctx.scale(calm ? 1 : Math.cos(p.life * 11 + p.rot), 1);
           box(p.col, -T * 0.08, -T * 0.04, T * 0.16, T * 0.08);
           ctx.restore();
-        } else if (p.k === 1) oval(p.col, px, py, T * 0.12, T * 0.045, p.rot + Math.sin(p.life * 6) * 0.8);
-        else oval(p.col, px, py, T * 0.06);
+        } else if (p.k === 1) {
+          // A heart
+          const r = T * 0.07;
+          oval(p.col, px - r, py, r);
+          oval(p.col, px + r, py, r);
+          shape(p.col, [px - r * 1.95, py + r * 0.3, px + r * 1.95, py + r * 0.3, px, py + r * 2.2]);
+        } else oval(p.col, px, py, T * 0.06);
       }
       ctx.globalAlpha = 1;
       // Fades between levels, the level number as one opens, the game-over dim
@@ -892,7 +1118,7 @@ export const game: Game = {
       if (state === "win") fade = level + 1 < LEVELS.length ? clamp((stateT - 1.4) * 2.5, 0, 1) : 0;
       if (fade > 0) {
         ctx.globalAlpha = fade;
-        box("#f7c8a0", 0, 0, s.w, viewH);
+        box(th[1], 0, 0, s.w, viewH);
         ctx.globalAlpha = 1;
       }
       if (state === "play" && levelT < 1.5) {
@@ -909,36 +1135,33 @@ export const game: Game = {
       if (state === "end" && lives <= 0) box(`rgba(19,36,27,${Math.min(0.45, stateT * 0.5)})`, 0, 0, s.w, viewH);
       ctx.restore();
 
-      // HUD on a soft pill: lives, apricots, level, score
+      // HUD on a soft pill: lives, fish, level, score
       const hs = clamp(T * 0.36, 10, 16);
       const hy = 12 + hs * 1.2;
-      ctx.fillStyle = "rgba(255,246,236,0.55)";
+      ctx.fillStyle = "rgba(255,246,236,0.7)";
       roundRect(ctx, 6, hy - hs * 1.25, s.w - 12, hs * 2.5, hs * 1.25);
       ctx.fill();
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < LIVES; i++) {
         ctx.globalAlpha = i < lives ? 1 : 0.25;
-        catHead(14 + hs + i * hs * 2.3, hy + hs * 0.1, hs);
+        catHead(12 + hs + i * hs * 1.85, hy + hs * 0.1, hs * 0.8, 0);
       }
       ctx.globalAlpha = 1;
-      const fx = 14 + hs * 8;
-      drawFruit(false, fx, hy + hs * 0.1, hs * 0.6);
+      const fx = 12 + hs * 10.2;
+      put(fx, hy, hs * 2, () => fish("#9cc0d6", 0.3));
       label(ctx, String(fruit), fx + hs * 1.1, hy, hs * 1.4, C.ink, "left");
-      label(ctx, `${level + 1}/${LEVELS.length}`, s.w / 2 + hs * 2, hy, hs * 1.3, C.ink);
+      label(ctx, `${level + 1}/${LEVELS.length}`, s.w / 2 + hs * 3, hy, hs * 1.3, C.ink);
       label(ctx, String(score), s.w - 16, hy, hs * 1.4, C.ink, "right");
 
-      // Pad area: the tufa wall below the roofline
+      // Pad area: the floor in the foreground, big dark checks
       const pg = ctx.createLinearGradient(0, viewH, 0, s.h);
-      pg.addColorStop(0, "#a5654c");
-      pg.addColorStop(1, "#6a3d36");
+      pg.addColorStop(0, th[5]);
+      pg.addColorStop(1, "#1c1416");
       box(pg, 0, viewH, s.w, s.h - viewH);
-      const bh = T * 0.8;
-      for (let yy = viewH + 8, i = 0; yy < s.h; yy += bh, i++) {
-        const seg = [0, yy, s.w, yy];
-        for (let xx = (i % 2) * T * 0.8; xx < s.w; xx += T * 1.6) seg.push(xx, yy, xx, yy + bh);
-        lines("rgba(50,25,30,0.18)", 1, seg);
-      }
-      box("#eeaa86", 0, viewH, s.w, 4);
-      box("rgba(40,20,30,0.35)", 0, viewH + 4, s.w, 5);
+      const q = T * 1.2;
+      for (let yy = viewH + 9, i = 0; yy < s.h; yy += q, i++)
+        for (let xx = (i % 2) * q; xx < s.w; xx += q * 2) box("rgba(255,255,255,0.06)", xx, yy, q, q);
+      box(th[3], 0, viewH, s.w, 4);
+      box("rgba(20,10,10,0.4)", 0, viewH + 4, s.w, 5);
       pad.draw(ctx, s);
       // Icons as shapes, with rounded corners
       ctx.lineJoin = "round";
@@ -959,6 +1182,7 @@ export const game: Game = {
       if (!paused && !reported) {
         time += dt;
         stateT += dt;
+        joyT -= dt;
         shake = Math.max(0, shake - dt);
         sqv += (-sq * 320 - sqv * 16) * dt;
         sq += sqv * dt;
@@ -977,11 +1201,12 @@ export const game: Game = {
         } else {
           pad.consume("a");
           pad.consume("up");
+          slick = false;
         }
         if (state === "dead" && stateT > RESPAWN) respawn();
         if (state === "win") {
-          x += (door.x - x) * Math.min(1, dt * 5);
-          if (!calm && Math.random() < 0.4) emit(5, door.x + rand(-1.5, 1.5), door.y - rand(3.2, 4.5), rand(-1, 1), rand(-1, 0), 1.6, pick(CONFETTI));
+          x += (door.x - 0.95 - x) * Math.min(1, dt * 5);
+          if (!calm && Math.random() < 0.4) emit(5, door.x + rand(-1.5, 1.5), door.y - rand(2.4, 3.6), rand(-1, 1), rand(-1, 0), 1.6, pick(CONFETTI));
           if (stateT > 1.9) {
             if (level + 1 < LEVELS.length) load(++level);
             else {
