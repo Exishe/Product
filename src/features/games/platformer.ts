@@ -179,6 +179,8 @@ export const game: Game = {
       ctx.stroke();
     };
     const outlined = (col: string, d: number, fn: () => void) => {
+      // A see-through figure gets no outline: stacked passes would darken it
+      if (ctx.globalAlpha < 1) return fn();
       over = col;
       for (const [ox, oy] of [[-d, 0], [d, 0], [0, -d], [0, d]] as const) {
         ctx.save();
@@ -603,7 +605,7 @@ export const game: Game = {
         // Tufa blocks in slightly varied stones, mortar, then light: warm on
         // the sun side (right) and on top, cool on the left and below.
         const h = hash(c * 3.1 + r * 17);
-        box(h > 0.66 ? "#d4866a" : h > 0.33 ? C.tufa : "#de9476", px, py, t, t);
+        box(h > 0.66 ? "#d6896a" : h > 0.33 ? C.tufa : "#db8f6e", px, py, t, t);
         const o = r % 2 ? s * 0.25 : s * 0.75;
         const o2 = px + ((o + s / 2) % s);
         lines("rgba(150,80,70,0.55)", 1, [px, py + s / 2, px + s, py + s / 2, px + o, py, px + o, py + s / 2, o2, py + s / 2, o2, py + s]);
@@ -797,7 +799,7 @@ export const game: Game = {
         for (let i = 0; i < 4; i++) {
           if (since < i * 0.4) continue;
           const p = (since * 0.45 + i / 4) % 1;
-          oval(`rgba(244,234,238,${0.6 * (1 - p)})`, px - s * 0.05 + Math.sin(p * 5 + i) * s * 0.12 + p * s * 0.4, py - s * (0.95 + p * 1.7), s * (0.12 + p * 0.24));
+          oval(`rgba(150,132,150,${0.55 * (1 - p)})`, px - s * 0.05 + Math.sin(p * 5 + i) * s * 0.12 + p * s * 0.4, py - s * (0.95 + p * 1.7), s * (0.12 + p * 0.24));
         }
       }
       box("#b56f55", px - s * 0.28, py - s * 0.78, s * 0.56, s * 0.78);
@@ -866,8 +868,8 @@ export const game: Game = {
         const py = oy + p.y * T;
         ctx.globalAlpha = p.k === 5 ? Math.min(1, a * 3) : a;
         if (p.k === 2) {
-          const sz = T * 0.45 * (1 + 0.5 * Math.max(0, 1 - p.life * 6));
-          label(ctx, p.txt!, px + 1, py + 1.5, sz, "rgba(80,30,30,0.55)");
+          const sz = T * (p.txt!.length > 3 ? 0.6 : 0.45) * (1 + 0.5 * Math.max(0, 1 - p.life * 6));
+          label(ctx, p.txt!, px + 1.5, py + 2, sz, "rgba(90,35,30,0.8)");
           label(ctx, p.txt!, px, py, sz, p.col);
         } else if (p.k === 3) oval(p.col, px, py, T * 0.08 * (1 + p.life * 3));
         else if (p.k === 4) star(p.col, px, py, T * 0.18 * a + 1);
