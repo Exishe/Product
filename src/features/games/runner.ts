@@ -167,7 +167,7 @@ export const game: Game = {
       slide = 0;
       sq = 0.22;
       sqv = 0;
-      api.sfx("jump");
+      api.sfx(double ? "boing" : "jump");
       if (double) parts.push({ x: xh, y: gy - hy, vx: 0, vy: 0, t: 0, life: 0.3, r: 8 * u, k: 3, c: "#ffffff" });
       else puff(xh, gy, 4);
     };
@@ -178,7 +178,7 @@ export const game: Game = {
       buf = 0;
       slideBuf = 0;
       if (slide <= 0) {
-        api.sfx("whoosh");
+        api.sfx("slip");
         sq = -0.12;
       }
       slide = 0.6;
@@ -260,6 +260,8 @@ export const game: Game = {
       vy = 480 * u;
       jumps = 2;
       api.sfx("hit");
+      // A head-first knock says "ouch!", a trip goes "whoa".
+      api.sfx(o.hi ? "ouch" : "whoa");
       const x = xh + 14 * u;
       const y = gy - hy - 84 * u;
       fly = [
@@ -350,6 +352,8 @@ export const game: Game = {
             puff(p.x, y, 8, 1, C.apricot, 150);
             parts.push({ x: p.x, y, vx: 0, vy: 0, t: 0, life: 0.35, r: 10 * u, k: 3, c: "#fff3d6" });
             api.sfx("coin");
+            // Every tenth cup the waiter is pleased with himself.
+            if (got % 10 === 0) api.sfx("mmm");
             p.y = -1; // collected
           }
         }

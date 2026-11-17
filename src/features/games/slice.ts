@@ -662,13 +662,18 @@ export const game: Game = {
       if (lives <= 0) {
         over = true;
         sfx("lose");
-      } else sfx("bad");
+        sfx("whoa");
+      } else {
+        sfx("bad");
+        sfx(f >= 1 ? "ouch" : "uhoh");
+      }
     };
 
     const finishCombo = () => {
       if (combo.n >= 3 && !over) {
         addScore(combo.n);
         pop(combo.x, combo.y - R * 1.4, `+${combo.n}`, C.matsoni, 40);
+        sfx(combo.n >= 5 ? "yay" : "mmm");
       }
       combo.n = 0;
     };
@@ -711,6 +716,7 @@ export const game: Game = {
       burst(it.x, it.y, it.vx, it.vy, [k.j, k.c[1]], 10);
       stain(it.x, it.y, k.j, ang);
       sfx("slice");
+      sfx("splat");
       const before = mult();
       streak++;
       streakT = 0;

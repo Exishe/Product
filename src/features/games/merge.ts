@@ -506,7 +506,10 @@ export const game: Game = {
           }
         }
       }
-      if (merged.length) api.sfx(fanfare ? "win" : "merge");
+      if (merged.length) {
+        api.sfx(fanfare ? "win" : "merge");
+        api.sfx(fanfare ? "mmm" : "pop");
+      }
       if (fanfare) stripT = 0;
       if (big && !calm) shakeT = 0.3;
       fanfare = false;
@@ -516,6 +519,7 @@ export const game: Game = {
         over = true;
         overT = 0;
         api.sfx("lose");
+        api.sfx("uhoh");
       }
     };
 

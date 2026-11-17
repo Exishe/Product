@@ -22,7 +22,7 @@
 //   fighter shape is shaded light-to-shadow from the right with a warm rim
 //   light; soft cool floor shadows; no outlines in the background.
 // - Signature: flour puffs on every hit, and a spinning lavash for a special.
-import { C, clamp, createPad, fitCanvas, label, loop, rand, roundRect, type Game, type PadButton, type Size } from "./engine";
+import { C, clamp, createPad, fitCanvas, label, loop, rand, roundRect, type Game, type PadButton, type SfxKind, type Size } from "./engine";
 
 type State = "idle" | "walk" | "punch" | "kick" | "throw" | "block" | "hit" | "stag" | "ko" | "win";
 type Fighter = {
@@ -474,9 +474,13 @@ export const game: Game = {
     const ai = { mv: 0, think: 0, react: 0, guard: 0, counter: 0, starts: [] as number[] };
     const lvl = () => Math.min(round, 3) - 1;
 
+    // A cheer (or an "uh-oh") a moment after the knockout, once the "whoa" is out.
+    let cheer: { at: number; kind: SfxKind } | null = null;
+
     const start = (f: Fighter, st: "punch" | "kick" | "throw") => {
       setSt(f, st);
       api.sfx("whoosh");
+      if (st === "kick") api.sfx("hah", f.cpu ? 1.2 : 0.85);
       if (!f.cpu) {
         ai.starts = ai.starts.filter((t) => now - t < 1.5);
         ai.starts.push(now);
@@ -495,6 +499,8 @@ export const game: Game = {
       add(loser.x, 60, 4, 1, 0, 0.2, 36);
       add(loser.x, 60, 1, 7, 170, 1.1, 8);
       api.sfx(winner === P ? "win" : "lose");
+      api.sfx("whoa", loser.cpu ? 1.2 : 0.85);
+      cheer = { at: now + 0.65, kind: winner === P ? "yay" : "uhoh" };
       if (!calm) flash = 0.18;
       if (winner === P) bonus += 300 + Math.ceil(timer) * 5;
       if (winner.wins >= 2) {
@@ -531,6 +537,8 @@ export const game: Game = {
         if (heavy && def.y <= 0) def.vy = 150;
         def.fl = 0.1;
         api.sfx(heavy ? "heavy" : "hit");
+        // The one who got hit says so: "oof" for a punch, "ouch!" for a kick.
+        api.sfx(heavy ? "ouch" : "oof", def.cpu ? 1.2 : 0.85);
         if (!calm) {
           shake = heavy ? 0.22 : 0.1;
           camX = from * (heavy ? 9 : 5);
@@ -690,6 +698,10 @@ export const game: Game = {
       const me: Intent = { mv: (s.right ? 1 : 0) - (s.left ? 1 : 0), block: s.down, jump: pad.consume("up"), a: pad.consume("a"), b: pad.consume("b"), c: pad.consume("c") };
       now += dt;
       phaseT += dt;
+      if (cheer && now >= cheer.at) {
+        api.sfx(cheer.kind, 0.9);
+        cheer = null;
+      }
       fightT = Math.max(0, fightT - dt);
       if (phase === "intro" && phaseT > 1.2) {
         phase = "fight";

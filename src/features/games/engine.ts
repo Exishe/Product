@@ -16,11 +16,18 @@ export type GameApi = {
   isPaused(): boolean;
   reducedMotion: boolean;
   locale: Locale;
-  /** Short synthesized sound effects; silent unless the guest turned sound on in the host. */
-  sfx: (kind: SfxKind) => void;
+  /**
+   * Short synthesized sound effects; silent unless the guest turned sound on in
+   * the host. `pitch` scales cartoon voices (0.8 a deep chef, 1.3 a squeaky one).
+   */
+  sfx: (kind: SfxKind, pitch?: number) => void;
 };
 
+/** Cartoon voices and noises, synthesized like the rest (see VOICES). */
+export type VoiceKind = "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
+
 export type SfxKind =
+  | VoiceKind
   | "tap"
   | "jump"
   | "land"
@@ -368,7 +375,57 @@ export function saveBest(gameId: string, score: number): number {
 // --- Sound: tiny synthesized effects, no audio files ------------------------
 
 type Note = { f: number; to?: number; t: number; type?: OscillatorType; v?: number; noise?: boolean };
-const SFX: Record<SfxKind, Note[]> = {
+
+// Cartoon voices: a buzzy tone through two band-pass filters at the formants
+// of a vowel, gliding from vowel to vowel ("u-ə-u" + a breathy "f" = "oof").
+// Each segment: start offset, length, pitch points (Hz), vowels spread over the
+// length, optional noise consonant before or after ([centre Hz, seconds]).
+// `tone` skips the formants for whistles and springs.
+type Seg = {
+  at?: number;
+  dur: number;
+  p: number[];
+  vw?: string;
+  v?: number;
+  pre?: [number, number];
+  post?: [number, number];
+  fm?: number;
+  tone?: OscillatorType;
+  vib?: [number, number];
+};
+// F1, F2 and the loudness of F2 for each vowel (a: "ah", h: "uh", y: "æ", m: a hum)
+const VOWEL: Record<string, [number, number, number]> = {
+  a: [800, 1250, 0.6],
+  o: [520, 880, 0.55],
+  u: [340, 760, 0.4],
+  e: [480, 1850, 0.5],
+  i: [300, 2350, 0.45],
+  y: [700, 1700, 0.55],
+  h: [600, 1150, 0.5],
+  m: [260, 900, 0.12],
+};
+const VOICES: Record<VoiceKind, Seg[]> = {
+  oof: [{ dur: 0.2, p: [240, 205, 150], vw: "uhu", post: [1300, 0.07] }],
+  ouch: [{ dur: 0.32, p: [330, 480, 250], vw: "aaou", post: [3600, 0.09] }],
+  hah: [{ dur: 0.16, p: [300, 340, 240], vw: "iaa", pre: [1700, 0.05] }],
+  yay: [{ dur: 0.44, p: [380, 580, 520], vw: "ieyyi", v: 0.9 }],
+  uhoh: [
+    { dur: 0.14, p: [420, 400], vw: "hh" },
+    { at: 0.21, dur: 0.32, p: [310, 290, 230], vw: "oou" },
+  ],
+  whoa: [{ dur: 0.62, p: [460, 400, 170], vw: "uoahh", vib: [6, 0.05] }],
+  meow: [{ dur: 0.42, p: [520, 740, 430], vw: "mieau", fm: 1.35 }],
+  mmm: [
+    { dur: 0.15, p: [250, 290], vw: "m", v: 1.3 },
+    { at: 0.2, dur: 0.32, p: [270, 390, 330], vw: "m", v: 1.3 },
+  ],
+  boing: [{ dur: 0.36, p: [140, 420, 380], tone: "sine", vib: [16, 0.18], v: 0.3 }],
+  slip: [{ dur: 0.38, p: [1500, 900, 380], tone: "sine", vib: [7, 0.02], v: 0.16 }],
+  pop: [{ dur: 0.07, p: [320, 1150], tone: "sine", v: 0.35 }],
+  splat: [{ dur: 0.16, p: [170, 45], tone: "triangle", v: 0.3, pre: [500, 0.12] }],
+};
+
+const SFX: Record<Exclude<SfxKind, VoiceKind>, Note[]> = {
   tap: [{ f: 660, t: 0.04, type: "triangle", v: 0.15 }],
   jump: [{ f: 320, to: 640, t: 0.12, type: "square", v: 0.08 }],
   land: [{ f: 140, to: 70, t: 0.08, type: "triangle", v: 0.2 }],
@@ -397,48 +454,138 @@ const SFX: Record<SfxKind, Note[]> = {
 };
 
 /** A synth for the host to hand to games as api.sfx; plays nothing while muted. */
-export function createSfx(isOn: () => boolean): { play: (kind: SfxKind) => void; close: () => void } {
+export function createSfx(isOn: () => boolean): { play: (kind: SfxKind, pitch?: number) => void; close: () => void } {
   let ac: AudioContext | null = null;
+  let out: AudioNode | null = null;
   let noise: AudioBuffer | null = null;
   let last = new Map<SfxKind, number>();
+  let lastVoice = -1;
+
+  const noiseBurst = (ctx: AudioContext, at: number, f: number, t: number, v: number, q = 1.2) => {
+    if (!noise) {
+      noise = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = noise;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(v, at);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + t);
+    if (f > 0) {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = f;
+      bp.Q.value = q;
+      src.connect(bp).connect(gain);
+    } else src.connect(gain);
+    gain.connect(out!);
+    src.start(at);
+    src.stop(at + t);
+  };
+
+  // A glide through points spread evenly over [at, at + dur].
+  const glide = (param: AudioParam, at: number, dur: number, pts: number[]) => {
+    param.setValueAtTime(pts[0]!, at);
+    pts.forEach((p, i) => i && param.linearRampToValueAtTime(p, at + (dur * i) / (pts.length - 1)));
+  };
+
+  const voice = (ctx: AudioContext, now: number, segs: Seg[], pitch: number) => {
+    for (const s of segs) {
+      let at = now + (s.at ?? 0);
+      if (s.pre) {
+        noiseBurst(ctx, at, s.pre[0], s.pre[1], 0.35 * (s.v ?? 1));
+        if (!s.tone) at += s.pre[1] * 0.6;
+      }
+      const osc = ctx.createOscillator();
+      osc.type = s.tone ?? "sawtooth";
+      glide(osc.frequency, at, s.dur, s.p.map((p) => p * pitch));
+      // Vibrato: a voice that wobbles a little sounds alive (and a spring a lot)
+      const [rate, depth] = s.vib ?? [5.5, 0.025];
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = rate;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = s.p[0]! * pitch * depth;
+      lfo.connect(lfoGain).connect(osc.frequency);
+      const env = ctx.createGain();
+      const v = (s.tone ? 1 : 0.55) * (s.v ?? 1);
+      env.gain.setValueAtTime(0.0001, at);
+      env.gain.exponentialRampToValueAtTime(v, at + 0.018);
+      env.gain.setValueAtTime(v, at + s.dur * 0.7);
+      env.gain.exponentialRampToValueAtTime(0.0001, at + s.dur);
+      env.connect(out!);
+      if (s.tone) osc.connect(env);
+      else {
+        const vowels = [...(s.vw ?? "h")].map((c) => VOWEL[c] ?? VOWEL.h!);
+        const fm = s.fm ?? 1;
+        for (const k of [0, 1] as const) {
+          const bp = ctx.createBiquadFilter();
+          bp.type = "bandpass";
+          bp.Q.value = k ? 9 : 5;
+          glide(bp.frequency, at, s.dur, vowels.map((w) => w[k] * fm));
+          const g = ctx.createGain();
+          if (k) glide(g.gain, at, s.dur, vowels.map((w) => w[2] * 1.6));
+          else g.gain.value = 1.6;
+          osc.connect(bp).connect(g).connect(env);
+        }
+      }
+      osc.start(at);
+      lfo.start(at);
+      osc.stop(at + s.dur + 0.02);
+      lfo.stop(at + s.dur + 0.02);
+      if (s.post) noiseBurst(ctx, at + s.dur * 0.8, s.post[0], s.post[1], 0.25 * (s.v ?? 1), 2);
+    }
+  };
+
   return {
-    play(kind) {
+    play(kind, pitch = 1) {
       if (!isOn()) return;
       try {
-        ac ??= new AudioContext();
+        if (!ac) {
+          ac = new AudioContext();
+          // Voices and hits stack up in a fight; a compressor keeps them from clipping.
+          const comp = ac.createDynamicsCompressor();
+          comp.threshold.value = -14;
+          comp.ratio.value = 6;
+          comp.connect(ac.destination);
+          out = comp;
+        }
         if (ac.state === "suspended") void ac.resume();
         const now = ac.currentTime;
         // The same sound at most every 40 ms: a burst of coins doesn't turn into noise.
         if (now - (last.get(kind) ?? -1) < 0.04) return;
         last.set(kind, now);
+        if (kind in VOICES) {
+          const segs = VOICES[kind as VoiceKind];
+          // One voice at a time, so a flurry of hits stays a few clear "oof"s
+          // rather than a choir; springs and pops are exempt.
+          if (!segs[0]!.tone) {
+            if (now - lastVoice < 0.16) return;
+            lastVoice = now;
+          }
+          // A little random pitch so the tenth "oof" doesn't sound like the first.
+          voice(ac, now, segs, pitch * (0.92 + Math.random() * 0.16));
+          return;
+        }
         let at = now;
-        for (const n of SFX[kind]) {
+        for (const n of SFX[kind as Exclude<SfxKind, VoiceKind>]) {
+          if (n.noise) {
+            noiseBurst(ac, at, 0, n.t, n.v ?? 0.1);
+            continue;
+          }
           const gain = ac.createGain();
           gain.gain.setValueAtTime(n.v ?? 0.1, at);
           gain.gain.exponentialRampToValueAtTime(0.0001, at + n.t);
-          gain.connect(ac.destination);
-          if (n.noise) {
-            if (!noise) {
-              noise = ac.createBuffer(1, ac.sampleRate * 0.3, ac.sampleRate);
-              const d = noise.getChannelData(0);
-              for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-            }
-            const src = ac.createBufferSource();
-            src.buffer = noise;
-            src.connect(gain);
-            src.start(at);
-            src.stop(at + n.t);
-          } else {
-            const osc = ac.createOscillator();
-            osc.type = n.type ?? "sine";
-            osc.frequency.setValueAtTime(n.f, at);
-            if (n.to) osc.frequency.exponentialRampToValueAtTime(n.to, at + n.t);
-            osc.connect(gain);
-            osc.start(at);
-            osc.stop(at + n.t);
-          }
+          gain.connect(out!);
+          const osc = ac.createOscillator();
+          osc.type = n.type ?? "sine";
+          osc.frequency.setValueAtTime(n.f, at);
+          if (n.to) osc.frequency.exponentialRampToValueAtTime(n.to, at + n.t);
+          osc.connect(gain);
+          osc.start(at);
+          osc.stop(at + n.t);
           // Notes of one sound play in sequence, except noise layered under a tone.
-          if (!n.noise) at += n.t * 0.85;
+          at += n.t * 0.85;
         }
       } catch {
         // no audio on this device: games stay silent
@@ -447,7 +594,9 @@ export function createSfx(isOn: () => boolean): { play: (kind: SfxKind) => void;
     close() {
       void ac?.close();
       ac = null;
+      out = null;
       last = new Map();
+      lastVoice = -1;
     },
   };
 }

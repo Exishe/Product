@@ -160,7 +160,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
       isPaused: () => paused.current,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       locale,
-      sfx: (kind) => (sfx.current ??= createSfx(() => soundOn.current)).play(kind),
+      sfx: (kind, pitch) => (sfx.current ??= createSfx(() => soundOn.current)).play(kind, pitch),
     };
     return game.mount(api);
     // round remounts the game for "play again"
@@ -196,10 +196,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
           className="grid size-11 place-items-center rounded-full text-slip hover:bg-basalt-3 aria-pressed:text-apricot-on-dark"
           data-testid="game-sound"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
-            {sound ? <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /> : <path d="M17 9l5 6M22 9l-5 6" />}
-          </svg>
+          <SpeakerIcon on={sound} />
         </button>
         <span className="text-right text-sm leading-tight">
           <span className="block text-slip-dim">{t("games.best", { score: best })}</span>
@@ -236,6 +233,16 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
                 data-testid="game-start"
               >
                 {phase === "loading" ? t("games.loading") : t("games.start")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSound((on) => !on)}
+                aria-pressed={sound}
+                className="flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold text-slip-dim hover:bg-basalt-3 aria-pressed:text-apricot-on-dark"
+                data-testid="game-sound-intro"
+              >
+                <SpeakerIcon on={sound} />
+                {sound ? t("games.soundOn") : t("games.soundOff")}
               </button>
             </div>
           </div>
@@ -284,5 +291,14 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
         )}
       </div>
     </div>
+  );
+}
+
+function SpeakerIcon({ on }: { on: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+      {on ? <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /> : <path d="M17 9l5 6M22 9l-5 6" />}
+    </svg>
   );
 }

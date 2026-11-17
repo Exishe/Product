@@ -320,6 +320,7 @@ export const game: Game = {
       deadY = y;
       stateT = 0;
       api.sfx(fell ? "bad" : "hit");
+      api.sfx(fell ? "whoa" : "meow", fell ? 1.4 : 1.25);
       if (!fell) {
         if (!calm) shake = 0.25;
         burst(x, y - 0.4, 8, "#fff", 4, 3);
@@ -427,7 +428,8 @@ export const game: Game = {
           f.dead = true;
           vy = pad.state.a || pad.state.up ? -JUMP * 0.85 : -11;
           squash(0.3);
-          api.sfx("tap");
+          api.sfx("boing");
+          api.sfx("oof", 1.6);
           burst(f.x, f.y - 0.35, 12, f.fly ? "#c9cfdc" : "#eef1f5", 1, 3);
           addScore(50, f.x, f.y - 1);
         } else if (hurtT <= 0 && dx < 0.42 && y - CH + 0.2 < f.y - 0.12 && y - 0.05 > f.y - 0.55) {
@@ -448,7 +450,7 @@ export const game: Game = {
         if (k.t < 0 && state === "play" && Math.abs(k.x - x) < 0.8 && Math.abs(k.y - y) < 1.5) {
           k.t = time;
           cp = { x: k.x, y: k.y };
-          api.sfx("tap");
+          api.sfx("meow", 0.95);
           burst(k.x + 0.4, k.y - 1.6, 8, C.apricot, 4, 2.5);
         }
       }
@@ -457,6 +459,7 @@ export const game: Game = {
         stateT = 0;
         vx = 0;
         api.sfx("win");
+        api.sfx("yay", 1.3);
         burst(door.x, door.y - 2.6, 40, C.apricot, 5, 6);
         for (const p of sparks) if (p.k === 5) p.col = pick(CONFETTI);
         addScore(500 + Math.max(0, Math.round(90 - levelT)) * 5, door.x, door.y - 3.6);
