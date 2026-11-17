@@ -107,7 +107,9 @@ export function loop(api: GameApi, frame: (dt: number, paused: boolean) => void)
   let last = performance.now();
   let id = 0;
   const tick = (now: number) => {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    // The first frame's timestamp can be earlier than the performance.now()
+    // taken at mount, so clamp at zero: a negative step made games twitch.
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
     last = now;
     frame(dt, api.isPaused() || document.hidden);
     id = requestAnimationFrame(tick);

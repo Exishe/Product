@@ -703,15 +703,15 @@
       },
       "runner": {
         "name": "Waiter Run",
-        "howTo": "Tap to jump, tap again in the air to jump higher. Clear the chairs and cats, collect the coffee cups."
+        "howTo": "Tap to jump, tap again in the air to jump higher. Swipe down to slide under awnings and signs. Collect the coffee cups!"
       },
       "fighter": {
         "name": "Kitchen Clash",
         "howTo": "◀ ▶ walk, ▲ jump, ▼ hide behind a pot lid. Bonk with the spoon, whack with the pan, throw a tomato! Win two rounds to become head chef."
       },
       "platformer": {
-        "name": "Rooftop Cat",
-        "howTo": "◀ ▶ walk, ⤒ jump. Collect apricots, jump on pigeons and reach the café door. Three levels."
+        "name": "Café Cat",
+        "howTo": "◀ ▶ walk, ⤒ jump. Grab the fish and sausages, stomp the mice, dodge the hot burners and the chef's broom, and steal his plate of fish!"
       },
       "sound": "Sound",
       "play": "Play",

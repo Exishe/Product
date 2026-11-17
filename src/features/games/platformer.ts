@@ -439,7 +439,7 @@ export const game: Game = {
           squash(-clamp(fallV / 55, 0.08, 0.36));
           if ("~Y".includes(at(Math.floor(x), y))) {
             rackT = time;
-            api.sfx("block");
+            api.sfx("clang");
           }
           if (fallV > HARD) {
             api.sfx("land");
@@ -645,7 +645,7 @@ export const game: Game = {
         ctx.save();
         ctx.translate(hx + 0.12, hy + 0.12);
         ctx.rotate(0.25);
-        fish(FRIED, 0.14);
+        fish(FRIED, 0.19);
         ctx.restore();
       }
     };
@@ -979,20 +979,18 @@ export const game: Game = {
       glow(0, -1.3, 1.8 + (calm ? 0 : Math.sin(time * 4) * 0.1), "rgba(255,226,150,0.5)");
       lines("#6b4630", 0.12, [0, -1, 0, 0, -0.35, 0, 0.35, 0]);
       box("#8a5a3a", -0.65, -1.08, 1.3, 0.12);
+      ctx.translate(0, -1.32);
       plate(0.42);
       if (won) return;
-      ctx.save();
-      ctx.translate(0, -1.32);
       fish(FRIED, 0.42);
-      ctx.restore();
-      oval("#ffe14a", 0.5, -1.22, 0.13, 0.08);
+      oval("#ffe14a", 0.5, 0.1, 0.13, 0.08);
       ctx.strokeStyle = "rgba(255,255,255,0.8)";
       ctx.lineWidth = 0.05;
       ctx.beginPath();
       for (const dx of [-0.2, 0.1]) {
         const wv = calm ? 0 : Math.sin(time * 4 + dx * 20) * 0.08;
-        ctx.moveTo(dx, -1.65);
-        ctx.quadraticCurveTo(dx + 0.12 + wv, -1.9, dx - wv, -2.15);
+        ctx.moveTo(dx, -0.33);
+        ctx.quadraticCurveTo(dx + 0.12 + wv, -0.58, dx - wv, -0.83);
       }
       ctx.stroke();
     };
@@ -1148,7 +1146,10 @@ export const game: Game = {
       ctx.globalAlpha = 1;
     };
 
-    const stopLoop = loop(api, (dt, paused) => {
+    const stopLoop = loop(api, (step, paused) => {
+      // The first frame's dt can come out negative (rAF time before the
+      // loop's start time), which would fake a buffered jump.
+      const dt = Math.max(0, step);
       if (!paused && !reported) {
         time += dt;
         stateT += dt;
@@ -1175,7 +1176,9 @@ export const game: Game = {
         }
         if (state === "dead" && stateT > RESPAWN) respawn();
         if (state === "win") {
+          // Settle beside the table, even if the plate was grabbed mid-jump
           x += (door.x - 0.95 - x) * Math.min(1, dt * 5);
+          y += (door.y - y) * Math.min(1, dt * 8);
           if (!calm && Math.random() < 0.4) emit(5, door.x + rand(-1.5, 1.5), door.y - rand(2.4, 3.6), rand(-1, 1), rand(-1, 0), 1.6, pick(CONFETTI));
           if (stateT > 1.9) {
             if (level + 1 < LEVELS.length) load(++level);
