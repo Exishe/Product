@@ -1,13 +1,15 @@
 "use client";
 
-import { clsx } from "clsx";
 import { useLocale, useTranslations } from "next-intl";
+import { Banknote, Check, CircleAlert, CreditCard, Split, WifiOff } from "lucide-react";
 import { useId, useState } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import type { DirectResult } from "./actions";
 import { settlement, type PayInput, type PayMode, type Payment } from "./floor-model";
 import { button, Sheet } from "./ui";
+
+const MODE_ICON = { cash: Banknote, card: CreditCard, split: Split } as const;
 
 const MODES: readonly PayMode[] = ["cash", "card", "split"];
 
@@ -58,35 +60,42 @@ export function SettleSheet({
 
   return (
     <Sheet labelledBy={id} onClose={onClose}>
-      <div className="grid gap-4 p-6">
-        <h2 id={id} className="display-face m-0 text-[2.375rem] leading-none">
+      <div className="grid gap-4 p-5 sm:p-6">
+        <h2 id={id} className="m-0 text-[1.75rem] leading-tight font-bold">
           {t("panel.table", { label })}
         </h2>
-        {oldBill && <p className="m-0 font-semibold text-muted">{t("settle.oldBill")}</p>}
-        <h3 className="m-0 text-2xl">{t("settle.title")}</h3>
+        {oldBill && <p className="m-0 font-semibold text-staff-label2">{t("settle.oldBill")}</p>}
+        <h3 className="m-0 text-[1.25rem] font-bold">{t("settle.title")}</h3>
         <div role="group" aria-label={t("settle.modes")} className="grid grid-cols-3 gap-2">
-          {MODES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={input.mode === m}
-              onClick={() => pick(m)}
-              className={clsx(button("quiet"), "aria-pressed:border-tarragon aria-pressed:bg-tarragon aria-pressed:text-white")}
-            >
-              {t(`settle.${m}`)}
-            </button>
-          ))}
+          {MODES.map((m) => {
+            const Icon = MODE_ICON[m];
+            return (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={input.mode === m}
+                onClick={() => pick(m)}
+                className="relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-white px-1 text-[0.9375rem] font-semibold text-ink ring-1 ring-staff-sep aria-pressed:bg-tarragon-tint aria-pressed:text-tarragon aria-pressed:ring-2 aria-pressed:ring-tarragon"
+              >
+                <Icon aria-hidden="true" className="size-6 shrink-0" />
+                {input.mode === m && (
+                  <Check aria-hidden="true" className="absolute top-1.5 right-1.5 size-5 rounded-full bg-tarragon p-0.5 text-white" />
+                )}
+                <span className="max-w-full [overflow-wrap:anywhere]">{t(`settle.${m}`)}</span>
+              </button>
+            );
+          })}
         </div>
         {input.mode === "split" && (
           <div className="grid grid-cols-2 gap-3">
             {(["cash", "card"] as const).map((k) => (
-              <label key={k} className="grid gap-1 text-sm font-semibold">
+              <label key={k} className="grid gap-1 text-[0.8125rem] font-semibold text-staff-label2">
                 {t(`settle.${k}`)}
                 <input
                   inputMode="numeric"
                   value={input[k]}
                   onChange={(e) => setInput((x) => ({ ...x, [k]: e.target.value.replace(/\D/g, "") }))}
-                  className="num min-h-[52px] w-full min-w-0 rounded-input border border-line-strong px-3 text-xl"
+                  className="num min-h-12 w-full min-w-0 rounded-xl bg-white px-3 text-[1.25rem] text-ink ring-1 ring-staff-sep"
                 />
               </label>
             ))}
@@ -94,20 +103,31 @@ export function SettleSheet({
         )}
         {input.mode === "split" && !result.ok && (
           <p role="alert" data-testid="mismatch" className="m-0 font-semibold text-pomegranate">
+            <CircleAlert aria-hidden="true" className="mr-1.5 inline size-5 align-[-4px]" />
             {t("settle.mismatch", { total: formatAmd(total, locale), paid: formatAmd(result.paid, locale) })}
           </p>
         )}
-        {!online && <p className="m-0 font-semibold text-pomegranate">{t("settle.offline")}</p>}
-        {failed && online && <p className="m-0 font-semibold text-pomegranate">{t("settle.failed")}</p>}
-        <div className="flex justify-between border-t border-line pt-4 text-2xl font-bold">
+        {!online && (
+          <p className="m-0 flex items-center gap-2 font-semibold text-pomegranate">
+            <WifiOff aria-hidden="true" className="size-5 shrink-0" />
+            {t("settle.offline")}
+          </p>
+        )}
+        {failed && online && (
+          <p className="m-0 flex items-center gap-2 font-semibold text-pomegranate">
+            <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+            {t("settle.failed")}
+          </p>
+        )}
+        <div className="flex justify-between border-t border-staff-sep pt-4 text-[1.375rem] font-bold">
           <span>{t("panel.total")}</span>
           <span className="num">{formatAmd(total, locale)}</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" className={button("quiet")} onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className={button("secondary", "min-h-14")} onClick={onClose}>
             {t("settle.back")}
           </button>
-          <button type="button" className={button("ink")} disabled={!result.ok || !online || busy} onClick={() => void confirm()}>
+          <button type="button" className={button("primary", "min-h-14")} disabled={!result.ok || !online || busy} onClick={() => void confirm()}>
             {t("settle.confirm")}
           </button>
         </div>

@@ -4,6 +4,7 @@ import {
   areaLayout,
   buildFloor,
   closeBlocker,
+  inbox,
   needCount,
   settlement,
   type FloorRows,
@@ -164,6 +165,41 @@ describe("table states (screens.md §5)", () => {
       T0,
     );
     expect(needCount(floor.tables)).toBe(2);
+  });
+});
+
+describe("Orders and Calls tabs (ADR-053)", () => {
+  it("lists new and ready orders and calls and bills per table, the longest-waiting first", () => {
+    const placed = order("o2", { status: "placed", placed_at: iso(-4), kitchen_tickets: [] });
+    const ready = order("o1", { placed_at: iso(-20), kitchen_status: "ready", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }] });
+    const floor = buildFloor(
+      rows({
+        sessions: [session("s1", "t1", [ready, placed]), session("s2", "t2", [])],
+        requests: [
+          { id: "r1", table_id: "t2", table_session_id: "s2", kind: "bring_bill", status: "open", created_at: iso(-1), payment_preference: "cash" },
+          { id: "r2", table_id: "t10", table_session_id: null, kind: "call_waiter", status: "open", created_at: iso(-6), payment_preference: null },
+        ],
+      }),
+      "hy",
+      T0,
+    );
+    const { orders, calls } = inbox(floor.tables, T0);
+    expect(orders.map((r) => [r.table.id, r.kind, r.minutes])).toEqual([
+      ["t1", "ready", 20],
+      ["t1", "new", 4],
+    ]);
+    expect(calls.map((r) => [r.table.id, r.kind, r.minutes])).toEqual([
+      ["t10", "call", 6],
+      ["t2", "bill", 1],
+    ]);
+  });
+
+  it("counts a waiting party's order as new and leaves quiet tables out", () => {
+    const waitingOrder = order("o9", { status: "placed", placed_at: iso(-2), kitchen_tickets: [] });
+    const floor = buildFloor(rows({ sessions: [session("s1", "t1", []), session("w1", "t1", [waitingOrder], { status: "waiting" })] }), "hy", T0);
+    const { orders, calls } = inbox(floor.tables, T0);
+    expect(orders.map((r) => [r.table.id, r.kind])).toEqual([["t1", "new"]]);
+    expect(calls).toEqual([]);
   });
 });
 

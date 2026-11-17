@@ -2,13 +2,30 @@
 
 import { clsx } from "clsx";
 import { useLocale, useTranslations } from "next-intl";
-import { useId, useState } from "react";
+import {
+  BellRing,
+  Check,
+  ChevronLeft,
+  CircleAlert,
+  CircleDashed,
+  Clock,
+  Copy,
+  HandPlatter,
+  Minus,
+  Plus,
+  Receipt,
+  SquarePen,
+  Users,
+  X,
+} from "lucide-react";
+import { useId, useState, type RefObject } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { MemberRole } from "@/lib/auth/membership";
 import { formatAmd } from "@/lib/format/money";
 import type { DirectResult } from "./actions";
 import { closeBlocker, type FloorTable, type WaiterAction, type WaiterLine, type WaiterOrder } from "./floor-model";
-import { button, chip, Sheet } from "./ui";
+import { StateIcon } from "./floor-map";
+import { button, chip, choice, Sheet } from "./ui";
 
 export type PanelProps = {
   table: FloorTable;
@@ -18,11 +35,14 @@ export type PanelProps = {
   onSettle: (sessionId: string) => void;
   onSeatWaiting: (waitingSessionId: string) => void;
   onCancelLine: (lineId: string, quantity: number, reason: string) => Promise<DirectResult>;
+  /** Back to the map on phones (the panel is a pushed screen there). */
+  onBack: () => void;
+  headingRef: RefObject<HTMLHeadingElement | null>;
 };
 
 // The right-hand panel (screens.md §6, design/waiter.html): alerts, the
 // table's rounds newest first, and the actions that apply.
-export function TablePanel(p: PanelProps) {
+export function TablePanel({ headingRef, ...p }: PanelProps) {
   const t = useTranslations("waiter");
   const locale = useLocale() as Locale;
   const [rejecting, setRejecting] = useState<WaiterOrder | null>(null);
@@ -31,16 +51,32 @@ export function TablePanel(p: PanelProps) {
   const blocker = closeBlocker(table);
   const title = t("panel.table", { label: table.label });
 
+  const nav = (
+    <div className="grid gap-1">
+      <button type="button" onClick={p.onBack} className="-ml-2 inline-flex min-h-12 items-center gap-1 justify-self-start rounded-xl px-2 text-[1.0625rem] font-semibold text-tarragon md:hidden">
+        <ChevronLeft aria-hidden="true" className="size-6" />
+        {t("tabs.tables")}
+      </button>
+      <h2 ref={headingRef} tabIndex={-1} className="m-0 text-[1.75rem] leading-tight font-bold [overflow-wrap:anywhere]">
+        {title}
+      </h2>
+    </div>
+  );
+
   if (table.state === "free" && table.orders.length === 0) {
     return (
       <>
-        <div className="grid flex-1 content-start gap-4 overflow-y-auto p-6">
-          <h2 className="display-face m-0 text-[2.375rem] leading-none">{title}</h2>
-          <p className="m-0 text-muted">{t("panel.free")}</p>
-          <p className="m-0 text-muted">{t("panel.freeHint")}</p>
+        <div className="grid flex-1 content-start gap-3 overflow-y-auto bg-staff-bg p-4 lg:p-6">
+          {nav}
+          <p className="m-0 flex items-center gap-2 text-[1.0625rem] font-semibold text-staff-label2">
+            <CircleDashed aria-hidden="true" className="size-5 shrink-0" />
+            {t("panel.free")}
+          </p>
+          <p className="m-0 text-[0.9375rem] text-staff-label2">{t("panel.freeHint")}</p>
         </div>
-        <div className="grid gap-3 border-t border-line px-6 py-4">
-          <button type="button" className={button("primary")} onClick={p.onOpenPad}>
+        <div className="grid gap-3 border-t border-staff-sep bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:px-6">
+          <button type="button" className={button("primary", "min-h-14")} onClick={p.onOpenPad}>
+            <SquarePen aria-hidden="true" />
             {t("panel.takeOrder")}
           </button>
         </div>
@@ -50,16 +86,27 @@ export function TablePanel(p: PanelProps) {
 
   return (
     <>
-      <div className="grid flex-1 content-start gap-4 overflow-y-auto p-6 *:min-w-0">
-        <h2 className="display-face m-0 text-[2.375rem] leading-none">{title}</h2>
-        {table.openMinutes !== null && <p className="m-0 text-muted">{t("panel.openFor", { minutes: table.openMinutes })}</p>}
+      <div className="grid flex-1 content-start gap-3 overflow-y-auto bg-staff-bg p-4 *:min-w-0 lg:p-6">
+        {nav}
+        {table.openMinutes !== null && (
+          <p className="m-0 flex items-center gap-1.5 text-[0.9375rem] text-staff-label2">
+            <Clock aria-hidden="true" className="size-4 shrink-0" />
+            <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
+          </p>
+        )}
 
         {table.call && (
-          <div data-testid="call-alert" className="flex items-center justify-between gap-3 rounded-sheet bg-pom-tint px-4 py-3 font-semibold text-pomegranate">
-            <span>{table.call.minutes > 0 ? t("panel.callAgo", { minutes: table.call.minutes }) : t("panel.callNow")}</span>
+          <div
+            data-testid="call-alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-pomegranate bg-pom-tint px-4 py-3 font-semibold text-pomegranate"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <BellRing aria-hidden="true" className="size-5 shrink-0" />
+              {table.call.minutes > 0 ? t("panel.callAgo", { minutes: table.call.minutes }) : t("panel.callNow")}
+            </span>
             <button
               type="button"
-              className={button("danger", "flex-none")}
+              className={button("destructive", "flex-none")}
               onClick={() => table.call && p.onAction({ kind: "resolve", requestId: table.call.id })}
             >
               {t("panel.going")}
@@ -67,21 +114,27 @@ export function TablePanel(p: PanelProps) {
           </div>
         )}
         {table.bill && (
-          <div data-testid="bill-alert" className="rounded-sheet bg-mist px-4 py-3 font-semibold">
+          <div data-testid="bill-alert" className="flex items-center gap-2 rounded-2xl bg-ink px-4 py-3 font-semibold text-white">
+            <StateIcon state="bill" payment={table.bill.payment} className="size-5 shrink-0" />
             {table.bill.payment === "card" ? t("panel.billCard") : table.bill.payment === "cash" ? t("panel.billCash") : t("panel.billRequested")}
           </div>
         )}
 
         {table.waiting && (
-          <section data-testid="waiting-party" aria-labelledby="waiting-title" className="grid gap-3 rounded-sheet border-2 border-apricot-deep p-4">
-            <h3 id="waiting-title" className="m-0 text-xl">
+          <section
+            data-testid="waiting-party"
+            aria-labelledby="waiting-title"
+            className="grid gap-3 rounded-2xl border-2 border-apricot-deep bg-white p-4"
+          >
+            <h3 id="waiting-title" className="m-0 flex items-center gap-2 text-[1.25rem] leading-tight font-bold">
+              <Users aria-hidden="true" className="size-5 shrink-0 text-amber-text" />
               {t("waiting.title", { label: table.label })}
             </h3>
-            <p className="m-0">{t("waiting.body")}</p>
-            <div className="flex flex-wrap gap-3">
+            <p className="m-0 text-[0.9375rem]">{t("waiting.body")}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
-                className={button("ink", "flex-1")}
+                className={button("primary")}
                 disabled={blocker !== null}
                 onClick={() => table.sessionId && p.onSettle(table.sessionId)}
               >
@@ -89,46 +142,54 @@ export function TablePanel(p: PanelProps) {
               </button>
               <button
                 type="button"
-                className={button("quiet", "flex-1")}
+                className={button("secondary")}
                 onClick={() => table.waiting && p.onSeatWaiting(table.waiting.sessionId)}
               >
                 {t("waiting.sameParty")}
               </button>
             </div>
-            <h4 className="m-0 text-base text-muted">{t("waiting.orders")}</h4>
+            <h4 className="m-0 text-[0.8125rem] font-semibold text-staff-label2">{t("waiting.orders")}</h4>
             {table.waiting.orders.map((o) => (
               <OrderCard key={o.id} order={o} locale={locale} held onAction={p.onAction} onReject={setRejecting} onCancel={setCancelling} />
             ))}
           </section>
         )}
 
-        {table.orders.length === 0 && !table.waiting && <p className="m-0 text-muted">{t("panel.noOrders")}</p>}
+        {table.orders.length === 0 && !table.waiting && <p className="m-0 text-staff-label2">{t("panel.noOrders")}</p>}
         {table.orders.map((o) => (
           <OrderCard key={o.id} order={o} locale={locale} onAction={p.onAction} onReject={setRejecting} onCancel={setCancelling} />
         ))}
       </div>
 
-      <div className="grid gap-3 border-t border-line px-6 py-4">
-        <div className="flex justify-between text-2xl font-bold">
+      <div className="grid gap-3 border-t border-staff-sep bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:px-6">
+        <div className="flex items-baseline justify-between gap-3 text-[1.375rem] font-bold">
           <span>{t("panel.total")}</span>
           <span data-testid="table-total" className="num">
             {formatAmd(table.total, locale)}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" className={button("quiet")} onClick={p.onOpenPad}>
+        {/* One button per row: the labels never wrap, the main action is last, nearest the thumb. */}
+        <div className="grid gap-2">
+          <button type="button" className={button("secondary", "min-h-14")} onClick={p.onOpenPad}>
+            <Plus aria-hidden="true" />
             {t("panel.addOrder")}
           </button>
           <button
             type="button"
-            className={button("ink")}
+            className={button("primary", "min-h-14")}
             disabled={blocker !== null}
             onClick={() => table.sessionId && p.onSettle(table.sessionId)}
           >
+            <Receipt aria-hidden="true" />
             {t("panel.close")}
           </button>
         </div>
-        {blocker === "pending" && <p className="m-0 text-muted">{t("panel.closeBlocked")}</p>}
+        {blocker === "pending" && (
+          <p className="m-0 flex items-center gap-1.5 text-[0.9375rem] text-amber-text">
+            <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
+            {t("panel.closeBlocked")}
+          </p>
+        )}
       </div>
 
       {rejecting && (
@@ -183,15 +244,20 @@ function OrderCard({
       data-testid="order"
       data-order-id={order.id}
       data-status={order.status}
-      className={clsx("grid gap-3 rounded-sheet border p-4", placed ? "border-2 border-apricot-deep" : "border-line")}
+      className={clsx("grid gap-3 rounded-2xl bg-white p-4", placed ? "ring-2 ring-apricot-deep" : "ring-1 ring-staff-sep")}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <strong className="text-xl">{order.number === null ? t("order.unsent") : t("order.title", { number: order.number })}</strong>
+        <strong className="text-[1.25rem] leading-tight">{order.number === null ? t("order.unsent") : t("order.title", { number: order.number })}</strong>
         <span className={clsx(chip.base, chip.plain)}>{t(`order.source.${order.source}`)}</span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {placed && <span className={clsx(chip.base, chip.wait)}>{t("order.placed")}</span>}
+        {placed && (
+          <span className={clsx(chip.base, chip.wait)}>
+            <Clock aria-hidden="true" />
+            {t("order.placed")}
+          </span>
+        )}
         {order.status === "rejected" && <span className={clsx(chip.base, chip.plain)}>{t("order.rejected")}</span>}
         {order.status === "cancelled" && <span className={clsx(chip.base, chip.plain)}>{t("order.cancelled")}</span>}
         {order.status === "accepted" &&
@@ -204,11 +270,18 @@ function OrderCard({
                 data-testid="station-chip"
                 className={clsx(chip.base, k.status === "ready" ? chip.ready : k.status === "served" ? chip.done : chip.plain)}
               >
+                {k.status === "ready" && <HandPlatter aria-hidden="true" />}
+                {k.status === "served" && <Check aria-hidden="true" />}
                 {several ? t("order.station", { station: stationLabel(k.stationName), status: word }) : word}
               </span>
             );
           })}
-        {order.duplicate && placed && <span className={clsx(chip.base, chip.alert)}>{t("order.duplicate")}</span>}
+        {order.duplicate && placed && (
+          <span className={clsx(chip.base, chip.alert)}>
+            <Copy aria-hidden="true" />
+            {t("order.duplicate")}
+          </span>
+        )}
         {order.pending && (
           <span data-testid="unsent" className={clsx(chip.base, chip.wait)}>
             {t("order.unsentMark")}
@@ -216,15 +289,15 @@ function OrderCard({
         )}
       </div>
 
-      <ul className="m-0 grid list-none gap-1 p-0">
+      <ul className="m-0 grid list-none p-0">
         {order.lines.map((l) => (
-          <li key={l.id} data-testid="line" className="flex items-start justify-between gap-3">
-            <span className={clsx("min-w-0 break-words", l.quantity === 0 && "text-muted line-through")}>
+          <li key={l.id} data-testid="line" className="flex min-h-12 items-center justify-between gap-3 border-t border-staff-sep py-1.5 first:border-t-0">
+            <span className={clsx("min-w-0 text-[1.0625rem] break-words", l.quantity === 0 && "text-staff-label2 line-through")}>
               <span className="num">{l.quantity === 0 ? l.cancelled : l.quantity}</span>
               {" × "}
               <span lang={l.name.locale !== locale ? l.name.locale : undefined}>{l.name.text}</span>
               {l.modifiers.length > 0 && (
-                <span className="block text-sm text-muted">
+                <span className="block text-[0.9375rem] text-staff-label2">
                   {l.modifiers.map((m, i) => (
                     <span key={i} lang={m.locale !== locale ? m.locale : undefined}>
                       {i > 0 && ", "}
@@ -233,50 +306,53 @@ function OrderCard({
                   ))}
                 </span>
               )}
-              {l.note && <em className="block text-sm text-muted not-italic">{l.note}</em>}
+              {l.note && <em className="block text-[0.9375rem] text-amber-text not-italic">{l.note}</em>}
               {l.cancelled > 0 && l.quantity > 0 && (
-                <span className="block text-sm text-muted">{t("order.cancelledCount", { count: l.cancelled })}</span>
+                <span className="block text-[0.9375rem] text-staff-label2">{t("order.cancelledCount", { count: l.cancelled })}</span>
               )}
             </span>
-            <span className="flex flex-none items-start gap-1">
-              <span className="num pt-0.5">{formatAmd(l.lineTotal, locale)}</span>
+            <span className="flex flex-none items-center gap-1">
+              <span className="num text-[0.9375rem]">{formatAmd(l.lineTotal, locale)}</span>
               {live && l.quantity > 0 && !order.pending && (
                 <button
                   type="button"
                   aria-label={t("order.cancelLine", { name: l.name.text })}
                   onClick={() => onCancel(l)}
-                  className="-my-3 grid size-14 place-items-center rounded-sheet text-xl text-muted hover:bg-mist"
+                  className="-mr-2 grid size-12 place-items-center rounded-full text-staff-label2 hover:bg-staff-fill"
                 >
-                  ×
+                  <X aria-hidden="true" className="size-5" />
                 </button>
               )}
             </span>
           </li>
         ))}
       </ul>
-      {order.note && <p className="m-0 text-sm text-muted">{t("order.note", { note: order.note })}</p>}
+      {order.note && <p className="m-0 text-[0.9375rem] text-amber-text">{t("order.note", { note: order.note })}</p>}
       {order.status === "rejected" && order.rejectReason && (
-        <p className="m-0 text-sm text-muted">{t("order.reason", { reason: order.rejectReason })}</p>
+        <p className="m-0 text-[0.9375rem] text-staff-label2">{t("order.reason", { reason: order.rejectReason })}</p>
       )}
 
       {placed && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             className={button("primary")}
             disabled={held || order.pending}
             onClick={() => onAction({ kind: "accept", orderId: order.id })}
           >
+            <Check aria-hidden="true" />
             {t("order.accept")}
           </button>
           <button type="button" className={button("danger")} disabled={order.pending} onClick={() => onReject(order)}>
+            <X aria-hidden="true" />
             {t("order.reject")}
           </button>
         </div>
       )}
-      {placed && held && <p className="m-0 text-sm text-muted">{t("waiting.acceptAfter")}</p>}
+      {placed && held && <p className="m-0 text-[0.9375rem] text-staff-label2">{t("waiting.acceptAfter")}</p>}
       {ready.map((k) => (
-        <button key={k.id} type="button" className={button("go")} onClick={() => onAction({ kind: "serve", ticketId: k.id })}>
+        <button key={k.id} type="button" className={button("primary")} onClick={() => onAction({ kind: "serve", ticketId: k.id })}>
+          <HandPlatter aria-hidden="true" />
           {several ? t("order.serveAt", { station: stationLabel(k.stationName) }) : t("order.serve")}
         </button>
       ))}
@@ -292,28 +368,23 @@ function RejectSheet({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
   const [reason, setReason] = useState<(typeof REJECT_REASONS)[number] | null>(null);
   return (
     <Sheet labelledBy={id} onClose={onClose}>
-      <div className="grid gap-4 p-6">
-        <h2 id={id} className="m-0 text-2xl">
+      <div className="grid gap-4 p-5 sm:p-6">
+        <h2 id={id} className="m-0 text-[1.375rem] leading-tight font-bold">
           {t("title")}
         </h2>
         <div role="group" aria-labelledby={id} className="grid gap-2">
           {REJECT_REASONS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={reason === r}
-              onClick={() => setReason(r)}
-              className={clsx(button("quiet"), "justify-start aria-pressed:border-tarragon aria-pressed:bg-tarragon aria-pressed:text-white")}
-            >
+            <button key={r} type="button" aria-pressed={reason === r} onClick={() => setReason(r)} className={choice}>
               {t(`reasons.${r}`)}
+              {reason === r && <Check aria-hidden="true" />}
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" className={button("quiet")} onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className={button("secondary")} onClick={onClose}>
             {t("back")}
           </button>
-          <button type="button" className={button("danger")} disabled={!reason} onClick={() => reason && onConfirm(t(`reasons.${reason}`))}>
+          <button type="button" className={button("destructive")} disabled={!reason} onClick={() => reason && onConfirm(t(`reasons.${reason}`))}>
             {t("confirm")}
           </button>
         </div>
@@ -358,21 +429,23 @@ function CancelSheet({
 
   return (
     <Sheet labelledBy={id} onClose={onClose}>
-      <div className="grid gap-4 p-6">
-        <h2 id={id} className="m-0 text-2xl">
+      <div className="grid gap-4 p-5 sm:p-6">
+        <h2 id={id} className="m-0 text-[1.375rem] leading-tight font-bold">
           {t("title")}
         </h2>
-        <p className="m-0 text-lg font-semibold" lang={line.name.locale !== locale ? line.name.locale : undefined}>
+        <p className="m-0 text-[1.0625rem] font-semibold" lang={line.name.locale !== locale ? line.name.locale : undefined}>
           {line.name.text}
         </p>
         {refused === "manager" ? (
-          <p role="alert" className="m-0 rounded-sheet bg-pom-tint px-4 py-3 font-semibold text-pomegranate">
+          <p role="alert" className="m-0 flex gap-2 rounded-2xl bg-pom-tint px-4 py-3 font-semibold text-pomegranate">
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
             {t("managerOnly")}
           </p>
         ) : (
           <>
             {refused === "offline" && (
-              <p role="alert" className="m-0 font-semibold text-pomegranate">
+              <p role="alert" className="m-0 flex items-center gap-2 font-semibold text-pomegranate">
+                <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
                 {t("offline")}
               </p>
             )}
@@ -381,11 +454,11 @@ function CancelSheet({
               <button
                 type="button"
                 aria-label={t("less")}
-                className={button("quiet", "w-14")}
+                className={button("secondary", "w-12 px-0")}
                 disabled={quantity <= 1}
                 onClick={() => setQuantity((q) => q - 1)}
               >
-                −
+                <Minus aria-hidden="true" />
               </button>
               <span data-testid="cancel-quantity" className="num w-8 text-center text-2xl font-bold">
                 {quantity}
@@ -393,34 +466,29 @@ function CancelSheet({
               <button
                 type="button"
                 aria-label={t("more")}
-                className={button("quiet", "w-14")}
+                className={button("secondary", "w-12 px-0")}
                 disabled={quantity >= line.quantity}
                 onClick={() => setQuantity((q) => q + 1)}
               >
-                +
+                <Plus aria-hidden="true" />
               </button>
             </div>
             <div role="group" aria-label={t("reason")} className="grid grid-cols-2 gap-2">
               {CANCEL_REASONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  aria-pressed={reason === r}
-                  onClick={() => setReason(r)}
-                  className={clsx(button("quiet"), "aria-pressed:border-tarragon aria-pressed:bg-tarragon aria-pressed:text-white")}
-                >
+                <button key={r} type="button" aria-pressed={reason === r} onClick={() => setReason(r)} className={clsx(choice, "py-2")}>
                   {t(`reasons.${r}`)}
+                  {reason === r && <Check aria-hidden="true" />}
                 </button>
               ))}
             </div>
           </>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" className={button("quiet", refused === "manager" ? "col-span-2" : undefined)} onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className={button("secondary", refused === "manager" ? "col-span-2" : undefined)} onClick={onClose}>
             {t("back")}
           </button>
           {refused !== "manager" && (
-            <button type="button" className={button("danger")} disabled={!reason || busy} onClick={() => void confirm()}>
+            <button type="button" className={button("destructive")} disabled={!reason || busy} onClick={() => void confirm()}>
               {t("confirm")}
             </button>
           )}

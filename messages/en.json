@@ -203,7 +203,7 @@
     "minutesShort": "{minutes} min",
     "noTables": "No tables yet. Add them in the admin panel.",
     "noTablesLink": "Open table settings",
-    "legend": "What the colours mean",
+    "legend": "Table states",
     "panel": {
       "table": "Table {label}",
       "free": "Free",
@@ -253,8 +253,8 @@
       "unsentMark": "Sending…",
       "accept": "Accept",
       "reject": "Reject",
-      "serve": "Served",
-      "serveAt": "Served: {station}",
+      "serve": "Mark served",
+      "serveAt": "Mark served: {station}",
       "cancelledCount": "{count} cancelled",
       "cancelLine": "Cancel {name}",
       "note": "Note: {note}",
@@ -322,7 +322,7 @@
       "mismatch": "The total must be {total}, now {paid}",
       "confirm": "Confirm the payment",
       "back": "Back",
-      "offline": "We'll record the payment when the connection is back.",
+      "offline": "Closing the table needs a connection.",
       "closed": "Table {label} is closed.",
       "failed": "That didn't work. Check the connection and try again."
     },
@@ -350,6 +350,18 @@
       "unsupported": "This browser can't receive notifications.",
       "install": "On iPhone, add the page to the home screen to get notifications.",
       "error": "Couldn't do it. Please try again."
+    },
+    "tabs": {
+      "label": "Sections",
+      "tables": "Tables",
+      "orders": "Orders",
+      "calls": "Calls"
+    },
+    "inbox": {
+      "ordersEmpty": "No orders to accept or serve.",
+      "callsEmpty": "No calls or bill requests.",
+      "ago": "{minutes} min ago",
+      "now": "just now"
     }
   },
   "menu": {

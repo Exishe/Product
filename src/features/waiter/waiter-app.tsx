@@ -1,6 +1,8 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { clsx } from "clsx";
+import { BellRing, CircleCheck, ClipboardList, LayoutGrid, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -17,11 +19,13 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import { cancelLine, sameWaiterAction, seatWaitingGuests, settleTable, waiterActionKey, waiterSender, type DirectResult } from "./actions";
 import { fetchFloor } from "./floor-data";
 import { AreaTabs, FloorMap } from "./floor-map";
-import { applyPending, areaOf, buildFloor, needCount, type FloorRows, type FloorTable, type Payment, type WaiterAction } from "./floor-model";
+import { InboxList } from "./inbox-list";
+import { applyPending, areaOf, buildFloor, inbox, needCount, type FloorRows, type FloorTable, type Payment, type WaiterAction } from "./floor-model";
 import { NotifyToggle } from "./notify-toggle";
 import { OrderPad, type PadOrder } from "./order-pad";
 import { SettleSheet } from "./settle";
 import { TablePanel } from "./table-panel";
+import { TabBar } from "./tab-bar";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
 
 export type WaiterAppProps = {
@@ -67,6 +71,8 @@ const subscribeOnline = (cb: () => void) => {
   };
 };
 
+type Tab = "tables" | "orders" | "calls";
+
 type Sheet = { kind: "pad"; tableId: string } | { kind: "settle"; tableId: string; sessionId: string; key: string } | null;
 
 function App(p: WaiterAppProps) {
@@ -86,6 +92,7 @@ function App(p: WaiterAppProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [area, setArea] = useState<string | null | undefined>(undefined);
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [tab, setTab] = useState<Tab>("tables");
 
   const nowRef = useRef(now);
   useEffect(() => {
@@ -288,54 +295,99 @@ function App(p: WaiterAppProps) {
 
   const need = needCount(tables);
   const sheetTable = sheet ? tables.find((x) => x.id === sheet.tableId) : null;
+  const lists = useMemo(() => inbox(tables, now), [tables, now]);
+
+  // Phones show the map or one table (a pushed screen with a back button);
+  // from 768 px the table sits beside the map (split view).
+  const panelHeading = useRef<HTMLHeadingElement>(null);
+  const openTable = (id: string) => {
+    setSelected(id);
+    if (window.matchMedia("(max-width: 767px)").matches) requestAnimationFrame(() => panelHeading.current?.focus());
+  };
+  const closeTable = () => {
+    const id = selected;
+    setSelected(null);
+    requestAnimationFrame(() => document.getElementById(`table-${id}`)?.focus());
+  };
+
+  const tabTitle = t(`tabs.${tab}`);
 
   return (
-    <div className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-matsoni">
-      <header className="flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-white px-4 py-2 lg:px-6">
-        <h1 className="display-face m-0 mr-2 text-2xl">{p.cafeName}</h1>
-        <AreaTabs areas={floor.areas} current={currentArea} onPick={(id) => setArea(id)} />
-        <span data-testid="need" className="ml-auto font-semibold">
-          {need > 0 ? t("need", { count: need }) : t("allServed")}
-        </span>
+    <div className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-staff-bg text-ink">
+      <header className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 border-b border-staff-sep bg-white/95 px-4 py-1.5 lg:px-6">
+        <p className="m-0 min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">{p.cafeName}</p>
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         <ConnectionPill state={connection} waiting={outbox.entries.length} />
-        <span data-testid="clock" className="num text-xl font-semibold">
+        <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold">
           {formatTime(new Date(now), p.location.timeZone)}
         </span>
       </header>
       {connection === "offline" ? (
-        <p role="alert" data-testid="offline-banner" className="m-0 bg-pomegranate px-4 py-2 font-semibold text-white lg:px-6">
+        <p role="alert" data-testid="offline-banner" className="m-0 flex items-start gap-2 bg-pomegranate px-4 py-2 text-[0.9375rem] font-semibold text-white lg:px-6">
+          <WifiOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {t("connection.banner", { time: formatTime(new Date(lastSyncAt), p.location.timeZone) })}
         </p>
       ) : (
         <span />
       )}
 
-      <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] md:grid-rows-1 lg:grid-cols-[minmax(0,1fr)_26.25rem]">
-        <div className="grid min-h-0 p-4 lg:p-6">
-          {tables.length === 0 ? (
-            <div className="grid content-start gap-3">
-              <p className="m-0 text-lg">{t("noTables")}</p>
-              {p.canManageTables && (
-                <Link href="/admin/tables" className="font-semibold text-tarragon underline">
-                  {t("noTablesLink")}
-                </Link>
-              )}
+      <div className="grid min-h-0 md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:grid-cols-[minmax(0,1fr)_26.25rem]">
+        <div className={clsx("grid min-h-0 grid-rows-[minmax(0,1fr)_auto]", table && "max-md:hidden")}>
+          <main className="grid min-h-0 content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
+            <div className="grid gap-1">
+              <h1 className="m-0 text-[2.125rem] leading-tight font-bold">{tabTitle}</h1>
+              <p
+                data-testid="need"
+                className={clsx("m-0 flex items-center gap-1.5 text-[0.9375rem] font-semibold", need > 0 ? "text-amber-text" : "text-tarragon")}
+              >
+                {need > 0 ? <BellRing aria-hidden="true" className="size-4 shrink-0" /> : <CircleCheck aria-hidden="true" className="size-4 shrink-0" />}
+                {need > 0 ? t("need", { count: need }) : t("allServed")}
+              </p>
             </div>
-          ) : (
-            <FloorMap tables={areaTables} selected={selected} onSelect={setSelected} />
-          )}
+            {tab === "tables" &&
+              (tables.length === 0 ? (
+                <div className="grid content-start gap-3 rounded-2xl bg-white p-4">
+                  <p className="m-0 text-[1.0625rem]">{t("noTables")}</p>
+                  {p.canManageTables && (
+                    <Link href="/admin/tables" className="font-semibold text-tarragon underline">
+                      {t("noTablesLink")}
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <AreaTabs areas={floor.areas} current={currentArea} onPick={(id) => setArea(id)} />
+                  <FloorMap tables={areaTables} selected={selected} onSelect={openTable} />
+                </>
+              ))}
+            {tab === "orders" && <InboxList rows={lists.orders} empty={t("inbox.ordersEmpty")} selected={selected} onSelect={openTable} />}
+            {tab === "calls" && <InboxList rows={lists.calls} empty={t("inbox.callsEmpty")} selected={selected} onSelect={openTable} />}
+          </main>
+          <TabBar
+            current={tab}
+            onPick={setTab}
+            items={[
+              { key: "tables", icon: LayoutGrid, badge: 0 },
+              { key: "orders", icon: ClipboardList, badge: lists.orders.length },
+              { key: "calls", icon: BellRing, badge: lists.calls.length },
+            ]}
+          />
         </div>
         <aside
           aria-label={table ? t("panel.table", { label: table.label }) : undefined}
           data-testid="panel"
-          className="flex min-h-0 min-w-0 flex-col border-t border-line bg-white md:border-t-0 md:border-l"
+          className={clsx(
+            "flex min-h-0 min-w-0 flex-col bg-white md:border-l md:border-staff-sep",
+            !table && "max-md:hidden",
+          )}
         >
           {table ? (
             <TablePanel
               key={table.id}
               table={table}
               role={p.role}
+              headingRef={panelHeading}
+              onBack={closeTable}
               onAction={act}
               onOpenPad={() => setSheet({ kind: "pad", tableId: table.id })}
               onSettle={(sessionId) => setSheet({ kind: "settle", tableId: table.id, sessionId, key: crypto.randomUUID() })}
@@ -343,7 +395,10 @@ function App(p: WaiterAppProps) {
               onCancelLine={onCancelLine}
             />
           ) : (
-            <p className="m-0 p-6 text-muted">{t("panel.pick")}</p>
+            <div className="grid flex-1 place-content-center justify-items-center gap-3 p-6 text-center text-staff-label2">
+              <LayoutGrid aria-hidden="true" className="size-10" />
+              <p className="m-0 text-[1.0625rem]">{t("panel.pick")}</p>
+            </div>
           )}
         </aside>
       </div>

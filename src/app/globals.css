@@ -25,6 +25,15 @@
   --color-pom-on-dark: #ff6b7e;
   --color-tarragon-on-dark: #5cc48e;
   --color-slip-dim: #b9c4bc;
+  /* Staff screens (waiter, kitchen), ADR-053: neutral system-like greys
+     around direction A's green, amber and red. */
+  --color-staff-bg: #f2f3f5;
+  --color-staff-fill: #e6e8ec;
+  --color-staff-sep: #d5d9df;
+  --color-staff-label2: #565d67;
+  --color-amber-text: #8a5300;
+  --color-basalt-4: #31423a;
+  --color-late-on-dark: #d0384a;
   --font-display: var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
   --font-ui: var(--font-google-sans), system-ui, sans-serif;
 
@@ -99,6 +108,15 @@
   :focus-visible {
     outline: 3px solid var(--color-tarragon);
     outline-offset: 2px;
+  }
+
+  /* The kitchen board is dark (ADR-053): native controls follow, and the
+     focus ring turns light so it shows on the dark surfaces. */
+  .staff-dark {
+    color-scheme: dark;
+  }
+  .staff-dark :focus-visible {
+    outline-color: var(--color-slip);
   }
 
   /* Every button and button-like link: pointer, a visible hover (pointer

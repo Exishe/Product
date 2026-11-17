@@ -1,5 +1,7 @@
 "use client";
 
+import { clsx } from "clsx";
+import { Bell, BellOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import {
@@ -10,7 +12,6 @@ import {
   type PushAvailability,
 } from "@/features/notifications/push-browser";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { clsx } from "clsx";
 
 type State = "loading" | "hidden" | Exclude<PushAvailability, "unconfigured" | "ready"> | "off" | "on";
 
@@ -102,7 +103,7 @@ export function NotifyToggle({
   const note = notes[state];
 
   return (
-    <span className="flex items-center gap-2" data-testid="waiter-notify" data-state={state}>
+    <span className="contents" data-testid="waiter-notify" data-state={state}>
       {(state === "on" || state === "off") && (
         <button
           type="button"
@@ -111,23 +112,24 @@ export function NotifyToggle({
           disabled={busy}
           onClick={() => void (state === "on" ? turnOff() : turnOn())}
           className={clsx(
-            "rounded-sheet inline-flex min-h-11 items-center gap-2 border px-3 text-sm font-semibold disabled:opacity-60",
-            state === "on"
-              ? "border-tarragon bg-tarragon-tint text-tarragon"
-              : "border-line-strong text-ink bg-white",
+            "inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-full px-3 text-[0.8125rem] font-semibold disabled:opacity-60",
+            state === "on" ? "bg-tarragon-tint text-tarragon" : "bg-staff-fill text-ink",
           )}
         >
-          {t("label")}
-          <span className="font-normal">{state === "on" ? t("on") : t("off")}</span>
+          {state === "on" ? <Bell aria-hidden="true" className="size-5" /> : <BellOff aria-hidden="true" className="size-5" />}
+          {/* Icon only on phones; the switch keeps its name and state for screen readers. */}
+          <span className="max-lg:sr-only">
+            {t("label")} <span className="font-normal">{state === "on" ? t("on") : t("off")}</span>
+          </span>
         </button>
       )}
       {note && (
-        <span role="status" className="text-muted text-sm">
+        <span role="status" className="basis-full text-[0.8125rem] text-staff-label2 lg:basis-auto">
           {note}
         </span>
       )}
       {error && (
-        <span role="alert" className="text-pomegranate text-sm">
+        <span role="alert" className="basis-full text-[0.8125rem] text-pomegranate lg:basis-auto">
           {t("error")}
         </span>
       )}

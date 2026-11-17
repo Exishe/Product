@@ -1,20 +1,33 @@
 "use client";
 
 import { clsx } from "clsx";
+import { Ban, Check, CircleAlert, Clock, Flame, Hourglass, Undo2, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { BoardLine, KitchenAction, ShownTicket } from "./board-model";
 import { classifyLateness, elapsedMinutes, type Lateness } from "./lateness";
 
-// A paper slip on the kitchen board (design/kitchen.html): table number 64 px,
-// quantity boxes and dish names 26 px, one big 72 px action. In the narrow
+// A ticket on the dark kitchen board (ADR-053), readable at 1.5 m: table
+// number 64 px, quantity boxes and dish names 26 px, one big 72 px action.
+// The head band is the timer: grey while on time, amber with an hourglass and
+// «Շտապել» from 8 minutes, red with an alert sign and «Ուշանում է» from 12
+// (lateness.ts), and the ticket's border takes the same colour. In the narrow
 // Ready column everything is a size smaller. The quantity has its own column,
 // so a long name wraps beside it and never pushes it out of sight.
 
 export type Column = "new" | "cooking" | "ready";
 
-const PERFORATION: CSSProperties = {
-  background: "radial-gradient(circle at 6px 5px, var(--color-basalt-2) 3px, transparent 3.5px) 0 0 / 12px 10px repeat-x",
+const BAND: Record<Lateness | "void", string> = {
+  normal: "bg-basalt-4 text-slip",
+  hurry: "bg-apricot text-ink",
+  late: "bg-late-on-dark text-white",
+  void: "bg-slip text-pomegranate",
+};
+const BORDER: Record<Lateness | "void", string> = {
+  normal: "border-basalt-4",
+  hurry: "border-apricot",
+  late: "border-late-on-dark",
+  void: "border-late-on-dark",
 };
 
 function Root({
@@ -46,29 +59,36 @@ function Root({
       data-lateness={lateness}
       data-pending={pending || undefined}
       className={clsx(
-        "relative grid shrink-0 gap-2 rounded-slip border-l-8 bg-slip px-4 pb-3 pt-4 text-ink",
-        kind === "void"
-          ? "border-l-pomegranate outline-[3px] outline-offset-0 outline-pom-on-dark outline-solid"
-          : lateness === "late"
-            ? "border-l-pomegranate"
-            : lateness === "hurry"
-              ? "border-l-apricot"
-              : "border-l-transparent",
-        fresh && "animate-in fade-in slide-in-from-left-10 duration-[420ms] ease-[cubic-bezier(.2,.8,.2,1)]",
+        "relative grid shrink-0 overflow-hidden rounded-2xl border-4 bg-basalt-3 text-slip transition-colors duration-200",
+        BORDER[kind === "void" ? "void" : lateness],
+        pending && "border-dashed",
+        // A new ticket fades in (≤ 200 ms) so the cook sees what changed.
+        fresh && "animate-in fade-in duration-200",
       )}
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-[5px] h-[10px]" style={PERFORATION} />
       {children}
     </article>
   );
 }
 
-function Head({ table, number, compact, meta }: { table: string | null; number: number; compact: boolean; meta: ReactNode }) {
+function Head({
+  table,
+  number,
+  compact,
+  tone,
+  meta,
+}: {
+  table: string | null;
+  number: number;
+  compact: boolean;
+  tone: Lateness | "void";
+  meta: ReactNode;
+}) {
   const t = useTranslations("kitchen.ticket");
   return (
-    <div className="flex items-start justify-between gap-2">
+    <div className={clsx("flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-3 transition-colors duration-200", BAND[tone])}>
       <span className="grid min-w-0 leading-none">
-        <small className="text-sm font-semibold text-muted">{table ? t("table") : t("noTable")}</small>
+        <small className="text-base font-semibold">{table ? t("table") : t("noTable")}</small>
         <b
           data-testid="ticket-table"
           className={clsx(
@@ -79,7 +99,7 @@ function Head({ table, number, compact, meta }: { table: string | null; number: 
           {table ?? number}
         </b>
       </span>
-      <span className="grid justify-items-end gap-1 text-right">{meta}</span>
+      <span className="ml-auto grid justify-items-end gap-1 text-right">{meta}</span>
     </div>
   );
 }
@@ -88,7 +108,7 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
   const t = useTranslations("kitchen.ticket");
   const boardLocale = useLocale();
   return (
-    <ul className="m-0 grid list-none gap-2 p-0">
+    <ul className="m-0 grid list-none gap-3 p-0">
       {lines.map((l) => {
         const gone = struck || l.quantity === 0;
         const reduced = !gone && l.quantity < l.orderedQuantity;
@@ -96,13 +116,13 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
           <li
             key={l.id}
             data-testid="ticket-line"
-            className={clsx("grid items-baseline gap-x-3 gap-y-1", compact ? "grid-cols-[36px_minmax(0,1fr)]" : "grid-cols-[48px_minmax(0,1fr)]")}
+            className={clsx("grid items-baseline gap-x-3 gap-y-1", compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[52px_minmax(0,1fr)]")}
           >
             <span className="grid justify-items-stretch gap-0.5 text-center">
               <span
                 data-testid="line-qty"
                 className={clsx(
-                  "num rounded-chip border-2 border-ink font-bold",
+                  "num rounded-lg border-2 border-slip font-bold",
                   compact ? "text-xl leading-[30px]" : "text-[1.875rem] leading-10",
                   gone && "line-through decoration-[3px]",
                 )}
@@ -110,7 +130,7 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
                 {gone && !struck ? l.orderedQuantity : l.quantity}
               </span>
               {reduced && (
-                <s aria-label={t("was", { quantity: l.orderedQuantity })} className="num text-base font-bold text-pomegranate">
+                <s aria-label={t("was", { quantity: l.orderedQuantity })} className="num text-base font-bold text-pom-on-dark">
                   {l.orderedQuantity}
                 </s>
               )}
@@ -121,13 +141,13 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
               className={clsx(
                 "min-w-0 font-semibold leading-[1.15] hyphens-auto [overflow-wrap:anywhere]",
                 compact ? "text-xl" : "text-kds-item",
-                gone && "line-through decoration-[3px]",
+                gone && "text-slip-dim line-through decoration-[3px]",
               )}
             >
               {l.name}
             </span>
             {l.modifiers.length > 0 && (
-              <span data-testid="line-modifiers" className={clsx("col-start-2 font-semibold text-muted", compact ? "text-base" : "text-xl")}>
+              <span data-testid="line-modifiers" className={clsx("col-start-2 font-semibold text-slip-dim", compact ? "text-base" : "text-xl")}>
                 {l.modifiers.map((m) => m.text).join(", ")}
               </span>
             )}
@@ -135,7 +155,7 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
               <span
                 data-testid="line-note"
                 className={clsx(
-                  "col-start-2 justify-self-start rounded-chip bg-[#FCE8C8] px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
+                  "col-start-2 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold text-ink [overflow-wrap:anywhere]",
                   compact ? "text-base" : "text-xl",
                 )}
               >
@@ -149,13 +169,18 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
   );
 }
 
-function Actions({ children }: { children: ReactNode }) {
-  return <div className="mt-2 grid">{children}</div>;
+function Body({ children }: { children: ReactNode }) {
+  return <div className="grid gap-3 px-4 pt-3 pb-4">{children}</div>;
 }
 
-export const TicketCard = { Root, Head, Lines, Actions };
+function Actions({ children }: { children: ReactNode }) {
+  return <div className="mt-1 grid">{children}</div>;
+}
 
-const BIG_BUTTON = "min-h-[72px] w-full rounded-chip px-3 text-2xl font-bold active:translate-y-px";
+export const TicketCard = { Root, Head, Body, Lines, Actions };
+
+const BIG_BUTTON =
+  "inline-flex min-h-[72px] w-full items-center justify-center gap-3 rounded-xl px-3 text-2xl font-bold active:translate-y-px [&_svg]:size-7 [&_svg]:shrink-0";
 
 export function OrderTicketCard({
   ticket,
@@ -177,6 +202,7 @@ export function OrderTicketCard({
   const compact = column === "ready";
   const move = (next: "cooking" | "ready") =>
     onAction({ kind: "set_ticket_status", ticketId: ticket.id, expected: ticket.status, next });
+  const TimerIcon = lateness === "late" ? CircleAlert : lateness === "hurry" ? Hourglass : Clock;
 
   return (
     <TicketCard.Root
@@ -192,66 +218,80 @@ export function OrderTicketCard({
         table={ticket.table}
         number={ticket.number}
         compact={compact}
+        tone={lateness}
         meta={
           <>
-            <span data-testid="ticket-timer" className={clsx("num font-bold", compact ? "text-xl" : "text-[1.875rem] leading-tight")}>
-              {minutes === 0 ? t("justNow") : t("minutes", { minutes })}
+            <span className={clsx("flex items-center gap-2 font-bold", compact ? "text-xl" : "text-[1.875rem] leading-tight")}>
+              <TimerIcon aria-hidden="true" className={compact ? "size-5" : "size-7"} />
+              <span data-testid="ticket-timer" className="num">
+                {minutes === 0 ? t("justNow") : t("minutes", { minutes })}
+              </span>
             </span>
-            {lateness === "hurry" && (
-              <span data-testid="ticket-age" className="rounded-chip bg-apricot px-2 py-0.5 text-base font-bold text-ink">
-                {t("hurry")}
+            {lateness !== "normal" && (
+              <span
+                data-testid="ticket-age"
+                className={clsx(
+                  "rounded-md px-2 py-0.5 text-lg leading-tight font-bold",
+                  lateness === "late" ? "bg-white text-pomegranate" : "bg-ink text-apricot-on-dark",
+                )}
+              >
+                {lateness === "late" ? t("late") : t("hurry")}
               </span>
             )}
-            {lateness === "late" && (
-              <span data-testid="ticket-age" className="rounded-chip bg-pomegranate px-2 py-0.5 text-base font-bold text-white">
-                {t("late")}
-              </span>
-            )}
-            <span className="text-sm text-muted">{t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}</span>
-            {ticket.pending && (
-              <span data-testid="ticket-pending" className="rounded-chip border border-dashed border-ink px-2 py-0.5 text-sm font-bold">
-                {t("pending")}
-              </span>
-            )}
+            <span className="text-base font-semibold">{t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}</span>
           </>
         }
       />
-      <TicketCard.Lines lines={ticket.lines} compact={compact} struck={false} />
-      {ticket.orderNote && (
-        <p
-          data-testid="ticket-note"
-          className={clsx(
-            "m-0 justify-self-start rounded-chip bg-[#FCE8C8] px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
-            compact ? "text-base" : "text-xl",
-          )}
-        >
-          {ticket.orderNote}
-        </p>
-      )}
-      <TicketCard.Actions>
-        {column === "new" && (
-          <button type="button" className={clsx(BIG_BUTTON, "bg-apricot text-ink")} onClick={() => move("cooking")}>
-            {t("start")}
-          </button>
+      <TicketCard.Body>
+        {ticket.pending && (
+          <span
+            data-testid="ticket-pending"
+            className="inline-flex items-center gap-2 justify-self-start rounded-lg border-2 border-dashed border-slip-dim px-2 py-0.5 text-base font-bold"
+          >
+            <WifiOff aria-hidden="true" className="size-4 shrink-0" />
+            {t("pending")}
+          </span>
         )}
-        {column === "cooking" && (
-          <button type="button" className={clsx(BIG_BUTTON, "bg-tarragon text-white")} onClick={() => move("ready")}>
-            {t("ready")}
-          </button>
+        <TicketCard.Lines lines={ticket.lines} compact={compact} struck={false} />
+        {ticket.orderNote && (
+          <p
+            data-testid="ticket-note"
+            className={clsx(
+              "m-0 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold text-ink [overflow-wrap:anywhere]",
+              compact ? "text-base" : "text-xl",
+            )}
+          >
+            {ticket.orderNote}
+          </p>
         )}
-        {column === "ready" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 font-semibold text-muted">
-            <span>{t("waiting")}</span>
-            <button
-              type="button"
-              className="min-h-14 rounded-chip border-2 border-ink bg-transparent px-4 text-base font-bold text-ink active:translate-y-px"
-              onClick={() => move("cooking")}
-            >
-              {t("undo")}
+        <TicketCard.Actions>
+          {column === "new" && (
+            <button type="button" className={clsx(BIG_BUTTON, "bg-slip text-ink")} onClick={() => move("cooking")}>
+              <Flame aria-hidden="true" />
+              {t("start")}
             </button>
-          </div>
-        )}
-      </TicketCard.Actions>
+          )}
+          {column === "cooking" && (
+            <button type="button" className={clsx(BIG_BUTTON, "bg-tarragon-on-dark text-ink")} onClick={() => move("ready")}>
+              <Check aria-hidden="true" />
+              {t("ready")}
+            </button>
+          )}
+          {column === "ready" && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-lg font-semibold text-slip-dim">
+              <span>{t("waiting")}</span>
+              <button
+                type="button"
+                className="inline-flex min-h-14 items-center gap-2 rounded-xl border-2 border-slip-dim px-4 text-left text-lg leading-tight font-bold text-slip active:translate-y-px"
+                onClick={() => move("cooking")}
+              >
+                <Undo2 aria-hidden="true" className="size-5 shrink-0" />
+                {t("undo")}
+              </button>
+            </div>
+          )}
+        </TicketCard.Actions>
+      </TicketCard.Body>
     </TicketCard.Root>
   );
 }
@@ -270,23 +310,34 @@ export function VoidTicketCard({ ticket, fresh, onAction }: { ticket: ShownTicke
       fresh={fresh}
       pending={ticket.pending}
     >
-      <p className="m-0 text-2xl font-bold text-pomegranate">{t("void")}</p>
       <TicketCard.Head
         table={ticket.table}
         number={ticket.number}
         compact={false}
-        meta={<span className="text-sm text-muted">{t("voidOrder", { number: ticket.number })}</span>}
+        tone="void"
+        meta={
+          <>
+            <span className="flex items-center gap-2 text-2xl font-bold">
+              <Ban aria-hidden="true" className="size-7 shrink-0" />
+              {t("void")}
+            </span>
+            <span className="text-base font-semibold">{t("voidOrder", { number: ticket.number })}</span>
+          </>
+        }
       />
-      <TicketCard.Lines lines={ticket.lines} compact={false} struck />
-      <TicketCard.Actions>
-        <button
-          type="button"
-          className={clsx(BIG_BUTTON, "bg-pomegranate text-white")}
-          onClick={() => onAction({ kind: "acknowledge_void", ticketId: ticket.id })}
-        >
-          {t("acknowledge")}
-        </button>
-      </TicketCard.Actions>
+      <TicketCard.Body>
+        <TicketCard.Lines lines={ticket.lines} compact={false} struck />
+        <TicketCard.Actions>
+          <button
+            type="button"
+            className={clsx(BIG_BUTTON, "bg-late-on-dark text-white")}
+            onClick={() => onAction({ kind: "acknowledge_void", ticketId: ticket.id })}
+          >
+            <Check aria-hidden="true" />
+            {t("acknowledge")}
+          </button>
+        </TicketCard.Actions>
+      </TicketCard.Body>
     </TicketCard.Root>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
+import { CircleCheck, Flame, Inbox, Power, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -50,6 +51,7 @@ const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
+const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = { new: Inbox, cooking: Flame, ready: CircleCheck };
 
 const client = getBrowserClient as unknown as () => SupabaseClient;
 
@@ -326,16 +328,16 @@ function Board(p: KitchenBoardProps) {
   const clock = formatTime(new Date(now), p.location.timeZone);
 
   return (
-    <div lang={locale} className="grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-basalt text-slip">
-      <header className="flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 border-b border-basalt-3 px-4 py-2 lg:gap-x-6 lg:px-6">
-        <h1 className="text-[1.875rem] font-bold leading-tight">{p.station.title}</h1>
+    <div lang={locale} className="staff-dark grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-basalt text-slip">
+      <header className="flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 border-b border-basalt-3 bg-basalt-2 px-4 py-2 lg:gap-x-4 lg:px-6">
+        <h1 className="mr-2 text-[1.875rem] leading-tight font-bold">{p.station.title}</h1>
         {p.otherStations.length > 0 && (
           <nav aria-label={t("stations")} className="flex flex-wrap gap-2">
             {p.otherStations.map((s) => (
               <Link
                 key={s.id}
                 href={`/kitchen/${s.id}`}
-                className="inline-flex min-h-11 items-center rounded-full border border-basalt-3 px-4 text-base font-semibold text-slip-dim"
+                className="inline-flex min-h-14 items-center rounded-full bg-basalt-3 px-5 text-lg font-semibold text-slip-dim"
               >
                 {s.title}
               </Link>
@@ -345,23 +347,25 @@ function Board(p: KitchenBoardProps) {
         <ConnectionPill state={connection} waiting={outbox.entries.length} lastSyncAt={lastSyncAt} timeZone={p.location.timeZone} />
         <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
         <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
-        <div className="ml-auto flex items-center gap-4">
-          <span data-testid="clock" className="num text-[1.875rem] font-semibold">
+        <div className="ml-auto flex items-center gap-3">
+          <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
             {clock}
           </span>
           {shift.on && (
             <button
               type="button"
               onClick={shift.end}
-              className="min-h-11 rounded-full border border-basalt-3 px-4 text-base font-semibold text-slip-dim"
+              className="inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-basalt-3 px-4 text-lg font-semibold text-slip-dim"
             >
-              {t("shift.end")}
+              <Power aria-hidden="true" className="size-5 shrink-0" />
+              {/* Icon only below 1280 px, so the bar stays one row on a 1024 px tablet. */}
+              <span className="max-xl:sr-only">{t("shift.end")}</span>
             </button>
           )}
         </div>
       </header>
 
-      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)] lg:grid-rows-[minmax(0,1fr)]">
+      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)] lg:grid-rows-[minmax(0,1fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}
@@ -401,26 +405,30 @@ function BoardColumn({
   onAction: (action: KitchenAction) => void;
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
+  const Icon = COLUMN_ICON[column];
   return (
     <section
       aria-labelledby={`column-${column}`}
       data-testid={`column-${column}`}
-      className={clsx("flex min-h-0 flex-col rounded-sheet bg-basalt-2", strip && "sm:col-span-2 lg:col-span-1")}
+      className={clsx("flex min-h-0 flex-col rounded-2xl bg-basalt-2", strip && "sm:col-span-2 lg:col-span-1")}
     >
-      <h2 id={`column-${column}`} className="flex justify-between gap-2 px-4 py-3 text-2xl font-bold text-slip-dim">
-        <span>{title}</span>
-        <b data-testid={`count-${column}`} className="num text-slip">
+      <h2 id={`column-${column}`} className="flex items-center justify-between gap-2 px-4 py-3 text-2xl font-bold">
+        <span className="flex min-w-0 items-center gap-2">
+          <Icon aria-hidden="true" className={clsx("size-7 shrink-0", column === "ready" ? "text-tarragon-on-dark" : "text-slip-dim")} />
+          <span className="min-w-0">{title}</span>
+        </span>
+        <b data-testid={`count-${column}`} className="num grid h-10 min-w-10 place-items-center rounded-full bg-basalt-4 px-2 text-slip">
           {tickets.length}
         </b>
       </h2>
       <div
         className={clsx(
-          "flex min-h-0 flex-1 flex-col gap-3 px-3 pb-3 pt-2 [scrollbar-color:var(--color-basalt-3)_transparent] sm:overflow-y-auto",
+          "flex min-h-0 flex-1 flex-col gap-3 px-3 pt-1 pb-3 [scrollbar-color:var(--color-basalt-4)_transparent] sm:overflow-y-auto",
           strip && "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
         )}
       >
         {tickets.length === 0 ? (
-          <p className="m-0 px-1 py-6 text-xl text-slip-dim">{empty}</p>
+          <p className="m-0 px-2 py-6 text-xl text-slip-dim">{empty}</p>
         ) : (
           tickets.map((ticket) =>
             ticket.kind === "void" ? (

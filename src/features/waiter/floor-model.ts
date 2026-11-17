@@ -258,6 +258,26 @@ export const areaOf = (t: FloorTable, areas: readonly FloorArea[]): string | nul
 const NEEDS: readonly TableState[] = ["new", "ready", "call", "bill"];
 export const needCount = (tables: readonly FloorTable[]) => tables.filter((t) => NEEDS.includes(t.state)).length;
 
+// The Orders and Calls tabs (ADR-053): one row per table and kind of request,
+// the longest-waiting first. Only a different view of the floor; nothing new.
+export type InboxRow = { table: FloorTable; kind: "new" | "ready" | "call" | "bill"; minutes: number };
+
+export function inbox(tables: readonly FloorTable[], now: number): { orders: InboxRow[]; calls: InboxRow[] } {
+  const orders: InboxRow[] = [];
+  const calls: InboxRow[] = [];
+  const since = (at: number) => Math.max(0, Math.floor((now - at) / 60_000));
+  for (const table of tables) {
+    const placed = [...table.orders, ...(table.waiting?.orders ?? [])].filter((o) => o.status === "placed");
+    if (placed.length > 0) orders.push({ table, kind: "new", minutes: since(Math.min(...placed.map((o) => o.placedAt))) });
+    const ready = table.orders.filter((o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"));
+    if (ready.length > 0) orders.push({ table, kind: "ready", minutes: since(Math.min(...ready.map((o) => o.placedAt))) });
+    if (table.call) calls.push({ table, kind: "call", minutes: table.call.minutes });
+    if (table.bill) calls.push({ table, kind: "bill", minutes: table.bill.minutes });
+  }
+  const oldestFirst = (a: InboxRow, b: InboxRow) => b.minutes - a.minutes;
+  return { orders: orders.sort(oldestFirst), calls: calls.sort(oldestFirst) };
+}
+
 // Saved floor positions (tables.pos_x/pos_y) draw the room; without them for
 // every table of an area, tables flow in order.
 export function areaLayout(tables: readonly { pos: { x: number; y: number } | null }[]) {

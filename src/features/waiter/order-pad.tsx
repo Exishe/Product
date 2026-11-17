@@ -2,6 +2,7 @@
 
 import { clsx } from "clsx";
 import { useLocale, useTranslations } from "next-intl";
+import { Check, Minus, Plus, Search, Send, X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import type { GuestCategory, GuestItem } from "@/features/menu/guest-menu/view-model";
 import { initialSelection, isSelectionValid, selectedIds, toggleOption, unitPrice, type Selection } from "@/features/menu/guest-menu/selection";
@@ -9,7 +10,7 @@ import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import { normalizeForSearch } from "@/lib/format/search";
 import type { PadLine, WaiterAction } from "./floor-model";
-import { button, Sheet } from "./ui";
+import { button, choice, Sheet } from "./ui";
 
 type CartLine = { key: string; item: GuestItem; modifierIds: string[]; optionNames: string[]; unit: number; quantity: number };
 
@@ -82,17 +83,18 @@ export function OrderPad({
   return (
     <Sheet labelledBy={titleId} onClose={onClose} wide>
       <div className="grid max-h-[92dvh] grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_20rem] md:grid-rows-[auto_minmax(0,1fr)]">
-        <header className="flex items-center justify-between gap-3 border-b border-line px-6 py-4 md:col-span-2">
-          <h2 id={titleId} className="m-0 text-2xl">
+        <header className="flex items-center justify-between gap-3 border-b border-staff-sep bg-white px-4 py-2 sm:px-6 md:col-span-2">
+          <h2 id={titleId} className="m-0 min-w-0 text-[1.25rem] leading-tight font-bold [overflow-wrap:anywhere]">
             {t("title", { label })}
           </h2>
-          <button type="button" className={button("quiet")} onClick={onClose}>
+          <button type="button" className={button("secondary", "rounded-full")} onClick={onClose}>
+            <X aria-hidden="true" />
             {t("close")}
           </button>
         </header>
 
         {categories.length === 0 ? (
-          <p className="m-0 p-6 text-muted">{t("noMenu")}</p>
+          <p className="m-0 p-6 text-staff-label2">{t("noMenu")}</p>
         ) : choosing ? (
           <Options
             item={choosing.item}
@@ -106,14 +108,17 @@ export function OrderPad({
           />
         ) : (
           <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden p-4">
-            <input
-              type="search"
-              aria-label={t("search")}
-              placeholder={t("search")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="min-h-14 w-full rounded-input border border-line-strong px-4 text-lg"
-            />
+            <span className="relative block">
+              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-staff-label2" />
+              <input
+                type="search"
+                aria-label={t("search")}
+                placeholder={t("search")}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="min-h-12 w-full rounded-xl bg-staff-fill pr-4 pl-10 text-[1.0625rem] placeholder:text-staff-label2"
+              />
+            </span>
             <div role="group" aria-label={t("categories")} className={clsx("flex gap-2 overflow-x-auto", q && "invisible")}>
               {categories.map((c) => (
                 <button
@@ -121,7 +126,7 @@ export function OrderPad({
                   type="button"
                   aria-pressed={category === c.id}
                   onClick={() => setCategory(c.id)}
-                  className="min-h-12 flex-none rounded-chip border border-line px-4 font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-matsoni"
+                  className="min-h-12 flex-none rounded-full bg-white px-4 font-semibold text-staff-label2 ring-1 ring-staff-sep aria-pressed:bg-ink aria-pressed:text-white aria-pressed:ring-ink"
                   lang={c.name ? nameLang(c.name.lang) : undefined}
                 >
                   {c.name?.text}
@@ -129,7 +134,7 @@ export function OrderPad({
               ))}
             </div>
             <ul className="m-0 grid list-none content-start gap-2 overflow-y-auto p-0 sm:grid-cols-2">
-              {shown.length === 0 && <li className="text-muted">{t("empty")}</li>}
+              {shown.length === 0 && <li className="text-staff-label2">{t("empty")}</li>}
               {shown.map((item) => (
                 <li key={item.id}>
                   <button
@@ -137,7 +142,7 @@ export function OrderPad({
                     data-testid="pad-item"
                     disabled={item.soldOut}
                     onClick={() => tap(item)}
-                    className="flex min-h-16 w-full items-center justify-between gap-3 rounded-sheet border border-line bg-white px-4 py-2 text-left disabled:bg-mist disabled:text-muted"
+                    className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-2 text-left text-[1.0625rem] disabled:bg-staff-fill disabled:text-staff-label2"
                   >
                     {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
                     <span className="min-w-0 font-semibold break-words">
@@ -147,7 +152,10 @@ export function OrderPad({
                         dish: (chunks) => <span lang={nameLang(item.name.lang)}>{chunks}</span>,
                       })}
                     </span>
-                    <span className="num flex-none">{item.soldOut ? t("soldOut") : formatAmd(item.price, locale)}</span>
+                    <span className="flex flex-none items-center gap-2">
+                      <span className="num text-[0.9375rem]">{item.soldOut ? t("soldOut") : formatAmd(item.price, locale)}</span>
+                      {!item.soldOut && <Plus aria-hidden="true" className="size-5 text-tarragon" />}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -155,43 +163,44 @@ export function OrderPad({
           </div>
         )}
 
-        <aside aria-label={t("cart")} className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] border-t border-line md:border-t-0 md:border-l">
+        <aside aria-label={t("cart")} className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] border-t border-staff-sep bg-white md:border-t-0 md:border-l">
           <ul data-testid="pad-cart" className="m-0 grid max-h-[30dvh] list-none content-start gap-2 overflow-y-auto p-4 md:max-h-none">
-            {cart.length === 0 && <li className="text-muted">{t("cartEmpty")}</li>}
+            {cart.length === 0 && <li className="text-staff-label2">{t("cartEmpty")}</li>}
             {cart.map((l) => (
               <li key={l.key} className="grid gap-1">
                 <span className="font-semibold break-words" lang={nameLang(l.item.name.lang)}>
                   {l.item.name.text}
                 </span>
-                {l.optionNames.length > 0 && <span className="text-sm text-muted">{l.optionNames.join(", ")}</span>}
+                {l.optionNames.length > 0 && <span className="text-[0.9375rem] text-staff-label2">{l.optionNames.join(", ")}</span>}
                 <span className="flex items-center gap-2">
-                  <button type="button" aria-label={t("less", { name: l.item.name.text })} className={button("quiet", "w-14")} onClick={() => step(l.key, -1)}>
-                    −
+                  <button type="button" aria-label={t("less", { name: l.item.name.text })} className={button("secondary", "w-12 px-0")} onClick={() => step(l.key, -1)}>
+                    <Minus aria-hidden="true" />
                   </button>
                   <span className="num w-8 text-center text-xl font-bold">{l.quantity}</span>
-                  <button type="button" aria-label={t("more", { name: l.item.name.text })} className={button("quiet", "w-14")} onClick={() => step(l.key, 1)}>
-                    +
+                  <button type="button" aria-label={t("more", { name: l.item.name.text })} className={button("secondary", "w-12 px-0")} onClick={() => step(l.key, 1)}>
+                    <Plus aria-hidden="true" />
                   </button>
                   <span className="num ml-auto">{formatAmd(l.unit * l.quantity, locale)}</span>
                 </span>
               </li>
             ))}
           </ul>
-          <div className="grid gap-3 border-t border-line p-4">
-            <label className="grid gap-1 text-sm font-semibold">
+          <div className="grid gap-3 border-t border-staff-sep p-4">
+            <label className="grid gap-1 text-[0.8125rem] font-semibold text-staff-label2">
               {t("note")}
               <textarea
                 value={note}
                 maxLength={300}
                 rows={2}
                 onChange={(e) => setNote(e.target.value)}
-                className="rounded-input border border-line-strong px-3 py-2 text-base font-normal"
+                className="rounded-xl bg-staff-fill px-3 py-2 text-[1.0625rem] font-normal text-ink"
               />
             </label>
-            <div className="flex justify-between text-xl font-bold">
+            <div className="flex justify-end text-[1.375rem] font-bold">
               <span className="num">{formatAmd(total, locale)}</span>
             </div>
-            <button type="button" className={button("primary")} disabled={cart.length === 0} onClick={send}>
+            <button type="button" className={button("primary", "min-h-14")} disabled={cart.length === 0} onClick={send}>
+              <Send aria-hidden="true" />
               {t("send")}
             </button>
           </div>
@@ -218,12 +227,12 @@ function Options({
   const locale = useLocale() as Locale;
   return (
     <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-6">
-      <h3 className="m-0 text-xl break-words">{item.name.text}</h3>
+      <h3 className="m-0 text-[1.25rem] font-bold break-words">{item.name.text}</h3>
       {item.groups.map((g) => (
         <fieldset key={g.id} className="m-0 grid gap-2 border-0 p-0">
           <legend className="mb-2 font-semibold">
             {g.name?.text ?? t("options")}
-            {g.min > 0 && <span className="ml-2 text-sm font-normal text-muted">{t("required")}</span>}
+            {g.min > 0 && <span className="ml-2 text-[0.8125rem] font-normal text-staff-label2">{t("required")}</span>}
           </legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {g.modifiers.map((m) => (
@@ -232,9 +241,12 @@ function Options({
                 type="button"
                 aria-pressed={selection[g.id]?.includes(m.id) ?? false}
                 onClick={() => onChange(toggleOption(selection, g, m.id))}
-                className={clsx(button("quiet"), "justify-between aria-pressed:border-tarragon aria-pressed:bg-tarragon aria-pressed:text-white")}
+                className={choice}
               >
-                <span>{m.name.text}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  {(selection[g.id]?.includes(m.id) ?? false) && <Check aria-hidden="true" />}
+                  {m.name.text}
+                </span>
                 {m.delta > 0 && <span className="num">+{formatAmd(m.delta, locale)}</span>}
                 {m.delta < 0 && <span className="num">−{formatAmd(-m.delta, locale)}</span>}
               </button>
@@ -242,8 +254,8 @@ function Options({
           </div>
         </fieldset>
       ))}
-      <div className="grid grid-cols-2 gap-3">
-        <button type="button" className={button("quiet")} onClick={onCancel}>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" className={button("secondary")} onClick={onCancel}>
           {t("close")}
         </button>
         <button type="button" className={button("primary")} disabled={!isSelectionValid(item.groups, selection)} onClick={onAdd}>

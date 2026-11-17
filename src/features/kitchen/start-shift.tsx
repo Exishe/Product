@@ -1,5 +1,6 @@
 "use client";
 
+import { Power } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -96,9 +97,9 @@ export function StartShiftOverlay({ localHour, onStart }: { localHour: number; o
       role="dialog"
       aria-modal="true"
       aria-labelledby="shift-greeting"
-      className="fixed inset-0 z-40 grid place-items-center bg-basalt/[0.92] px-6 text-center text-slip"
+      className="fixed inset-0 z-40 grid place-items-center bg-basalt/95 px-6 text-center text-slip"
     >
-      <div>
+      <div className="grid justify-items-center">
         <h2 id="shift-greeting" className="mb-3 text-5xl font-bold">
           {t(greetingKey(localHour))}
         </h2>
@@ -107,8 +108,9 @@ export function StartShiftOverlay({ localHour, onStart }: { localHour: number; o
           type="button"
           autoFocus
           onClick={onStart}
-          className="min-h-[88px] rounded-sheet bg-apricot px-12 text-[1.875rem] font-bold text-ink active:translate-y-px"
+          className="inline-flex min-h-[88px] items-center gap-3 rounded-2xl bg-slip px-12 text-[1.875rem] font-bold text-ink active:translate-y-px"
         >
+          <Power aria-hidden="true" className="size-8 shrink-0" />
           {t("start")}
         </button>
       </div>

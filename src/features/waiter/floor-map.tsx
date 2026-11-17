@@ -1,17 +1,20 @@
 "use client";
 
 import { clsx } from "clsx";
+import { Banknote, BellRing, CircleDashed, ClipboardList, CreditCard, HandPlatter, Receipt, Users, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { areaLayout, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
-// Colour and word together (screens.md §5), as in design/waiter.html.
+// Every table state has a colour, an icon and a word (ADR-053), so it never
+// relies on colour alone. Colours from direction A: green is food or a seated
+// party, amber a new order, red a call, ink the bill.
 const STATE_CLASS: Record<TableState, string> = {
-  free: "border-line-strong bg-white text-muted",
-  busy: "border-tarragon bg-tarragon-tint text-tarragon",
-  new: "border-apricot-deep bg-apricot text-ink motion-safe:animate-[nudge_900ms_ease-out_1]",
+  free: "border-staff-sep bg-white text-staff-label2",
+  busy: "border-tarragon/40 bg-tarragon-tint text-tarragon",
+  new: "border-apricot-deep bg-apricot text-ink",
   ready: "border-tarragon bg-tarragon text-white",
   call: "border-[3px] border-pomegranate bg-pom-tint text-pomegranate",
-  bill: "border-ink bg-ink text-matsoni",
+  bill: "border-ink bg-ink text-white",
 };
 const NUMBER_CLASS: Record<TableState, string> = {
   free: "text-ink",
@@ -19,18 +22,36 @@ const NUMBER_CLASS: Record<TableState, string> = {
   new: "text-ink",
   ready: "text-white",
   call: "text-ink",
-  bill: "text-matsoni",
+  bill: "text-white",
 };
-const SWATCH: Record<TableState, string> = {
-  free: "border-line-strong bg-white",
-  busy: "border-tarragon bg-tarragon-tint",
-  new: "border-apricot-deep bg-apricot",
-  ready: "border-tarragon bg-tarragon",
-  call: "border-pomegranate bg-pom-tint",
-  bill: "border-ink bg-ink",
+export const STATE_ICON: Record<TableState, LucideIcon> = {
+  free: CircleDashed,
+  busy: Users,
+  new: ClipboardList,
+  ready: HandPlatter,
+  call: BellRing,
+  bill: Receipt,
+};
+// The small round badge used in the legend and the Orders and Calls lists.
+export const STATE_BADGE: Record<TableState, string> = {
+  free: "bg-white text-staff-label2 ring-1 ring-staff-sep",
+  busy: "bg-tarragon-tint text-tarragon",
+  new: "bg-apricot text-ink",
+  ready: "bg-tarragon text-white",
+  call: "bg-pomegranate text-white",
+  bill: "bg-ink text-white",
 };
 export const STATES: readonly TableState[] = ["free", "busy", "new", "ready", "call", "bill"];
 
+// The state's icon; a bill shows how the guest wants to pay when they said so.
+export function StateIcon({ state, payment, className }: { state: TableState; payment?: "card" | "cash" | null; className?: string }) {
+  if (state === "bill" && payment === "card") return <CreditCard aria-hidden="true" className={className} />;
+  if (state === "bill" && payment === "cash") return <Banknote aria-hidden="true" className={className} />;
+  const Icon = STATE_ICON[state];
+  return <Icon aria-hidden="true" className={className} />;
+}
+
+// Areas as a segmented control (HIG): one row, scrolls sideways when long.
 export function AreaTabs({
   areas,
   current,
@@ -43,14 +64,14 @@ export function AreaTabs({
   const t = useTranslations("waiter");
   if (areas.length < 2) return null;
   return (
-    <div role="group" aria-label={t("areas")} className="flex flex-wrap gap-2">
+    <div role="group" aria-label={t("areas")} className="flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-staff-fill p-0.5">
       {areas.map((a) => (
         <button
           key={a.id ?? "none"}
           type="button"
           aria-pressed={current === a.id}
           onClick={() => onPick(a.id)}
-          className="min-h-11 rounded-chip px-4 font-semibold text-muted aria-pressed:bg-ink aria-pressed:text-matsoni"
+          className="min-h-11 min-w-0 flex-1 rounded-[10px] px-4 text-[0.9375rem] font-semibold whitespace-nowrap text-staff-label2 aria-pressed:bg-white aria-pressed:text-ink aria-pressed:shadow-sm"
         >
           {a.name ?? t("otherArea")}
         </button>
@@ -71,14 +92,14 @@ export function FloorMap({
   const t = useTranslations("waiter");
   const layout = areaLayout(tables);
   return (
-    <section aria-label={t("floorMap")} className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3">
-      <div className="min-h-0 overflow-auto rounded-sheet border border-line bg-white p-4">
+    <section aria-label={t("floorMap")} className="grid content-start gap-4">
+      <div className={clsx(layout.placed && "overflow-x-auto")}>
         <div
           data-testid="floor"
-          className={clsx("grid gap-4", !layout.placed && "grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))]")}
+          className={clsx("grid gap-3", !layout.placed && "grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]")}
           style={
             layout.placed
-              ? { gridTemplateColumns: `repeat(${layout.columns}, minmax(7rem, 1fr))`, gridTemplateRows: `repeat(${layout.rows}, auto)` }
+              ? { gridTemplateColumns: `repeat(${layout.columns}, minmax(6.5rem, 1fr))`, gridTemplateRows: `repeat(${layout.rows}, auto)` }
               : undefined
           }
         >
@@ -87,14 +108,23 @@ export function FloorMap({
           ))}
         </div>
       </div>
-      <ul aria-label={t("legend")} className="m-0 flex list-none flex-wrap gap-x-4 gap-y-2 p-0 text-sm text-muted">
-        {STATES.map((s) => (
-          <li key={s} className="flex items-center gap-1.5">
-            <span aria-hidden="true" className={clsx("size-4 rounded border-2", SWATCH[s])} />
-            {t(`state.${s}`)}
-          </li>
-        ))}
-      </ul>
+      <section aria-labelledby="legend-title" className="grid gap-2">
+        <h2 id="legend-title" className="m-0 px-1 text-[0.8125rem] font-semibold text-staff-label2">
+          {t("legend")}
+        </h2>
+        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-x-4 gap-y-2 rounded-2xl bg-white p-3">
+          {STATES.map((s) => {
+            return (
+              <li key={s} className="flex min-w-0 items-center gap-2 text-[0.9375rem]">
+                <span aria-hidden="true" className={clsx("grid size-7 shrink-0 place-items-center rounded-full", STATE_BADGE[s])}>
+                  <StateIcon state={s} className="size-4" />
+                </span>
+                <span className="min-w-0">{t(`state.${s}`)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </section>
   );
 }
@@ -109,6 +139,7 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
   return (
     <button
       type="button"
+      id={`table-${table.id}`}
       data-testid="table"
       data-table={table.label}
       data-state={table.state}
@@ -116,11 +147,11 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "flex min-h-28 min-w-0 flex-col items-center justify-center gap-0.5 border-2 p-2 text-center",
-        table.shape === "round" ? "aspect-square rounded-full" : "rounded-sheet",
+        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150",
+        table.shape === "round" ? "aspect-square rounded-full" : "rounded-2xl",
         table.shape === "rect" && "col-span-2",
         STATE_CLASS[table.state],
-        selected && "outline-4 outline-offset-[3px] outline-ink outline-solid",
+        selected && "outline-[3px] outline-offset-[3px] outline-ink outline-solid",
       )}
     >
       {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
@@ -133,8 +164,14 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
       >
         {t.rich("tableName", { label: table.label, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
       </b>
-      <span className="text-sm leading-tight font-semibold">{state}</span>
-      {minutes !== null && <span className="num text-sm">{t("minutesShort", { minutes })}</span>}
+      {/* The icon sits in the corner (inside the circle on round tables), so the word keeps the whole width. */}
+      <StateIcon
+        state={table.state}
+        payment={table.bill?.payment}
+        className={clsx("absolute size-5", table.shape === "round" ? "top-3 left-1/2 -translate-x-1/2" : "top-2.5 left-2.5")}
+      />
+      <span className="max-w-full text-[0.8125rem] leading-tight font-semibold break-words">{state}</span>
+      {minutes !== null && <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>}
     </button>
   );
 }
