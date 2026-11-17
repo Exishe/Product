@@ -1,5 +1,6 @@
 "use client";
 
+import { StarBorder } from "@/features/guest-theme/star-border";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { cartKey, useCart } from "@/features/ordering/cart-store";
@@ -338,17 +339,24 @@ export function GuestMenu({
       </div>
       {lines.length > 0 && (
         <div className="from-matsoni sticky bottom-0 z-10 bg-linear-to-t from-60% to-transparent px-4 pt-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
-          <button
-            type="button"
+          <StarBorder
             onClick={openCart}
-            className="bg-noir text-ivory shadow-float ring-champagne/60 mx-auto flex min-h-14 w-full max-w-[560px] items-center justify-between gap-3 rounded-full py-2 pr-6 pl-6 text-left font-semibold ring-1"
+            color="var(--guest-champagne-light)"
+            trailColor="var(--guest-champagne)"
+            backgroundColor="var(--guest-noir)"
+            textColor="var(--guest-ivory)"
+            borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
+            radius={999}
+            glow={0.7}
+            duration={5}
+            className="shadow-float mx-auto flex min-h-14 w-full max-w-[560px] items-center justify-between gap-3 py-2 pr-6 pl-6 text-left font-semibold"
           >
             <span className="flex flex-col leading-tight">
               {t("menu.viewOrder")}
               <small className="text-ivory-dim text-sm font-normal">{t("menu.items", { count: summary.count })}</small>
             </span>
             <span className="num text-champagne-light text-lg whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
-          </button>
+          </StarBorder>
         </div>
       )}
       {sheet && (

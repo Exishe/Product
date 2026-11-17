@@ -1,5 +1,6 @@
 "use client";
 
+import { StarBorder } from "@/features/guest-theme/star-border";
 import { useEffect, useRef, useState } from "react";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -209,15 +210,22 @@ export function DishSheet({
                   <PlusIcon />
                 </button>
               </span>
-              <button
-                type="button"
+              <StarBorder
                 disabled={!valid}
                 onClick={() => onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note })}
-                className="bg-noir text-ivory ring-champagne/60 disabled:bg-mist disabled:text-muted flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 rounded-full px-6 font-semibold ring-1 disabled:ring-0"
+                color="var(--guest-champagne-light)"
+                trailColor="var(--guest-champagne)"
+                backgroundColor="var(--guest-noir)"
+                textColor="var(--guest-ivory)"
+                borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
+                radius={999}
+                glow={0.7}
+                duration={5}
+                className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"
               >
                 <span>{t("sheet.add")}</span>
                 <span className={`num whitespace-nowrap ${valid ? "text-champagne-light" : ""}`}>{formatAmd(price, locale)}</span>
-              </button>
+              </StarBorder>
             </div>
           ) : null}
         </div>

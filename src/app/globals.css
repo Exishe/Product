@@ -307,6 +307,12 @@
   letter-spacing: 0.005em;
 }
 
+/* Glows (StarBorder) bleed past their buttons; clip sideways overflow so they
+   never widen the page (clip, unlike hidden, keeps sticky bars working). */
+.guest-lux {
+  overflow-x: clip;
+}
+
 /* Overscroll beyond the page shows the guest page colour too. */
 body:has(.guest-lux) {
   background: var(--color-matsoni);

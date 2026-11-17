@@ -1,5 +1,6 @@
 "use client";
 
+import { StarBorder } from "@/features/guest-theme/star-border";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/routing";
@@ -137,9 +138,21 @@ export function OrderSender({
           {t("cart.retry")}
         </button>
       ) : (
-        <button type="button" className={primary} disabled={phase.name === "sending" || summary.blocked || summary.count === 0} onClick={start}>
+        <StarBorder
+          className="shadow-float flex min-h-14 w-full items-center justify-center px-6 font-semibold"
+          color="var(--guest-champagne-light)"
+          trailColor="var(--guest-champagne)"
+          backgroundColor="var(--guest-noir)"
+          textColor="var(--guest-ivory)"
+          borderColor="color-mix(in srgb, var(--guest-champagne) 45%, transparent)"
+          radius={999}
+          glow={0.7}
+          duration={5}
+          disabled={phase.name === "sending" || summary.blocked || summary.count === 0}
+          onClick={start}
+        >
           {phase.name === "sending" ? t("cart.sending") : t("cart.send")}
-        </button>
+        </StarBorder>
       )}
     </div>
   );
