@@ -61,7 +61,7 @@ function LineRow({
       )}
       <div className="col-start-1 mt-1 flex items-center gap-3">
         {available ? (
-          <span className="inline-flex items-center rounded-input border border-line-strong">
+          <span className="inline-flex items-center rounded-full border border-line-strong bg-white">
             <button
               type="button"
               className="grid size-12 place-items-center disabled:text-line-strong"
@@ -86,7 +86,7 @@ function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="min-h-12 rounded-input border border-line-strong bg-white px-4 font-semibold"
+            className="min-h-12 rounded-full border border-line-strong bg-white px-5 font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}
@@ -119,21 +119,21 @@ export function CartView({
 }) {
   const { t, locale } = useGuestI18n();
   return (
-    <main className="flex-1 px-4 pb-8" data-testid="cart">
-      <div className="pt-2">
+    <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-10 md:px-8" data-testid="cart">
+      <div className="pt-3 md:pt-6">
         <button type="button" onClick={onBack} className="-ml-1 inline-flex min-h-12 items-center gap-1 font-semibold text-tarragon">
           <BackIcon />
           {t("cart.back")}
         </button>
       </div>
-      <h2 className="display-face mt-2 mb-1 text-display-38 leading-[1.05]">{t("cart.title")}</h2>
-      <ul className="mt-4">
+      <h2 className="display-face mt-2 mb-1 text-display-38 leading-[1.05] md:text-[2.75rem]">{t("cart.title")}</h2>
+      <ul className="mt-4 border-t border-line">
         {summary.lines.map((p) => (
           <LineRow key={p.line.id} priced={p} item={items[p.line.itemId]} locked={locked} onQuantity={onQuantity} />
         ))}
       </ul>
-      <div className="flex items-baseline justify-between py-4 text-xl font-semibold">
-        <span>{t("cart.total")}</span>
+      <div className="flex items-baseline justify-between py-5 text-xl font-semibold">
+        <span className="display-face text-2xl">{t("cart.total")}</span>
         <span className="num" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>

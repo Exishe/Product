@@ -41,21 +41,21 @@ export default async function OrderStatusPage({ params, searchParams }: { params
 
   return (
     <div className="flex min-h-dvh flex-col">
-        {table ? (
-          <>
-            <GuestHeader locale={locale} cafeName={table.restaurant_name} tableLabel={table.table_label} locales={table.guest_locales} hrefFor={hrefFor} />
-            <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
-              <OrderStatusView tableId={table.table_id} menuHref={menuHref} vapidPublicKey={vapidPublicKey} />
-            </GuestI18nProvider>
-          </>
-        ) : (
-          <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
-            <Notice tone="alert">{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
-            <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
-              {t("order.toMenu")}
-            </a>
-          </main>
-        )}
+      {table ? (
+        <>
+          <GuestHeader locale={locale} cafeName={table.restaurant_name} tableLabel={table.table_label} locales={table.guest_locales} hrefFor={hrefFor} />
+          <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
+            <OrderStatusView tableId={table.table_id} menuHref={menuHref} vapidPublicKey={vapidPublicKey} />
+          </GuestI18nProvider>
+        </>
+      ) : (
+        <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
+          <Notice tone="alert">{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
+          <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
+            {t("order.toMenu")}
+          </a>
+        </main>
+      )}
     </div>
   );
 }

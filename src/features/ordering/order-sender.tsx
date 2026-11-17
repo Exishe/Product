@@ -122,7 +122,7 @@ export function OrderSender({
         : null;
 
   const primary =
-    "flex min-h-14 w-full items-center justify-center rounded-sheet bg-apricot px-4 font-semibold text-ink disabled:bg-mist disabled:text-muted";
+    "flex min-h-14 w-full items-center justify-center rounded-full bg-noir px-6 font-semibold text-ivory ring-1 ring-champagne/60 shadow-float disabled:bg-mist disabled:text-muted disabled:shadow-none disabled:ring-0";
   return (
     <div className="grid gap-3">
       <p role="status" aria-live="polite" className={message ? "rounded-sheet border border-pomegranate bg-pom-tint px-4 py-3" : "sr-only"}>

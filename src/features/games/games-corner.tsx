@@ -41,7 +41,7 @@ export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boole
 
   return (
     <>
-      <section ref={section} className="-mx-4 mt-2 mb-4 scroll-mt-4 bg-basalt px-4 pt-6 pb-5 text-slip" aria-labelledby="games-title" data-testid="games">
+      <section ref={section} className="-mx-4 mt-2 mb-4 scroll-mt-4 bg-basalt px-4 pt-6 pb-5 text-slip md:mx-0 md:rounded-[20px] md:px-6 md:ring-1 md:ring-apricot-on-dark/25" aria-labelledby="games-title" data-testid="games">
         <div className="flex items-center gap-3">
           <PadIcon className="size-9 flex-none text-apricot-on-dark" />
           <div>
@@ -51,9 +51,9 @@ export function GamesCorner({ ready, waiting }: { ready: boolean; waiting: boole
             <p className="text-sm text-slip-dim">{t("games.subtitle")}</p>
           </div>
         </div>
-        <ul className="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:-mx-6 md:scroll-px-6 md:px-6 [&::-webkit-scrollbar]:hidden">
           {GAMES.map((g) => (
-            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start">
+            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[12.5rem]">
               <button
                 type="button"
                 onClick={() => setOpen(g.id)}

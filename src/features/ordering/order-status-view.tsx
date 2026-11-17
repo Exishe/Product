@@ -249,7 +249,7 @@ export function OrderStatusView({
 
   if (phase === "loading") {
     return slow ? (
-      <main className="flex-1 animate-pulse px-4 pt-4" aria-busy="true">
+      <main className="mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 animate-pulse pt-5 md:pt-10" aria-busy="true">
         <div className="h-10 w-2/3 rounded-chip bg-mist" />
         <div className="mt-6 grid gap-4">
           {[0, 1, 2, 3, 4].map((i) => (
@@ -265,7 +265,7 @@ export function OrderStatusView({
   const orders = data?.orders ?? [];
   if (phase === "none" || orders.length === 0) {
     return (
-      <main className="flex flex-1 flex-col items-start gap-3 px-4 py-10">
+      <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-start gap-3 px-4 py-10 md:px-8 md:py-16">
         <h2 className="display-face text-3xl">{t("order.empty")}</h2>
         <p className="text-muted">{t("order.emptyHint")}</p>
         <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
@@ -281,10 +281,10 @@ export function OrderStatusView({
   const latestStatus = latest ? displayStatus(latest) : null;
   const grand = orders.filter((o) => o.status !== "rejected" && o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-sheet border border-line-strong bg-white px-3 font-semibold disabled:opacity-60 aria-pressed:border-tarragon aria-pressed:bg-tarragon-tint";
+    "min-h-[52px] rounded-full border border-line-strong bg-white px-4 font-semibold disabled:opacity-60 aria-pressed:border-gold-deep aria-pressed:bg-gold-tint";
 
   return (
-    <main className="flex-1 px-4 pt-3 pb-10">
+    <main className="mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 pt-5 pb-12 md:pt-10">
       {latest && (
         <OrderCard
           order={latest}

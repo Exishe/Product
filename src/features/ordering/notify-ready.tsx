@@ -106,7 +106,7 @@ export function NotifyReady({
       {state === "off" && (
         <button
           type="button"
-          className="rounded-sheet border-line-strong min-h-[52px] border bg-white px-3 font-semibold disabled:opacity-60"
+          className="border-line-strong min-h-[52px] rounded-full border bg-white px-4 font-semibold disabled:opacity-60"
           disabled={busy}
           onClick={() => void turnOn()}
         >
@@ -115,7 +115,7 @@ export function NotifyReady({
       )}
       {state === "on" && (
         <>
-          <p className="text-tarragon m-0 font-semibold" role="status">
+          <p className="text-success m-0 font-semibold" role="status">
             {t("order.notifyOn")}
           </p>
           <button

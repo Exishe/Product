@@ -95,7 +95,7 @@
 
 .slim[data-shown="true"] {
   transform: none;
-  box-shadow: 0 1px 0 var(--color-line);
+  box-shadow: 0 1px 0 rgb(168 132 78 / 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
