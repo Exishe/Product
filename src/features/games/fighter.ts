@@ -613,7 +613,7 @@ export const game: Game = {
         fh = [4, -40];
         bh = [-16, -36];
       } else if (f.st === "win") {
-        fh = [18, -54];
+        fh = [24, -46];
       } else if (ko) {
         hipY = -9;
         ff = [26, -2];
