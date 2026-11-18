@@ -183,7 +183,7 @@ export function GuestMenu({
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
-  const quickAdd = (item: GuestItem, from: HTMLElement) => {
+  const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) => {
     sparkFrom(from);
     flyToCart(from, {
       photo: item.image ? dishPhotoUrl(item.image) : null,
@@ -191,7 +191,7 @@ export function GuestMenu({
     });
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
-      quantity: 1,
+      quantity,
       note: "",
     });
   };
@@ -210,6 +210,9 @@ export function GuestMenu({
     ) : null;
 
   const count = summary.count;
+  const pure = menu.theme === "soft";
+  // The first featured photo on the page is fetched at once (likely the LCP).
+  const firstFeatured = shown.map((c) => featuredOf(c.items)).find(Boolean);
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
   const iconButton =
     "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
@@ -413,7 +416,12 @@ export function GuestMenu({
                         id={`h-${c.id}`}
                         text={c.name.text}
                         lang={c.name.lang === locale ? undefined : c.name.lang}
-                        className="display-face text-title mb-5 block text-[2.125rem] leading-[1.02] [overflow-wrap:anywhere] md:text-[2.75rem]"
+                        className={`display-face text-title block leading-[1.02] break-words hyphens-auto ${
+                          // Pure: the template's huge, thin "Menu" title.
+                          pure
+                            ? "mb-6 text-[clamp(2.5rem,11vw,3rem)] leading-[0.98] md:text-[3.75rem] xl:text-[4.25rem]"
+                            : "mb-5 text-[2.125rem] md:text-[2.75rem]"
+                        }`}
                       />
                     )}
                     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -426,6 +434,8 @@ export function GuestMenu({
                             item={item}
                             canOrder={canOrder}
                             featured={item.id === featured}
+                            pure={pure}
+                            priority={item.id === firstFeatured}
                             index={before + i}
                             onOpen={setSheet}
                             onQuickAdd={quickAdd}

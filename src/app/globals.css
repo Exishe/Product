@@ -437,6 +437,7 @@ body:has(.admin-shell) {
   --guest-dish-well: var(--guest-plate);
   --guest-dish-ink: var(--guest-accent-text);
   --guest-dish-inset: 0%;
+  --guest-photo-edge: none; /* an inner shade on the photo's round edge */
 
   /* the older tokens, mapped onto the palette */
   --color-matsoni: var(--guest-page);
@@ -587,7 +588,8 @@ body:has(.admin-shell) {
   --guest-dish-rim: rgb(255 255 255 / 0.1);
   --guest-dish-well: #272b31;
   --guest-dish-ink: #e9ecef; /* 13.6:1 on the plate */
-  --guest-dish-inset: 7%;
+  --guest-dish-inset: 3.5%; /* the photo fills the plate up to a thin dark rim */
+  --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 3px 12px rgb(0 0 0 / 0.28);
 }
 
 /* Pure: the big titles are light and a touch tighter, as in the reference. */

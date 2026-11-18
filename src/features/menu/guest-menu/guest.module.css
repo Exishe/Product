@@ -109,3 +109,43 @@
     transition: none;
   }
 }
+
+/* Pure's featured card (dish-card.tsx): the plate bleeds off the top-right
+   corner, sized from the card's width (a size container); an invisible float
+   of the same footprint makes the text flow round the plate's curve and then
+   under it. */
+.feature {
+  container-type: inline-size;
+  --pad: 1.25rem;
+  --plate: min(54cqw, 21rem);
+}
+
+@media (min-width: 640px) {
+  .feature {
+    --pad: 1.75rem;
+  }
+}
+
+.featurePad {
+  padding: var(--pad) var(--pad) 1rem;
+}
+
+.featurePlate {
+  width: var(--plate);
+  top: calc(var(--plate) * -0.12);
+  right: calc(var(--plate) * -0.16);
+}
+
+.featureGap {
+  float: right;
+  width: calc(var(--plate) * 0.84 - var(--pad) + 0.75rem);
+  height: calc(var(--plate) * 0.88 - var(--pad) + 0.25rem);
+  shape-outside: circle(
+    calc(var(--plate) / 2 + 0.75rem) at calc(100% - var(--plate) * 0.34 + var(--pad))
+      calc(var(--plate) * 0.38 - var(--pad))
+  );
+}
+
+.featureActions {
+  padding: 0 var(--pad) var(--pad);
+}

@@ -47,7 +47,7 @@ function LineRow({
         <Txt
           value={item.name}
           locale={locale}
-          className={`display-face text-[1.375rem] leading-tight [overflow-wrap:anywhere] ${available ? "" : "text-muted line-through"}`}
+          className={`display-face text-[1.375rem] leading-tight break-words hyphens-auto ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />

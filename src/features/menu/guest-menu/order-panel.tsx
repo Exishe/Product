@@ -121,7 +121,7 @@ export function OrderPanel({
                   <Txt
                     value={item.name}
                     locale={locale}
-                    className={`block max-w-full truncate text-[0.8125rem] leading-tight ${off ? "text-muted line-through" : "text-ink"}`}
+                    className={`line-clamp-2 max-w-full text-[0.8125rem] leading-tight break-words hyphens-auto ${off ? "text-muted line-through" : "text-ink"}`}
                   />
                   <span className="num text-muted -mt-1 text-xs">
                     {off ? t("menu.soldOut") : formatAmd(p.total, locale)}

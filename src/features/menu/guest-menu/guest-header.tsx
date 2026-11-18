@@ -37,44 +37,52 @@ export function GuestHeader({
   return (
     <header className="text-ink">
       <div className="mx-auto grid w-full max-w-[1360px] min-w-0 gap-5 px-4 pt-4 pb-2 md:px-8 md:pt-7">
-        <div className="flex min-h-12 items-center gap-3">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
-            <img
-              src={logoUrl}
-              alt=""
-              width={44}
-              height={44}
-              decoding="async"
-              className="bg-surface shadow-plate size-11 flex-none rounded-full object-cover"
-            />
-          )}
-          {tableLabel && (
-            <span
-              className="border-line-strong/60 text-ink flex-none rounded-pill border px-3 py-1 text-sm font-semibold"
-              data-testid="table-chip"
-            >
-              {t("table", { label: tableLabel })}
-            </span>
-          )}
-          <span className="flex-1" />
-          {offered.length > 1 && (
-            <nav aria-label={t("language.label")} className="flex flex-none items-center">
-              {offered.map(({ locale: l, href }) => (
-                <a
-                  key={l}
-                  href={href}
-                  lang={l}
-                  hrefLang={l}
-                  aria-current={l === locale ? "true" : undefined}
-                  className="text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold aria-[current=true]:underline aria-[current=true]:decoration-2 aria-[current=true]:underline-offset-[6px] aria-[current=true]:decoration-[var(--guest-glow)]"
+        {/* Two groups that wrap: the logo and table on the left; languages and
+            the round buttons on the right, dropping to their own line when a
+            narrow phone can't hold both (a logo, «Սեղան 12», three languages). */}
+        <div className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          {(logoUrl || tableLabel) && (
+            <div className="flex min-w-0 items-center gap-3">
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
+                <img
+                  src={logoUrl}
+                  alt=""
+                  width={44}
+                  height={44}
+                  decoding="async"
+                  className="bg-surface shadow-plate size-11 flex-none rounded-full object-cover"
+                />
+              )}
+              {tableLabel && (
+                <span
+                  className="border-line-strong/60 text-ink rounded-pill flex-none border px-3 py-1 text-sm font-semibold whitespace-nowrap"
+                  data-testid="table-chip"
                 >
-                  {t(`language.${l}`)}
-                </a>
-              ))}
-            </nav>
+                  {t("table", { label: tableLabel })}
+                </span>
+              )}
+            </div>
           )}
-          {tools}
+          <div className="ml-auto flex flex-none items-center gap-2">
+            {offered.length > 1 && (
+              <nav aria-label={t("language.label")} className="flex flex-none items-center">
+                {offered.map(({ locale: l, href }) => (
+                  <a
+                    key={l}
+                    href={href}
+                    lang={l}
+                    hrefLang={l}
+                    aria-current={l === locale ? "true" : undefined}
+                    className="text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold aria-[current=true]:underline aria-[current=true]:decoration-[var(--guest-glow)] aria-[current=true]:decoration-2 aria-[current=true]:underline-offset-[6px]"
+                  >
+                    {t(`language.${l}`)}
+                  </a>
+                ))}
+              </nav>
+            )}
+            {tools}
+          </div>
         </div>
         <div className="min-w-0">
           <SplitText

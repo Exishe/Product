@@ -94,12 +94,14 @@ export function DishSheet({
               <Txt
                 value={item.name}
                 locale={locale}
-                className="display-face block text-[2.125rem] leading-[1.04] [overflow-wrap:anywhere] md:text-[2.75rem]"
+                className="display-face block text-[clamp(1.75rem,8vw,2.125rem)] leading-[1.06] break-words hyphens-auto md:text-[2.75rem]"
               />
             </h2>
             <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
               {item.portion && (
-                <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
+                <span className="bg-chip text-ink rounded-full px-2.5 text-xs leading-6 font-semibold">
+                  {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
+                </span>
               )}
               {item.tags.map((tag) => (
                 <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
@@ -122,6 +124,9 @@ export function DishSheet({
         {item.groups.map((group) => {
           const chosen = selection[group.id] ?? [];
           const single = group.min === 1 && group.max === 1;
+          // A required single choice (a size) shows each option's own price,
+          // "Mini 1 300 ֏", rather than a difference that can be negative.
+          const asPrice = single && group.modifiers.some((m) => m.delta !== 0);
           const hint = [
             group.min > 0 ? t("sheet.required") : t("sheet.optional"),
             group.max > 1 ? t("sheet.upTo", { max: group.max }) : null,
@@ -155,11 +160,17 @@ export function DishSheet({
                       className="accent-accent size-[22px] flex-none"
                     />
                     <Txt value={m.name} locale={locale} className="min-w-0 flex-1" />
-                    {m.delta !== 0 && (
+                    {asPrice ? (
                       <span className="num text-muted text-sm whitespace-nowrap">
-                        {m.delta > 0 ? "+" : "−"}
-                        {formatAmd(Math.abs(m.delta), locale)}
+                        {formatAmd(item.price + m.delta, locale)}
                       </span>
+                    ) : (
+                      m.delta !== 0 && (
+                        <span className="num text-muted text-sm whitespace-nowrap">
+                          {m.delta > 0 ? "+" : "−"}
+                          {formatAmd(Math.abs(m.delta), locale)}
+                        </span>
+                      )
                     )}
                   </label>
                 );

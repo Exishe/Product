@@ -90,16 +90,22 @@ export function initial(text: string): string {
 
 // A dish on its plate (owner's reference, ADR-056): a round plate in the
 // theme's plate colour (dark in Pure) with a soft drop shadow and a rim
-// highlight; the photo sits inside it, inset by --guest-dish-inset (0 in
-// Evening and Wine, where the photo is the plate). Without a photo: an
-// empty plate with the dish's initial in the display face. Decorative: the
-// dish name is always next to it. A grid, not positioned layers, so the
+// highlight; the photo fills it up to a thin rim, --guest-dish-inset (0 in
+// Evening and Wine, where the photo is the plate), cropped round and shaded
+// at its edge like food on a real plate seen from above. Without a photo:
+// an empty plate with the dish's initial in the display face. Decorative:
+// the dish name is always next to it. A grid, not positioned layers, so the
 // caller's own position (absolute on a featured card) always applies.
+// Photos are one 600 px WebP each (photo.ts; Storage's resizing is a paid
+// feature), so there is no srcset: width/height and aspect-square keep the
+// layout still while it loads, and only the first featured photo skips lazy
+// loading.
 export function Plate({
   src,
   name,
   size,
   lazy = true,
+  priority = false,
   muted = false,
   className = "",
 }: {
@@ -108,6 +114,8 @@ export function Plate({
   /** Intrinsic size in px (for width/height, so nothing shifts while loading). */
   size: number;
   lazy?: boolean;
+  /** The page's first big photo: fetched early (it is likely the LCP). */
+  priority?: boolean;
   muted?: boolean;
   className?: string;
 }) {
@@ -119,16 +127,22 @@ export function Plate({
       className={`bg-dish shadow-plate [container-type:inline-size] grid aspect-square place-items-center overflow-hidden rounded-full ${shade} ${className}`}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
-        <img
-          src={src}
-          alt=""
-          width={size}
-          height={size}
-          loading={lazy ? "lazy" : undefined}
-          decoding="async"
-          className={`bg-plate ${layer} aspect-square h-auto w-[calc(100%-2*var(--guest-dish-inset))] object-cover`}
-        />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp */}
+          <img
+            src={src}
+            alt=""
+            width={size}
+            height={size}
+            loading={lazy && !priority ? "lazy" : undefined}
+            fetchPriority={priority ? "high" : undefined}
+            decoding="async"
+            className={`${layer} aspect-square h-auto w-[calc(100%-2*var(--guest-dish-inset))] bg-[var(--guest-dish-well)] object-cover`}
+          />
+          <span
+            className={`${layer} aspect-square w-[calc(100%-2*var(--guest-dish-inset))] shadow-[var(--guest-photo-edge)]`}
+          />
+        </>
       ) : (
         <>
           <span className={`${layer} size-[82%] border [border-color:var(--guest-dish-rim)]`} />
