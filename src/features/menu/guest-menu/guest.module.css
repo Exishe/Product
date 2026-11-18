@@ -22,17 +22,18 @@
   display: none;
 }
 
+/* Only the rise: Tailwind centres the toast with the separate "translate" property. */
 .toast {
   animation: toast-in 160ms ease-out;
 }
 
 @keyframes toast-in {
   from {
-    transform: translate(-50%, 8px);
+    transform: translateY(8px);
     opacity: 0;
   }
   to {
-    transform: translate(-50%, 0);
+    transform: none;
     opacity: 1;
   }
 }
