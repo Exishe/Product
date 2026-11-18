@@ -157,8 +157,9 @@ Fiscal receipts (HDM) are deliberately out of scope; cafés keep their existing 
 
 - **Guest menu redesign, on preview only:**
   - full-screen layout on computers and tablets as well as phones;
-  - three looks each café picks in its admin («Հյուրի էջի տեսքը»): Evening (noir and champagne), Wine (dark wine with one red) and Soft (light grey with white cards), plus the café's own brand colour and logo;
+  - three looks each café picks in its admin («Հյուրի էջի տեսքը»): Pure (recommended: the owner's reference look, light grey, floating white cards, dishes on dark plates, one amber accent), Evening (noir and champagne) and Wine (dark wine with one red), plus the café's own brand colour and logo;
   - dishes as cards on round plates, a featured dish per section, an order panel beside the menu on computers;
   - a floating bottom bar: menu, order, games, call the waiter;
   - the Stardom display font and four small effects (letters rising in, rotating category names, cards tilting under the finger, a spark when adding).
+- **One look for the whole platform (ADR-056), on preview only:** the waiter app, the kitchen board (now light), the owner admin, sign-in and sign-up follow the same Pure look: grey page, floating white cards, light serif titles, black pill buttons.
 - **Production:** the games and the redesign go to production when the owner says "go".

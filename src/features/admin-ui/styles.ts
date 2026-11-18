@@ -5,11 +5,12 @@ import { clsx } from "clsx";
 // the main action; the others are grey; red tint only for what removes
 // something. Every control is at least 44 px tall (48 px for buttons).
 const base =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed aria-disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed aria-disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0";
 
 const kinds = {
-  primary: "bg-tarragon text-white disabled:bg-staff-fill disabled:text-staff-label2",
-  secondary: "bg-staff-fill text-ink disabled:text-staff-label2",
+  primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
+  secondary:
+    "bg-white text-ink shadow-[var(--shadow-soft)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
   tinted: "bg-tarragon-tint text-tarragon disabled:bg-staff-fill disabled:text-staff-label2",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
@@ -23,7 +24,7 @@ export const button = (kind: ButtonKind, extra?: string) => clsx(base, kinds[kin
 // A square icon-only button (needs an aria-label).
 export const iconButton = (extra?: string) =>
   clsx(
-    "inline-grid size-11 shrink-0 place-items-center rounded-xl text-staff-label2 disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-5",
+    "inline-grid size-11 shrink-0 place-items-center rounded-full text-staff-label2 disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-5",
     extra,
   );
 
@@ -34,7 +35,7 @@ export const input = clsx(field, "h-12");
 export const fieldLabel = "text-[0.9375rem] font-semibold text-staff-label2";
 
 // Grouped content on the grey page: white, rounded, no border (iOS inset grouped).
-export const card = "rounded-2xl bg-white p-4 sm:p-5";
+export const card = "rounded-2xl bg-white p-4 sm:p-5"; // floats on --shadow-soft (globals.css, ADR-056)
 
 export const chip = {
   base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",

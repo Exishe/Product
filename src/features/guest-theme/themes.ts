@@ -8,6 +8,10 @@ export const GUEST_THEMES = ["evening", "wine", "soft"] as const;
 export type GuestTheme = (typeof GUEST_THEMES)[number];
 export const DEFAULT_THEME: GuestTheme = "evening";
 
+/** The order the admin offers them in: Pure (stored as "soft", ADR-056) first, as recommended. */
+export const THEME_CHOICES: readonly GuestTheme[] = ["soft", "evening", "wine"];
+export const RECOMMENDED_THEME: GuestTheme = "soft";
+
 export const isGuestTheme = (v: unknown): v is GuestTheme =>
   typeof v === "string" && (GUEST_THEMES as readonly string[]).includes(v);
 
@@ -18,7 +22,7 @@ type Facts = { page: string; surface: string; ink: string; dark: boolean };
 export const THEME_FACTS: Record<GuestTheme, Facts> = {
   evening: { page: "#f6f1e7", surface: "#fffdf8", ink: "#1b1712", dark: false },
   wine: { page: "#260212", surface: "#4f0423", ink: "#ffffff", dark: true },
-  soft: { page: "#eceef1", surface: "#ffffff", ink: "#1d1f24", dark: false },
+  soft: { page: "#eceef1", surface: "#ffffff", ink: "#1b1d21", dark: false },
 };
 
 /** The browser bar matches the page (the meta tag needs a literal colour). */
@@ -41,11 +45,15 @@ export function contrast(a: string, b: string): number {
 
 /**
  * A café's brand colour replaces the theme's accent: filled buttons, the
- * active tab, badges and the glow. Text on it is white or black, whichever
+ * active tab, badges and the glow (also where a preset splits those roles
+ * off the accent, as Pure does). Text on it is white or black, whichever
  * reads better. It also colours small accent text, but only where it keeps
  * 4.5:1 on the page and on cards; otherwise the theme's own accent text stays.
  */
-export function brandStyle(theme: GuestTheme, brandColor: string | null | undefined): CSSProperties | undefined {
+export function brandStyle(
+  theme: GuestTheme,
+  brandColor: string | null | undefined,
+): CSSProperties | undefined {
   if (!brandColor || !HEX.test(brandColor)) return undefined;
   const { page, surface } = THEME_FACTS[theme];
   const onAccent = contrast("#ffffff", brandColor) >= contrast("#000000", brandColor) ? "#ffffff" : "#000000";
@@ -53,7 +61,12 @@ export function brandStyle(theme: GuestTheme, brandColor: string | null | undefi
     "--guest-accent": brandColor,
     "--guest-on-accent": onAccent,
     "--guest-glow": brandColor,
+    "--guest-badge": brandColor,
+    "--guest-on-badge": onAccent,
+    "--guest-tab": brandColor,
+    "--guest-on-tab": onAccent,
   };
-  if (contrast(brandColor, page) >= 4.5 && contrast(brandColor, surface) >= 4.5) vars["--guest-accent-text"] = brandColor;
+  if (contrast(brandColor, page) >= 4.5 && contrast(brandColor, surface) >= 4.5)
+    vars["--guest-accent-text"] = brandColor;
   return vars as CSSProperties;
 }

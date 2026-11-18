@@ -185,7 +185,10 @@ export function GuestMenu({
   };
   const quickAdd = (item: GuestItem, from: HTMLElement) => {
     sparkFrom(from);
-    flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null, initial: initial(item.name.text) });
+    flyToCart(from, {
+      photo: item.image ? dishPhotoUrl(item.image) : null,
+      initial: initial(item.name.text),
+    });
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
       quantity: 1,
@@ -216,10 +219,16 @@ export function GuestMenu({
         <Search size={20} aria-hidden />
       </button>
       {(canOrder || lines.length > 0) && (
-        <button type="button" className={iconButton} aria-label={orderLabel} disabled={lines.length === 0} onClick={openCart}>
+        <button
+          type="button"
+          className={iconButton}
+          aria-label={orderLabel}
+          disabled={lines.length === 0}
+          onClick={openCart}
+        >
           <ShoppingBag size={20} aria-hidden />
           {count > 0 && (
-            <span className="num bg-accent text-on-accent absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-bold">
+            <span className="num bg-badge text-on-badge absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-bold">
               {count}
             </span>
           )}
@@ -238,7 +247,10 @@ export function GuestMenu({
         view === "menu" && rotating.length > 1 ? (
           <p aria-hidden="true" className="text-muted mt-3 text-lg leading-snug">
             {t("menu.todayIn")}{" "}
-            <RotatingText words={rotating} className="display-face text-glow max-w-full text-[1.875rem] leading-[1.1] md:text-[2.5rem]" />
+            <RotatingText
+              words={rotating}
+              className="display-face max-w-full text-[1.875rem] leading-[1.1] text-[color:var(--guest-flourish)] md:text-[2.5rem]"
+            />
           </p>
         ) : null
       }
@@ -265,7 +277,12 @@ export function GuestMenu({
                 disabled: lines.length === 0,
                 onClick: openCart,
               }
-            : { key: "order", label: t("nav.order"), icon: <ShoppingBag size={22} aria-hidden />, href: orderHref },
+            : {
+                key: "order",
+                label: t("nav.order"),
+                icon: <ShoppingBag size={22} aria-hidden />,
+                href: orderHref,
+              },
           ...(canOrder
             ? [
                 {
@@ -330,7 +347,7 @@ export function GuestMenu({
         <div className={`${COLUMN} flex h-16 items-center gap-3`}>
           <span className="display-face min-w-0 flex-1 truncate text-2xl">{menu.restaurantName}</span>
           {table.kind === "ok" && (
-            <span className="border-line-strong/60 flex-none rounded-pill border px-2.5 py-0.5 text-sm font-semibold">
+            <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold">
               {t("table", { label: table.label })}
             </span>
           )}
@@ -354,7 +371,11 @@ export function GuestMenu({
           <label className="sr-only" htmlFor="menu-search">
             {t("menu.search")}
           </label>
-          <Search size={18} aria-hidden className="text-muted pointer-events-none absolute top-1/2 left-4 mt-1.5 -translate-y-1/2" />
+          <Search
+            size={18}
+            aria-hidden
+            className="text-muted pointer-events-none absolute top-1/2 left-4 mt-1.5 -translate-y-1/2"
+          />
           <input
             ref={search}
             id="menu-search"
@@ -364,11 +385,11 @@ export function GuestMenu({
             placeholder={t("menu.search")}
             autoComplete="off"
             enterKeyHint="search"
-            className="bg-surface border-line-strong/50 placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border pr-5 pl-11 md:max-w-[440px]"
+            className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-5 pl-11 md:max-w-[440px]"
           />
         </div>
         <CategoryNav categories={shown} belowBar={scrolled} />
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_14.5rem] xl:gap-14">
           <main className="min-w-0">
             {shown.length === 0 ? (
               <p className="text-muted py-12 text-center" role="status">
@@ -380,7 +401,12 @@ export function GuestMenu({
                 // The dish's place on the page, counted over the sections before.
                 const before = shown.slice(0, at).reduce((n, x) => n + x.items.length, 0);
                 return (
-                  <section key={c.id} id={sectionId(c.id)} aria-labelledby={`h-${c.id}`} className="scroll-mt-36 pt-8">
+                  <section
+                    key={c.id}
+                    id={sectionId(c.id)}
+                    aria-labelledby={`h-${c.id}`}
+                    className="scroll-mt-36 pt-8"
+                  >
                     {c.name && (
                       <SplitText
                         as="h2"
@@ -392,17 +418,19 @@ export function GuestMenu({
                     )}
                     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
                       {/* The featured dish leads its section, so the grid below it stays whole. */}
-                      {[...c.items].sort((a, b) => Number(b.id === featured) - Number(a.id === featured)).map((item, i) => (
-                        <DishCard
-                          key={item.id}
-                          item={item}
-                          canOrder={canOrder}
-                          featured={item.id === featured}
-                          index={before + i}
-                          onOpen={setSheet}
-                          onQuickAdd={quickAdd}
-                        />
-                      ))}
+                      {[...c.items]
+                        .sort((a, b) => Number(b.id === featured) - Number(a.id === featured))
+                        .map((item, i) => (
+                          <DishCard
+                            key={item.id}
+                            item={item}
+                            canOrder={canOrder}
+                            featured={item.id === featured}
+                            index={before + i}
+                            onOpen={setSheet}
+                            onQuickAdd={quickAdd}
+                          />
+                        ))}
                     </ul>
                   </section>
                 );
@@ -450,7 +478,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 lg:bottom-[calc(104px+env(safe-area-inset-bottom,0px))] w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 rounded-card px-5 py-3 text-center ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:bottom-[calc(104px+env(safe-area-inset-bottom,0px))] ${styles.toast}`}
         >
           {toast.text}
         </p>

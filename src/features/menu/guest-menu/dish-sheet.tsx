@@ -67,44 +67,56 @@ export function DishSheet({
       onClick={(e) => {
         if (e.target === dialog.current) onClose(); // a tap on the backdrop
       }}
-      className={`rounded-t-feature bg-page text-ink mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[600px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:rounded-feature md:shadow-float md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
+      className={`rounded-t-feature bg-surface text-ink md:rounded-feature md:shadow-float mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[600px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
       <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-7 md:max-h-[88dvh] md:px-9 md:pt-9">
-        <Plate
-          src={item.image ? dishPhotoUrl(item.image) : null}
-          name={item.name.text}
-          size={440}
-          lazy={false}
-          className={`mx-auto mb-5 block ${item.image ? "w-[min(62%,15rem)]" : "w-[min(36%,8.5rem)]"}`}
-        />
-        <div className="flex items-start justify-between gap-3">
-          <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
-            <Txt
-              value={item.name}
-              locale={locale}
-              className="display-face block text-[2.25rem] leading-[1.05] [overflow-wrap:anywhere] md:text-[2.75rem]"
-            />
-          </h2>
+        {/* The expanded card (owner's reference): the plate bleeds off the
+            top-right corner, a round × floats top-left, and the name,
+            description and price sit beside the plate. */}
+        <div className="relative -mx-5 -mt-7 min-h-[13.5rem] overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:min-h-[16rem] md:px-9 md:pt-7">
+          <Plate
+            src={item.image ? dishPhotoUrl(item.image) : null}
+            name={item.name.text}
+            size={440}
+            lazy={false}
+            className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
+          />
           <button
             type="button"
             onClick={onClose}
             aria-label={t("sheet.close")}
-            className="text-muted bg-surface shadow-card -mt-1 -mr-1 grid size-12 flex-none place-items-center rounded-full"
+            className="text-ink bg-surface shadow-card relative grid size-12 flex-none place-items-center rounded-full"
           >
             <CloseIcon />
           </button>
+          <div className="relative mt-5 pr-[44%] md:pr-[46%]">
+            <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
+              <Txt
+                value={item.name}
+                locale={locale}
+                className="display-face block text-[2.125rem] leading-[1.04] [overflow-wrap:anywhere] md:text-[2.75rem]"
+              />
+            </h2>
+            <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+              {item.portion && (
+                <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
+              )}
+              {item.tags.map((tag) => (
+                <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+              ))}
+            </p>
+          </div>
         </div>
         {item.description && (
-          <Txt value={item.description} locale={locale} as="p" className="text-muted mt-2" />
+          <Txt
+            value={item.description}
+            locale={locale}
+            as="p"
+            className="text-muted mt-3 text-[0.9375rem] leading-relaxed"
+          />
         )}
-        <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="num text-accent-text text-lg font-semibold">{formatAmd(item.price, locale)}</span>
-          {item.portion && (
-            <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
-          )}
-          {item.tags.map((tag) => (
-            <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
-          ))}
+        <p className="num text-accent-text mt-3 text-[1.625rem] font-semibold">
+          {formatAmd(item.price, locale)}
         </p>
 
         {item.groups.map((group) => {
@@ -179,28 +191,31 @@ export function DishSheet({
         <div
           className={
             canOrder
-              ? "bg-page border-line sticky bottom-0 -mx-5 mt-6 border-t px-5 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:-mx-9 md:px-9 md:pb-7"
+              ? "bg-surface sticky bottom-0 -mx-5 mt-6 px-5 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:-mx-9 md:px-9 md:pb-7"
               : "pb-[calc(24px+env(safe-area-inset-bottom,0px))]"
           }
         >
           {canOrder ? (
             <div className="flex gap-3">
-              <span className="border-line-strong bg-surface rounded-pill inline-flex flex-none items-center border">
+              <span className="inline-flex flex-none items-center gap-1">
                 <button
                   type="button"
-                  className="disabled:text-line-strong grid size-12 place-items-center"
+                  className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
                   aria-label={t("sheet.decrease")}
                   disabled={quantity <= 1}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 >
                   <MinusIcon />
                 </button>
-                <output className="num min-w-7 text-center font-semibold" aria-label={t("sheet.quantity")}>
+                <output
+                  className="num min-w-8 text-center text-lg font-semibold"
+                  aria-label={t("sheet.quantity")}
+                >
                   {quantity}
                 </output>
                 <button
                   type="button"
-                  className="disabled:text-line-strong grid size-12 place-items-center"
+                  className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
                   aria-label={t("sheet.increase")}
                   disabled={quantity >= MAX_QUANTITY}
                   onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
@@ -212,7 +227,10 @@ export function DishSheet({
                 disabled={!valid}
                 onClick={(e) => {
                   sparkFrom(e.currentTarget);
-                  flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null, initial: initial(item.name.text) });
+                  flyToCart(e.currentTarget, {
+                    photo: item.image ? dishPhotoUrl(item.image) : null,
+                    initial: initial(item.name.text),
+                  });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
                 className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"

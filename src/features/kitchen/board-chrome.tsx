@@ -37,14 +37,23 @@ export function ConnectionPill({
       data-state={state}
       className={clsx(
         "inline-flex min-h-14 items-center gap-2 rounded-full px-4 py-1 text-lg font-semibold",
-        state === "offline" ? "bg-late-on-dark text-white" : state === "connecting" ? "bg-apricot text-ink" : "bg-basalt-3 text-slip",
+        state === "offline"
+          ? "bg-late-on-dark text-white"
+          : state === "connecting"
+            ? "bg-apricot text-ink"
+            : "bg-basalt-3 text-slip",
       )}
     >
-      <Icon aria-hidden="true" className={clsx("size-5 shrink-0", state === "online" && "text-tarragon-on-dark")} />
+      <Icon
+        aria-hidden="true"
+        className={clsx("size-5 shrink-0", state === "online" && "text-tarragon-on-dark")}
+      />
       <span className="grid leading-tight">
         <span data-testid="connection-label">{label}</span>
         {state === "offline" && lastSyncAt !== null && (
-          <span className="text-base font-normal">{t("lastSync", { time: formatTime(new Date(lastSyncAt), timeZone) })}</span>
+          <span className="text-base font-normal">
+            {t("lastSync", { time: formatTime(new Date(lastSyncAt), timeZone) })}
+          </span>
         )}
       </span>
     </span>
@@ -55,7 +64,10 @@ export type Toast = { id: number; title: string; detail?: string; tone: "conflic
 
 export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDismiss: (id: number) => void }) {
   return (
-    <div aria-live="assertive" className="pointer-events-none fixed inset-x-0 bottom-6 z-30 grid justify-items-center gap-3 px-4">
+    <div
+      aria-live="assertive"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-30 grid justify-items-center gap-3 px-4"
+    >
       {toasts.map((toast) => {
         const Icon = toast.tone === "conflict" ? TriangleAlert : CircleAlert;
         return (
@@ -66,14 +78,20 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
             data-testid="toast"
             onClick={() => onDismiss(toast.id)}
             className={clsx(
-              "pointer-events-auto flex max-w-xl items-start gap-4 rounded-2xl border-4 bg-basalt-3 px-6 py-4 text-left text-slip shadow-float",
+              "bg-basalt-3 text-slip shadow-float pointer-events-auto flex max-w-xl items-start gap-4 rounded-2xl border-4 px-6 py-4 text-left",
               toast.tone === "conflict" ? "border-apricot" : "border-late-on-dark",
             )}
           >
-            <Icon aria-hidden="true" className={clsx("mt-0.5 size-8 shrink-0", toast.tone === "conflict" ? "text-apricot" : "text-pom-on-dark")} />
+            <Icon
+              aria-hidden="true"
+              className={clsx(
+                "mt-0.5 size-8 shrink-0",
+                toast.tone === "conflict" ? "text-apricot" : "text-pom-on-dark",
+              )}
+            />
             <span className="grid">
               <span className="text-2xl font-bold">{toast.title}</span>
-              {toast.detail && <span className="text-lg text-slip-dim">{toast.detail}</span>}
+              {toast.detail && <span className="text-slip-dim text-lg">{toast.detail}</span>}
             </span>
           </button>
         );
@@ -86,14 +104,22 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
 export function DisconnectedScreen() {
   const t = useTranslations("kitchen.revoked");
   return (
-    <div role="alertdialog" aria-modal="true" aria-labelledby="revoked-title" className="fixed inset-0 z-50 grid place-items-center bg-basalt px-6 text-center text-slip">
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="revoked-title"
+      className="bg-basalt text-slip fixed inset-0 z-50 grid place-items-center px-6 text-center"
+    >
       <div className="grid max-w-xl justify-items-center gap-4">
-        <WifiOff aria-hidden="true" className="size-16 text-slip-dim" />
+        <WifiOff aria-hidden="true" className="text-slip-dim size-16" />
         <h2 id="revoked-title" className="text-4xl font-bold">
           {t("title")}
         </h2>
-        <p className="text-2xl text-slip-dim">{t("body")}</p>
-        <Link href="/pair" className="mt-4 inline-grid min-h-[72px] place-items-center rounded-xl bg-slip px-10 text-2xl font-bold text-ink">
+        <p className="text-slip-dim text-2xl">{t("body")}</p>
+        <Link
+          href="/pair"
+          className="bg-slip mt-4 inline-grid min-h-[72px] place-items-center rounded-xl px-10 text-2xl font-bold text-white"
+        >
           {t("action")}
         </Link>
       </div>

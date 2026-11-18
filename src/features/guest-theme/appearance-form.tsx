@@ -8,7 +8,7 @@ import { useId, useState, useTransition } from "react";
 import { resizeToWebp } from "@/features/menu/photo";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { saveAppearance, type AppearanceInput } from "./actions";
-import { GUEST_THEMES, brandStyle, type GuestTheme } from "./themes";
+import { RECOMMENDED_THEME, THEME_CHOICES, brandStyle, type GuestTheme } from "./themes";
 
 const DEFAULT_PICK = "#c2185b";
 const logoUrl = (path: string) =>
@@ -40,7 +40,7 @@ function Preview({
             key={i}
             className="bg-surface shadow-card rounded-card block border [border-color:var(--guest-card-border)] p-2"
           >
-            <span className="bg-plate shadow-plate mx-auto block size-9 rounded-full" />
+            <span className="bg-dish shadow-plate mx-auto block size-9 rounded-full" />
             <span className="bg-ink/70 mx-auto mt-2 block h-1.5 w-3/4 rounded-full" />
             <span className="bg-accent-text mx-auto mt-1 block h-1.5 w-1/3 rounded-full" />
           </span>
@@ -108,10 +108,10 @@ export function AppearanceForm({
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0" disabled={!ready}>
         <legend className="mb-2 px-1 text-[1.25rem] font-bold">{t("theme")}</legend>
         <div className="grid gap-3 sm:grid-cols-3">
-          {GUEST_THEMES.map((id) => (
+          {THEME_CHOICES.map((id) => (
             <label
               key={id}
-              className="ring-staff-sep has-[:checked]:ring-tarragon has-[:focus-visible]:outline-tarragon relative flex cursor-pointer flex-col gap-3 rounded-2xl bg-white p-3 ring-1 has-[:checked]:ring-3 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
+              className="has-[:checked]:ring-ink has-[:focus-visible]:outline-ink relative flex cursor-pointer flex-col gap-3 rounded-2xl bg-white p-3 ring-0 has-[:checked]:ring-2 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
               data-testid={`theme-${id}`}
             >
               <input
@@ -128,13 +128,20 @@ export function AppearanceForm({
               <Preview theme={id} brandColor={brandColor} title={t("previewTitle")} />
               <span className="flex items-start gap-2">
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[1.0625rem] font-semibold">{t(`themes.${id}.name`)}</span>
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[1.0625rem] font-semibold">
+                    {t(`themes.${id}.name`)}
+                    {id === RECOMMENDED_THEME && (
+                      <span className="bg-staff-fill text-ink rounded-full px-2 py-0.5 text-[0.8125rem] font-semibold">
+                        {t("recommended")}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-staff-label2 text-[0.9375rem]">{t(`themes.${id}.hint`)}</span>
                 </span>
                 {/* Ticked as well as ringed: the choice never rests on colour alone. */}
                 <span
                   aria-hidden="true"
-                  className={`grid size-6 shrink-0 place-items-center rounded-full ${theme === id ? "bg-tarragon text-white" : "ring-staff-field ring-1"}`}
+                  className={`grid size-6 shrink-0 place-items-center rounded-full ${theme === id ? "bg-ink text-white" : "ring-staff-field ring-1"}`}
                 >
                   {theme === id && <Check className="size-4" />}
                 </span>

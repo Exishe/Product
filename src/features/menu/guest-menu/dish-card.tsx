@@ -48,7 +48,9 @@ export function DishCard({
   const muted = item.soldOut ? "text-muted" : "";
 
   const facts = (
-    <span className={`text-muted flex flex-wrap items-center gap-1.5 text-[0.8125rem] ${featured ? "" : "justify-center"}`}>
+    <span
+      className={`text-muted flex flex-wrap items-center gap-1.5 text-[0.8125rem] ${featured ? "" : "justify-center"}`}
+    >
       {item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>}
       {item.portion && <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>}
       {item.tags.map((tag) => (
@@ -57,7 +59,9 @@ export function DishCard({
     </span>
   );
   const price = (
-    <span className={`num text-accent-text text-[1.0625rem] font-semibold whitespace-nowrap ${muted}`}>
+    <span
+      className={`num text-accent-text font-semibold whitespace-nowrap ${featured ? "text-[1.375rem]" : "text-[0.9375rem]"} ${muted}`}
+    >
       {formatAmd(item.price, locale)}
     </span>
   );
@@ -82,7 +86,9 @@ export function DishCard({
           disabled={item.soldOut}
           onClick={() => onOpen(item)}
           className={`block h-full w-full rounded-[inherit] disabled:cursor-default ${
-            featured ? "min-h-[15rem] p-5 pr-[44%] text-left sm:min-h-[17rem] sm:p-7 sm:pr-[42%]" : "px-3 pt-4 pb-7 text-center sm:px-4"
+            featured
+              ? "min-h-[15rem] p-5 pr-[44%] text-left sm:min-h-[17rem] sm:p-7 sm:pr-[42%]"
+              : "px-3 pt-4 pb-7 text-center sm:px-4"
           }`}
         >
           {featured ? (
@@ -97,24 +103,36 @@ export function DishCard({
               <Txt
                 value={item.name}
                 locale={locale}
-                className={`display-face block text-[1.75rem] leading-[1.05] [overflow-wrap:anywhere] sm:text-[2.25rem] ${muted}`}
+                className={`display-face block text-[2rem] leading-[1.04] [overflow-wrap:anywhere] sm:text-[2.625rem] ${muted}`}
               />
               <span className="mt-2 block">{facts}</span>
               {item.description && (
-                <Txt value={item.description} locale={locale} className="text-muted mt-3 line-clamp-3 block text-sm" />
+                <Txt
+                  value={item.description}
+                  locale={locale}
+                  className="text-muted mt-3 line-clamp-3 block text-[0.8125rem] leading-relaxed"
+                />
               )}
               <span className="mt-4 block pr-12">{price}</span>
             </>
           ) : (
             <>
-              <Plate src={photo} name={item.name.text} size={240} muted={item.soldOut} className={`mx-auto block w-[74%] max-w-[10.5rem] ${motionStyles.spin}`} />
+              <Plate
+                src={photo}
+                name={item.name.text}
+                size={240}
+                muted={item.soldOut}
+                className={`mx-auto w-[74%] max-w-[10.5rem] ${motionStyles.spin}`}
+              />
               <Txt
                 value={item.name}
                 locale={locale}
-                className={`display-face mt-3 block text-[1.1875rem] leading-[1.12] [overflow-wrap:anywhere] sm:text-[1.3125rem] ${muted}`}
+                className={`display-face mt-4 block text-[1.25rem] leading-[1.12] [overflow-wrap:anywhere] sm:text-[1.375rem] ${muted}`}
               />
               <span className="mt-1 block">{price}</span>
-              {(item.portion || item.tags.length > 0 || item.soldOut) && <span className="mt-1.5 block">{facts}</span>}
+              {(item.portion || item.tags.length > 0 || item.soldOut) && (
+                <span className="mt-1.5 block">{facts}</span>
+              )}
             </>
           )}
         </button>
@@ -122,7 +140,7 @@ export function DishCard({
         {showAdd && (
           <button
             type="button"
-            className={`bg-accent text-on-accent ring-page absolute z-10 grid size-12 place-items-center rounded-full ring-4 active:scale-90 ${
+            className={`bg-add text-on-add ring-page absolute z-10 grid size-12 place-items-center rounded-full shadow-[var(--guest-add-shadow)] ring-4 active:scale-90 ${
               featured ? "right-4 bottom-4 sm:right-6 sm:bottom-6" : "-right-2 -bottom-3"
             }`}
             aria-label={t("menu.add", { name: item.name.text })}

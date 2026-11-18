@@ -964,6 +964,7 @@
     "title": "Guest page look",
     "intro": "Choose how guests see your menu when they scan the QR code. The order and order status pages follow it.",
     "theme": "Theme",
+    "recommended": "Recommended",
     "themes": {
       "evening": {
         "name": "Evening",
@@ -974,8 +975,8 @@
         "hint": "Dark wine page, burgundy cards and one bright red"
       },
       "soft": {
-        "name": "Soft",
-        "hint": "Light grey page, white cards and a red accent"
+        "name": "Pure",
+        "hint": "Light grey page, white cards, dark plates and one amber accent"
       }
     },
     "previewTitle": "Menu",

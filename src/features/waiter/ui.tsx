@@ -11,18 +11,20 @@ import type { Connection } from "@/features/kitchen/connection";
 // action, grey fill for the others, red only for what removes something.
 // Every control is at least 48 px tall on the waiter's phone.
 export const btn = {
-  base: "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0",
-  primary: "bg-tarragon text-white disabled:bg-staff-fill disabled:text-staff-label2",
-  secondary: "bg-staff-fill text-ink disabled:text-staff-label2",
+  base: "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0",
+  primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
+  secondary:
+    "bg-white text-ink shadow-[var(--shadow-soft)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
 };
-export const button = (kind: keyof Omit<typeof btn, "base">, extra?: string) => clsx(btn.base, btn[kind], extra);
+export const button = (kind: keyof Omit<typeof btn, "base">, extra?: string) =>
+  clsx(btn.base, btn[kind], extra);
 
 // A choice in a list (reason, payment): selected is tinted, ringed and ticked,
 // so it never relies on colour alone.
 export const choice =
-  "inline-flex min-h-12 items-center justify-between gap-2 rounded-xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink ring-1 ring-staff-sep aria-pressed:bg-tarragon-tint aria-pressed:text-tarragon aria-pressed:ring-2 aria-pressed:ring-tarragon [&_svg]:size-5 [&_svg]:shrink-0";
+  "inline-flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink shadow-[var(--shadow-soft)] ring-0 aria-pressed:bg-tarragon-tint aria-pressed:text-tarragon aria-pressed:ring-2 aria-pressed:ring-tarragon [&_svg]:size-5 [&_svg]:shrink-0";
 
 export const chip = {
   base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",
@@ -67,7 +69,7 @@ export function Sheet({
       ref={ref}
       aria-labelledby={labelledBy}
       className={clsx(
-        "m-auto max-h-[92dvh] w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-staff-bg p-0 text-ink shadow-float backdrop:bg-black/40",
+        "bg-staff-bg text-ink m-auto max-h-[92dvh] w-[calc(100vw-2rem)] overflow-hidden rounded-[var(--radius-soft)] p-0 shadow-[var(--shadow-soft-float)] backdrop:bg-black/30",
         "max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-[env(safe-area-inset-bottom,0px)]",
         wide ? "max-w-4xl" : "max-w-lg",
       )}
@@ -98,13 +100,17 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
             data-testid="toast"
             data-tone={toast.tone}
             onClick={() => onDismiss(toast.id)}
-            className="pointer-events-auto flex max-w-xl items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-left text-[0.9375rem] font-semibold text-white shadow-float"
+            className="bg-ink shadow-float pointer-events-auto flex max-w-xl items-center gap-3 rounded-2xl px-4 py-3 text-left text-[0.9375rem] font-semibold text-white"
           >
             <Icon
               aria-hidden="true"
               className={clsx(
                 "size-5 shrink-0",
-                toast.tone === "info" ? "text-tarragon-on-dark" : toast.tone === "conflict" ? "text-apricot-on-dark" : "text-pom-on-dark",
+                toast.tone === "info"
+                  ? "text-tarragon-on-dark"
+                  : toast.tone === "conflict"
+                    ? "text-apricot-on-dark"
+                    : "text-pom-on-dark",
               )}
             />
             {toast.text}
@@ -133,7 +139,11 @@ export function ConnectionPill({ state, waiting }: { state: Connection; waiting:
       data-state={state}
       className={clsx(
         "inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
-        state === "offline" ? "bg-pomegranate text-white" : state === "connecting" ? "bg-apricot text-ink" : "bg-tarragon-tint text-tarragon",
+        state === "offline"
+          ? "bg-pomegranate text-white"
+          : state === "connecting"
+            ? "bg-apricot text-ink"
+            : "bg-tarragon-tint text-tarragon",
       )}
     >
       <Icon aria-hidden="true" className="size-4 shrink-0" />
@@ -149,14 +159,14 @@ export function DisconnectedScreen() {
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="revoked-title"
-      className="fixed inset-0 z-50 grid place-items-center bg-staff-bg px-6 text-center"
+      className="bg-staff-bg fixed inset-0 z-50 grid place-items-center px-6 text-center"
     >
       <div className="grid max-w-md justify-items-center gap-3">
-        <WifiOff aria-hidden="true" className="size-12 text-staff-label2" />
-        <h2 id="revoked-title" className="m-0 text-[1.75rem] leading-tight font-bold">
+        <WifiOff aria-hidden="true" className="text-staff-label2 size-12" />
+        <h2 id="revoked-title" className="page-title m-0 text-[2.25rem]">
           {t("title")}
         </h2>
-        <p className="m-0 text-[1.0625rem] text-staff-label2">{t("body")}</p>
+        <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("body")}</p>
         <Link href="/pair" className={button("primary", "mt-4 min-h-14 px-8")}>
           {t("action")}
         </Link>

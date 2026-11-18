@@ -136,7 +136,7 @@
   top: 0;
   left: 0;
   border-radius: var(--guest-r-pill);
-  background: var(--guest-accent);
+  background: var(--guest-tab);
   transform-origin: 0 50%;
   pointer-events: none;
   opacity: 0;

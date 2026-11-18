@@ -19,7 +19,14 @@ import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
 import { ConciergeBell, Gamepad2, ReceiptText, UtensilsCrossed } from "lucide-react";
-import { displayStatus, isActive, STEPS, stepIndex, type DisplayStatus, type OrderState } from "./order-status";
+import {
+  displayStatus,
+  isActive,
+  STEPS,
+  stepIndex,
+  type DisplayStatus,
+  type OrderState,
+} from "./order-status";
 
 type Db = SupabaseClient<Database>;
 type Names = Record<string, string | null> | null;
@@ -33,7 +40,14 @@ type Line = {
   sort: number;
   order_item_modifiers: { name_i18n: Names }[];
 };
-type Order = OrderState & { id: string; number: number; total: number; placed_at: string; reject_reason: string | null; order_items: Line[] };
+type Order = OrderState & {
+  id: string;
+  number: number;
+  total: number;
+  placed_at: string;
+  reject_reason: string | null;
+  order_items: Line[];
+};
 type Request = { id: string; kind: "call_waiter" | "bring_bill"; status: string };
 type Data = { orders: Order[]; requests: Request[]; closed: boolean };
 
@@ -66,8 +80,16 @@ async function findGuestSession(db: Db, tableId: string): Promise<string | null>
 
 async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   const [orders, requests, session] = await Promise.all([
-    db.from("orders").select(ORDER_COLUMNS).eq("guest_session_id", guestSessionId).order("placed_at", { ascending: false }),
-    db.from("service_requests").select("id, kind, status").eq("guest_session_id", guestSessionId).neq("status", "resolved"),
+    db
+      .from("orders")
+      .select(ORDER_COLUMNS)
+      .eq("guest_session_id", guestSessionId)
+      .order("placed_at", { ascending: false }),
+    db
+      .from("service_requests")
+      .select("id, kind, status")
+      .eq("guest_session_id", guestSessionId)
+      .neq("status", "resolved"),
     db.from("guest_sessions").select("revoked_at, expires_at").eq("id", guestSessionId).maybeSingle(),
   ]);
   if (orders.error || requests.error || session.error) return null;
@@ -111,9 +133,16 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
         const tickAt = { "--d": `${settled ? BEAT : i * BEAT}ms` } as CSSProperties;
         const fillAt = { "--d": `${settled ? 0 : i * BEAT + 120}ms` } as CSSProperties;
         return (
-          <li key={step} className="relative grid min-h-[52px] grid-cols-[28px_1fr] items-start gap-3" aria-current={current ? "step" : undefined}>
+          <li
+            key={step}
+            className="relative grid min-h-[52px] grid-cols-[28px_1fr] items-start gap-3"
+            aria-current={current ? "step" : undefined}
+          >
             {!last && (
-              <span aria-hidden="true" className="bg-line absolute top-7 -bottom-1 left-[13px] w-0.5 overflow-hidden">
+              <span
+                aria-hidden="true"
+                className="bg-line absolute top-7 -bottom-1 left-[13px] w-0.5 overflow-hidden"
+              >
                 <span className={`bg-tarragon ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
               </span>
             )}
@@ -123,16 +152,23 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
                 done ? "border-tarragon bg-matsoni text-white" : "border-line-strong bg-matsoni"
               } ${current ? "shadow-[0_0_0_5px_var(--color-tarragon-tint)]" : ""}`}
             >
-              {current && status !== "served" && status !== "paid" ? <span className={motionStyles.pulse} /> : null}
+              {current && status !== "served" && status !== "paid" ? (
+                <span className={motionStyles.pulse} />
+              ) : null}
               {done ? (
-                <span className={`bg-tarragon absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`} style={tickAt}>
+                <span
+                  className={`bg-tarragon absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
+                  style={tickAt}
+                >
                   <CheckIcon />
                 </span>
               ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
-              <div className={`leading-7 ${done ? "font-semibold" : "text-muted"}`}>{t(`order.steps.${step}`)}</div>
-              {current && <p className="text-sm text-muted">{note}</p>}
+              <div className={`leading-7 ${done ? "font-semibold" : "text-muted"}`}>
+                {t(`order.steps.${step}`)}
+              </div>
+              {current && <p className="text-muted text-sm">{note}</p>}
             </div>
           </li>
         );
@@ -147,12 +183,31 @@ function OrderCard({ order, latest, below }: { order: Order; latest: boolean; be
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
   const Title = latest ? "h2" : "h3";
   return (
-    <article className={latest ? "" : "border-t border-line pt-4"} data-testid="order" data-order-number={order.number} data-status={status}>
+    <article
+      className={
+        latest
+          ? "bg-surface shadow-card rounded-feature mb-5 border [border-color:var(--guest-card-border)] px-5 pt-6 pb-1 md:px-8 md:pt-8"
+          : "border-line border-t pt-4"
+      }
+      data-testid="order"
+      data-order-number={order.number}
+      data-status={status}
+    >
       <div className="flex items-baseline justify-between gap-3">
-        <Title className={`display-face leading-[1.05] ${latest ? "text-display-38" : "text-2xl"}`}>{t("order.title", { number: order.number })}</Title>
-        {!latest && <span className="text-sm font-semibold text-tarragon">{t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}</span>}
+        <Title
+          className={`display-face leading-[1.05] ${latest ? "text-[2.75rem] md:text-[3.25rem]" : "text-2xl"}`}
+        >
+          {t("order.title", { number: order.number })}
+        </Title>
+        {!latest && (
+          <span className="text-tarragon text-sm font-semibold">
+            {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
+          </span>
+        )}
       </div>
-      <p className="text-sm text-muted">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</p>
+      <p className="text-muted text-sm">
+        {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
+      </p>
       {status === "rejected" ? (
         <div className="my-4 grid gap-1">
           <Notice tone="alert">
@@ -172,20 +227,31 @@ function OrderCard({ order, latest, below }: { order: Order; latest: boolean; be
         {lines.map((l) => {
           const name = localized(l.name_i18n, locale as Locale);
           const left = l.quantity - l.cancelled_quantity;
-          const mods = l.order_item_modifiers.map((m) => localized(m.name_i18n, locale as Locale)).filter((m) => m !== null);
+          const mods = l.order_item_modifiers
+            .map((m) => localized(m.name_i18n, locale as Locale))
+            .filter((m) => m !== null);
           return (
-            <li key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b border-line py-3">
-              <span className={`display-face text-xl leading-tight [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}>
+            <li
+              key={l.id}
+              className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-3 last:border-b-0"
+            >
+              <span
+                className={`display-face text-xl leading-tight [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
+              >
                 <span className="num">
-                  {l.cancelled_quantity > 0 && left > 0 ? <s className="mr-1 text-muted">{l.quantity}</s> : null}
+                  {l.cancelled_quantity > 0 && left > 0 ? (
+                    <s className="text-muted mr-1">{l.quantity}</s>
+                  ) : null}
                   {left > 0 ? left : l.quantity}
                 </span>
                 {" × "}
                 {name ? <Txt value={name} locale={locale as Locale} /> : null}
               </span>
-              <span className="num text-right font-semibold whitespace-nowrap">{left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}</span>
+              <span className="num text-right font-semibold whitespace-nowrap">
+                {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
+              </span>
               {mods.length > 0 && (
-                <span className="col-start-1 text-sm text-muted">
+                <span className="text-muted col-start-1 text-sm">
                   {mods.map((m, i) => (
                     <span key={i}>
                       {i > 0 ? ", " : null}
@@ -194,14 +260,16 @@ function OrderCard({ order, latest, below }: { order: Order; latest: boolean; be
                   ))}
                 </span>
               )}
-              {l.note && <span className="col-start-1 text-sm break-words text-muted">{l.note}</span>}
+              {l.note && <span className="text-muted col-start-1 text-sm break-words">{l.note}</span>}
             </li>
           );
         })}
       </ul>
       <div className="flex items-baseline justify-between py-4 text-xl font-semibold">
         <span>{t("order.total")}</span>
-        <span className="num">{formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}</span>
+        <span className="num">
+          {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
+        </span>
       </div>
     </article>
   );
@@ -257,7 +325,10 @@ export function OrderStatusView({
     void load(db, guestSessionId).then((loaded) => loaded && setData(loaded));
   }, [db, guestSessionId]);
 
-  const active = useMemo(() => (data ? data.orders.some(isActive) || data.requests.length > 0 : false), [data]);
+  const active = useMemo(
+    () => (data ? data.orders.some(isActive) || data.requests.length > 0 : false),
+    [data],
+  );
 
   // "Ready": a banner slides in, and if it became ready while the guest
   // watched, a big spark bursts from it.
@@ -289,11 +360,14 @@ export function OrderStatusView({
 
   if (phase === "loading") {
     return slow ? (
-      <main className="mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 animate-pulse pt-5 md:pt-10" aria-busy="true">
-        <div className="h-10 w-2/3 rounded-chip bg-mist" />
+      <main
+        className="mx-auto w-full max-w-[720px] flex-1 animate-pulse px-4 pt-5 md:px-8 md:pt-10"
+        aria-busy="true"
+      >
+        <div className="rounded-chip bg-mist h-10 w-2/3" />
         <div className="mt-6 grid gap-4">
           {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-7 w-1/2 rounded-chip bg-mist" />
+            <div key={i} className="rounded-chip bg-mist h-7 w-1/2" />
           ))}
         </div>
       </main>
@@ -308,7 +382,7 @@ export function OrderStatusView({
       <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-start gap-3 px-4 py-10 md:px-8 md:py-16">
         <h2 className="display-face text-3xl">{t("order.empty")}</h2>
         <p className="text-muted">{t("order.emptyHint")}</p>
-        <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-accent-text">
+        <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
           {t("order.toMenu")}
         </a>
       </main>
@@ -319,11 +393,14 @@ export function OrderStatusView({
   const closed = data?.closed ?? false;
   const open = new Set((data?.requests ?? []).map((r) => r.kind));
   const latestStatus = latest ? displayStatus(latest) : null;
-  const grand = orders.filter((o) => o.status !== "rejected" && o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const grand = orders
+    .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
+    .reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-pill border border-line-strong bg-surface px-4 font-semibold disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
+    "min-h-[52px] rounded-pill border [border-color:var(--guest-field-edge)] bg-surface px-4 font-semibold shadow-card disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
-  const smooth = (): ScrollBehavior => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+  const smooth = (): ScrollBehavior =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   // The bottom bar (ADR-052): back to the menu, this order, the games while
   // waiting, and the waiter. Its Waiter item is the same request as the
   // button below the order, so it reads «Մատուցող», not the button's words.
@@ -342,7 +419,8 @@ export function OrderStatusView({
             key: "games",
             label: t("nav.games"),
             icon: <Gamepad2 size={22} aria-hidden />,
-            onClick: () => document.getElementById("games")?.scrollIntoView({ behavior: smooth(), block: "start" }),
+            onClick: () =>
+              document.getElementById("games")?.scrollIntoView({ behavior: smooth(), block: "start" }),
           },
         ]
       : []),
@@ -361,7 +439,7 @@ export function OrderStatusView({
   ];
 
   return (
-    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 pt-5 md:pt-10 ${DOCK_SPACE}`}>
+    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 pt-5 md:px-8 md:pt-10 ${DOCK_SPACE}`}>
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
         <div
@@ -382,12 +460,23 @@ export function OrderStatusView({
           latest
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
-          below={!showGames ? null : <GamesCorner ready={latestStatus === "ready"} waiting={latestStatus !== null && waiting.has(latestStatus)} />}
+          below={
+            !showGames ? null : (
+              <GamesCorner
+                ready={latestStatus === "ready"}
+                waiting={latestStatus !== null && waiting.has(latestStatus)}
+              />
+            )
+          }
         />
       )}
-      {channel === "down" && <p className="-mt-2 mb-2 text-sm text-muted">{t("order.reconnecting")}</p>}
+      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-sm">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
-        {latestStatus ? t(`order.steps.${latestStatus === "rejected" || latestStatus === "cancelled" ? "received" : latestStatus}`) : null}
+        {latestStatus
+          ? t(
+              `order.steps.${latestStatus === "rejected" || latestStatus === "cancelled" ? "received" : latestStatus}`,
+            )
+          : null}
       </p>
 
       {closed ? (
@@ -400,15 +489,33 @@ export function OrderStatusView({
             <NotifyReady db={db} guestSessionId={guestSessionId} vapidPublicKey={vapidPublicKey} />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" className={secondary} aria-pressed={open.has("call_waiter")} disabled={asking !== null} onClick={() => void ask("call_waiter")}>
+            <button
+              type="button"
+              className={secondary}
+              aria-pressed={open.has("call_waiter")}
+              disabled={asking !== null}
+              onClick={() => void ask("call_waiter")}
+            >
               {t("order.callWaiter")}
             </button>
-            <button type="button" className={secondary} aria-pressed={open.has("bring_bill")} disabled={asking !== null} aria-expanded={choosing} onClick={() => setChoosing((x) => !x)}>
+            <button
+              type="button"
+              className={secondary}
+              aria-pressed={open.has("bring_bill")}
+              disabled={asking !== null}
+              aria-expanded={choosing}
+              onClick={() => setChoosing((x) => !x)}
+            >
               {t("order.askBill")}
             </button>
           </div>
           {choosing && (
-            <div role="group" aria-label={t("order.payTitle")} data-testid="pay-choice" className="mt-3 grid gap-2">
+            <div
+              role="group"
+              aria-label={t("order.payTitle")}
+              data-testid="pay-choice"
+              className="mt-3 grid gap-2"
+            >
               <p className="m-0 font-semibold">{t("order.payTitle")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button type="button" className={secondary} onClick={() => void ask("bring_bill", "card")}>
@@ -418,7 +525,11 @@ export function OrderStatusView({
                   {t("order.payCash")}
                 </button>
               </div>
-              <button type="button" className="min-h-12 justify-self-start font-semibold text-tarragon" onClick={() => setChoosing(false)}>
+              <button
+                type="button"
+                className="text-tarragon min-h-12 justify-self-start font-semibold"
+                onClick={() => setChoosing(false)}
+              >
                 {t("order.payBack")}
               </button>
             </div>
@@ -433,7 +544,7 @@ export function OrderStatusView({
                   : null}
           </p>
           <p>
-            <a href={menuHref} className="inline-flex min-h-12 items-center font-semibold text-tarragon">
+            <a href={menuHref} className="text-tarragon inline-flex min-h-12 items-center font-semibold">
               {t("order.orderMore")}
             </a>
           </p>
@@ -448,7 +559,7 @@ export function OrderStatusView({
           {earlier.map((o) => (
             <OrderCard key={o.id} order={o} latest={false} />
           ))}
-          <div className="flex items-baseline justify-between border-t border-line py-4 text-xl font-semibold">
+          <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">
             <span>{t("order.allRounds")}</span>
             <span className="num">{formatAmd(grand, locale as Locale)}</span>
           </div>

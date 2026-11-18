@@ -38,9 +38,7 @@ export function AdminPage({
               {back.label}
             </Link>
           )}
-          <h1 className="m-0 text-[1.75rem] leading-tight font-bold break-words sm:text-[2.125rem]">
-            {title}
-          </h1>
+          <h1 className="page-title m-0 text-[2.375rem] break-words sm:text-[3rem]">{title}</h1>
           {subtitle && <div className="text-staff-label2 max-w-prose text-[1.0625rem]">{subtitle}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -72,7 +70,7 @@ export function Section({
     <section aria-labelledby={id} data-testid={testId} className="flex min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-end justify-between gap-2 px-1">
         <div className="flex min-w-0 flex-col">
-          <h2 id={id} className="m-0 text-[1.25rem] leading-tight font-bold break-words">
+          <h2 id={id} className="m-0 text-[1.1875rem] leading-tight font-semibold break-words">
             {title}
           </h2>
           {hint && <p className="text-staff-label2 m-0 text-[0.9375rem]">{hint}</p>}
@@ -109,9 +107,9 @@ export function Notice({
       role={role}
       data-testid={testId}
       className={clsx(
-        "flex items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem] [&>svg]:mt-0.5 [&>svg]:size-5 [&>svg]:shrink-0",
+        "flex items-start gap-3 rounded-[var(--radius-soft)] px-4 py-3 text-[1.0625rem] [&>svg]:mt-0.5 [&>svg]:size-5 [&>svg]:shrink-0",
         {
-          info: "text-ink [&>svg]:text-staff-label2 bg-white",
+          info: "text-ink [&>svg]:text-staff-label2 bg-white shadow-[var(--shadow-soft)]",
           ok: "bg-tarragon-tint text-ink [&>svg]:text-tarragon",
           wait: "text-ink [&>svg]:text-amber-text bg-[#fdf0dc]",
           alert: "bg-pom-tint text-pomegranate",

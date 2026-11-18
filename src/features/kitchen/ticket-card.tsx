@@ -21,7 +21,7 @@ const BAND: Record<Lateness | "void", string> = {
   normal: "bg-basalt-4 text-slip",
   hurry: "bg-apricot text-ink",
   late: "bg-late-on-dark text-white",
-  void: "bg-slip text-pomegranate",
+  void: "bg-pom-tint text-pomegranate",
 };
 const BORDER: Record<Lateness | "void", string> = {
   normal: "border-basalt-4",
@@ -59,7 +59,7 @@ function Root({
       data-lateness={lateness}
       data-pending={pending || undefined}
       className={clsx(
-        "relative grid shrink-0 overflow-hidden rounded-2xl border-4 bg-basalt-3 text-slip transition-colors duration-200",
+        "bg-basalt-3 text-slip relative grid shrink-0 overflow-hidden rounded-2xl border-4 transition-colors duration-200",
         BORDER[kind === "void" ? "void" : lateness],
         pending && "border-dashed",
         // A new ticket fades in (≤ 200 ms) so the cook sees what changed.
@@ -86,14 +86,23 @@ function Head({
 }) {
   const t = useTranslations("kitchen.ticket");
   return (
-    <div className={clsx("flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-3 transition-colors duration-200", BAND[tone])}>
+    <div
+      className={clsx(
+        "flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-3 transition-colors duration-200",
+        BAND[tone],
+      )}
+    >
       <span className="grid min-w-0 leading-none">
         <small className="text-base font-semibold">{table ? t("table") : t("noTable")}</small>
         <b
           data-testid="ticket-table"
           className={clsx(
             "num font-bold tracking-[-0.01em] [overflow-wrap:anywhere]",
-            table !== null && table.length > 4 ? "text-4xl leading-[1.05]" : compact ? "text-5xl" : "text-kds-number",
+            table !== null && table.length > 4
+              ? "text-4xl leading-[1.05]"
+              : compact
+                ? "text-5xl"
+                : "text-kds-number",
           )}
         >
           {table ?? number}
@@ -104,7 +113,15 @@ function Head({
   );
 }
 
-function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compact: boolean; struck: boolean }) {
+function Lines({
+  lines,
+  compact,
+  struck,
+}: {
+  lines: readonly BoardLine[];
+  compact: boolean;
+  struck: boolean;
+}) {
   const t = useTranslations("kitchen.ticket");
   const boardLocale = useLocale();
   return (
@@ -116,13 +133,16 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
           <li
             key={l.id}
             data-testid="ticket-line"
-            className={clsx("grid items-baseline gap-x-3 gap-y-1", compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[52px_minmax(0,1fr)]")}
+            className={clsx(
+              "grid items-baseline gap-x-3 gap-y-1",
+              compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[52px_minmax(0,1fr)]",
+            )}
           >
             <span className="grid justify-items-stretch gap-0.5 text-center">
               <span
                 data-testid="line-qty"
                 className={clsx(
-                  "num rounded-lg border-2 border-slip font-bold",
+                  "num border-slip rounded-lg border-2 font-bold",
                   compact ? "text-xl leading-[30px]" : "text-[1.875rem] leading-10",
                   gone && "line-through decoration-[3px]",
                 )}
@@ -130,7 +150,10 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
                 {gone && !struck ? l.orderedQuantity : l.quantity}
               </span>
               {reduced && (
-                <s aria-label={t("was", { quantity: l.orderedQuantity })} className="num text-base font-bold text-pom-on-dark">
+                <s
+                  aria-label={t("was", { quantity: l.orderedQuantity })}
+                  className="num text-pom-on-dark text-base font-bold"
+                >
                   {l.orderedQuantity}
                 </s>
               )}
@@ -139,7 +162,7 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
               data-testid="line-name"
               lang={l.nameLocale === boardLocale ? undefined : l.nameLocale}
               className={clsx(
-                "min-w-0 font-semibold leading-[1.15] hyphens-auto [overflow-wrap:anywhere]",
+                "min-w-0 leading-[1.15] font-semibold [overflow-wrap:anywhere] hyphens-auto",
                 compact ? "text-xl" : "text-kds-item",
                 gone && "text-slip-dim line-through decoration-[3px]",
               )}
@@ -147,7 +170,10 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
               {l.name}
             </span>
             {l.modifiers.length > 0 && (
-              <span data-testid="line-modifiers" className={clsx("col-start-2 font-semibold text-slip-dim", compact ? "text-base" : "text-xl")}>
+              <span
+                data-testid="line-modifiers"
+                className={clsx("text-slip-dim col-start-2 font-semibold", compact ? "text-base" : "text-xl")}
+              >
                 {l.modifiers.map((m) => m.text).join(", ")}
               </span>
             )}
@@ -155,7 +181,7 @@ function Lines({ lines, compact, struck }: { lines: readonly BoardLine[]; compac
               <span
                 data-testid="line-note"
                 className={clsx(
-                  "col-start-2 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold text-ink [overflow-wrap:anywhere]",
+                  "text-ink col-start-2 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
                   compact ? "text-base" : "text-xl",
                 )}
               >
@@ -197,7 +223,10 @@ export function OrderTicketCard({
 }) {
   const t = useTranslations("kitchen.ticket");
   const age = now - ticket.createdAt;
-  const lateness = classifyLateness(age, column === "ready" ? "ready" : ticket.status === "cooking" ? "cooking" : "new");
+  const lateness = classifyLateness(
+    age,
+    column === "ready" ? "ready" : ticket.status === "cooking" ? "cooking" : "new",
+  );
   const minutes = elapsedMinutes(age);
   const compact = column === "ready";
   const move = (next: "cooking" | "ready") =>
@@ -221,7 +250,12 @@ export function OrderTicketCard({
         tone={lateness}
         meta={
           <>
-            <span className={clsx("flex items-center gap-2 font-bold", compact ? "text-xl" : "text-[1.875rem] leading-tight")}>
+            <span
+              className={clsx(
+                "flex items-center gap-2 font-bold",
+                compact ? "text-xl" : "text-[1.875rem] leading-tight",
+              )}
+            >
               <TimerIcon aria-hidden="true" className={compact ? "size-5" : "size-7"} />
               <span data-testid="ticket-timer" className="num">
                 {minutes === 0 ? t("justNow") : t("minutes", { minutes })}
@@ -232,13 +266,15 @@ export function OrderTicketCard({
                 data-testid="ticket-age"
                 className={clsx(
                   "rounded-md px-2 py-0.5 text-lg leading-tight font-bold",
-                  lateness === "late" ? "bg-white text-pomegranate" : "bg-ink text-apricot-on-dark",
+                  lateness === "late" ? "text-pomegranate bg-white" : "bg-ink text-apricot",
                 )}
               >
                 {lateness === "late" ? t("late") : t("hurry")}
               </span>
             )}
-            <span className="text-base font-semibold">{t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}</span>
+            <span className="text-base font-semibold">
+              {t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}
+            </span>
           </>
         }
       />
@@ -246,7 +282,7 @@ export function OrderTicketCard({
         {ticket.pending && (
           <span
             data-testid="ticket-pending"
-            className="inline-flex items-center gap-2 justify-self-start rounded-lg border-2 border-dashed border-slip-dim px-2 py-0.5 text-base font-bold"
+            className="border-slip-dim inline-flex items-center gap-2 justify-self-start rounded-lg border-2 border-dashed px-2 py-0.5 text-base font-bold"
           >
             <WifiOff aria-hidden="true" className="size-4 shrink-0" />
             {t("pending")}
@@ -257,7 +293,7 @@ export function OrderTicketCard({
           <p
             data-testid="ticket-note"
             className={clsx(
-              "m-0 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold text-ink [overflow-wrap:anywhere]",
+              "text-ink m-0 justify-self-start rounded-lg bg-[#FCE8C8] px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
               compact ? "text-base" : "text-xl",
             )}
           >
@@ -266,23 +302,31 @@ export function OrderTicketCard({
         )}
         <TicketCard.Actions>
           {column === "new" && (
-            <button type="button" className={clsx(BIG_BUTTON, "bg-slip text-ink")} onClick={() => move("cooking")}>
+            <button
+              type="button"
+              className={clsx(BIG_BUTTON, "bg-slip text-white")}
+              onClick={() => move("cooking")}
+            >
               <Flame aria-hidden="true" />
               {t("start")}
             </button>
           )}
           {column === "cooking" && (
-            <button type="button" className={clsx(BIG_BUTTON, "bg-tarragon-on-dark text-ink")} onClick={() => move("ready")}>
+            <button
+              type="button"
+              className={clsx(BIG_BUTTON, "bg-tarragon-on-dark text-white")}
+              onClick={() => move("ready")}
+            >
               <Check aria-hidden="true" />
               {t("ready")}
             </button>
           )}
           {column === "ready" && (
-            <div className="flex flex-wrap items-center justify-between gap-2 text-lg font-semibold text-slip-dim">
+            <div className="text-slip-dim flex flex-wrap items-center justify-between gap-2 text-lg font-semibold">
               <span>{t("waiting")}</span>
               <button
                 type="button"
-                className="inline-flex min-h-14 items-center gap-2 rounded-xl border-2 border-slip-dim px-4 text-left text-lg leading-tight font-bold text-slip active:translate-y-px"
+                className="border-slip-dim text-slip inline-flex min-h-14 items-center gap-2 rounded-xl border-2 px-4 text-left text-lg leading-tight font-bold active:translate-y-px"
                 onClick={() => move("cooking")}
               >
                 <Undo2 aria-hidden="true" className="size-5 shrink-0" />
@@ -298,7 +342,15 @@ export function OrderTicketCard({
 
 // A cancellation stays on top of New, red, with struck-through lines, until a
 // cook taps «Հասկացա» (R7).
-export function VoidTicketCard({ ticket, fresh, onAction }: { ticket: ShownTicket; fresh: boolean; onAction: (action: KitchenAction) => void }) {
+export function VoidTicketCard({
+  ticket,
+  fresh,
+  onAction,
+}: {
+  ticket: ShownTicket;
+  fresh: boolean;
+  onAction: (action: KitchenAction) => void;
+}) {
   const t = useTranslations("kitchen.ticket");
   return (
     <TicketCard.Root

@@ -48,7 +48,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                     {item.badge ? (
                       <span
                         data-fly-bump=""
-                        className="num bg-accent text-on-accent absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[0.6875rem] leading-none font-bold"
+                        className="num bg-badge text-on-badge absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[0.6875rem] leading-none font-bold"
                       >
                         {item.badge}
                       </span>

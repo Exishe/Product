@@ -4,7 +4,7 @@ import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import type { CartSummary } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { CloseIcon, Plate, Txt, dishPhotoUrl } from "./ui";
+import { CheckIcon, CloseIcon, Plate, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // The main action on the menu: "View order", with the chosen dishes' plates,
@@ -25,7 +25,10 @@ export function CartBar({
   className?: string;
 }) {
   const { t, locale } = useGuestI18n();
-  const plates = (showPlates ? summary.lines : []).slice(-3).map((p) => items[p.line.itemId]).filter((i): i is GuestItem => Boolean(i));
+  const plates = (showPlates ? summary.lines : [])
+    .slice(-3)
+    .map((p) => items[p.line.itemId])
+    .filter((i): i is GuestItem => Boolean(i));
   return (
     <ThemedStarBorder
       onClick={onOpen}
@@ -38,7 +41,7 @@ export function CartBar({
             src={i.image ? dishPhotoUrl(i.image) : null}
             name={i.name.text}
             size={40}
-            className="ring-accent size-10 ring-2"
+            className="size-10 ring-2 ring-[var(--guest-on-accent)]"
           />
         ))}
       </span>
@@ -51,10 +54,11 @@ export function CartBar({
   );
 }
 
-// "Your order" beside the menu on a desktop (owner's pick, the left screen of
-// menu-layout.webp): each chosen dish on its round plate with its quantity,
-// a × to take it out, the total and the main action. A dish added on a
-// desktop flies here (fly.ts) and the heading bounces as it lands.
+// "Your order" beside the menu on a desktop (owner's reference, ADR-056):
+// a narrow white column with the title in the display face, each chosen
+// dish as a round plate with a small × to take it out and its quantity on a
+// badge, then the total and a round ✓ that opens the order. A dish added on
+// a desktop flies here (fly.ts) and the heading bounces as it lands.
 export function OrderPanel({
   summary,
   items,
@@ -67,53 +71,77 @@ export function OrderPanel({
   onRemove: (lineId: string) => void;
 }) {
   const { t, locale } = useGuestI18n();
+  const count = t("menu.items", { count: summary.count });
   return (
     <aside
       aria-labelledby="order-panel-title"
       data-fly-target="1"
-      className="bg-surface shadow-card rounded-feature sticky top-6 hidden max-h-[calc(100dvh-8rem)] flex-col border [border-color:var(--guest-card-border)] p-6 lg:flex"
+      className="bg-surface shadow-card rounded-feature sticky top-6 hidden max-h-[calc(100dvh-11rem)] flex-col items-center border [border-color:var(--guest-card-border)] px-4 pt-7 pb-6 lg:flex"
     >
-      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-center text-[2rem] leading-none">
+      <h2
+        id="order-panel-title"
+        data-fly-bump=""
+        className="display-face text-center text-[1.875rem] leading-[1.05]"
+      >
         {t("cart.title")}
       </h2>
       {summary.lines.length === 0 ? (
-        <p className="text-muted mt-6 text-center text-sm">{t("panel.empty")}</p>
+        <p className="text-muted mt-5 text-center text-[0.8125rem] leading-relaxed">{t("panel.empty")}</p>
       ) : (
         <>
-          <ul className="-mx-2 mt-5 grid min-h-0 flex-1 gap-1 overflow-y-auto px-2 py-1">
+          <ul className="-mx-4 mt-6 grid min-h-0 w-[calc(100%+2rem)] flex-1 justify-items-center gap-5 overflow-y-auto px-4 pt-2 pb-3">
             {summary.lines.map((p) => {
               const item = items[p.line.itemId];
               if (!item) return null;
               const off = p.status !== "ok";
               return (
-                <li key={p.line.id} className="flex items-center gap-3 py-1.5">
-                  <span className="relative flex-none">
-                    <Plate src={item.image ? dishPhotoUrl(item.image) : null} name={item.name.text} size={56} muted={off} className="size-14" />
-                    <span className="num bg-accent text-on-accent absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full text-xs font-bold">
+                <li key={p.line.id} className="grid w-full justify-items-center gap-2 text-center">
+                  <span className="relative">
+                    <Plate
+                      src={item.image ? dishPhotoUrl(item.image) : null}
+                      name={item.name.text}
+                      size={88}
+                      muted={off}
+                      className="size-[5.25rem]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRemove(p.line.id)}
+                      aria-label={t("cart.remove", { name: item.name.text })}
+                      className="bg-surface text-ink shadow-float absolute -top-1.5 left-1/2 grid size-7 -translate-x-1/2 place-items-center rounded-full [&_svg]:size-3.5"
+                    >
+                      <CloseIcon />
+                    </button>
+                    <span className="num bg-badge text-on-badge absolute -right-1 -bottom-0.5 grid h-6 min-w-6 place-items-center rounded-full px-1 text-xs font-bold">
                       {p.line.quantity}
                     </span>
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <Txt value={item.name} locale={locale} className={`display-face block leading-tight [overflow-wrap:anywhere] ${off ? "text-muted line-through" : ""}`} />
-                    <span className="num text-muted text-sm">{off ? t("menu.soldOut") : formatAmd(p.total, locale)}</span>
+                  <Txt
+                    value={item.name}
+                    locale={locale}
+                    className={`block max-w-full truncate text-[0.8125rem] leading-tight ${off ? "text-muted line-through" : "text-ink"}`}
+                  />
+                  <span className="num text-muted -mt-1 text-xs">
+                    {off ? t("menu.soldOut") : formatAmd(p.total, locale)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onRemove(p.line.id)}
-                    aria-label={t("cart.remove", { name: item.name.text })}
-                    className="text-muted hover:text-ink grid size-10 flex-none place-items-center rounded-full"
-                  >
-                    <CloseIcon />
-                  </button>
                 </li>
               );
             })}
           </ul>
-          <div className="border-line mt-4 flex items-baseline justify-between border-t pt-4">
-            <span className="display-face text-xl">{t("cart.total")}</span>
-            <span className="num text-lg font-semibold">{formatAmd(summary.total, locale)}</span>
+          <div className="border-line mt-4 grid w-full justify-items-center gap-0.5 border-t pt-5 text-center">
+            <span className="display-face text-[1.375rem] leading-none">{t("cart.total")}</span>
+            <span className="text-muted mt-1 text-xs">{count}</span>
+            <span className="num mt-1 text-[1.375rem] font-semibold">{formatAmd(summary.total, locale)}</span>
           </div>
-          <CartBar summary={summary} items={items} onOpen={onOpen} plates={false} className="mt-4" />
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`${t("menu.viewOrder")}, ${count}`}
+            title={t("menu.viewOrder")}
+            className="bg-add text-on-add mt-5 grid size-14 flex-none place-items-center rounded-full shadow-[var(--guest-add-shadow)] [&_svg]:size-6"
+          >
+            <CheckIcon />
+          </button>
         </>
       )}
     </aside>

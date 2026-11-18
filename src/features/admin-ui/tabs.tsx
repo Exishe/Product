@@ -33,7 +33,7 @@ export function Tabs<K extends string>({
     <div
       role="tablist"
       aria-label={label}
-      className={clsx("bg-staff-fill grid auto-cols-fr grid-flow-col gap-1 rounded-xl p-1", className)}
+      className={clsx("bg-staff-fill grid auto-cols-fr grid-flow-col gap-1 rounded-full p-1", className)}
     >
       {items.map((item, i) => {
         const on = item.key === value;
@@ -57,7 +57,7 @@ export function Tabs<K extends string>({
               e.preventDefault();
             }}
             className={clsx(
-              "flex min-h-11 items-center justify-center gap-2 rounded-[0.625rem] px-3 text-[0.9375rem] font-semibold [&_svg]:size-4",
+              "flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-[0.9375rem] font-semibold [&_svg]:size-4",
               on ? "text-ink bg-white shadow-sm" : "text-staff-label2",
             )}
           >

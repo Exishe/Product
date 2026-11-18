@@ -47,7 +47,9 @@ export function useShift() {
 
   const start = useCallback(() => {
     try {
-      const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (Ctx) {
         audio.current ??= new Ctx();
         void audio.current.resume();
@@ -97,18 +99,18 @@ export function StartShiftOverlay({ localHour, onStart }: { localHour: number; o
       role="dialog"
       aria-modal="true"
       aria-labelledby="shift-greeting"
-      className="fixed inset-0 z-40 grid place-items-center bg-basalt/95 px-6 text-center text-slip"
+      className="bg-basalt/95 text-slip fixed inset-0 z-40 grid place-items-center px-6 text-center"
     >
       <div className="grid justify-items-center">
         <h2 id="shift-greeting" className="mb-3 text-5xl font-bold">
           {t(greetingKey(localHour))}
         </h2>
-        <p className="mx-auto mb-8 max-w-xl text-xl text-slip-dim">{t("hint")}</p>
+        <p className="text-slip-dim mx-auto mb-8 max-w-xl text-xl">{t("hint")}</p>
         <button
           type="button"
           autoFocus
           onClick={onStart}
-          className="inline-flex min-h-[88px] items-center gap-3 rounded-2xl bg-slip px-12 text-[1.875rem] font-bold text-ink active:translate-y-px"
+          className="bg-slip inline-flex min-h-[88px] items-center gap-3 rounded-2xl px-12 text-[1.875rem] font-bold text-white active:translate-y-px"
         >
           <Power aria-hidden="true" className="size-8 shrink-0" />
           {t("start")}

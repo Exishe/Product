@@ -7,7 +7,7 @@ const SIZES: Record<"normal" | "big", Burst> = {
   normal: { count: 12, length: 16, width: 3, radius: 34, duration: 0.6 },
   big: { count: 18, length: 26, width: 4, radius: 90, duration: 0.95 },
 };
-const COLORS = ["var(--guest-accent)", "var(--guest-star)"];
+const COLORS = ["var(--guest-glow)", "var(--guest-star)"];
 
 export function burst(target: Element, r: DOMRect, size: "normal" | "big") {
   const { count, length, width, radius, duration } = SIZES[size];

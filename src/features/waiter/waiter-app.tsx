@@ -16,11 +16,29 @@ import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel } from "@/lib/realtime/use-location-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { cancelLine, sameWaiterAction, seatWaitingGuests, settleTable, waiterActionKey, waiterSender, type DirectResult } from "./actions";
+import {
+  cancelLine,
+  sameWaiterAction,
+  seatWaitingGuests,
+  settleTable,
+  waiterActionKey,
+  waiterSender,
+  type DirectResult,
+} from "./actions";
 import { fetchFloor } from "./floor-data";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
-import { applyPending, areaOf, buildFloor, inbox, needCount, type FloorRows, type FloorTable, type Payment, type WaiterAction } from "./floor-model";
+import {
+  applyPending,
+  areaOf,
+  buildFloor,
+  inbox,
+  needCount,
+  type FloorRows,
+  type FloorTable,
+  type Payment,
+  type WaiterAction,
+} from "./floor-model";
 import { NotifyToggle } from "./notify-toggle";
 import { OrderPad, type PadOrder } from "./order-pad";
 import { SettleSheet } from "./settle";
@@ -56,7 +74,12 @@ const client = getBrowserClient as unknown as () => SupabaseClient;
 export function WaiterApp(props: WaiterAppProps) {
   const send = useMemo(() => waiterSender(getBrowserClient), []);
   return (
-    <OutboxProvider name={`pativ-waiter-outbox-${props.memberId}`} send={send} sameAction={sameWaiterAction} groupKey={waiterActionKey}>
+    <OutboxProvider
+      name={`pativ-waiter-outbox-${props.memberId}`}
+      send={send}
+      sameAction={sameWaiterAction}
+      groupKey={waiterActionKey}
+    >
       <App {...props} />
     </OutboxProvider>
   );
@@ -73,14 +96,21 @@ const subscribeOnline = (cb: () => void) => {
 
 type Tab = "tables" | "orders" | "calls";
 
-type Sheet = { kind: "pad"; tableId: string } | { kind: "settle"; tableId: string; sessionId: string; key: string } | null;
+type Sheet =
+  | { kind: "pad"; tableId: string }
+  | { kind: "settle"; tableId: string; sessionId: string; key: string }
+  | null;
 
 function App(p: WaiterAppProps) {
   const t = useTranslations("waiter");
   const locale = useLocale() as Locale;
   const now = useServerClock(p.renderedAt);
   const outbox = useOutbox<WaiterAction>();
-  const browserOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const browserOnline = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true,
+  );
 
   const [rows, setRows] = useState(p.initialRows);
   const [fetchFailed, setFetchFailed] = useState(false);
@@ -165,7 +195,13 @@ function App(p: WaiterAppProps) {
   useEffect(() => {
     setTrouble((prev) => troubleSince(prev, networkDown, nowRef.current));
   }, [networkDown]);
-  const connection = connectionState({ browserOnline, lastFetchFailed: fetchFailed, channel, troubleSince: trouble, now });
+  const connection = connectionState({
+    browserOnline,
+    lastFetchFailed: fetchFailed,
+    channel,
+    troubleSince: trouble,
+    now,
+  });
   const online = browserOnline && !fetchFailed;
 
   // --- Toasts -------------------------------------------------------------------
@@ -190,13 +226,16 @@ function App(p: WaiterAppProps) {
     tablesRef.current = tables;
   });
 
-  const currentArea = area !== undefined && floor.areas.some((a) => a.id === area) ? area : (floor.areas[0]?.id ?? null);
+  const currentArea =
+    area !== undefined && floor.areas.some((a) => a.id === area) ? area : (floor.areas[0]?.id ?? null);
   const areaTables = tables.filter((x) => areaOf(x, floor.areas) === currentArea);
   const table = tables.find((x) => x.id === selected) ?? null;
 
   // --- Taps ---------------------------------------------------------------------
   const orderNumber = (orderId: string) =>
-    tablesRef.current.flatMap((x) => [...x.orders, ...(x.waiting?.orders ?? [])]).find((o) => o.id === orderId)?.number ?? null;
+    tablesRef.current
+      .flatMap((x) => [...x.orders, ...(x.waiting?.orders ?? [])])
+      .find((o) => o.id === orderId)?.number ?? null;
 
   useEffect(
     () =>
@@ -207,7 +246,11 @@ function App(p: WaiterAppProps) {
         } else if (e.type === "stale") {
           // Someone else acted first (Review focus 4): say so, show the truth.
           const text =
-            e.current === "table_needs_closing" ? t("needsClosing") : e.current === "served" ? t("alreadyServed") : t("conflict");
+            e.current === "table_needs_closing"
+              ? t("needsClosing")
+              : e.current === "served"
+                ? t("alreadyServed")
+                : t("conflict");
           pushToast(text, "conflict");
           void refresh();
         } else if (e.type === "failed") {
@@ -224,7 +267,10 @@ function App(p: WaiterAppProps) {
     (action: WaiterAction) => {
       if (action.kind === "accept" || action.kind === "reject") {
         const number = orderNumber(action.orderId);
-        if (number !== null) pushToast(action.kind === "accept" ? t("order.accepted", { number }) : t("order.rejectedToast", { number }));
+        if (number !== null)
+          pushToast(
+            action.kind === "accept" ? t("order.accepted", { number }) : t("order.rejectedToast", { number }),
+          );
       }
       void outbox.enqueue(action);
     },
@@ -302,7 +348,8 @@ function App(p: WaiterAppProps) {
   const panelHeading = useRef<HTMLHeadingElement>(null);
   const openTable = (id: string) => {
     setSelected(id);
-    if (window.matchMedia("(max-width: 767px)").matches) requestAnimationFrame(() => panelHeading.current?.focus());
+    if (window.matchMedia("(max-width: 767px)").matches)
+      requestAnimationFrame(() => panelHeading.current?.focus());
   };
   const closeTable = () => {
     const id = selected;
@@ -313,8 +360,8 @@ function App(p: WaiterAppProps) {
   const tabTitle = t(`tabs.${tab}`);
 
   return (
-    <div className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-staff-bg text-ink">
-      <header className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 border-b border-staff-sep bg-white/95 px-4 py-1.5 lg:px-6">
+    <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
+      <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
         <p className="m-0 min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">{p.cafeName}</p>
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         <ConnectionPill state={connection} waiting={outbox.entries.length} />
@@ -323,7 +370,11 @@ function App(p: WaiterAppProps) {
         </span>
       </header>
       {connection === "offline" ? (
-        <p role="alert" data-testid="offline-banner" className="m-0 flex items-start gap-2 bg-pomegranate px-4 py-2 text-[0.9375rem] font-semibold text-white lg:px-6">
+        <p
+          role="alert"
+          data-testid="offline-banner"
+          className="bg-pomegranate m-0 flex items-start gap-2 px-4 py-2 text-[0.9375rem] font-semibold text-white lg:px-6"
+        >
           <WifiOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {t("connection.banner", { time: formatTime(new Date(lastSyncAt), p.location.timeZone) })}
         </p>
@@ -332,15 +383,27 @@ function App(p: WaiterAppProps) {
       )}
 
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:grid-cols-[minmax(0,1fr)_26.25rem]">
-        <div className={clsx("grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto]", table && "max-md:hidden")}>
+        <div
+          className={clsx(
+            "grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto]",
+            table && "max-md:hidden",
+          )}
+        >
           <main className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
             <div className="grid gap-1">
-              <h1 className="m-0 text-[2.125rem] leading-tight font-bold">{tabTitle}</h1>
+              <h1 className="page-title m-0 text-[2.5rem]">{tabTitle}</h1>
               <p
                 data-testid="need"
-                className={clsx("m-0 flex items-center gap-1.5 text-[0.9375rem] font-semibold", need > 0 ? "text-amber-text" : "text-tarragon")}
+                className={clsx(
+                  "m-0 flex items-center gap-1.5 text-[0.9375rem] font-semibold",
+                  need > 0 ? "text-amber-text" : "text-tarragon",
+                )}
               >
-                {need > 0 ? <BellRing aria-hidden="true" className="size-4 shrink-0" /> : <CircleCheck aria-hidden="true" className="size-4 shrink-0" />}
+                {need > 0 ? (
+                  <BellRing aria-hidden="true" className="size-4 shrink-0" />
+                ) : (
+                  <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
+                )}
                 {need > 0 ? t("need", { count: need }) : t("allServed")}
               </p>
             </div>
@@ -349,7 +412,7 @@ function App(p: WaiterAppProps) {
                 <div className="grid content-start gap-3 rounded-2xl bg-white p-4">
                   <p className="m-0 text-[1.0625rem]">{t("noTables")}</p>
                   {p.canManageTables && (
-                    <Link href="/admin/tables" className="font-semibold text-tarragon underline">
+                    <Link href="/admin/tables" className="text-tarragon font-semibold underline">
                       {t("noTablesLink")}
                     </Link>
                   )}
@@ -360,8 +423,22 @@ function App(p: WaiterAppProps) {
                   <FloorMap tables={areaTables} selected={selected} onSelect={openTable} />
                 </>
               ))}
-            {tab === "orders" && <InboxList rows={lists.orders} empty={t("inbox.ordersEmpty")} selected={selected} onSelect={openTable} />}
-            {tab === "calls" && <InboxList rows={lists.calls} empty={t("inbox.callsEmpty")} selected={selected} onSelect={openTable} />}
+            {tab === "orders" && (
+              <InboxList
+                rows={lists.orders}
+                empty={t("inbox.ordersEmpty")}
+                selected={selected}
+                onSelect={openTable}
+              />
+            )}
+            {tab === "calls" && (
+              <InboxList
+                rows={lists.calls}
+                empty={t("inbox.callsEmpty")}
+                selected={selected}
+                onSelect={openTable}
+              />
+            )}
           </main>
           <TabBar
             current={tab}
@@ -377,7 +454,7 @@ function App(p: WaiterAppProps) {
           aria-label={table ? t("panel.table", { label: table.label }) : undefined}
           data-testid="panel"
           className={clsx(
-            "flex min-h-0 min-w-0 flex-col bg-white md:border-l md:border-staff-sep",
+            "md:border-staff-sep flex min-h-0 min-w-0 flex-col bg-white md:border-l",
             !table && "max-md:hidden",
           )}
         >
@@ -390,12 +467,14 @@ function App(p: WaiterAppProps) {
               onBack={closeTable}
               onAction={act}
               onOpenPad={() => setSheet({ kind: "pad", tableId: table.id })}
-              onSettle={(sessionId) => setSheet({ kind: "settle", tableId: table.id, sessionId, key: crypto.randomUUID() })}
+              onSettle={(sessionId) =>
+                setSheet({ kind: "settle", tableId: table.id, sessionId, key: crypto.randomUUID() })
+              }
               onSeatWaiting={(id) => void onSeatWaiting(id)}
               onCancelLine={onCancelLine}
             />
           ) : (
-            <div className="grid flex-1 place-content-center justify-items-center gap-3 p-6 text-center text-staff-label2">
+            <div className="text-staff-label2 grid flex-1 place-content-center justify-items-center gap-3 p-6 text-center">
               <LayoutGrid aria-hidden="true" className="size-10" />
               <p className="m-0 text-[1.0625rem]">{t("panel.pick")}</p>
             </div>
@@ -404,7 +483,12 @@ function App(p: WaiterAppProps) {
       </div>
 
       {sheet?.kind === "pad" && sheetTable && (
-        <OrderPad label={sheetTable.label} categories={p.menu} onClose={() => setSheet(null)} onSend={(o) => onSend(sheetTable, o)} />
+        <OrderPad
+          label={sheetTable.label}
+          categories={p.menu}
+          onClose={() => setSheet(null)}
+          onSend={(o) => onSend(sheetTable, o)}
+        />
       )}
       {sheet?.kind === "settle" && sheetTable && (
         <SettleSheet

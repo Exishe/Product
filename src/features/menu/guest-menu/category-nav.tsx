@@ -88,7 +88,12 @@ export function CategoryNav({
       if (animate && m && was && w > 0) {
         m.animate(
           ind,
-          { transform: [`translateX(${was.x}px) scaleX(${(was.w / w).toFixed(4)})`, `translateX(${x}px) scaleX(1)`] },
+          {
+            transform: [
+              `translateX(${was.x}px) scaleX(${(was.w / w).toFixed(4)})`,
+              `translateX(${x}px) scaleX(1)`,
+            ],
+          },
           { type: m.spring, duration: 0.5, bounce: 0.22 },
         );
       } else ind.style.transform = `translateX(${x}px)`;
@@ -136,7 +141,7 @@ export function CategoryNav({
             holdUntil.current = performance.now() + 1500;
             document.getElementById(sectionId(c.id))?.scrollIntoView({ behavior: smooth(), block: "start" });
           }}
-          className="text-soft hover:text-ink aria-[current=true]:bg-accent aria-[current=true]:text-on-accent border-line flex min-h-11 flex-none items-center rounded-pill border px-4 font-semibold whitespace-nowrap aria-[current=true]:border-transparent"
+          className="text-soft hover:text-ink aria-[current=true]:bg-tab aria-[current=true]:text-on-tab rounded-pill flex min-h-11 flex-none items-center border [border-color:var(--guest-tab-border)] px-4 font-semibold whitespace-nowrap aria-[current=true]:border-transparent"
         >
           {c.name ? <Txt value={c.name} locale={locale} /> : null}
         </a>

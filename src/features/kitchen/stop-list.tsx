@@ -43,14 +43,17 @@ export function StopList({
           dialog.current?.showModal();
         }}
         className={clsx(
-          "inline-flex min-h-14 items-center gap-2 rounded-full bg-basalt-3 px-5 text-lg font-semibold text-slip",
-          count > 0 && "ring-2 ring-pom-on-dark",
+          "bg-basalt-3 text-slip inline-flex min-h-14 items-center gap-2 rounded-full px-5 text-lg font-semibold",
+          count > 0 && "ring-pom-on-dark ring-2",
         )}
       >
         <Ban aria-hidden="true" className="size-5 shrink-0" />
         {t("button")}
         {count > 0 && (
-          <span data-testid="stop-list-count" className="num grid h-7 min-w-7 place-items-center rounded-full bg-pom-on-dark px-2 text-base font-bold text-ink">
+          <span
+            data-testid="stop-list-count"
+            className="num bg-pom-on-dark grid h-7 min-w-7 place-items-center rounded-full px-2 text-base font-bold text-white"
+          >
             {count}
           </span>
         )}
@@ -58,36 +61,39 @@ export function StopList({
       <dialog
         ref={dialog}
         aria-labelledby="stop-list-title"
-        className="mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l border-basalt-3 bg-basalt-2 p-0 text-slip backdrop:bg-black/60"
+        className="border-basalt-3 bg-basalt-2 text-slip mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l p-0 backdrop:bg-black/40"
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-start justify-between gap-4 border-b border-basalt-3 px-6 py-4">
+          <div className="border-basalt-3 flex items-start justify-between gap-4 border-b px-6 py-4">
             <div>
               <h2 id="stop-list-title" className="text-2xl font-bold">
                 {t("title")}
               </h2>
-              <p className="mt-1 text-base text-slip-dim">{t("hint")}</p>
+              <p className="text-slip-dim mt-1 text-base">{t("hint")}</p>
             </div>
             <button
               type="button"
               onClick={() => dialog.current?.close()}
-              className="inline-flex min-h-14 shrink-0 items-center gap-2 rounded-xl bg-slip px-4 text-lg font-bold text-ink"
+              className="bg-slip inline-flex min-h-14 shrink-0 items-center gap-2 rounded-xl px-4 text-lg font-bold text-white"
             >
               <X aria-hidden="true" className="size-5 shrink-0" />
               {t("close")}
             </button>
           </div>
           {failed && (
-            <p role="alert" className="mx-6 mt-4 flex items-center gap-2 rounded-xl bg-late-on-dark px-3 py-2 font-semibold text-white">
+            <p
+              role="alert"
+              className="bg-late-on-dark mx-6 mt-4 flex items-center gap-2 rounded-xl px-3 py-2 font-semibold text-white"
+            >
               <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
               {t("failed")}
             </p>
           )}
           <div className="flex-1 overflow-y-auto px-6 pb-6">
-            {sections.length === 0 && <p className="mt-6 text-lg text-slip-dim">{t("empty")}</p>}
+            {sections.length === 0 && <p className="text-slip-dim mt-6 text-lg">{t("empty")}</p>}
             {sections.map((section) => (
               <section key={section.category} className="mt-5">
-                <h3 className="mb-2 text-base font-bold text-slip-dim">{section.category}</h3>
+                <h3 className="text-slip-dim mb-2 text-base font-bold">{section.category}</h3>
                 <ul className="m-0 grid list-none gap-2 p-0">
                   {section.dishes.map((dish) => {
                     const out = soldOut.has(dish.id);
@@ -102,17 +108,22 @@ export function StopList({
                           onClick={() => void toggle(dish.id)}
                           className={clsx(
                             "flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-2 text-left disabled:cursor-wait",
-                            out ? "border-pom-on-dark bg-basalt-3" : "border-transparent bg-basalt-3",
+                            out ? "border-pom-on-dark bg-basalt-3" : "bg-basalt-3 border-transparent",
                           )}
                         >
                           <span
                             lang={dish.nameLocale === boardLocale ? undefined : dish.nameLocale}
-                            className={clsx("min-w-0 text-xl font-semibold [overflow-wrap:anywhere]", out && "text-slip-dim line-through decoration-2")}
+                            className={clsx(
+                              "min-w-0 text-xl font-semibold [overflow-wrap:anywhere]",
+                              out && "text-slip-dim line-through decoration-2",
+                            )}
                           >
                             {dish.name}
                           </span>
                           <span className="flex shrink-0 items-center gap-2 text-base font-bold">
-                            <span className={out ? "text-pom-on-dark" : "text-tarragon-on-dark"}>{out ? t("soldOut") : t("available")}</span>
+                            <span className={out ? "text-pom-on-dark" : "text-tarragon-on-dark"}>
+                              {out ? t("soldOut") : t("available")}
+                            </span>
                             <span
                               aria-hidden="true"
                               className={clsx(

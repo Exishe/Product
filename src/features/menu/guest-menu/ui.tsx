@@ -52,7 +52,7 @@ const TAG_STYLES: Record<GuestTag, string> = {
   popular: "bg-chip text-ink",
   spicy: "bg-alert-tint text-alert",
   vegan: "bg-success-tint text-success",
-  new: "bg-accent text-on-accent",
+  new: "bg-badge text-on-badge",
 };
 
 export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
@@ -70,9 +70,7 @@ export function Notice({ tone, children }: { tone: "calm" | "busy" | "alert"; ch
     alert: "border-alert bg-alert-tint text-ink",
   };
   return (
-    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>
-      {children}
-    </p>
+    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>{children}</p>
   );
 }
 
@@ -80,14 +78,23 @@ let segmenter: Intl.Segmenter | null | undefined;
 /** The first letter of a name (a whole grapheme), for the monogram plate. */
 export function initial(text: string): string {
   if (segmenter === undefined)
-    segmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
-  const first = segmenter ? segmenter.segment(text)[Symbol.iterator]().next().value?.segment : Array.from(text)[0];
+    segmenter =
+      typeof Intl !== "undefined" && "Segmenter" in Intl
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null;
+  const first = segmenter
+    ? segmenter.segment(text)[Symbol.iterator]().next().value?.segment
+    : Array.from(text)[0];
   return (first ?? "").toLocaleUpperCase();
 }
 
-// A dish on its plate: the photo cropped round with a soft shadow, or, when
-// the café has no photo, an empty plate with the dish's initial in the
-// display face. Decorative: the dish name is always next to it.
+// A dish on its plate (owner's reference, ADR-056): a round plate in the
+// theme's plate colour (dark in Pure) with a soft drop shadow and a rim
+// highlight; the photo sits inside it, inset by --guest-dish-inset (0 in
+// Evening and Wine, where the photo is the plate). Without a photo: an
+// empty plate with the dish's initial in the display face. Decorative: the
+// dish name is always next to it. A grid, not positioned layers, so the
+// caller's own position (absolute on a featured card) always applies.
 export function Plate({
   src,
   name,
@@ -105,29 +112,32 @@ export function Plate({
   className?: string;
 }) {
   const shade = muted ? "opacity-50 grayscale" : "";
-  if (src)
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
-      <img
-        src={src}
-        alt=""
-        width={size}
-        height={size}
-        loading={lazy ? "lazy" : undefined}
-        decoding="async"
-        className={`bg-plate shadow-plate aspect-square h-auto rounded-full object-cover ${shade} ${className}`}
-      />
-    );
+  const layer = "col-start-1 row-start-1 rounded-full";
   return (
     <span
       aria-hidden="true"
-      className={`bg-surface shadow-plate relative grid aspect-square place-items-center rounded-full [container-type:inline-size] ${shade} ${className}`}
+      className={`bg-dish shadow-plate [container-type:inline-size] grid aspect-square place-items-center overflow-hidden rounded-full ${shade} ${className}`}
     >
-      <span className="border-line absolute inset-[9%] rounded-full border" />
-      <span className="bg-plate absolute inset-[22%] rounded-full" />
-      <span className="display-face text-accent-text relative text-[40cqw] leading-none">
-        {initial(name)}
-      </span>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          loading={lazy ? "lazy" : undefined}
+          decoding="async"
+          className={`bg-plate ${layer} aspect-square h-auto w-[calc(100%-2*var(--guest-dish-inset))] object-cover`}
+        />
+      ) : (
+        <>
+          <span className={`${layer} size-[82%] border [border-color:var(--guest-dish-rim)]`} />
+          <span className={`${layer} size-[56%] bg-[var(--guest-dish-well)]`} />
+          <span className="display-face text-dish-ink col-start-1 row-start-1 text-[40cqw] leading-none">
+            {initial(name)}
+          </span>
+        </>
+      )}
     </span>
   );
 }

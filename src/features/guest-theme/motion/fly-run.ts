@@ -36,9 +36,9 @@ export function fly(from: Element, start: DOMRect, dish: FlyingDish) {
   plate.dataset.flying = "";
   plate.style.cssText =
     `position:fixed;left:0;top:0;width:${SIZE}px;height:${SIZE}px;border-radius:50%;overflow:hidden;` +
-    `display:grid;place-items:center;pointer-events:none;z-index:61;background:var(--guest-plate);` +
-    `color:var(--guest-accent-text);font-family:var(--font-display);font-size:22px;line-height:1;` +
-    `box-shadow:0 0 0 3px var(--guest-accent),0 10px 24px -8px rgb(0 0 0 / 0.5);will-change:transform`;
+    `display:grid;place-items:center;pointer-events:none;z-index:61;background:var(--guest-dish);` +
+    `color:var(--guest-dish-ink);font-family:var(--font-display);font-size:22px;line-height:1;` +
+    `box-shadow:0 0 0 3px var(--guest-badge),0 10px 24px -8px rgb(0 0 0 / 0.5);will-change:transform`;
   if (dish.photo) {
     const img = document.createElement("img");
     img.src = dish.photo;

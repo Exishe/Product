@@ -11,7 +11,15 @@ import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel, type LocationMessage } from "@/lib/realtime/use-location-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { heartbeat, kitchenActionKey, kitchenSender, markTicketsSeen, sameKitchenAction, setKitchenBusy, setSoldOut } from "./actions";
+import {
+  heartbeat,
+  kitchenActionKey,
+  kitchenSender,
+  markTicketsSeen,
+  sameKitchenAction,
+  setKitchenBusy,
+  setSoldOut,
+} from "./actions";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
 import {
@@ -51,7 +59,11 @@ const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
-const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = { new: Inbox, cooking: Flame, ready: CircleCheck };
+const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = {
+  new: Inbox,
+  cooking: Flame,
+  ready: CircleCheck,
+};
 
 const client = getBrowserClient as unknown as () => SupabaseClient;
 
@@ -87,7 +99,11 @@ function Board(p: KitchenBoardProps) {
   const now = useServerClock(p.renderedAt);
   const shift = useShift();
   const outbox = useOutbox<KitchenAction>();
-  const browserOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const browserOnline = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true,
+  );
 
   const [tickets, setTickets] = useState(p.initialTickets);
   const [busy, setBusy] = useState(p.initialBusy);
@@ -150,7 +166,10 @@ function Board(p: KitchenBoardProps) {
 
   const refreshExtras = useCallback(async () => {
     const sb = getBrowserClient();
-    const [b, s] = await Promise.all([fetchBusy(sb, p.location.id), fetchSoldOut(sb, p.location.id, new Date(nowRef.current))]);
+    const [b, s] = await Promise.all([
+      fetchBusy(sb, p.location.id),
+      fetchSoldOut(sb, p.location.id, new Date(nowRef.current)),
+    ]);
     if (b.ok && b.data === null) setRevoked(true);
     else if (b.ok && b.data) setBusy(b.data);
     if (s.ok) setSoldOutIds(new Set(s.data));
@@ -170,7 +189,9 @@ function Board(p: KitchenBoardProps) {
         const status = m.payload.status as TicketStatus;
         const gone = !LIVE.includes(status) || m.payload.acknowledged === true;
         setTickets((list) =>
-          gone ? list.filter((x) => x.id !== id) : list.map((x) => (x.id === id && x.kind === "order" ? { ...x, status } : x)),
+          gone
+            ? list.filter((x) => x.id !== id)
+            : list.map((x) => (x.id === id && x.kind === "order" ? { ...x, status } : x)),
         );
         void refreshTickets();
       } else if (m.event === "order") {
@@ -178,7 +199,8 @@ function Board(p: KitchenBoardProps) {
       } else if (m.event === "location") {
         setBusy({
           until: typeof m.payload.kitchen_busy_until === "string" ? m.payload.kitchen_busy_until : null,
-          minutes: typeof m.payload.expected_wait_minutes === "number" ? m.payload.expected_wait_minutes : null,
+          minutes:
+            typeof m.payload.expected_wait_minutes === "number" ? m.payload.expected_wait_minutes : null,
         });
       }
     },
@@ -211,7 +233,13 @@ function Board(p: KitchenBoardProps) {
   useEffect(() => {
     setTrouble((prev) => troubleSince(prev, networkDown, nowRef.current));
   }, [networkDown]);
-  const connection = connectionState({ browserOnline, lastFetchFailed: fetchFailed, channel, troubleSince: trouble, now });
+  const connection = connectionState({
+    browserOnline,
+    lastFetchFailed: fetchFailed,
+    channel,
+    troubleSince: trouble,
+    now,
+  });
 
   // --- Taps ----------------------------------------------------------------
   const pushToast = useCallback((toast: Omit<Toast, "id">) => {
@@ -306,7 +334,11 @@ function Board(p: KitchenBoardProps) {
 
   const onToggleSoldOut = useCallback(
     async (itemId: string, out: boolean) => {
-      const until = nextBusinessDayStart(new Date(nowRef.current), p.location.timeZone, p.location.businessDayStarts);
+      const until = nextBusinessDayStart(
+        new Date(nowRef.current),
+        p.location.timeZone,
+        p.location.businessDayStarts,
+      );
       const ok = await setSoldOut(
         getBrowserClient(),
         { restaurantId: p.location.restaurantId, locationId: p.location.id, itemId, userId: p.userId, until },
@@ -328,23 +360,31 @@ function Board(p: KitchenBoardProps) {
   const clock = formatTime(new Date(now), p.location.timeZone);
 
   return (
-    <div lang={locale} className="staff-dark grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-basalt text-slip">
-      <header className="flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 border-b border-basalt-3 bg-basalt-2 px-4 py-2 lg:gap-x-4 lg:px-6">
-        <h1 className="mr-2 text-[1.875rem] leading-tight font-bold">{p.station.title}</h1>
+    <div
+      lang={locale}
+      className="kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+    >
+      <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
+        <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
         {p.otherStations.length > 0 && (
           <nav aria-label={t("stations")} className="flex flex-wrap gap-2">
             {p.otherStations.map((s) => (
               <Link
                 key={s.id}
                 href={`/kitchen/${s.id}`}
-                className="inline-flex min-h-14 items-center rounded-full bg-basalt-3 px-5 text-lg font-semibold text-slip-dim"
+                className="bg-basalt-3 text-slip-dim inline-flex min-h-14 items-center rounded-full px-5 text-lg font-semibold"
               >
                 {s.title}
               </Link>
             ))}
           </nav>
         )}
-        <ConnectionPill state={connection} waiting={outbox.entries.length} lastSyncAt={lastSyncAt} timeZone={p.location.timeZone} />
+        <ConnectionPill
+          state={connection}
+          waiting={outbox.entries.length}
+          lastSyncAt={lastSyncAt}
+          timeZone={p.location.timeZone}
+        />
         <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
         <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
         <div className="ml-auto flex items-center gap-3">
@@ -355,7 +395,7 @@ function Board(p: KitchenBoardProps) {
             <button
               type="button"
               onClick={shift.end}
-              className="inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-basalt-3 px-4 text-lg font-semibold text-slip-dim"
+              className="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-full px-4 text-lg font-semibold"
             >
               <Power aria-hidden="true" className="size-5 shrink-0" />
               {/* Icon only below 1280 px, so the bar stays one row on a 1024 px tablet. */}
@@ -365,7 +405,7 @@ function Board(p: KitchenBoardProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)] lg:grid-rows-[minmax(0,1fr)]">
+      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}
@@ -380,7 +420,9 @@ function Board(p: KitchenBoardProps) {
         ))}
       </main>
 
-      {!shift.on && !revoked && <StartShiftOverlay localHour={Number(clock.slice(0, 2))} onStart={shift.start} />}
+      {!shift.on && !revoked && (
+        <StartShiftOverlay localHour={Number(clock.slice(0, 2))} onStart={shift.start} />
+      )}
       {revoked && <DisconnectedScreen />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
@@ -410,31 +452,59 @@ function BoardColumn({
     <section
       aria-labelledby={`column-${column}`}
       data-testid={`column-${column}`}
-      className={clsx("flex min-h-0 flex-col rounded-2xl bg-basalt-2", strip && "sm:col-span-2 lg:col-span-1")}
+      className={clsx(
+        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl",
+        strip && "sm:col-span-2 lg:col-span-1",
+      )}
     >
-      <h2 id={`column-${column}`} className="flex items-center justify-between gap-2 px-4 py-3 text-2xl font-bold">
+      <h2
+        id={`column-${column}`}
+        className="flex items-center justify-between gap-2 px-4 py-3 text-2xl font-bold"
+      >
         <span className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className={clsx("size-7 shrink-0", column === "ready" ? "text-tarragon-on-dark" : "text-slip-dim")} />
+          <Icon
+            aria-hidden="true"
+            className={clsx(
+              "size-7 shrink-0",
+              column === "ready" ? "text-tarragon-on-dark" : "text-slip-dim",
+            )}
+          />
           <span className="min-w-0">{title}</span>
         </span>
-        <b data-testid={`count-${column}`} className="num grid h-10 min-w-10 place-items-center rounded-full bg-basalt-4 px-2 text-slip">
+        <b
+          data-testid={`count-${column}`}
+          className="num bg-basalt-4 text-slip grid h-10 min-w-10 place-items-center rounded-full px-2"
+        >
           {tickets.length}
         </b>
       </h2>
       <div
         className={clsx(
-          "flex min-h-0 flex-1 flex-col gap-3 px-3 pt-1 pb-3 [scrollbar-color:var(--color-basalt-4)_transparent] sm:overflow-y-auto",
-          strip && "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
+          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto",
+          strip &&
+            "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
         )}
       >
         {tickets.length === 0 ? (
-          <p className="m-0 px-2 py-6 text-xl text-slip-dim">{empty}</p>
+          <p className="text-slip-dim m-0 px-2 py-6 text-xl">{empty}</p>
         ) : (
           tickets.map((ticket) =>
             ticket.kind === "void" ? (
-              <VoidTicketCard key={ticket.id} ticket={ticket} fresh={fresh.has(ticket.id)} onAction={onAction} />
+              <VoidTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                fresh={fresh.has(ticket.id)}
+                onAction={onAction}
+              />
             ) : (
-              <OrderTicketCard key={ticket.id} ticket={ticket} column={column} now={now} fresh={fresh.has(ticket.id)} onAction={onAction} />
+              <OrderTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                column={column}
+                now={now}
+                fresh={fresh.has(ticket.id)}
+                onAction={onAction}
+              />
             ),
           )
         )}

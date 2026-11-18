@@ -19,7 +19,7 @@ import { areaLayout, type FloorArea, type FloorTable, type TableState } from "./
 // relies on colour alone. Colours from direction A: green is food or a seated
 // party, amber a new order, red a call, ink the bill.
 const STATE_CLASS: Record<TableState, string> = {
-  free: "border-staff-sep bg-white text-staff-label2",
+  free: "border-transparent bg-white text-staff-label2",
   busy: "border-tarragon/40 bg-tarragon-tint text-tarragon",
   new: "border-apricot-deep bg-apricot text-ink",
   ready: "border-tarragon bg-tarragon text-white",
@@ -194,7 +194,7 @@ function TableButton({
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150",
+        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center shadow-[var(--shadow-soft)] transition-colors duration-150",
         table.shape === "round" ? "aspect-square rounded-full" : "rounded-2xl",
         wide && "col-span-2",
         STATE_CLASS[table.state],
