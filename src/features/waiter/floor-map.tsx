@@ -122,7 +122,7 @@ export function FloorMap({
           style={
             layout.placed
               ? {
-                  gridTemplateColumns: `repeat(${layout.columns}, minmax(6.5rem, 1fr))`,
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(4.75rem, 1fr))`,
                   gridTemplateRows: `repeat(${layout.rows}, auto)`,
                 }
               : undefined

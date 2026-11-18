@@ -72,6 +72,8 @@ export function OrderPanel({
 }) {
   const { t, locale } = useGuestI18n();
   const count = t("menu.items", { count: summary.count });
+  // The ✓'s name, ahead of the total (hidden words, as on the phone's bar).
+  const openLabel = `${t("menu.viewOrder")}, ${count}, `;
   return (
     <aside
       aria-labelledby="order-panel-title"
@@ -89,7 +91,7 @@ export function OrderPanel({
         <p className="text-muted mt-5 text-center text-[0.8125rem] leading-relaxed">{t("panel.empty")}</p>
       ) : (
         <>
-          <ul className="-mx-4 mt-6 grid min-h-0 w-[calc(100%+2rem)] flex-1 justify-items-center gap-5 overflow-y-auto px-4 pt-2 pb-3">
+          <ul className="-mx-4 mt-6 grid min-h-0 w-[calc(100%+2rem)] flex-1 justify-items-center gap-4 overflow-y-auto px-4 pt-2 pb-3">
             {summary.lines.map((p) => {
               const item = items[p.line.itemId];
               if (!item) return null;
@@ -100,9 +102,9 @@ export function OrderPanel({
                     <Plate
                       src={item.image ? dishPhotoUrl(item.image) : null}
                       name={item.name.text}
-                      size={88}
+                      size={80}
                       muted={off}
-                      className="size-[5.25rem]"
+                      className="size-[4.75rem]"
                     />
                     <button
                       type="button"
@@ -133,14 +135,19 @@ export function OrderPanel({
             <span className="text-muted mt-1 text-xs">{count}</span>
             <span className="num mt-1 text-[1.375rem] font-semibold">{formatAmd(summary.total, locale)}</span>
           </div>
+          {/* Its name, read from the hidden words, is the same as the phone's
+              bar: "View order, N items, total". */}
           <button
             type="button"
             onClick={onOpen}
-            aria-label={`${t("menu.viewOrder")}, ${count}`}
             title={t("menu.viewOrder")}
             className="bg-add text-on-add mt-5 grid size-14 flex-none place-items-center rounded-full shadow-[var(--guest-add-shadow)] [&_svg]:size-6"
           >
             <CheckIcon />
+            <span className="sr-only">
+              {openLabel}
+              <span className="num">{formatAmd(summary.total, locale)}</span>
+            </span>
           </button>
         </>
       )}
