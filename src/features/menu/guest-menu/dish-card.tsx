@@ -111,7 +111,7 @@ export function DishCard({
       <Txt
         value={item.name}
         locale={locale}
-        className={`display-face block text-[clamp(1.625rem,7.5cqw,2.75rem)] leading-[1.06] ${WRAP} ${muted}`}
+        className={`display-face block text-[clamp(1.5rem,7cqw,2.75rem)] leading-[1.06] ${WRAP} ${muted}`}
       />
       <span className="mt-3 block">{facts}</span>
       {item.description && (
@@ -137,7 +137,7 @@ export function DishCard({
       <article
         ref={card}
         className={`group bg-surface text-ink shadow-card relative isolate h-full border [border-color:var(--guest-card-border)] ${
-          featured ? "rounded-feature overflow-hidden" : "rounded-card"
+          featured ? "rounded-feature overflow-clip" : "rounded-card"
         } ${expanded ? `flex flex-col ${styles.feature}` : ""}`}
       >
         <button
@@ -212,7 +212,7 @@ export function DishCard({
               >
                 <button
                   type="button"
-                  className="bg-surface shadow-card disabled:text-line-strong grid size-11 place-items-center rounded-full [&_svg]:size-[18px]"
+                  className="bg-page text-ink disabled:text-line-strong grid size-11 place-items-center rounded-full [&_svg]:size-[18px]"
                   aria-label={t("sheet.decrease")}
                   disabled={quantity <= 1}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -227,7 +227,7 @@ export function DishCard({
                 </output>
                 <button
                   type="button"
-                  className="bg-surface shadow-card disabled:text-line-strong grid size-11 place-items-center rounded-full [&_svg]:size-[18px]"
+                  className="bg-page text-ink disabled:text-line-strong grid size-11 place-items-center rounded-full [&_svg]:size-[18px]"
                   aria-label={t("sheet.increase")}
                   disabled={quantity >= MAX_QUANTITY}
                   onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
