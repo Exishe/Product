@@ -195,7 +195,7 @@ function TableButton({
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
         "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center shadow-[var(--shadow-soft)] transition-colors duration-150",
-        table.shape === "round" ? "aspect-square rounded-full" : "rounded-2xl",
+        table.shape === "round" ? "rounded-full sm:aspect-square" : "rounded-2xl",
         wide && "col-span-2",
         STATE_CLASS[table.state],
         selected && "outline-ink outline-[3px] outline-offset-[3px] outline-solid",
