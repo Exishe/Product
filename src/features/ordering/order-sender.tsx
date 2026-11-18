@@ -138,7 +138,16 @@ export function OrderSender({
           {t("cart.retry")}
         </button>
       ) : (
+        // The page's one main action: a brighter, quicker star with a blush
+        // trail and sparkles (the default trail is the accent itself, which
+        // vanishes on the accent fill in Wine).
         <ThemedStarBorder
+          trailColor="var(--guest-star)"
+          glow={1}
+          thickness={2}
+          duration={3.2}
+          trailLength={0.42}
+          sparkle
           className="shadow-float flex min-h-14 w-full items-center justify-center px-6 font-semibold"
           disabled={phase.name === "sending" || summary.blocked || summary.count === 0}
           onClick={start}

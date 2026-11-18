@@ -3,6 +3,7 @@
 import { ConciergeBell, Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RotatingText } from "@/features/guest-theme/motion/rotating-text";
+import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { SplitText } from "@/features/guest-theme/motion/split-text";
@@ -21,7 +22,7 @@ import { GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
 import { CartBar, OrderPanel } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, dishPhotoUrl } from "./ui";
+import { Notice, dishPhotoUrl, initial } from "./ui";
 import type { GuestItem, GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -184,6 +185,7 @@ export function GuestMenu({
   };
   const quickAdd = (item: GuestItem, from: HTMLElement) => {
     sparkFrom(from);
+    flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null, initial: initial(item.name.text) });
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
       quantity: 1,
@@ -234,9 +236,9 @@ export function GuestMenu({
       tools={view === "menu" ? tools : undefined}
       below={
         view === "menu" && rotating.length > 1 ? (
-          <p aria-hidden="true" className="text-muted mt-3 text-lg">
+          <p aria-hidden="true" className="text-muted mt-3 text-lg leading-snug">
             {t("menu.todayIn")}{" "}
-            <RotatingText words={rotating} className="display-face text-ink text-[1.375rem]" />
+            <RotatingText words={rotating} className="display-face text-glow max-w-full text-[1.875rem] leading-[1.1] md:text-[2.5rem]" />
           </p>
         ) : null
       }
@@ -373,8 +375,10 @@ export function GuestMenu({
                 {t("menu.noResults")}
               </p>
             ) : (
-              shown.map((c) => {
+              shown.map((c, at) => {
                 const featured = featuredOf(c.items);
+                // The dish's place on the page, counted over the sections before.
+                const before = shown.slice(0, at).reduce((n, x) => n + x.items.length, 0);
                 return (
                   <section key={c.id} id={sectionId(c.id)} aria-labelledby={`h-${c.id}`} className="scroll-mt-36 pt-8">
                     {c.name && (
@@ -388,12 +392,13 @@ export function GuestMenu({
                     )}
                     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
                       {/* The featured dish leads its section, so the grid below it stays whole. */}
-                      {[...c.items].sort((a, b) => Number(b.id === featured) - Number(a.id === featured)).map((item) => (
+                      {[...c.items].sort((a, b) => Number(b.id === featured) - Number(a.id === featured)).map((item, i) => (
                         <DishCard
                           key={item.id}
                           item={item}
                           canOrder={canOrder}
                           featured={item.id === featured}
+                          index={before + i}
                           onOpen={setSheet}
                           onQuickAdd={quickAdd}
                         />

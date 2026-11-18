@@ -12,7 +12,7 @@ import styles from "./motion.module.css";
 // - reveal="load": plays at first paint in CSS, no JavaScript needed (the
 //   café name at the top must show at once, even before Motion arrives);
 // - reveal="view": plays once with Motion when the heading first scrolls
-//   into view; until Motion arrives, or without it, the text just shows.
+//   into view (out of a short blur); without Motion the text just shows.
 // Screen readers get the plain text; the letters are aria-hidden.
 const LONG_WORD = 14; // longer words rise as one piece and may wrap anywhere
 
@@ -58,13 +58,22 @@ export function SplitText({
             el.dataset.split = "done";
             return;
           }
+          // Rise out of a blur, a touch larger than at rest, letter by letter.
+          m.animate(chars, { filter: ["blur(6px)", "blur(0px)"] }, { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 });
           const run = m.animate(
             chars,
-            { opacity: [0, 1], transform: ["translateY(0.5em)", "translateY(0)"] },
-            { type: m.spring, duration: 0.7, bounce: 0.2, delay: (i: number) => i * 0.028 },
+            { opacity: [0, 1], transform: ["translateY(0.6em) scale(1.12)", "translateY(0) scale(1)"] },
+            { type: m.spring, duration: 0.75, bounce: 0.3, delay: (i: number) => i * 0.032 },
           );
           void Promise.resolve(run).finally(() => {
-            if (!gone) el.dataset.split = "done";
+            if (gone) return;
+            el.dataset.split = "done";
+            // The letters rest without inline styles (no lingering layers).
+            chars.forEach((c) => {
+              c.style.removeProperty("filter");
+              c.style.removeProperty("transform");
+              c.style.removeProperty("opacity");
+            });
           });
         });
       },

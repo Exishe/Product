@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
+import motionStyles from "@/features/guest-theme/motion/motion.module.css";
+import { useReveal } from "@/features/guest-theme/motion/reveal";
 import { useTilt } from "@/features/guest-theme/motion/tilt";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
@@ -12,24 +14,34 @@ import type { GuestItem } from "./view-model";
 // round "+" hanging off the card's corner. The whole card opens the dish
 // sheet (a stretched button); "+" adds a simple dish at once, or opens the
 // sheet when there's a choice to make. A featured dish (popular, with a
-// photo) spans the row, its plate bleeding off the card's edge. Cards tilt
-// towards the pointer or finger (Tilted Card).
+// photo) spans the row, its plate bleeding off the card's edge. Cards rise
+// in as they come into view and tilt towards the pointer or finger, with a
+// glare and a turn of the plate (Tilted Card). The first few (`index`) rise
+// at first paint in CSS; any card below the fold waits for it (reveal.ts).
+const ENTER_FIRST = 6;
+
 export function DishCard({
   item,
   canOrder,
   featured = false,
+  index = ENTER_FIRST,
   onOpen,
   onQuickAdd,
 }: {
   item: GuestItem;
   canOrder: boolean;
   featured?: boolean;
+  /** Its place on the page: the first few rise at first paint. */
+  index?: number;
   onOpen: (item: GuestItem) => void;
   onQuickAdd: (item: GuestItem, from: HTMLElement) => void;
 }) {
   const { t, locale } = useGuestI18n();
   const card = useRef<HTMLElement>(null);
-  useTilt(card, featured ? { max: 5, scale: 1.01 } : undefined);
+  const row = useRef<HTMLLIElement>(null);
+  const early = index < ENTER_FIRST;
+  useTilt(card, featured ? { max: 6, touchMax: 4, scale: 1.015 } : undefined);
+  useReveal(row);
   const needsChoice = item.groups.some((g) => g.min > 0);
   const showAdd = canOrder && !item.soldOut;
   const photo = item.image ? dishPhotoUrl(item.image) : null;
@@ -52,14 +64,16 @@ export function DishCard({
 
   return (
     <li
-      className={featured ? "col-span-full" : "min-w-0"}
+      ref={row}
+      className={`${featured ? "col-span-full" : "min-w-0"} ${motionStyles.reveal} ${early ? motionStyles.enter : ""}`}
+      style={early ? ({ "--i": index } as CSSProperties) : undefined}
       data-testid="dish"
       data-dish-id={item.id}
       data-featured={featured || undefined}
     >
       <article
         ref={card}
-        className={`group bg-surface text-ink shadow-card relative h-full border [border-color:var(--guest-card-border)] will-change-transform ${
+        className={`group bg-surface text-ink shadow-card relative isolate h-full border [border-color:var(--guest-card-border)] ${
           featured ? "rounded-feature overflow-hidden" : "rounded-card"
         }`}
       >
@@ -78,7 +92,7 @@ export function DishCard({
                 name={item.name.text}
                 size={360}
                 muted={item.soldOut}
-                className="pointer-events-none absolute top-[-14%] right-[-16%] w-[60%] max-w-[22rem] sm:top-[-18%] sm:right-[-10%] sm:w-[48%]"
+                className={`pointer-events-none absolute top-[-14%] right-[-16%] w-[60%] max-w-[22rem] sm:top-[-18%] sm:right-[-10%] sm:w-[48%] ${motionStyles.spin}`}
               />
               <Txt
                 value={item.name}
@@ -93,7 +107,7 @@ export function DishCard({
             </>
           ) : (
             <>
-              <Plate src={photo} name={item.name.text} size={240} muted={item.soldOut} className="mx-auto block w-[74%] max-w-[10.5rem]" />
+              <Plate src={photo} name={item.name.text} size={240} muted={item.soldOut} className={`mx-auto block w-[74%] max-w-[10.5rem] ${motionStyles.spin}`} />
               <Txt
                 value={item.name}
                 locale={locale}
@@ -104,6 +118,7 @@ export function DishCard({
             </>
           )}
         </button>
+        <span aria-hidden="true" className={motionStyles.glare} />
         {showAdd && (
           <button
             type="button"

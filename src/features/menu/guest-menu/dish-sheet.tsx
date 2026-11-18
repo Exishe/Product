@@ -1,5 +1,6 @@
 "use client";
 
+import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +16,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, MinusIcon, Plate, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { CloseIcon, MinusIcon, Plate, PlusIcon, TagChip, Txt, dishPhotoUrl, initial } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -211,6 +212,7 @@ export function DishSheet({
                 disabled={!valid}
                 onClick={(e) => {
                   sparkFrom(e.currentTarget);
+                  flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null, initial: initial(item.name.text) });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
                 className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"

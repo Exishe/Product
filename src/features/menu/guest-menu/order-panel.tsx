@@ -53,7 +53,8 @@ export function CartBar({
 
 // "Your order" beside the menu on a desktop (owner's pick, the left screen of
 // menu-layout.webp): each chosen dish on its round plate with its quantity,
-// a × to take it out, the total and the main action.
+// a × to take it out, the total and the main action. A dish added on a
+// desktop flies here (fly.ts) and the heading bounces as it lands.
 export function OrderPanel({
   summary,
   items,
@@ -69,9 +70,10 @@ export function OrderPanel({
   return (
     <aside
       aria-labelledby="order-panel-title"
+      data-fly-target="1"
       className="bg-surface shadow-card rounded-feature sticky top-6 hidden max-h-[calc(100dvh-8rem)] flex-col border [border-color:var(--guest-card-border)] p-6 lg:flex"
     >
-      <h2 id="order-panel-title" className="display-face text-center text-[2rem] leading-none">
+      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-center text-[2rem] leading-none">
         {t("cart.title")}
       </h2>
       {summary.lines.length === 0 ? (

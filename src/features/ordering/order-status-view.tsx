@@ -1,7 +1,10 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { warmMotion } from "@/features/guest-theme/motion/motion";
+import motionStyles from "@/features/guest-theme/motion/motion.module.css";
+import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import { CheckIcon, Notice, Txt } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
@@ -76,10 +79,21 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   };
 }
 
+// The steps one after another (ms): a done step ticks in on a spring, then
+// the line below it fills down to the next. On first view they play in turn;
+// a step reached later (live) plays at once.
+const BEAT = 450;
+
 function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   const { t } = useGuestI18n();
   const now = stepIndex(status);
   const steps: string[] = status === "paid" ? [...STEPS, "paid"] : [...STEPS];
+  // After the first sequence, changes play without the wait.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(true), BEAT * (STEPS.length + 1));
+    return () => clearTimeout(timer);
+  }, []);
   const note =
     status === "received"
       ? order.possible_duplicate_of
@@ -94,16 +108,27 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
         const done = i <= now;
         const current = i === now;
         const last = i === steps.length - 1;
+        const tickAt = { "--d": `${settled ? BEAT : i * BEAT}ms` } as CSSProperties;
+        const fillAt = { "--d": `${settled ? 0 : i * BEAT + 120}ms` } as CSSProperties;
         return (
           <li key={step} className="relative grid min-h-[52px] grid-cols-[28px_1fr] items-start gap-3" aria-current={current ? "step" : undefined}>
-            {!last && <span aria-hidden="true" className={`absolute top-7 -bottom-1 left-[13px] w-0.5 ${i < now ? "bg-tarragon" : "bg-line"}`} />}
+            {!last && (
+              <span aria-hidden="true" className="bg-line absolute top-7 -bottom-1 left-[13px] w-0.5 overflow-hidden">
+                <span className={`bg-tarragon ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
+              </span>
+            )}
             <span
               aria-hidden="true"
-              className={`z-[1] grid size-7 place-items-center rounded-full border-2 ${
-                done ? "border-tarragon bg-tarragon text-white" : "border-line-strong bg-matsoni"
+              className={`relative z-[1] grid size-7 place-items-center rounded-full border-2 ${
+                done ? "border-tarragon bg-matsoni text-white" : "border-line-strong bg-matsoni"
               } ${current ? "shadow-[0_0_0_5px_var(--color-tarragon-tint)]" : ""}`}
             >
-              {done ? <CheckIcon /> : null}
+              {current && status !== "served" && status !== "paid" ? <span className={motionStyles.pulse} /> : null}
+              {done ? (
+                <span className={`bg-tarragon absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`} style={tickAt}>
+                  <CheckIcon />
+                </span>
+              ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
               <div className={`leading-7 ${done ? "font-semibold" : "text-muted"}`}>{t(`order.steps.${step}`)}</div>
@@ -233,6 +258,19 @@ export function OrderStatusView({
   }, [db, guestSessionId]);
 
   const active = useMemo(() => (data ? data.orders.some(isActive) || data.requests.length > 0 : false), [data]);
+
+  // "Ready": a banner slides in, and if it became ready while the guest
+  // watched, a big spark bursts from it.
+  const top = data?.orders[0];
+  const topStatus = top ? displayStatus(top) : null;
+  const seen = useRef<DisplayStatus | null>(null);
+  const banner = useRef<HTMLDivElement>(null);
+  useEffect(() => warmMotion(), []);
+  useEffect(() => {
+    const was = seen.current;
+    seen.current = topStatus;
+    if (topStatus === "ready" && was !== null && was !== "ready") sparkFrom(banner.current, "big");
+  }, [topStatus]);
   const channel = useGuestChannel({ supabase: db, guestSessionId, refresh, poll: active && !data?.closed });
 
   const ask = async (kind: Request["kind"], payment?: "card" | "cash") => {
@@ -324,6 +362,20 @@ export function OrderStatusView({
 
   return (
     <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 pt-5 md:pt-10 ${DOCK_SPACE}`}>
+      {latestStatus === "ready" && (
+        // Decoration: the status itself is announced below and shown in the tracker.
+        <div
+          ref={banner}
+          aria-hidden="true"
+          data-testid="ready-banner"
+          className={`bg-accent text-on-accent rounded-card mb-5 flex items-center gap-3 px-5 py-4 ${motionStyles.banner}`}
+        >
+          <span className="bg-on-accent text-accent grid size-9 flex-none place-items-center rounded-full">
+            <CheckIcon />
+          </span>
+          <span className="display-face text-[1.75rem] leading-none">{t("order.steps.ready")}</span>
+        </div>
+      )}
       {latest && (
         <OrderCard
           order={latest}

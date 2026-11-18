@@ -18,19 +18,32 @@
    without JavaScript never hides anything). */
 .split[data-split="wait"] .char {
   opacity: 0;
-  transform: translateY(0.5em);
+  transform: translateY(0.6em);
+  filter: blur(6px);
 }
 
-/* The café name: rises at first paint, in CSS. */
+/* The café name: rises out of a blur at first paint, in CSS, so it plays
+   before any JavaScript has arrived. */
 .load .char {
-  animation: rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(80ms + var(--i, 0) * 32ms);
+  animation:
+    rise 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    unblur 560ms ease-out backwards;
+  animation-delay: calc(60ms + var(--i, 0) * 45ms);
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(0.5em);
+    transform: translateY(0.55em) scale(1.18);
+  }
+}
+
+@keyframes unblur {
+  from {
+    filter: blur(8px);
+  }
+  to {
+    filter: none;
   }
 }
 
@@ -52,6 +65,163 @@
   visibility: hidden;
 }
 
+/* Tilted Card, entrance: the first cards rise at first paint in CSS (no
+   JavaScript needed); the rest wait below the fold (data-reveal, set by
+   reveal.ts only) and rise as they scroll into view. */
+.enter {
+  animation: card-in 680ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(90ms + var(--i, 0) * 70ms);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: perspective(800px) translateY(44px) rotateX(18deg) scale(0.94);
+  }
+}
+
+.reveal[data-reveal="wait"] {
+  opacity: 0;
+  transform: perspective(800px) translateY(44px) rotateX(18deg) scale(0.94);
+}
+
+/* Tilted Card, glare: a soft light that follows the pointer while the card
+   leans (tilt.ts sets data-tilt and --glare-x/y). The light moves by
+   transform; its frame clips it to the card's corners. */
+.glare {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glare::before {
+  content: "";
+  position: absolute;
+  top: -170px;
+  left: -170px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(255 255 255 / 0.26),
+    rgb(255 255 255 / 0.08) 55%,
+    transparent
+  );
+  transform: translate(var(--glare-x, 50%), var(--glare-y, 50%));
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+[data-tilt="on"] > .glare::before {
+  opacity: 1;
+}
+
+/* The plate turns a little while its card leans. */
+.spin {
+  transition: transform 650ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-tilt="on"] .spin {
+  transform: rotate(11deg) scale(1.06);
+}
+
+/* Category tabs: one red pill slides between the tabs (category-nav.tsx
+   moves it by transform); while it is on, the current tab drops its own
+   fill. Without JavaScript the tab keeps its fill. */
+.indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: var(--guest-r-pill);
+  background: var(--guest-accent);
+  transform-origin: 0 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.track[data-indicator="on"] > .indicator {
+  opacity: 1;
+}
+
+.track[data-indicator="on"] > [aria-current="true"] {
+  background: transparent;
+}
+
+.track[data-indicator="on"] > a {
+  position: relative;
+  transition: color 200ms ease;
+}
+
+/* Order status: the line fills down to the current step, done steps tick in
+   on a spring, the current one breathes, and "ready" gets a banner. */
+.fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+}
+
+.fill[data-on="true"] {
+  animation: fill 450ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes fill {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.tick {
+  display: grid;
+  animation: tick 620ms cubic-bezier(0.34, 1.7, 0.64, 1) backwards;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+  }
+}
+
+.pulse {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: var(--guest-glow);
+  pointer-events: none;
+  animation: pulse 1.8s ease-out infinite;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+.banner {
+  animation: banner-in 700ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.92);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .load .char {
     animation: none;
@@ -59,5 +229,26 @@
   .split[data-split="wait"] .char {
     opacity: 1;
     transform: none;
+    filter: none;
+  }
+  .enter,
+  .fill[data-on="true"],
+  .tick,
+  .banner {
+    animation: none;
+  }
+  .fill[data-on="true"] {
+    transform: none;
+  }
+  .reveal[data-reveal="wait"] {
+    opacity: 1;
+    transform: none;
+  }
+  .pulse {
+    display: none;
+  }
+  .spin,
+  .glare::before {
+    transition: none;
   }
 }

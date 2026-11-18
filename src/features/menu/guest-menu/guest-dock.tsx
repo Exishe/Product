@@ -24,7 +24,9 @@ export type DockItem = {
 // with icon and label per item; the current one glows softly in the theme's
 // colour). Above it stack the cart bar on the menu and the waiter question,
 // so nothing floats over the main action. It stays clear of the home
-// indicator (safe-area inset), and every item is at least 48 px tall.
+// indicator (safe-area inset), and every item is at least 48 px tall. The
+// Order item is where a dish added on a phone flies to (fly.ts), its count
+// bouncing as it lands.
 export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNode }) {
   const { t } = useGuestI18n();
   if (items.length === 0 && !above) return null;
@@ -44,7 +46,10 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                   <span className="relative grid place-items-center">
                     {item.icon}
                     {item.badge ? (
-                      <span className="num bg-accent text-on-accent absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[0.6875rem] leading-none font-bold">
+                      <span
+                        data-fly-bump=""
+                        className="num bg-accent text-on-accent absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[0.6875rem] leading-none font-bold"
+                      >
                         {item.badge}
                       </span>
                     ) : null}
@@ -63,6 +68,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                   aria-label={item.ariaLabel}
                   className={cls}
                   data-testid={item.testId}
+                  data-fly-target={item.key === "order" ? 2 : undefined}
                 >
                   {body}
                 </a>
@@ -77,6 +83,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                   aria-label={item.ariaLabel}
                   className={cls}
                   data-testid={item.testId}
+                  data-fly-target={item.key === "order" ? 2 : undefined}
                 >
                   {body}
                 </button>
