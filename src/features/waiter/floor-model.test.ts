@@ -15,7 +15,10 @@ import {
 const T0 = Date.parse("2026-11-09T18:00:00Z");
 const iso = (minutes: number) => new Date(T0 + minutes * 60_000).toISOString();
 
-const item = (id: string, over: Partial<OrderRow["order_items"][number]> = {}): OrderRow["order_items"][number] => ({
+const item = (
+  id: string,
+  over: Partial<OrderRow["order_items"][number]> = {},
+): OrderRow["order_items"][number] => ({
   id,
   name_i18n: { hy: "Տոլմա", ru: "Толма" },
   quantity: 2,
@@ -44,7 +47,12 @@ const order = (id: string, over: Partial<OrderRow> = {}): OrderRow => ({
   ...over,
 });
 
-const session = (id: string, table: string, orders: OrderRow[], over: Partial<SessionRow> = {}): SessionRow => ({
+const session = (
+  id: string,
+  table: string,
+  orders: OrderRow[],
+  over: Partial<SessionRow> = {},
+): SessionRow => ({
   id,
   table_id: table,
   status: "open",
@@ -90,7 +98,11 @@ describe("table states (screens.md §5)", () => {
   });
 
   it("an order waiting for acceptance is a new order", () => {
-    const floor = buildFloor(rows({ sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })])] }), "hy", T0);
+    const floor = buildFloor(
+      rows({ sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })])] }),
+      "hy",
+      T0,
+    );
     expect(byId(floor, "t1").state).toBe("new");
   });
 
@@ -102,17 +114,52 @@ describe("table states (screens.md §5)", () => {
         { id: "k2", station_id: "bar", kind: "order", status: "ready" },
       ],
     });
-    expect(byId(buildFloor(rows({ sessions: [session("s1", "t1", [o])] }), "hy", T0), "t1").state).toBe("ready");
+    expect(byId(buildFloor(rows({ sessions: [session("s1", "t1", [o])] }), "hy", T0), "t1").state).toBe(
+      "ready",
+    );
   });
 
   it("an open bill request is «Հաշիվ», a call is «Կանչում են»", () => {
-    const served = order("o1", { kitchen_status: "served", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "served" }] });
+    const served = order("o1", {
+      kitchen_status: "served",
+      kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "served" }],
+    });
     const base = { sessions: [session("s1", "t1", [served])] };
-    const bill = buildFloor(rows({ ...base, requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: null }] }), "hy", T0);
+    const bill = buildFloor(
+      rows({
+        ...base,
+        requests: [
+          {
+            id: "r1",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "bring_bill",
+            status: "open",
+            created_at: iso(-2),
+            payment_preference: null,
+          },
+        ],
+      }),
+      "hy",
+      T0,
+    );
     expect(byId(bill, "t1").state).toBe("bill");
     expect(byId(bill, "t1").bill?.payment).toBeNull();
     const card = buildFloor(
-      rows({ ...base, requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: "card" }] }),
+      rows({
+        ...base,
+        requests: [
+          {
+            id: "r1",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "bring_bill",
+            status: "open",
+            created_at: iso(-2),
+            payment_preference: "card",
+          },
+        ],
+      }),
       "hy",
       T0,
     );
@@ -121,8 +168,24 @@ describe("table states (screens.md §5)", () => {
       rows({
         ...base,
         requests: [
-          { id: "r1", table_id: "t1", table_session_id: "s1", kind: "bring_bill", status: "open", created_at: iso(-2), payment_preference: null },
-          { id: "r2", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "acknowledged", created_at: iso(-3), payment_preference: null },
+          {
+            id: "r1",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "bring_bill",
+            status: "open",
+            created_at: iso(-2),
+            payment_preference: null,
+          },
+          {
+            id: "r2",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "call_waiter",
+            status: "acknowledged",
+            created_at: iso(-3),
+            payment_preference: null,
+          },
         ],
       }),
       "hy",
@@ -134,16 +197,27 @@ describe("table states (screens.md §5)", () => {
 
   it("priority: calling > new order > ready > bill > busy", () => {
     const placed = order("o2", { status: "placed", kitchen_tickets: [] });
-    const ready = order("o1", { kitchen_status: "ready", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }] });
+    const ready = order("o1", {
+      kitchen_status: "ready",
+      kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }],
+    });
     const both = buildFloor(rows({ sessions: [session("s1", "t1", [ready, placed])] }), "hy", T0);
     expect(byId(both, "t1").state).toBe("new");
   });
 
   it("a new party waiting at the table is a new order and is listed apart", () => {
-    const served = order("o1", { kitchen_status: "served", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "served" }] });
+    const served = order("o1", {
+      kitchen_status: "served",
+      kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "served" }],
+    });
     const waitingOrder = order("o9", { status: "placed", number: 9, kitchen_tickets: [] });
     const floor = buildFloor(
-      rows({ sessions: [session("s1", "t1", [served]), session("w1", "t1", [waitingOrder], { status: "waiting", opened_at: iso(-1) })] }),
+      rows({
+        sessions: [
+          session("s1", "t1", [served]),
+          session("w1", "t1", [waitingOrder], { status: "waiting", opened_at: iso(-1) }),
+        ],
+      }),
       "hy",
       T0,
     );
@@ -158,8 +232,21 @@ describe("table states (screens.md §5)", () => {
   it("counts the tables that need someone", () => {
     const floor = buildFloor(
       rows({
-        sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })]), session("s2", "t2", [])],
-        requests: [{ id: "r", table_id: "t10", table_session_id: null, kind: "call_waiter", status: "open", created_at: iso(0), payment_preference: null }],
+        sessions: [
+          session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })]),
+          session("s2", "t2", []),
+        ],
+        requests: [
+          {
+            id: "r",
+            table_id: "t10",
+            table_session_id: null,
+            kind: "call_waiter",
+            status: "open",
+            created_at: iso(0),
+            payment_preference: null,
+          },
+        ],
       }),
       "hy",
       T0,
@@ -171,13 +258,33 @@ describe("table states (screens.md §5)", () => {
 describe("Orders and Calls tabs (ADR-054)", () => {
   it("lists new and ready orders and calls and bills per table, the longest-waiting first", () => {
     const placed = order("o2", { status: "placed", placed_at: iso(-4), kitchen_tickets: [] });
-    const ready = order("o1", { placed_at: iso(-20), kitchen_status: "ready", kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }] });
+    const ready = order("o1", {
+      placed_at: iso(-20),
+      kitchen_status: "ready",
+      kitchen_tickets: [{ id: "k", station_id: "kitchen", kind: "order", status: "ready" }],
+    });
     const floor = buildFloor(
       rows({
         sessions: [session("s1", "t1", [ready, placed]), session("s2", "t2", [])],
         requests: [
-          { id: "r1", table_id: "t2", table_session_id: "s2", kind: "bring_bill", status: "open", created_at: iso(-1), payment_preference: "cash" },
-          { id: "r2", table_id: "t10", table_session_id: null, kind: "call_waiter", status: "open", created_at: iso(-6), payment_preference: null },
+          {
+            id: "r1",
+            table_id: "t2",
+            table_session_id: "s2",
+            kind: "bring_bill",
+            status: "open",
+            created_at: iso(-1),
+            payment_preference: "cash",
+          },
+          {
+            id: "r2",
+            table_id: "t10",
+            table_session_id: null,
+            kind: "call_waiter",
+            status: "open",
+            created_at: iso(-6),
+            payment_preference: null,
+          },
         ],
       }),
       "hy",
@@ -196,7 +303,13 @@ describe("Orders and Calls tabs (ADR-054)", () => {
 
   it("counts a waiting party's order as new and leaves quiet tables out", () => {
     const waitingOrder = order("o9", { status: "placed", placed_at: iso(-2), kitchen_tickets: [] });
-    const floor = buildFloor(rows({ sessions: [session("s1", "t1", []), session("w1", "t1", [waitingOrder], { status: "waiting" })] }), "hy", T0);
+    const floor = buildFloor(
+      rows({
+        sessions: [session("s1", "t1", []), session("w1", "t1", [waitingOrder], { status: "waiting" })],
+      }),
+      "hy",
+      T0,
+    );
     const { orders, calls } = inbox(floor.tables, T0);
     expect(orders.map((r) => [r.table.id, r.kind])).toEqual([["t1", "new"]]);
     expect(calls).toEqual([]);
@@ -209,11 +322,24 @@ describe("orders in the panel", () => {
     const o2 = order("o2", {
       placed_at: iso(-5),
       number: 8,
-      order_items: [item("a", { name_i18n: { ru: "Хачапури" }, quantity: 3, cancelled_quantity: 1, line_total: 3000, station_id: "bar" })],
+      order_items: [
+        item("a", {
+          name_i18n: { ru: "Хачапури" },
+          quantity: 3,
+          cancelled_quantity: 1,
+          line_total: 3000,
+          station_id: "bar",
+        }),
+      ],
     });
     const t = byId(buildFloor(rows({ sessions: [session("s1", "t1", [o1, o2])] }), "en", T0), "t1");
     expect(t.orders.map((o) => o.number)).toEqual([8, 3]);
-    expect(t.orders[0]?.lines[0]).toMatchObject({ quantity: 2, cancelled: 1, name: { text: "Хачапури", locale: "ru" }, lineTotal: 3000 });
+    expect(t.orders[0]?.lines[0]).toMatchObject({
+      quantity: 2,
+      cancelled: 1,
+      name: { text: "Хачапури", locale: "ru" },
+      lineTotal: 3000,
+    });
   });
 
   it("the total counts accepted orders only, as the bill will", () => {
@@ -266,16 +392,32 @@ describe("orders in the panel", () => {
 
 describe("closing the table", () => {
   it("is blocked while a QR order waits for acceptance", () => {
-    const t = byId(buildFloor(rows({ sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })])] }), "hy", T0), "t1");
+    const t = byId(
+      buildFloor(
+        rows({ sessions: [session("s1", "t1", [order("o1", { status: "placed", kitchen_tickets: [] })])] }),
+        "hy",
+        T0,
+      ),
+      "t1",
+    );
     expect(closeBlocker(t)).toBe("pending");
     const ok = byId(buildFloor(rows({ sessions: [session("s1", "t1", [order("o1")])] }), "hy", T0), "t1");
     expect(closeBlocker(ok)).toBeNull();
   });
 
   it("cash or card pays the total; split must add up exactly", () => {
-    expect(settlement({ mode: "cash", cash: "", card: "" }, 9800)).toEqual({ ok: true, paid: 9800, payments: [{ method: "cash", amount: 9800 }] });
-    expect(settlement({ mode: "card", cash: "", card: "" }, 9800).payments).toEqual([{ method: "card_terminal", amount: 9800 }]);
-    expect(settlement({ mode: "split", cash: "5000", card: "4900" }, 9800)).toMatchObject({ ok: false, paid: 9900 });
+    expect(settlement({ mode: "cash", cash: "", card: "" }, 9800)).toEqual({
+      ok: true,
+      paid: 9800,
+      payments: [{ method: "cash", amount: 9800 }],
+    });
+    expect(settlement({ mode: "card", cash: "", card: "" }, 9800).payments).toEqual([
+      { method: "card_terminal", amount: 9800 },
+    ]);
+    expect(settlement({ mode: "split", cash: "5000", card: "4900" }, 9800)).toMatchObject({
+      ok: false,
+      paid: 9900,
+    });
     expect(settlement({ mode: "split", cash: "5 000", card: "4800" }, 9800)).toEqual({
       ok: true,
       paid: 9800,
@@ -290,12 +432,25 @@ describe("closing the table", () => {
 
 describe("taps not yet confirmed", () => {
   const placed = order("o1", { status: "placed", kitchen_tickets: [] });
-  const ready = order("o2", { kitchen_status: "ready", kitchen_tickets: [{ id: "k2", station_id: "kitchen", kind: "order", status: "ready" }] });
+  const ready = order("o2", {
+    kitchen_status: "ready",
+    kitchen_tickets: [{ id: "k2", station_id: "kitchen", kind: "order", status: "ready" }],
+  });
   const floor = () =>
     buildFloor(
       rows({
         sessions: [session("s1", "t1", [placed, ready])],
-        requests: [{ id: "r1", table_id: "t1", table_session_id: "s1", kind: "call_waiter", status: "open", created_at: iso(0), payment_preference: null }],
+        requests: [
+          {
+            id: "r1",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "call_waiter",
+            status: "open",
+            created_at: iso(0),
+            payment_preference: null,
+          },
+        ],
       }),
       "hy",
       T0,
@@ -315,7 +470,9 @@ describe("taps not yet confirmed", () => {
   });
 
   it("a rejected order leaves the total and the new-order state", () => {
-    const shown = applyPending(floor().tables, [{ action: { kind: "reject", orderId: "o1", reason: "x" }, waiting: true }]);
+    const shown = applyPending(floor().tables, [
+      { action: { kind: "reject", orderId: "o1", reason: "x" }, waiting: true },
+    ]);
     expect(shown.find((x) => x.id === "t1")?.state).toBe("call");
     expect(shown.find((x) => x.id === "t1")?.orders.find((o) => o.id === "o1")?.status).toBe("rejected");
   });
@@ -330,7 +487,10 @@ describe("taps not yet confirmed", () => {
           lines: [{ item_id: "i", quantity: 2, modifier_ids: [], note: null }],
           note: null,
           locale: "hy",
-          preview: { lines: [{ name: { text: "Սուրճ", locale: "hy" }, quantity: 2, lineTotal: 1600 }], total: 1600 },
+          preview: {
+            lines: [{ name: { text: "Սուրճ", locale: "hy" }, quantity: 2, lineTotal: 1600 }],
+            total: 1600,
+          },
         },
         waiting: true,
       },
@@ -342,17 +502,37 @@ describe("taps not yet confirmed", () => {
 });
 
 describe("floor layout", () => {
+  const sq = (id: string, x: number, y: number) => ({ id, shape: "square", pos: { x, y } });
+  const rect = (id: string, x: number, y: number) => ({ id, shape: "rect", pos: { x, y } });
+
   it("uses the saved positions when every table has one", () => {
-    expect(
-      areaLayout([
-        { pos: { x: 0, y: 0 } },
-        { pos: { x: 3, y: 1 } },
-      ]),
-    ).toEqual({ placed: true, columns: 4, rows: 2 });
+    expect(areaLayout([sq("a", 0, 0), sq("b", 3, 1)])).toEqual({
+      placed: true,
+      columns: 4,
+      rows: 2,
+      wide: new Set(),
+    });
+  });
+
+  it("lets a long table take two columns only when the next cell is free", () => {
+    // Demo floor: table 7 (long) at column 2 with table 8 right next to it.
+    const crowded = areaLayout([rect("t7", 2, 1), sq("t8", 3, 1)]);
+    expect(crowded.wide.has("t7")).toBe(false);
+    expect(crowded.columns).toBe(4);
+    const free = areaLayout([rect("t7", 2, 1), sq("t8", 3, 0)]);
+    expect(free.wide.has("t7")).toBe(true);
+    expect(free.columns).toBe(4);
+    // A long table in the last column widens the grid instead of spilling out.
+    expect(areaLayout([sq("a", 0, 0), rect("b", 1, 0)]).columns).toBe(3);
   });
 
   it("otherwise flows the tables in order", () => {
-    expect(areaLayout([{ pos: { x: 0, y: 0 } }, { pos: null }])).toEqual({ placed: false, columns: 0, rows: 0 });
+    expect(areaLayout([sq("a", 0, 0), { id: "b", shape: "square", pos: null }])).toEqual({
+      placed: false,
+      columns: 0,
+      rows: 0,
+      wide: new Set(),
+    });
   });
 
   it("orders tables by sort, then by label as a number", () => {

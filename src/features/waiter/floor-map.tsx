@@ -1,7 +1,17 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Banknote, BellRing, CircleDashed, ClipboardList, CreditCard, HandPlatter, Receipt, Users, type LucideIcon } from "lucide-react";
+import {
+  Banknote,
+  BellRing,
+  CircleDashed,
+  ClipboardList,
+  CreditCard,
+  HandPlatter,
+  Receipt,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { areaLayout, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
@@ -44,7 +54,15 @@ export const STATE_BADGE: Record<TableState, string> = {
 export const STATES: readonly TableState[] = ["free", "busy", "new", "ready", "call", "bill"];
 
 // The state's icon; a bill shows how the guest wants to pay when they said so.
-export function StateIcon({ state, payment, className }: { state: TableState; payment?: "card" | "cash" | null; className?: string }) {
+export function StateIcon({
+  state,
+  payment,
+  className,
+}: {
+  state: TableState;
+  payment?: "card" | "cash" | null;
+  className?: string;
+}) {
   if (state === "bill" && payment === "card") return <CreditCard aria-hidden="true" className={className} />;
   if (state === "bill" && payment === "cash") return <Banknote aria-hidden="true" className={className} />;
   const Icon = STATE_ICON[state];
@@ -64,14 +82,18 @@ export function AreaTabs({
   const t = useTranslations("waiter");
   if (areas.length < 2) return null;
   return (
-    <div role="group" aria-label={t("areas")} className="flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-staff-fill p-0.5">
+    <div
+      role="group"
+      aria-label={t("areas")}
+      className="bg-staff-fill flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-0.5"
+    >
       {areas.map((a) => (
         <button
           key={a.id ?? "none"}
           type="button"
           aria-pressed={current === a.id}
           onClick={() => onPick(a.id)}
-          className="min-h-11 min-w-0 flex-1 rounded-[10px] px-4 text-[0.9375rem] font-semibold whitespace-nowrap text-staff-label2 aria-pressed:bg-white aria-pressed:text-ink aria-pressed:shadow-sm"
+          className="text-staff-label2 aria-pressed:text-ink min-h-11 min-w-0 flex-1 rounded-[10px] px-4 text-[0.9375rem] font-semibold whitespace-nowrap aria-pressed:bg-white aria-pressed:shadow-sm"
         >
           {a.name ?? t("otherArea")}
         </button>
@@ -99,24 +121,36 @@ export function FloorMap({
           className={clsx("grid gap-3", !layout.placed && "grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]")}
           style={
             layout.placed
-              ? { gridTemplateColumns: `repeat(${layout.columns}, minmax(6.5rem, 1fr))`, gridTemplateRows: `repeat(${layout.rows}, auto)` }
+              ? {
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(6.5rem, 1fr))`,
+                  gridTemplateRows: `repeat(${layout.rows}, auto)`,
+                }
               : undefined
           }
         >
           {tables.map((table) => (
-            <TableButton key={table.id} table={table} selected={selected === table.id} onSelect={onSelect} />
+            <TableButton
+              key={table.id}
+              table={table}
+              wide={layout.placed ? layout.wide.has(table.id) : table.shape === "rect"}
+              selected={selected === table.id}
+              onSelect={onSelect}
+            />
           ))}
         </div>
       </div>
       <section aria-labelledby="legend-title" className="grid gap-2">
-        <h2 id="legend-title" className="m-0 px-1 text-[0.8125rem] font-semibold text-staff-label2">
+        <h2 id="legend-title" className="text-staff-label2 m-0 px-1 text-[0.8125rem] font-semibold">
           {t("legend")}
         </h2>
         <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-x-4 gap-y-2 rounded-2xl bg-white p-3">
           {STATES.map((s) => {
             return (
               <li key={s} className="flex min-w-0 items-center gap-2 text-[0.9375rem]">
-                <span aria-hidden="true" className={clsx("grid size-7 shrink-0 place-items-center rounded-full", STATE_BADGE[s])}>
+                <span
+                  aria-hidden="true"
+                  className={clsx("grid size-7 shrink-0 place-items-center rounded-full", STATE_BADGE[s])}
+                >
                   <StateIcon state={s} className="size-4" />
                 </span>
                 <span className="min-w-0">{t(`state.${s}`)}</span>
@@ -129,13 +163,26 @@ export function FloorMap({
   );
 }
 
-function TableButton({ table, selected, onSelect }: { table: FloorTable; selected: boolean; onSelect: (id: string) => void }) {
+function TableButton({
+  table,
+  wide,
+  selected,
+  onSelect,
+}: {
+  table: FloorTable;
+  wide: boolean;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
   const t = useTranslations("waiter");
   const state =
     table.state === "bill" && table.bill?.payment
       ? t(table.bill.payment === "card" ? "state.billCard" : "state.billCash")
       : t(`state.${table.state}`);
-  const minutes = (table.state === "busy" || table.state === "bill") && table.openMinutes !== null ? table.openMinutes : null;
+  const minutes =
+    (table.state === "busy" || table.state === "bill") && table.openMinutes !== null
+      ? table.openMinutes
+      : null;
   return (
     <button
       type="button"
@@ -149,9 +196,9 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
       className={clsx(
         "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150",
         table.shape === "round" ? "aspect-square rounded-full" : "rounded-2xl",
-        table.shape === "rect" && "col-span-2",
+        wide && "col-span-2",
         STATE_CLASS[table.state],
-        selected && "outline-[3px] outline-offset-[3px] outline-ink outline-solid",
+        selected && "outline-ink outline-[3px] outline-offset-[3px] outline-solid",
       )}
     >
       {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
@@ -162,16 +209,24 @@ function TableButton({ table, selected, onSelect }: { table: FloorTable; selecte
           NUMBER_CLASS[table.state],
         )}
       >
-        {t.rich("tableName", { label: table.label, hidden: (chunks) => <span className="sr-only">{chunks}</span> })}
+        {t.rich("tableName", {
+          label: table.label,
+          hidden: (chunks) => <span className="sr-only">{chunks}</span>,
+        })}
       </b>
       {/* The icon sits in the corner (inside the circle on round tables), so the word keeps the whole width. */}
       <StateIcon
         state={table.state}
         payment={table.bill?.payment}
-        className={clsx("absolute size-5", table.shape === "round" ? "top-3 left-1/2 -translate-x-1/2" : "top-2.5 left-2.5")}
+        className={clsx(
+          "absolute size-5",
+          table.shape === "round" ? "top-3 left-1/2 -translate-x-1/2" : "top-2.5 left-2.5",
+        )}
       />
       <span className="max-w-full text-[0.8125rem] leading-tight font-semibold break-words">{state}</span>
-      {minutes !== null && <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>}
+      {minutes !== null && (
+        <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>
+      )}
     </button>
   );
 }

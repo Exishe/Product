@@ -90,7 +90,12 @@ export type WaiterLine = {
   served: boolean;
 };
 
-export type WaiterTicket = { id: string; stationId: string; stationName: string | null; status: TicketStatus };
+export type WaiterTicket = {
+  id: string;
+  stationId: string;
+  stationName: string | null;
+  status: TicketStatus;
+};
 
 export type WaiterOrder = {
   id: string;
@@ -149,7 +154,11 @@ const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now -
 // The system's default station is shown by role («Խոհանոց»), named ones by name.
 const SYSTEM_STATION_NAME = "Kitchen";
 
-function toOrder(row: OrderRow, locale: Locale, stations: Map<string, { name: string; is_default: boolean }>): WaiterOrder {
+function toOrder(
+  row: OrderRow,
+  locale: Locale,
+  stations: Map<string, { name: string; is_default: boolean }>,
+): WaiterOrder {
   const tickets = row.kitchen_tickets
     .filter((k) => k.kind === "order" && k.status !== "cancelled")
     .map((k) => {
@@ -157,7 +166,9 @@ function toOrder(row: OrderRow, locale: Locale, stations: Map<string, { name: st
       const stationName = !st || (st.is_default && st.name === SYSTEM_STATION_NAME) ? null : st.name;
       return { id: k.id, stationId: k.station_id, stationName, status: k.status };
     })
-    .sort((a, b) => Number(a.stationName !== null) - Number(b.stationName !== null) || a.id.localeCompare(b.id));
+    .sort(
+      (a, b) => Number(a.stationName !== null) - Number(b.stationName !== null) || a.id.localeCompare(b.id),
+    );
   const servedAt = new Set(tickets.filter((k) => k.status === "served").map((k) => k.stationId));
   const lines = [...row.order_items]
     .sort((a, b) => a.sort - b.sort)
@@ -188,14 +199,16 @@ function toOrder(row: OrderRow, locale: Locale, stations: Map<string, { name: st
   };
 }
 
-const newestFirst = (a: WaiterOrder, b: WaiterOrder) => b.placedAt - a.placedAt || (b.number ?? Infinity) - (a.number ?? Infinity);
+const newestFirst = (a: WaiterOrder, b: WaiterOrder) =>
+  b.placedAt - a.placedAt || (b.number ?? Infinity) - (a.number ?? Infinity);
 
 // Priority for the colour when several things happen at one table (screens.md
 // §5): calling > new order > ready > bill > busy.
 export function stateOf(t: Omit<FloorTable, "state" | "total">): TableState {
   if (t.call) return "call";
   if (t.waiting || t.orders.some((o) => o.status === "placed")) return "new";
-  if (t.orders.some((o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"))) return "ready";
+  if (t.orders.some((o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready")))
+    return "ready";
   if (t.bill) return "bill";
   if (t.sessionId || t.orders.length > 0) return "busy";
   return "free";
@@ -248,7 +261,8 @@ export function buildFloor(rows: FloorRows, locale: Locale, now: number): Floor 
     .sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name))
     .filter((a) => used.has(a.id))
     .map((a) => ({ id: a.id, name: a.name }));
-  if (tables.some((t) => t.areaId === null || !areas.some((a) => a.id === t.areaId))) areas.push({ id: null, name: null });
+  if (tables.some((t) => t.areaId === null || !areas.some((a) => a.id === t.areaId)))
+    areas.push({ id: null, name: null });
   return { areas, tables };
 }
 
@@ -256,7 +270,8 @@ export const areaOf = (t: FloorTable, areas: readonly FloorArea[]): string | nul
   areas.some((a) => a.id === t.areaId) ? t.areaId : null;
 
 const NEEDS: readonly TableState[] = ["new", "ready", "call", "bill"];
-export const needCount = (tables: readonly FloorTable[]) => tables.filter((t) => NEEDS.includes(t.state)).length;
+export const needCount = (tables: readonly FloorTable[]) =>
+  tables.filter((t) => NEEDS.includes(t.state)).length;
 
 // The Orders and Calls tabs (ADR-054): one row per table and kind of request,
 // the longest-waiting first. Only a different view of the floor; nothing new.
@@ -268,9 +283,13 @@ export function inbox(tables: readonly FloorTable[], now: number): { orders: Inb
   const since = (at: number) => Math.max(0, Math.floor((now - at) / 60_000));
   for (const table of tables) {
     const placed = [...table.orders, ...(table.waiting?.orders ?? [])].filter((o) => o.status === "placed");
-    if (placed.length > 0) orders.push({ table, kind: "new", minutes: since(Math.min(...placed.map((o) => o.placedAt))) });
-    const ready = table.orders.filter((o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"));
-    if (ready.length > 0) orders.push({ table, kind: "ready", minutes: since(Math.min(...ready.map((o) => o.placedAt))) });
+    if (placed.length > 0)
+      orders.push({ table, kind: "new", minutes: since(Math.min(...placed.map((o) => o.placedAt))) });
+    const ready = table.orders.filter(
+      (o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"),
+    );
+    if (ready.length > 0)
+      orders.push({ table, kind: "ready", minutes: since(Math.min(...ready.map((o) => o.placedAt))) });
     if (table.call) calls.push({ table, kind: "call", minutes: table.call.minutes });
     if (table.bill) calls.push({ table, kind: "bill", minutes: table.bill.minutes });
   }
@@ -280,11 +299,25 @@ export function inbox(tables: readonly FloorTable[], now: number): { orders: Inb
 
 // Saved floor positions (tables.pos_x/pos_y) draw the room; without them for
 // every table of an area, tables flow in order.
-export function areaLayout(tables: readonly { pos: { x: number; y: number } | null }[]) {
-  if (tables.length === 0 || tables.some((t) => t.pos === null)) return { placed: false, columns: 0, rows: 0 };
-  const xs = tables.map((t) => t.pos?.x ?? 0);
-  const ys = tables.map((t) => t.pos?.y ?? 0);
-  return { placed: true, columns: Math.max(...xs) + 1, rows: Math.max(...ys) + 1 };
+// A long ("rect") table takes two columns, but only where the cell to its right
+// is free: a neighbour placed there would otherwise sit on top of it.
+export function areaLayout(
+  tables: readonly { id: string; shape: string; pos: { x: number; y: number } | null }[],
+) {
+  const wide = new Set<string>();
+  if (tables.length === 0 || tables.some((t) => t.pos === null))
+    return { placed: false, columns: 0, rows: 0, wide };
+  const taken = new Set(tables.map((t) => `${t.pos?.x},${t.pos?.y}`));
+  let columns = 0;
+  let rows = 0;
+  for (const t of tables) {
+    const { x, y } = t.pos ?? { x: 0, y: 0 };
+    const spans = t.shape === "rect" && !taken.has(`${x + 1},${y}`);
+    if (spans) wide.add(t.id);
+    columns = Math.max(columns, x + (spans ? 2 : 1));
+    rows = Math.max(rows, y + 1);
+  }
+  return { placed: true, columns, rows, wide };
 }
 
 // --- Closing the table ----------------------------------------------------------
@@ -305,9 +338,13 @@ const amount = (s: string) => {
 };
 
 // The amounts must add up to the bill exactly (screens.md §6).
-export function settlement(input: PayInput, total: number): { ok: boolean; paid: number; payments: Payment[] } {
+export function settlement(
+  input: PayInput,
+  total: number,
+): { ok: boolean; paid: number; payments: Payment[] } {
   if (input.mode === "cash") return { ok: true, paid: total, payments: [{ method: "cash", amount: total }] };
-  if (input.mode === "card") return { ok: true, paid: total, payments: [{ method: "card_terminal", amount: total }] };
+  if (input.mode === "card")
+    return { ok: true, paid: total, payments: [{ method: "card_terminal", amount: total }] };
   if (input.mode === "split") {
     const payments: Payment[] = [
       { method: "cash", amount: amount(input.cash) },
