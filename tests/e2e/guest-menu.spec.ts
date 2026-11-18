@@ -205,22 +205,35 @@ test.describe("guest menu when the café switches ordering off", () => {
 });
 
 test("the guest menu downloads little JavaScript of its own", async ({ page, browser }) => {
+  // Scripts asked for after the page's load event are the lazily loaded
+  // animation engine (fetched when the browser is idle, ADR-052): counted
+  // apart, with a budget of their own.
   const scripts = async (p: Page, url: string) => {
     const seen = new Map<string, number>();
+    const lazy = new Set<string>();
+    let loaded = false;
+    p.on("load", () => (loaded = true));
+    p.on("request", (req) => {
+      if (loaded && req.resourceType() === "script") lazy.add(new URL(req.url()).pathname);
+    });
     p.on("response", async (res) => {
       if (res.request().resourceType() !== "script") return;
       const sizes = await res.request().sizes();
       seen.set(new URL(res.url()).pathname, sizes.responseBodySize);
     });
     await p.goto(url, { waitUntil: "networkidle" });
-    return seen;
+    return { seen, lazy };
   };
   const landing = await scripts(await browser.newPage(), "/hy");
   const menu = await scripts(page, "/hy/m/demo-cafe/main");
-  const own = [...menu].filter(([path]) => !landing.has(path));
-  const ownKb = own.reduce((s, [, b]) => s + b, 0) / 1024;
-  const totalKb = [...menu.values()].reduce((s, b) => s + b, 0) / 1024;
-  console.log(`guest menu JS: ${totalKb.toFixed(1)} KB in total, ${ownKb.toFixed(1)} KB beyond the framework`);
-  expect(own.every(([path]) => !path.includes("supabase"))).toBe(true);
-  expect(ownKb).toBeLessThan(25);
+  const own = [...menu.seen].filter(([path]) => !landing.seen.has(path) && !menu.lazy.has(path));
+  const later = [...menu.seen].filter(([path]) => menu.lazy.has(path));
+  const kb = (list: [string, number][]) => list.reduce((s, [, b]) => s + b, 0) / 1024;
+  const totalKb = [...menu.seen.values()].reduce((s, b) => s + b, 0) / 1024;
+  console.log(
+    `guest menu JS: ${totalKb.toFixed(1)} KB in total, ${kb(own).toFixed(1)} KB beyond the framework, ${kb(later).toFixed(1)} KB loaded later (animations)`,
+  );
+  expect([...own, ...later].every(([path]) => !path.includes("supabase"))).toBe(true);
+  expect(kb(own)).toBeLessThan(25);
+  expect(kb(later)).toBeLessThan(10);
 });

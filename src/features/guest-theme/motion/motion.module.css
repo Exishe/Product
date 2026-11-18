@@ -18,7 +18,7 @@
    without JavaScript never hides anything). */
 .split[data-split="wait"] .char {
   opacity: 0;
-  transform: translateY(0.6em);
+  transform: translateY(0.7em);
   filter: blur(6px);
 }
 
@@ -34,7 +34,7 @@
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(0.55em) scale(1.18);
+    transform: translateY(0.7em);
   }
 }
 

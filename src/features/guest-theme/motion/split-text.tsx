@@ -58,11 +58,12 @@ export function SplitText({
             el.dataset.split = "done";
             return;
           }
-          // Rise out of a blur, a touch larger than at rest, letter by letter.
+          // Rise out of a blur, letter by letter (no scale: a letter never grows
+          // past its word box).
           m.animate(chars, { filter: ["blur(6px)", "blur(0px)"] }, { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 });
           const run = m.animate(
             chars,
-            { opacity: [0, 1], transform: ["translateY(0.6em) scale(1.12)", "translateY(0) scale(1)"] },
+            { opacity: [0, 1], transform: ["translateY(0.7em)", "translateY(0)"] },
             { type: m.spring, duration: 0.75, bounce: 0.3, delay: (i: number) => i * 0.032 },
           );
           void Promise.resolve(run).finally(() => {
