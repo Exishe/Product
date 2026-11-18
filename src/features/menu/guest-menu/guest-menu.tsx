@@ -1,7 +1,7 @@
 "use client";
 
 import { ConciergeBell, Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RotatingText } from "@/features/guest-theme/motion/rotating-text";
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
@@ -16,7 +16,6 @@ import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
-import { DishSheet } from "./dish-sheet";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
@@ -32,6 +31,18 @@ const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+// The dish sheet is needed only after a tap: it arrives on its own once the
+// page is idle or first touched (like the animation engine, ADR-052), so the
+// first load stays inside the guest JS budget.
+const loadSheet = () => import("./dish-sheet");
+const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
+const warmSheet = () => {
+  const go = () => void loadSheet();
+  if ("requestIdleCallback" in window) window.requestIdleCallback(go, { timeout: 2000 });
+  else setTimeout(go, 300);
+  window.addEventListener("pointerdown", go, { once: true, passive: true });
+};
 
 const CART_HASH = "#cart";
 /** Category names short enough for the rotating line (graphemes, roughly). */
@@ -125,6 +136,7 @@ export function GuestMenu({
   );
 
   useEffect(() => warmMotion(), []);
+  useEffect(warmSheet, []);
 
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
@@ -210,7 +222,6 @@ export function GuestMenu({
     ) : null;
 
   const count = summary.count;
-  const pure = menu.theme === "soft";
   // The first featured photo on the page is fetched at once (likely the LCP).
   const firstFeatured = shown.map((c) => featuredOf(c.items)).find(Boolean);
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
@@ -416,12 +427,7 @@ export function GuestMenu({
                         id={`h-${c.id}`}
                         text={c.name.text}
                         lang={c.name.lang === locale ? undefined : c.name.lang}
-                        className={`display-face text-title block leading-[1.02] break-words hyphens-auto ${
-                          // Pure: the template's huge, thin "Menu" title.
-                          pure
-                            ? "mb-6 text-[clamp(2.5rem,11vw,3rem)] leading-[0.98] md:text-[3.75rem] xl:text-[4.25rem]"
-                            : "mb-5 text-[2.125rem] md:text-[2.75rem]"
-                        }`}
+                        className={`display-face text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
                       />
                     )}
                     <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -434,7 +440,6 @@ export function GuestMenu({
                             item={item}
                             canOrder={canOrder}
                             featured={item.id === featured}
-                            pure={pure}
                             priority={item.id === firstFeatured}
                             index={before + i}
                             onOpen={setSheet}
@@ -473,16 +478,18 @@ export function GuestMenu({
         }
       />
       {sheet && (
-        <DishSheet
-          key={sheet.id}
-          item={sheet}
-          canOrder={canOrder}
-          onClose={() => setSheet(null)}
-          onAdd={(a) => {
-            add(sheet, a);
-            setSheet(null);
-          }}
-        />
+        <Suspense fallback={null}>
+          <DishSheet
+            key={sheet.id}
+            item={sheet}
+            canOrder={canOrder}
+            onClose={() => setSheet(null)}
+            onAdd={(a) => {
+              add(sheet, a);
+              setSheet(null);
+            }}
+          />
+        </Suspense>
       )}
       {toast && (
         <p

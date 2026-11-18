@@ -592,6 +592,17 @@ body:has(.admin-shell) {
   --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 3px 12px rgb(0 0 0 / 0.28);
 }
 
+/* The photo's round edge, shaded like food on a plate (ui.tsx Plate); a grid
+   item over the photo, the same size. */
+.guest-lux .dish-photo::after {
+  content: "";
+  grid-area: 1 / 1;
+  width: calc(100% - 2 * var(--guest-dish-inset));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: var(--guest-photo-edge);
+}
+
 /* Pure: the big titles are light and a touch tighter, as in the reference. */
 .guest-lux[data-guest-theme="soft"] .display-face {
   letter-spacing: -0.012em;

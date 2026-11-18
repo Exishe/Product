@@ -48,6 +48,49 @@ export function dishPhotoUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
 }
 
+// − n + : the dish sheet's and the featured card's quantity, 1 to `max`.
+export function Stepper({
+  value,
+  max,
+  onChange,
+  labels,
+  button,
+}: {
+  value: number;
+  max: number;
+  onChange: (value: number) => void;
+  labels: { decrease: string; increase: string; quantity: string };
+  /** The round buttons' fill and size. */
+  button: string;
+}) {
+  const round = `${button} disabled:text-line-strong grid place-items-center rounded-full [&_svg]:size-[18px]`;
+  return (
+    <>
+      <button
+        type="button"
+        className={round}
+        aria-label={labels.decrease}
+        disabled={value <= 1}
+        onClick={() => onChange(Math.max(1, value - 1))}
+      >
+        <MinusIcon />
+      </button>
+      <output className="num min-w-7 text-center text-lg font-semibold" aria-label={labels.quantity}>
+        {value}
+      </output>
+      <button
+        type="button"
+        className={round}
+        aria-label={labels.increase}
+        disabled={value >= max}
+        onClick={() => onChange(Math.min(max, value + 1))}
+      >
+        <PlusIcon />
+      </button>
+    </>
+  );
+}
+
 const TAG_STYLES: Record<GuestTag, string> = {
   popular: "bg-chip text-ink",
   spicy: "bg-alert-tint text-alert",
@@ -98,8 +141,9 @@ export function initial(text: string): string {
 // caller's own position (absolute on a featured card) always applies.
 // Photos are one 600 px WebP each (photo.ts; Storage's resizing is a paid
 // feature), so there is no srcset: width/height and aspect-square keep the
-// layout still while it loads, and only the first featured photo skips lazy
-// loading.
+// layout still while it loads. The first featured photo stays lazy (an eager
+// one would hold back the load event, and the animation engine that waits
+// for it) but is fetched at high priority once it is near the screen.
 export function Plate({
   src,
   name,
@@ -114,7 +158,7 @@ export function Plate({
   /** Intrinsic size in px (for width/height, so nothing shifts while loading). */
   size: number;
   lazy?: boolean;
-  /** The page's first big photo: fetched early (it is likely the LCP). */
+  /** The page's first big photo: fetched at high priority (likely the LCP). */
   priority?: boolean;
   muted?: boolean;
   className?: string;
@@ -124,25 +168,20 @@ export function Plate({
   return (
     <span
       aria-hidden="true"
-      className={`bg-dish shadow-plate [container-type:inline-size] grid aspect-square place-items-center overflow-hidden rounded-full ${shade} ${className}`}
+      className={`bg-dish shadow-plate [container-type:inline-size] grid aspect-square place-items-center overflow-hidden rounded-full ${src ? "dish-photo" : ""} ${shade} ${className}`}
     >
       {src ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp */}
-          <img
-            src={src}
-            alt=""
-            width={size}
-            height={size}
-            loading={lazy && !priority ? "lazy" : undefined}
-            fetchPriority={priority ? "high" : undefined}
-            decoding="async"
-            className={`${layer} aspect-square h-auto w-[calc(100%-2*var(--guest-dish-inset))] bg-[var(--guest-dish-well)] object-cover`}
-          />
-          <span
-            className={`${layer} aspect-square w-[calc(100%-2*var(--guest-dish-inset))] shadow-[var(--guest-photo-edge)]`}
-          />
-        </>
+        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          loading={lazy ? "lazy" : undefined}
+          fetchPriority={priority ? "high" : undefined}
+          decoding="async"
+          className={`${layer} aspect-square h-auto w-[calc(100%-2*var(--guest-dish-inset))] bg-[var(--guest-dish-well)] object-cover`}
+        />
       ) : (
         <>
           <span className={`${layer} size-[82%] border [border-color:var(--guest-dish-rim)]`} />

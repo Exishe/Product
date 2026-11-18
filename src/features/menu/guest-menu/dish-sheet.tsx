@@ -16,7 +16,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, MinusIcon, Plate, PlusIcon, TagChip, Txt, dishPhotoUrl, initial } from "./ui";
+import { CloseIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl, initial } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -99,7 +99,7 @@ export function DishSheet({
             </h2>
             <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
               {item.portion && (
-                <span className="bg-chip text-ink rounded-full px-2.5 text-xs leading-6 font-semibold">
+                <span className={styles.portion}>
                   {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
                 </span>
               )}
@@ -209,30 +209,17 @@ export function DishSheet({
           {canOrder ? (
             <div className="flex gap-3">
               <span className="inline-flex flex-none items-center gap-1">
-                <button
-                  type="button"
-                  className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
-                  aria-label={t("sheet.decrease")}
-                  disabled={quantity <= 1}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  <MinusIcon />
-                </button>
-                <output
-                  className="num min-w-8 text-center text-lg font-semibold"
-                  aria-label={t("sheet.quantity")}
-                >
-                  {quantity}
-                </output>
-                <button
-                  type="button"
-                  className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
-                  aria-label={t("sheet.increase")}
-                  disabled={quantity >= MAX_QUANTITY}
-                  onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
-                >
-                  <PlusIcon />
-                </button>
+                <Stepper
+                  value={quantity}
+                  max={MAX_QUANTITY}
+                  onChange={setQuantity}
+                  labels={{
+                    decrease: t("sheet.decrease"),
+                    increase: t("sheet.increase"),
+                    quantity: t("sheet.quantity"),
+                  }}
+                  button="bg-surface shadow-card size-12"
+                />
               </span>
               <ThemedStarBorder
                 disabled={!valid}
