@@ -31,7 +31,7 @@ export function DishRow({
   const muted = item.soldOut ? "text-muted" : "";
   return (
     <li
-      className="relative flex break-inside-avoid items-start gap-3 border-b [border-color:color-mix(in_srgb,var(--guest-line-strong)_35%,transparent)] py-4 last:border-b-0"
+      className="relative flex items-start gap-3 border-t [border-color:color-mix(in_srgb,var(--guest-line-strong)_35%,transparent)] py-4 first:border-t-0"
       data-testid="dish"
       data-dish-id={item.id}
       data-layout="row"

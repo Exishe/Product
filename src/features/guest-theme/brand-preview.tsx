@@ -73,7 +73,7 @@ export function BrandPreview({
             {cafeName}
           </span>
         )}
-        <span className="display-face guest-flourish mt-2 block text-[1.375rem] leading-tight text-[color:var(--guest-flourish)]">
+        <span className="display-face guest-flourish text-title mt-2 block text-[1.375rem] leading-tight">
           {t("previewSection")}
         </span>
       </div>

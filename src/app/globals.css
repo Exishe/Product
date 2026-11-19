@@ -454,8 +454,8 @@ body:has(.admin-shell) {
   --guest-tab: var(--guest-accent);
   --guest-on-tab: var(--guest-on-accent);
   --guest-tab-border: var(--guest-line);
-  --guest-field-edge: color-mix(in srgb, var(--guest-line-strong) 50%, transparent); /* the search field */
-  --guest-flourish: var(--guest-glow); /* the rotating category name under the café's name */
+  --guest-field-edge: var(--guest-line-strong); /* the search field: a visible edge, 3:1 and up */
+  --guest-flourish: var(--guest-glow); /* a coloured accent line; kept for themes and brand.ts */
   --guest-add: var(--guest-accent);
   --guest-on-add: var(--guest-on-accent);
   --guest-add-shadow: none;
@@ -717,12 +717,17 @@ body:has(.admin-shell) {
   }
 }
 
-/* The script accent: one line per screen (the rotating category name). */
+/* The script accent: the section titles (guest-menu.tsx), never body text. */
 .guest-lux[data-brand-script] .guest-flourish {
   font-family: var(--brand-font-script);
   font-weight: 400;
   font-stretch: 100%;
   letter-spacing: 0;
+}
+/* Script letters join: Split Text's letters stay inline here, so they fade
+   in without rising (a transform needs inline-block, which breaks the join). */
+.guest-lux[data-brand-script] .guest-flourish [data-char] {
+  display: inline;
 }
 
 /* The photo's round edge, shaded like food on a plate (ui.tsx Plate); a grid

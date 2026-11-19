@@ -314,10 +314,7 @@ export function DishSheet({
                 disabled={!valid}
                 onClick={(e) => {
                   sparkFrom(e.currentTarget);
-                  flyToCart(e.currentTarget, {
-                    photo: item.image ? dishPhotoUrl(item.image) : null,
-                    initial: "",
-                  });
+                  flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
                 className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold`}

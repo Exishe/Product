@@ -237,7 +237,7 @@ function OrderCard({
           {t("order.title", { number: order.number })}
         </Title>
         {!latest && (
-          <span className="text-tarragon text-sm font-semibold">
+          <span className="text-muted text-sm font-semibold">
             {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
           </span>
         )}
@@ -641,7 +641,7 @@ export function OrderStatusView({
               </div>
               <button
                 type="button"
-                className="text-tarragon min-h-12 justify-self-start font-semibold"
+                className="text-accent-text min-h-12 justify-self-start font-semibold"
                 onClick={() => setChoosing(false)}
               >
                 {t("order.payBack")}
@@ -658,7 +658,7 @@ export function OrderStatusView({
                   : null}
           </p>
           <p>
-            <a href={menuHref} className="text-tarragon inline-flex min-h-12 items-center font-semibold">
+            <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
               {t("order.orderMore")}
             </a>
           </p>

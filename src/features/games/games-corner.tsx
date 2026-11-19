@@ -199,9 +199,10 @@ function GameLayer({
       isPaused: () => paused.current,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       locale,
-      // The café's brand colour (guest theme tokens) for the few accents the
-      // games draw themselves, such as a pressed pad button.
-      accent: getComputedStyle(el).getPropertyValue("--guest-accent").trim() || undefined,
+      // The café's accent for dark surfaces (guest theme tokens) for the few
+      // accents the games draw themselves, such as the ring on a pressed pad
+      // button over the dark pad (--guest-accent can be near-black).
+      accent: getComputedStyle(el).getPropertyValue("--guest-deep-accent").trim() || undefined,
       sfx: (kind, pitch) => (sfx.current ??= createSfx(() => soundOn.current)).play(kind, pitch),
     };
     return game.mount(api);

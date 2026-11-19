@@ -31,7 +31,10 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
   if (items.length === 0 && !above) return null;
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(10px+env(safe-area-inset-bottom,0px))]">
-      <div className="mx-auto grid w-full max-w-[480px] gap-2">
+      {/* Four items side by side (icon + label from 640 px) need more room than three. */}
+      <div
+        className={`mx-auto grid w-full max-w-[480px] gap-2 ${items.length > 3 ? "sm:max-w-[620px]" : ""}`}
+      >
         {above}
         {items.length > 0 && (
           <nav

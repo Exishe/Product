@@ -1184,7 +1184,7 @@
       "heading": "Titles",
       "body": "Text",
       "script": "Script accent",
-      "scriptHint": "Only for the changing section name under your name.",
+      "scriptHint": "For section titles.",
       "themeFont": "The theme's font",
       "plate": "Plates",
       "plateHint": "How dish photos sit on the menu.",

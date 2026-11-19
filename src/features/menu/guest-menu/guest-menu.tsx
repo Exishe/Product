@@ -238,10 +238,7 @@ export function GuestMenu({
   };
   const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) => {
     sparkFrom(from);
-    flyToCart(from, {
-      photo: item.image ? dishPhotoUrl(item.image) : null,
-      initial: "",
-    });
+    flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null });
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
       quantity,
@@ -495,13 +492,14 @@ export function GuestMenu({
                         className="guest-cover"
                       />
                     )}
+                    {/* guest-flourish: the brand's script font, when it has one (globals.css). */}
                     {c.name && (
                       <SplitText
                         as="h2"
                         id={`h-${c.id}`}
                         text={c.name.text}
                         lang={c.name.lang === locale ? undefined : c.name.lang}
-                        className={`display-face text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
+                        className={`display-face guest-flourish text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
                       />
                     )}
                     {!plates ? (
@@ -531,8 +529,10 @@ export function GuestMenu({
                               ))}
                           </ul>
                         )}
+                        {/* Two columns filled row by row (a grid, not CSS columns), so the
+                            hairlines sit between rows and no column ends on a stray rule. */}
                         <ul
-                          className={`bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7 ${featured ? "" : "md:columns-2 md:gap-12"}`}
+                          className={`bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7 ${featured ? "" : "md:grid md:grid-cols-2 md:gap-x-12 md:[&>li:nth-child(2)]:border-t-0"}`}
                         >
                           {c.items
                             .filter((item) => item.id !== featured)

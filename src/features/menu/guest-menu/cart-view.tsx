@@ -28,21 +28,20 @@ function LineRow({
   );
   const [open, close] = locale === "en" ? ["“", "”"] : ["«", "»"];
   const available = status === "ok";
+  // A plate only for a real photo: an empty plate per line tells the guest
+  // nothing, so photoless lines read like a receipt.
+  const photo = item?.image ? dishPhotoUrl(item.image) : null;
+  const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className="border-line grid grid-cols-[4rem_minmax(0,1fr)_auto] gap-x-4 gap-y-1 border-b py-5 last:border-b-0"
+      className={`border-line grid gap-x-4 gap-y-1 border-b py-5 last:border-b-0 ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
       data-testid="cart-line"
     >
-      <span className="row-span-4">
-        {item && (
-          <Plate
-            src={item.image ? dishPhotoUrl(item.image) : null}
-            size={64}
-            muted={!available}
-            className="size-16"
-          />
-        )}
-      </span>
+      {photo && (
+        <span className="row-span-4">
+          <Plate src={photo} size={64} muted={!available} className="size-16" />
+        </span>
+      )}
       {item ? (
         <Txt
           value={item.name}
@@ -56,7 +55,7 @@ function LineRow({
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {options.length > 0 && (
-        <span className="text-muted col-start-2 text-sm">
+        <span className={`text-muted ${col} text-sm`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -66,18 +65,18 @@ function LineRow({
         </span>
       )}
       {line.note && (
-        <span className="text-muted col-start-2 text-sm break-words">
+        <span className={`text-muted ${col} text-sm break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className="text-alert col-start-2 text-sm font-semibold" role="status">
+        <span className={`text-alert ${col} text-sm font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}
-      <div className="col-start-2 mt-1 flex items-center gap-3">
+      <div className={`${col} mt-1 flex items-center gap-3`}>
         {available ? (
           <span className="inline-flex items-center gap-1">
             <button

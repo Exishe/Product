@@ -1,6 +1,6 @@
 # Pativ («Պատիվ»): product overview
 
-State as of 17 November 2026. "Restaurant OS" is the internal project name; guests and cafés see **Pativ**.
+State as of 19 November 2026. "Restaurant OS" is the internal project name; guests and cafés see **Pativ**.
 
 ## In one paragraph
 
@@ -22,7 +22,7 @@ Pativ is an Armenian-first cloud platform for independent cafés and small resta
   - **Kissing Dishes:** food with faces merges from a bunch of greens up to a festive table.
   - **Salad Panic:** slice the panicking vegetables, but not grandma's teapot.
   - **Café Cat:** the café cat sneaks through the kitchen to steal the chef's fish.
-  
+
   The games have cartoon voices and sound effects (off by default). When the food is ready a banner pauses the game so the guest doesn't miss it.
 
 ### Waiter (phone)
@@ -84,20 +84,20 @@ Pativ is an Armenian-first cloud platform for independent cafés and small resta
 
 ## Where it lives
 
-| What | Where |
-|---|---|
-| Production (live) | https://pativ.vercel.app, with the guest menu improvements |
+| What                             | Where                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Production (live)                | https://pativ.vercel.app, with the guest menu improvements                                                         |
 | Preview (latest work, protected) | https://pativ-git-claude-new-session-qjsyvc-sroondz.vercel.app — new games, games strip, menu redesign in progress |
-| Database | Supabase project `restaurant-os-dev` (Frankfurt, free plan) |
-| Demo café | `demo-cafe`, table 1 |
+| Database                         | Supabase project `restaurant-os-dev` (Frankfurt, free plan)                                                        |
+| Demo café                        | `demo-cafe`, table 1                                                                                               |
 
 New work always goes to the preview first; production only on the owner's "go".
 
 ## Business model (decided 9 Nov 2026)
 
-| Plan | Price | What's included |
-|---|---|---|
-| **Menu** | Free, forever | QR menu in 3 languages, menu from a photo, stop list, a small "made with Pativ" link |
+| Plan        | Price                                              | What's included                                                                                                        |
+| ----------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Menu**    | Free, forever                                      | QR menu in 3 languages, menu from a photo, stop list, a small "made with Pativ" link                                   |
 | **Service** | 15,000 ֏ / month per location, or 150,000 ֏ / year | Everything in Menu, plus ordering, waiter and kitchen screens, Telegram, dashboard, no Pativ link, support in Telegram |
 
 - **Trial and set-up:** a 30-day free trial with no card. No set-up fee, and in-person set-up is free for the first 50 cafés.
@@ -111,6 +111,7 @@ New work always goes to the preview first; production only on the owner's "go".
 **Not a fit today.** Cafés that need fiscal receipts (HDM), stock control or online payment, and cafés already running iiko.
 
 **Go-to-market:**
+
 1. Visit 20 cafés in Kentron.
 2. Run 3 pilot cafés for about 8 weeks.
 3. Grow to 10 cafés and write a case study.
@@ -121,6 +122,7 @@ No paid ads.
 **Targets.** 10 cafés live with 3 paying by month 3, and 50 paying (750,000 ֏ / month) by month 9.
 
 **Main success measure.** Real orders per café per open day, with a pilot target of 30 by week 4. Other targets:
+
 - At least half of orders come through QR.
 - An order reaches the kitchen screen in 2 seconds or less.
 - Waiters accept an order within 2 minutes.
@@ -153,6 +155,18 @@ Fiscal receipts (HDM) are deliberately out of scope; cafés keep their existing 
   - a lawyer's review of the terms;
   - a support phone number and Telegram contact.
 
+## New on 19 November 2026 (preview only)
+
+Built by parallel lanes and merged together; the decisions are ADR-057 to ADR-063.
+
+- **Each café's own look (ADR-058).** On top of the theme an owner sets, in `/admin/look`, up to five brand colours with fixed jobs (header, accent, badges, lines, page), title, text and script fonts from 27 free Google fonts with Cyrillic, the plate style (white porcelain, dark, none), a wordmark picture and a wide cover photo per menu section. The editor shows each colour's contrast and ignores a colour on the guest page when text would be hard to read. A café without a brand looks exactly as before.
+- **Guest menu (ADR-060, ADR-061).** Sections with few photos read as a printed menu instead of rows of empty plates. Dishes list their allergens, and an "Allergies" filter marks dishes that contain what the guest avoids (it never calls a dish safe). "Order the same again" and "Last time here" bring back an earlier order. The bill can be split evenly. "Often ordered with this" and "Usually ready in 10–15 min" come from the café's own orders. The rotating section word and the star-trail buttons are gone.
+- **Waiter (ADR-063).** A timeline per table, how long each table has waited, a "quiet table" cue after 20 minutes, quick actions in the Orders and Calls lists, a visible queue of taps waiting to be sent while offline, and «Իմ հերթափոխը», the waiter's own shift summary.
+- **Kitchen (ADR-062).** A red allergy banner when a note mentions an allergy, different sounds for a new order, a cancellation and an allergy order (with a pitch per screen), an all-day count of each dish still to cook, and striking dishes one by one.
+- **Owner admin (ADR-057).** A new home with today's revenue, orders, open tables and a to-do list; a cost price per dish (owner only); and a menu analysis page that sorts dishes by how often they sell and how much they earn, with a busy-hours table.
+- **Games (ADR-059).** Still plain canvas, no game engine: the games lower their resolution on slow phones, stop in a hidden tab, use no emoji, and take the café's colours.
+- **Database:** three migrations (`guest_hints`, `menu_insights`, `brand_profile`) reach the dev database through the CI `migrate` job after the push. Until then those features stay hidden or show a notice.
+
 ## In progress right now
 
 - **Guest menu redesign, on preview only:**
@@ -160,6 +174,6 @@ Fiscal receipts (HDM) are deliberately out of scope; cafés keep their existing 
   - three looks each café picks in its admin («Հյուրի էջի տեսքը»): Pure (recommended: the owner's reference look, light grey, floating white cards, dishes on dark plates, one amber accent), Evening (noir and champagne) and Wine (dark wine with one red), plus the café's own brand colour and logo;
   - dishes as cards on round plates, a featured dish per section, an order panel beside the menu on computers;
   - a floating bottom bar: menu, order, games, call the waiter;
-  - the Stardom display font and four small effects (letters rising in, rotating category names, cards tilting under the finger, a spark when adding).
+  - the Stardom display font and three small effects (letters rising in, cards tilting under the finger, a spark when adding).
 - **One look for the whole platform (ADR-056), on preview only:** the waiter app, the kitchen board (now light), the owner admin, sign-in and sign-up follow the same Pure look: grey page, floating white cards, light serif titles, black pill buttons.
 - **Production:** the games and the redesign go to production when the owner says "go".
