@@ -371,7 +371,62 @@
       "ordersEmpty": "No orders to accept or serve.",
       "callsEmpty": "No calls or bill requests.",
       "ago": "{minutes} min ago",
-      "now": "just now"
+      "now": "just now",
+      "action": "{action}, table {label}",
+      "closeBill": "Close the bill"
+    },
+    "quiet": "quiet {minutes} min",
+    "timeline": {
+      "title": "What happened",
+      "seated": "Guests sat down",
+      "placed": "Order {number} came in",
+      "placedByWaiter": "Order {number} entered by a waiter",
+      "accepted": "Order {number} accepted",
+      "ready": "Order {number} ready",
+      "readyAt": "Order {number} ready: {station}",
+      "served": "Order {number} served",
+      "call": "Called the waiter",
+      "bill": "Asked for the bill",
+      "quiet": "Nothing new for {minutes} min. Worth a look."
+    },
+    "queue": {
+      "chip": "Not sent: {count}",
+      "title": "Waiting to send",
+      "hint": "These taps are saved on this device. They go out by themselves when the connection is back.",
+      "empty": "Everything has been sent.",
+      "kind": {
+        "accept": "Accept the order",
+        "reject": "Reject the order",
+        "serve": "Mark served",
+        "resolve": "Answer the call",
+        "place": "New order, {total}"
+      },
+      "savedAt": "saved at {time}",
+      "tries": "{count, plural, one {# try} other {# tries}} so far",
+      "sendNow": "Try to send now",
+      "remove": "Remove",
+      "removeConfirm": "Remove, don't send",
+      "keep": "Keep",
+      "sentTitle": "Sent recently",
+      "sentAt": "sent at {time}",
+      "close": "Close"
+    },
+    "shift": {
+      "open": "My shift",
+      "title": "My shift",
+      "subtitle": "Business day {date}. Only what this device recorded.",
+      "tables": "Tables closed",
+      "cash": "Cash to hand over",
+      "card": "Paid by card",
+      "total": "Total taken",
+      "entered": "Orders entered",
+      "accepted": "QR orders accepted",
+      "acceptTime": "Average wait before accepting",
+      "underMinute": "under 1 min",
+      "none": "—",
+      "loading": "Loading…",
+      "error": "Couldn't load it. Check the connection and open it again.",
+      "close": "Close"
     }
   },
   "menu": {

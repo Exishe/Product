@@ -13,18 +13,19 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { areaLayout, type FloorArea, type FloorTable, type TableState } from "./floor-model";
+import { areaLayout, tileAge, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
 // Every table state has a colour, an icon and a word (ADR-054), so it never
-// relies on colour alone. Colours from direction A: green is food or a seated
-// party, amber a new order, red a call, ink the bill.
+// relies on colour alone. A free table is an empty outline on the floor; a
+// seated one a white card with a green edge (5.6:1 on the staff grey); amber
+// is a new order (ADR-056's one warm accent), red a call, ink the bill.
 const STATE_CLASS: Record<TableState, string> = {
-  free: "border-transparent bg-white text-staff-label2",
-  busy: "border-tarragon/40 bg-tarragon-tint text-tarragon",
-  new: "border-apricot-deep bg-apricot text-ink",
-  ready: "border-tarragon bg-tarragon text-white",
-  call: "border-[3px] border-pomegranate bg-pom-tint text-pomegranate",
-  bill: "border-ink bg-ink text-white",
+  free: "border-dashed border-line-strong bg-transparent text-staff-label2 shadow-none",
+  busy: "border-tarragon bg-white text-tarragon shadow-[var(--shadow-soft)]",
+  new: "border-amber-text bg-amber text-ink shadow-[var(--shadow-soft)]",
+  ready: "border-tarragon bg-tarragon text-white shadow-[var(--shadow-soft)]",
+  call: "border-[3px] border-pomegranate bg-pom-tint text-pomegranate shadow-[var(--shadow-soft)]",
+  bill: "border-ink bg-ink text-white shadow-[var(--shadow-soft)]",
 };
 const NUMBER_CLASS: Record<TableState, string> = {
   free: "text-ink",
@@ -44,9 +45,9 @@ export const STATE_ICON: Record<TableState, LucideIcon> = {
 };
 // The small round badge used in the legend and the Orders and Calls lists.
 export const STATE_BADGE: Record<TableState, string> = {
-  free: "bg-white text-staff-label2 ring-1 ring-staff-sep",
-  busy: "bg-tarragon-tint text-tarragon",
-  new: "bg-apricot text-ink",
+  free: "text-staff-label2 outline-2 outline-dashed -outline-offset-2 outline-line-strong",
+  busy: "bg-white text-tarragon ring-2 ring-inset ring-tarragon",
+  new: "bg-amber text-ink",
   ready: "bg-tarragon text-white",
   call: "bg-pomegranate text-white",
   bill: "bg-ink text-white",
@@ -106,10 +107,15 @@ export function FloorMap({
   tables,
   selected,
   onSelect,
+  now,
+  pendingTables,
 }: {
   tables: readonly FloorTable[];
   selected: string | null;
   onSelect: (id: string) => void;
+  now: number;
+  /** Tables with taps still waiting in this device's outbox. */
+  pendingTables?: ReadonlySet<string>;
 }) {
   const t = useTranslations("waiter");
   const layout = areaLayout(tables);
@@ -135,6 +141,8 @@ export function FloorMap({
               wide={layout.placed ? layout.wide.has(table.id) : table.shape === "rect"}
               selected={selected === table.id}
               onSelect={onSelect}
+              now={now}
+              pending={pendingTables?.has(table.id) ?? false}
             />
           ))}
         </div>
@@ -168,21 +176,25 @@ function TableButton({
   wide,
   selected,
   onSelect,
+  now,
+  pending,
 }: {
   table: FloorTable;
   wide: boolean;
   selected: boolean;
   onSelect: (id: string) => void;
+  now: number;
+  pending: boolean;
 }) {
   const t = useTranslations("waiter");
   const state =
     table.state === "bill" && table.bill?.payment
       ? t(table.bill.payment === "card" ? "state.billCard" : "state.billCash")
       : t(`state.${table.state}`);
-  const minutes =
-    (table.state === "busy" || table.state === "bill") && table.openMinutes !== null
-      ? table.openMinutes
-      : null;
+  // How long the most urgent thing has waited; a seated table shows how long
+  // it has been open, or that it has gone quiet (no order, call or plate for 20 min).
+  const age = tileAge(table, now);
+  const minutes = age?.minutes ?? (table.state === "busy" ? table.openMinutes : null);
   return (
     <button
       type="button"
@@ -190,11 +202,13 @@ function TableButton({
       data-testid="table"
       data-table={table.label}
       data-state={table.state}
+      data-quiet={age?.kind === "quiet" ? "" : undefined}
+      data-pending={pending ? "" : undefined}
       aria-pressed={selected}
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center shadow-[var(--shadow-soft)] transition-colors duration-150",
+        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150 motion-reduce:transition-none",
         table.shape === "round" ? "rounded-full sm:aspect-square" : "rounded-2xl",
         wide && "col-span-2",
         STATE_CLASS[table.state],
@@ -224,8 +238,22 @@ function TableButton({
         )}
       />
       <span className="max-w-full text-[0.8125rem] leading-tight font-semibold break-words">{state}</span>
-      {minutes !== null && (
-        <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>
+      {age?.kind === "quiet" ? (
+        <span className="num text-amber-text text-[0.8125rem] leading-tight font-semibold">
+          {t("quiet", { minutes: age.minutes })}
+        </span>
+      ) : (
+        minutes !== null && (
+          <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>
+        )
+      )}
+      {/* A tap on this table still waits in the outbox (header «Չուղարկված»). */}
+      {pending && (
+        <span
+          aria-hidden="true"
+          data-testid="pending-dot"
+          className="bg-amber ring-ink absolute top-2.5 right-2.5 size-3 rounded-full ring-2"
+        />
       )}
     </button>
   );

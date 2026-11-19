@@ -12,12 +12,19 @@ import { createClient } from "@/lib/supabase/server";
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 // The live part of the first paint, with the time it was read.
-async function loadFloor(supabase: Client, location: { id: string; published_menu_version_id: string | null }) {
+async function loadFloor(
+  supabase: Client,
+  location: { id: string; published_menu_version_id: string | null },
+) {
   const renderedAt = Date.now();
   const [floor, snapshot, soldOut] = await Promise.all([
     fetchFloor(supabase, location.id),
     location.published_menu_version_id
-      ? supabase.from("menu_versions").select("snapshot").eq("id", location.published_menu_version_id).maybeSingle()
+      ? supabase
+          .from("menu_versions")
+          .select("snapshot")
+          .eq("id", location.published_menu_version_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     fetchSoldOut(supabase, location.id, new Date(renderedAt)),
   ]);
@@ -37,7 +44,7 @@ export default async function WaiterPage() {
     supabase.from("restaurants").select("name").eq("id", me.restaurantId).maybeSingle(),
     supabase
       .from("locations")
-      .select("id, name, timezone, guest_locales, published_menu_version_id")
+      .select("id, name, timezone, business_day_starts, guest_locales, published_menu_version_id")
       .eq("restaurant_id", me.restaurantId)
       .order("created_at")
       .limit(1),
@@ -62,11 +69,19 @@ export default async function WaiterPage() {
 
   const messages = await getMessages();
   return (
-    <NextIntlClientProvider locale={locale} timeZone={location.timezone} messages={{ waiter: messages.waiter }}>
+    <NextIntlClientProvider
+      locale={locale}
+      timeZone={location.timezone}
+      messages={{ waiter: messages.waiter }}
+    >
       <WaiterApp
         cafeName={restaurant?.name ?? ""}
-        location={{ id: location.id, timeZone: location.timezone }}
-        initialRows={floor.ok && floor.data ? floor.data : { areas: [], tables: [], sessions: [], requests: [], stations: [] }}
+        location={{ id: location.id, timeZone: location.timezone, dayStartsAt: location.business_day_starts }}
+        initialRows={
+          floor.ok && floor.data
+            ? floor.data
+            : { areas: [], tables: [], sessions: [], requests: [], stations: [] }
+        }
         menu={menu}
         renderedAt={renderedAt}
         memberId={me.id}

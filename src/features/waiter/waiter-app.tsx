@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { BellRing, CircleCheck, ClipboardList, LayoutGrid, WifiOff } from "lucide-react";
+import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Wallet, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -34,6 +34,7 @@ import {
   buildFloor,
   inbox,
   needCount,
+  tableOfAction,
   type FloorRows,
   type FloorTable,
   type Payment,
@@ -41,14 +42,16 @@ import {
 } from "./floor-model";
 import { NotifyToggle } from "./notify-toggle";
 import { OrderPad, type PadOrder } from "./order-pad";
+import { QueueSheet, type SentTap } from "./queue-sheet";
 import { SettleSheet } from "./settle";
+import { ShiftSheet } from "./shift-sheet";
 import { TablePanel } from "./table-panel";
 import { TabBar } from "./tab-bar";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
 
 export type WaiterAppProps = {
   cafeName: string;
-  location: { id: string; timeZone: string };
+  location: { id: string; timeZone: string; dayStartsAt: string };
   initialRows: FloorRows;
   menu: GuestCategory[];
   renderedAt: number;
@@ -99,7 +102,11 @@ type Tab = "tables" | "orders" | "calls";
 type Sheet =
   | { kind: "pad"; tableId: string }
   | { kind: "settle"; tableId: string; sessionId: string; key: string }
+  | { kind: "queue" }
+  | { kind: "shift" }
   | null;
+
+const RECENT_SENT = 5;
 
 function App(p: WaiterAppProps) {
   const t = useTranslations("waiter");
@@ -123,6 +130,7 @@ function App(p: WaiterAppProps) {
   const [area, setArea] = useState<string | null | undefined>(undefined);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState<Tab>("tables");
+  const [recent, setRecent] = useState<SentTap[]>([]);
 
   const nowRef = useRef(now);
   useEffect(() => {
@@ -222,9 +230,23 @@ function App(p: WaiterAppProps) {
     [floor.tables, sent, outbox.entries],
   );
   const tablesRef = useRef(tables);
+  const floorTablesRef = useRef(floor.tables);
   useEffect(() => {
     tablesRef.current = tables;
+    floorTablesRef.current = floor.tables;
   });
+  // Which tables have a tap still waiting here: a dot on their tile.
+  const pendingTables = useMemo(
+    () =>
+      new Set(
+        outbox.entries.flatMap((e) => {
+          const owner = tableOfAction(floor.tables, e.action);
+          return owner ? [owner.id] : [];
+        }),
+      ),
+    [outbox.entries, floor.tables],
+  );
+  const labelOf = (action: WaiterAction) => tableOfAction(floor.tables, action)?.label ?? null;
 
   const currentArea =
     area !== undefined && floor.areas.some((a) => a.id === area) ? area : (floor.areas[0]?.id ?? null);
@@ -242,6 +264,13 @@ function App(p: WaiterAppProps) {
       outbox.subscribe((e) => {
         if (e.type === "sent") {
           setSent((list) => [...list, { action: e.entry.action, at: performance.now() }]);
+          const label = tableOfAction(floorTablesRef.current, e.entry.action)?.label ?? null;
+          setRecent((list) =>
+            [{ id: e.entry.id, action: e.entry.action, label, at: Date.now() }, ...list].slice(
+              0,
+              RECENT_SENT,
+            ),
+          );
           void refresh();
         } else if (e.type === "stale") {
           // Someone else acted first (Review focus 4): say so, show the truth.
@@ -340,7 +369,9 @@ function App(p: WaiterAppProps) {
   }, []);
 
   const need = needCount(tables);
-  const sheetTable = sheet ? tables.find((x) => x.id === sheet.tableId) : null;
+  const sheetTable = sheet && "tableId" in sheet ? tables.find((x) => x.id === sheet.tableId) : null;
+  const openSettle = (tableId: string, sessionId: string) =>
+    setSheet({ kind: "settle", tableId, sessionId, key: crypto.randomUUID() });
   const lists = useMemo(() => inbox(tables, now), [tables, now]);
 
   // Phones show the map or one table (a pushed screen with a back button);
@@ -364,7 +395,30 @@ function App(p: WaiterAppProps) {
       <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
         <p className="m-0 min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">{p.cafeName}</p>
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
-        <ConnectionPill state={connection} waiting={outbox.entries.length} />
+        {/* The outbox stays visible until it is empty, online or not: a waiter
+            who can't see a queued order enters it again. */}
+        {outbox.entries.length > 0 && (
+          <button
+            type="button"
+            data-testid="queue-chip"
+            onClick={() => setSheet({ kind: "queue" })}
+            className="bg-amber text-ink inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-semibold"
+          >
+            <CloudUpload aria-hidden="true" className="size-4 shrink-0" />
+            <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
+          </button>
+        )}
+        <ConnectionPill state={connection} waiting={0} />
+        <button
+          type="button"
+          data-testid="shift-open"
+          aria-label={t("shift.open")}
+          title={t("shift.open")}
+          onClick={() => setSheet({ kind: "shift" })}
+          className="text-ink hover:bg-staff-fill grid size-12 shrink-0 place-items-center rounded-full"
+        >
+          <Wallet aria-hidden="true" className="size-6" />
+        </button>
         <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold">
           {formatTime(new Date(now), p.location.timeZone)}
         </span>
@@ -412,7 +466,7 @@ function App(p: WaiterAppProps) {
                 <div className="grid content-start gap-3 rounded-2xl bg-white p-4">
                   <p className="m-0 text-[1.0625rem]">{t("noTables")}</p>
                   {p.canManageTables && (
-                    <Link href="/admin/tables" className="text-tarragon font-semibold underline">
+                    <Link href="/admin/tables" className="text-ink font-semibold underline">
                       {t("noTablesLink")}
                     </Link>
                   )}
@@ -420,7 +474,13 @@ function App(p: WaiterAppProps) {
               ) : (
                 <>
                   <AreaTabs areas={floor.areas} current={currentArea} onPick={(id) => setArea(id)} />
-                  <FloorMap tables={areaTables} selected={selected} onSelect={openTable} />
+                  <FloorMap
+                    tables={areaTables}
+                    selected={selected}
+                    onSelect={openTable}
+                    now={now}
+                    pendingTables={pendingTables}
+                  />
                 </>
               ))}
             {tab === "orders" && (
@@ -429,6 +489,8 @@ function App(p: WaiterAppProps) {
                 empty={t("inbox.ordersEmpty")}
                 selected={selected}
                 onSelect={openTable}
+                onAction={act}
+                onSettle={openSettle}
               />
             )}
             {tab === "calls" && (
@@ -437,6 +499,8 @@ function App(p: WaiterAppProps) {
                 empty={t("inbox.callsEmpty")}
                 selected={selected}
                 onSelect={openTable}
+                onAction={act}
+                onSettle={openSettle}
               />
             )}
           </main>
@@ -467,11 +531,11 @@ function App(p: WaiterAppProps) {
               onBack={closeTable}
               onAction={act}
               onOpenPad={() => setSheet({ kind: "pad", tableId: table.id })}
-              onSettle={(sessionId) =>
-                setSheet({ kind: "settle", tableId: table.id, sessionId, key: crypto.randomUUID() })
-              }
+              onSettle={(sessionId) => openSettle(table.id, sessionId)}
               onSeatWaiting={(id) => void onSeatWaiting(id)}
               onCancelLine={onCancelLine}
+              now={now}
+              timeZone={p.location.timeZone}
             />
           ) : (
             <div className="text-staff-label2 grid flex-1 place-content-center justify-items-center gap-3 p-6 text-center">
@@ -499,6 +563,26 @@ function App(p: WaiterAppProps) {
           online={online}
           onClose={() => setSheet(null)}
           onConfirm={(payments) => onSettle(sheetTable, sheet.sessionId, sheet.key, payments)}
+        />
+      )}
+      {sheet?.kind === "queue" && (
+        <QueueSheet
+          entries={outbox.entries}
+          sent={recent}
+          labelOf={labelOf}
+          timeZone={p.location.timeZone}
+          onRetry={outbox.retry}
+          onDiscard={outbox.discard}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      {sheet?.kind === "shift" && (
+        <ShiftSheet
+          locationId={p.location.id}
+          memberId={p.memberId}
+          timeZone={p.location.timeZone}
+          dayStartsAt={p.location.dayStartsAt}
+          onClose={() => setSheet(null)}
         />
       )}
       {revoked && <DisconnectedScreen />}

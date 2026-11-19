@@ -29,13 +29,16 @@ type Migrations = { calls: boolean; guard: boolean; billPreference: boolean };
 const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrations: Migrations }>({
   cafe: [async ({}, provide) => provide(await createWaiterCafe()), { scope: "worker" }],
   device: [
-    async ({ browser, cafe }, provide, info) => provide(await pairWaiterDevice(browser, cafe, info.project.use.baseURL)),
+    async ({ browser, cafe }, provide, info) =>
+      provide(await pairWaiterDevice(browser, cafe, info.project.use.baseURL)),
     { scope: "worker" },
   ],
   migrations: [
     async ({ cafe }, provide) =>
       provide({
-        calls: (await hasFunction(cafe.owner, "guest_service_request")) && (await hasFunction(cafe.owner, "resolve_service_request")),
+        calls:
+          (await hasFunction(cafe.owner, "guest_service_request")) &&
+          (await hasFunction(cafe.owner, "resolve_service_request")),
         guard: await hasFunction(cafe.owner, "seat_waiting_guests"),
         billPreference: await hasBillPreference(cafe.owner),
       }),
@@ -44,9 +47,11 @@ const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrati
   storageState: async ({ device }, provide) => provide(device.storageState),
 });
 
-const OFFLINE_NOISE = /ERR_INTERNET_DISCONNECTED|ERR_NETWORK_CHANGED|WebSocket connection to .* failed|Failed to fetch/;
+const OFFLINE_NOISE =
+  /ERR_INTERNET_DISCONNECTED|ERR_NETWORK_CHANGED|WebSocket connection to .* failed|Failed to fetch/;
 
-const shot = (page: Page, name: string, project: string) => page.screenshot({ path: `${SCREENSHOTS}/${project}-${name}.png`, fullPage: false });
+const shot = (page: Page, name: string, project: string) =>
+  page.screenshot({ path: `${SCREENSHOTS}/${project}-${name}.png`, fullPage: false });
 
 async function openTable(page: Page, label: string) {
   await tableButton(page, label).click();
@@ -90,7 +95,10 @@ test.describe("waiter app", () => {
   });
 
   test("7.1 a call turns the table red and one tap resolves it", async ({ page, cafe, migrations }, info) => {
-    test.skip(!migrations.calls, "needs migrations 20261109190300_guest_service_requests and 20261109204500_waiter_app on the dev project");
+    test.skip(
+      !migrations.calls,
+      "needs migrations 20261109190300_guest_service_requests and 20261109204500_waiter_app on the dev project",
+    );
     const guest = await seatGuest(cafe, "2");
     await guestOrder(cafe, guest, [{ dish: "coffee", quantity: 1 }]);
     await page.goto("/waiter");
@@ -104,7 +112,10 @@ test.describe("waiter app", () => {
     await panel(page).getByRole("button", { name: "Գնում եմ" }).click();
     await expect(tableButton(page, "2")).toHaveAttribute("data-state", "busy");
     await expect
-      .poll(async () => (await cafe.owner.from("service_requests").select("status").eq("id", call).single()).data?.status)
+      .poll(
+        async () =>
+          (await cafe.owner.from("service_requests").select("status").eq("id", call).single()).data?.status,
+      )
       .toBe("resolved");
 
     // Asking for the bill: «Հաշիվ» in ink.
@@ -113,8 +124,15 @@ test.describe("waiter app", () => {
     await expect(panel(page).getByText("Հաշիվ են խնդրում")).toBeVisible();
   });
 
-  test("7.1 a bill asked for by card shows «Հաշիվ՝ քարտով» and the settle sheet preselects the guest's choice", async ({ page, cafe, migrations }, info) => {
-    test.skip(!migrations.calls || !migrations.billPreference, "needs migration 20261110120000_bill_payment_preference on the dev project");
+  test("7.1 a bill asked for by card shows «Հաշիվ՝ քարտով» and the settle sheet preselects the guest's choice", async ({
+    page,
+    cafe,
+    migrations,
+  }, info) => {
+    test.skip(
+      !migrations.calls || !migrations.billPreference,
+      "needs migration 20261110120000_bill_payment_preference on the dev project",
+    );
     const guest = await seatGuest(cafe, "4");
     await guestOrder(cafe, guest, [{ dish: "coffee", quantity: 1 }]);
     await page.goto("/waiter");
@@ -136,7 +154,10 @@ test.describe("waiter app", () => {
     await shot(page, "71-bill-preference", info.project.name);
   });
 
-  test("7.2 a large QR order waits for acceptance and reaches the kitchen after «Ընդունել»", async ({ page, cafe }, info) => {
+  test("7.2 a large QR order waits for acceptance and reaches the kitchen after «Ընդունել»", async ({
+    page,
+    cafe,
+  }, info) => {
     const guest = await seatGuest(cafe, "3");
     const order = await guestOrder(cafe, guest, [{ dish: "khashlama", quantity: 2 }]);
     expect((await orderStatus(cafe, order))?.status).toBe("placed");
@@ -158,19 +179,24 @@ test.describe("waiter app", () => {
 
     // Ready in the kitchen → «Մատուցված է» on the waiter's card.
     await kitchenReady(cafe, order);
-    await card.getByRole("button", { name: "Մատուցված է" }).click();
+    await card.getByRole("button", { name: "Նշել մատուցված" }).click();
     await expect.poll(async () => (await orderStatus(cafe, order))?.kitchen_status).toBe("served");
 
     // Cancelling a served line asks for a manager.
     await card.getByRole("button", { name: /^Չեղարկել՝/ }).click();
     const sheet = page.getByRole("dialog", { name: "Չեղարկել ուտեստը" });
-    await expect(sheet.getByRole("alert")).toHaveText("Մատուցված ուտեստը կարող է չեղարկել միայն մենեջերը։ Կանչեք մենեջերին։");
+    await expect(sheet.getByRole("alert")).toHaveText(
+      "Մատուցված ուտեստը կարող է չեղարկել միայն մենեջերը։ Կանչեք մենեջերին։",
+    );
     await expect(sheet.getByRole("button", { name: "Չեղարկել", exact: true })).toHaveCount(0);
     await shot(page, "72-manager-only", info.project.name);
     await sheet.getByRole("button", { name: "Հետ" }).click();
   });
 
-  test("7.2 the order pad sends a waiter order, with options, through the outbox", async ({ page, cafe }, info) => {
+  test("7.2 the order pad sends a waiter order, with options, through the outbox", async ({
+    page,
+    cafe,
+  }, info) => {
     // Its own table: the bill test seats a guest at table 4.
     await page.goto("/waiter");
     await openTable(page, "9");
@@ -190,14 +216,23 @@ test.describe("waiter app", () => {
     await expect(tableButton(page, "9")).toHaveAttribute("data-state", "busy");
     await expect(panel(page).getByTestId("table-total")).toHaveText("7 100 ֏");
     const placed = async () =>
-      (await cafe.owner.from("orders").select("id, source, status, total").eq("table_id", cafe.tables["9"]?.id ?? "").maybeSingle()).data;
+      (
+        await cafe.owner
+          .from("orders")
+          .select("id, source, status, total")
+          .eq("table_id", cafe.tables["9"]?.id ?? "")
+          .maybeSingle()
+      ).data;
     await expect.poll(placed).toMatchObject({ source: "waiter", status: "accepted", total: 7100 });
     expect(await tickets(cafe, (await placed())?.id ?? "")).toHaveLength(1);
     await expect(panel(page).getByTestId("unsent")).toHaveCount(0);
     await expect(panel(page).getByTestId("order").first()).toContainText("Պատվեր ");
   });
 
-  test("7.3 full loop: ordered, accepted, ready, served, settled by card, table free, the old guest can't order", async ({ page, cafe }, info) => {
+  test("7.3 full loop: ordered, accepted, ready, served, settled by card, table free, the old guest can't order", async ({
+    page,
+    cafe,
+  }, info) => {
     const guest = await seatGuest(cafe, "5");
     const order = await guestOrder(cafe, guest, [
       { dish: "tolma", quantity: 1 },
@@ -209,9 +244,18 @@ test.describe("waiter app", () => {
     await expect.poll(async () => (await tickets(cafe, order)).length).toBe(1);
     await kitchenReady(cafe, order);
     await expect(tableButton(page, "5")).toHaveAttribute("data-state", "ready");
-    await panel(page).getByRole("button", { name: "Մատուցված է" }).click();
+    await panel(page).getByRole("button", { name: "Նշել մատուցված" }).click();
     await expect(tableButton(page, "5")).toHaveAttribute("data-state", "busy");
     await expect(panel(page).getByTestId("table-total")).toHaveText("7 700 ֏");
+    // «Ինչ է եղել»: the evening of the table, oldest first.
+    await expect
+      .poll(async () =>
+        panel(page)
+          .getByTestId("timeline-event")
+          .evaluateAll((els) => els.map((e) => e.getAttribute("data-kind"))),
+      )
+      .toEqual(["seated", "placed", "accepted", "ready", "served"]);
+    await shot(page, "73-timeline", info.project.name);
 
     await panel(page).getByRole("button", { name: "Փակել սեղանը" }).click();
     const sheet = page.getByRole("dialog", { name: "Սեղան 5" });
@@ -228,14 +272,59 @@ test.describe("waiter app", () => {
 
     await expect(tableButton(page, "5")).toHaveAttribute("data-state", "free");
     expect((await orderStatus(cafe, order))?.paid_at).not.toBeNull();
-    const { data: payments } = await cafe.owner.from("payments").select("method, amount").eq("location_id", cafe.locationId).eq("amount", 7700);
+    const { data: payments } = await cafe.owner
+      .from("payments")
+      .select("method, amount")
+      .eq("location_id", cafe.locationId)
+      .eq("amount", 7700);
     expect(payments).toEqual([{ method: "card_terminal", amount: 7700 }]);
-    await expect(guestOrder(cafe, guest, [{ dish: "coffee", quantity: 1 }])).rejects.toThrow(/guest_session_invalid/);
+    await expect(guestOrder(cafe, guest, [{ dish: "coffee", quantity: 1 }])).rejects.toThrow(
+      /guest_session_invalid/,
+    );
     await shot(page, "73-free", info.project.name);
+
+    // «Իմ հերթափոխը»: this device closed the table, so the card money is on it.
+    await page.getByTestId("shift-open").click();
+    const shift = page.getByRole("dialog", { name: "Իմ հերթափոխը" });
+    await expect(shift.getByTestId("shift-work")).toContainText("Փակված սեղաններ");
+    await expect(shift.getByTestId("shift-money")).toContainText("Վճարված քարտով");
+    await shot(page, "73-shift", info.project.name);
+    await shift.getByRole("button", { name: "Փակել" }).click();
+    await expect(shift).toHaveCount(0);
   });
 
-  test("7.3 a new guest at a table that looks finished makes the waiter close the old bill first", async ({ page, cafe, migrations }, info) => {
-    test.skip(!migrations.guard || !migrations.calls, "needs migration 20261109204500_waiter_app (and 20261109190300) on the dev project");
+  test("quick actions: «Գնում եմ» from the Calls tab without opening the table", async ({
+    page,
+    cafe,
+    migrations,
+  }, info) => {
+    test.skip(!migrations.calls, "needs the service request migrations on the dev project");
+    const guest = await seatGuest(cafe, "3");
+    const call = await guestRequest(guest, "call_waiter");
+    await page.goto("/waiter");
+    await page.getByTestId("tab-calls").click();
+    const row = page.getByTestId("inbox-row").filter({ has: page.locator('[data-quick="going"]') });
+    await expect(row).toHaveAttribute("data-table", "3");
+    await shot(page, "quick-calls", info.project.name);
+    await row.getByRole("button", { name: "Գնում եմ, սեղան 3" }).click();
+    await expect
+      .poll(
+        async () =>
+          (await cafe.owner.from("service_requests").select("status").eq("id", call).single()).data?.status,
+      )
+      .toBe("resolved");
+    await expect(row).toHaveCount(0);
+  });
+
+  test("7.3 a new guest at a table that looks finished makes the waiter close the old bill first", async ({
+    page,
+    cafe,
+    migrations,
+  }, info) => {
+    test.skip(
+      !migrations.guard || !migrations.calls,
+      "needs migration 20261109204500_waiter_app (and 20261109190300) on the dev project",
+    );
     const first = await seatGuest(cafe, "6");
     const old = await guestOrder(cafe, first, [{ dish: "tolma", quantity: 1 }]);
     await kitchenServe(cafe, old);
@@ -265,7 +354,12 @@ test.describe("waiter app", () => {
     await expect.poll(async () => (await tickets(cafe, fresh)).length).toBe(1);
   });
 
-  test("offline: taps queue, closing waits for the connection, the queue replays", async ({ page, cafe, context, consoleErrors }, info) => {
+  test("offline: taps queue, closing waits for the connection, the queue replays", async ({
+    page,
+    cafe,
+    context,
+    consoleErrors,
+  }, info) => {
     const guest = await seatGuest(cafe, "7");
     const order = await guestOrder(cafe, guest, [{ dish: "tolma", quantity: 2 }]);
     await page.goto("/waiter");
@@ -275,14 +369,30 @@ test.describe("waiter app", () => {
     await expect(panel(page).getByTestId("unsent")).toBeVisible();
     await expect(page.getByTestId("connection")).toContainText(/Միանում է|Կապ չկա/);
     expect((await orderStatus(cafe, order))?.status).toBe("placed");
+    // The queue stays in sight: a chip in the header, a dot on the table.
+    await expect(page.getByTestId("queue-chip")).toHaveText("Չուղարկված՝ 1");
+    await page.getByTestId("queue-chip").click();
+    const queue = page.getByRole("dialog", { name: "Սպասում են ուղարկման" });
+    await expect(queue.getByTestId("queue-entry")).toHaveCount(1);
+    await expect(queue.getByTestId("queue-entry")).toContainText("Սեղան 7 · Ընդունել պատվերը");
+    await shot(page, "offline-queue-sheet", info.project.name);
+    await queue.getByRole("button", { name: "Փակել" }).click();
     await shot(page, "offline-queued", info.project.name);
     await context.setOffline(false);
-    await expect.poll(async () => (await orderStatus(cafe, order))?.status, { timeout: 15_000 }).toBe("accepted");
+    await expect
+      .poll(async () => (await orderStatus(cafe, order))?.status, { timeout: 15_000 })
+      .toBe("accepted");
     await expect(panel(page).getByTestId("unsent")).toHaveCount(0);
+    await expect(page.getByTestId("queue-chip")).toHaveCount(0);
     consoleErrors.splice(0, consoleErrors.length, ...consoleErrors.filter((e) => !OFFLINE_NOISE.test(e)));
   });
 
-  test("two devices on one order: the loser sees «Արդեն փոխվել է» and the truth (Review focus 4)", async ({ page, cafe, context, consoleErrors }) => {
+  test("two devices on one order: the loser sees «Արդեն փոխվել է» and the truth (Review focus 4)", async ({
+    page,
+    cafe,
+    context,
+    consoleErrors,
+  }) => {
     const guest = await seatGuest(cafe, "8");
     const order = await guestOrder(cafe, guest, [{ dish: "tolma", quantity: 2 }]);
     await page.goto("/waiter");
@@ -290,13 +400,24 @@ test.describe("waiter app", () => {
     await context.setOffline(true);
     await panel(page).getByRole("button", { name: "Ընդունել" }).click();
     // Meanwhile the owner rejects it from another device.
-    const { error } = await cafe.owner.schema("api").rpc("reject_order", { p_order_id: order, p_reason: "test" });
+    const { error } = await cafe.owner
+      .schema("api")
+      .rpc("reject_order", { p_order_id: order, p_reason: "test" });
     expect(error).toBeNull();
     await context.setOffline(false);
-    await expect(page.getByTestId("toast").filter({ hasText: "Արդեն փոխվել է" })).toBeVisible({ timeout: 15_000 });
-    await expect(panel(page).locator(`[data-order-id="${order}"]`)).toHaveAttribute("data-status", "rejected");
+    await expect(page.getByTestId("toast").filter({ hasText: "Արդեն փոխվել է" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(panel(page).locator(`[data-order-id="${order}"]`)).toHaveAttribute(
+      "data-status",
+      "rejected",
+    );
     expect((await orderStatus(cafe, order))?.status).toBe("rejected");
     // The refused replay logs a 400 on purpose.
-    consoleErrors.splice(0, consoleErrors.length, ...consoleErrors.filter((e) => !/400/.test(e) && !OFFLINE_NOISE.test(e)));
+    consoleErrors.splice(
+      0,
+      consoleErrors.length,
+      ...consoleErrors.filter((e) => !/400/.test(e) && !OFFLINE_NOISE.test(e)),
+    );
   });
 });
