@@ -440,7 +440,8 @@
     "namesSection": "Название",
     "photoAfterSave": "Сначала сохраните блюдо, потом добавьте фото.",
     "priceAndKitchen": "Цена и кухня",
-    "edit": "Изменить"
+    "edit": "Изменить",
+    "addPhotoFor": "Добавить фото: {name}"
   },
   "optionGroups": {
     "title": "Варианты",
