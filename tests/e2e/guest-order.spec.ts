@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { formatAmd } from "../../src/lib/format/money";
 import { expect, test } from "./fixtures";
 import type { TestCafe } from "./guest-helpers";
 import { createTestCafe } from "./guest-menu-fixture";
@@ -28,7 +29,7 @@ const guestSessionOf = (page: Page, tableId: string) =>
 test.describe("ordering at a fresh café", () => {
   test.use({ locale: "hy-AM" });
   test.beforeAll(async () => {
-    cafe = await createTestCafe(["1", "2", "3"]);
+    cafe = await createTestCafe(["1", "2", "3", "4"]);
   });
 
   test("a lost answer is retried with the same key: the same order, and only one (Review focus 1)", async ({ page, consoleErrors }) => {
@@ -117,6 +118,37 @@ test.describe("ordering at a fresh café", () => {
     await page.getByRole("link", { name: "Պատվիրել ևս" }).click();
     await expect(page).toHaveURL(slugPattern("\\?t="));
     await expect(page.getByRole("button", { name: /Դիտել պատվերը/ })).toHaveCount(0);
+  });
+
+  test("a round can be ordered again, the menu remembers the last order, and the bill splits evenly", async ({ page }) => {
+    const table = { id: cafe.tables["4"]!.id, token: cafe.tables["4"]!.token };
+    await openMenuFromQr(page, table.token);
+    await expect(page.getByTestId("order-again")).toHaveCount(0);
+    await addAndOpenCart(page, "Տոլմա");
+    await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
+    await expect(page).toHaveURL(/\/order\?t=/);
+
+    // "Order the same again" puts the round back in this table's cart.
+    await page.getByRole("button", { name: "Կրկնել պատվերը" }).click();
+    await expect(page.getByRole("heading", { name: "Ձեր պատվերը" })).toBeVisible();
+    await expect(page.getByTestId("cart-line")).toHaveCount(1);
+    await expect(page.getByTestId("cart-line")).toContainText("Տոլմա");
+
+    // With the cart emptied, the menu offers the last order again.
+    await page.getByRole("button", { name: "Հեռացնել՝ Տոլմա" }).click();
+    await expect(page.getByTestId("order-again")).toContainText("Տոլմա");
+    await page.getByTestId("order-again").getByRole("button", { name: "Կրկին ավելացնել" }).click();
+    await expect(page.getByRole("button", { name: /Դիտել պատվերը/ })).toBeVisible();
+    await expect(page.getByTestId("order-again")).toHaveCount(0);
+
+    // Splitting the bill is arithmetic on this phone's orders.
+    await page.goto(`/hy/m/${cafe.slug}/main/order?t=${table.token}`);
+    await page.getByRole("button", { name: "Խնդրել հաշիվը" }).click();
+    const split = page.getByTestId("split");
+    await split.getByRole("button", { name: "Ավելի շատ մարդ" }).click();
+    await split.getByRole("button", { name: "Ավելի շատ մարդ" }).click();
+    await expect(split).toContainText("3 հոգի");
+    await expect(page.getByTestId("split-share")).toContainText(formatAmd(1070, "hy"));
   });
 
   test("calling the waiter twice makes one open request", async ({ page }) => {

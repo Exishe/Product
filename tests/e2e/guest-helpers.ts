@@ -49,6 +49,7 @@ export type TestDish = {
   price: number;
   portion?: { amount: number; unit: "g" | "ml" | "pcs" };
   tags?: string[];
+  allergens?: string[];
   soldOut?: boolean;
   groups?: { names: Names; min: number; max: number; options: { names: Names; delta?: number; isDefault?: boolean }[] }[];
 };
@@ -117,6 +118,7 @@ export async function createCafeWithMenu(opts: {
           price: d.price,
           sort,
           tags: d.tags ?? [],
+          allergens: d.allergens ?? [],
           portion_amount: d.portion?.amount ?? null,
           portion_unit: d.portion?.unit ?? null,
         })

@@ -9,6 +9,7 @@ import { SplitText } from "@/features/guest-theme/motion/split-text";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
+import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
 import { OrderSender } from "@/features/ordering/order-sender";
 import { normalizeForSearch } from "@/lib/format/search";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
@@ -38,6 +39,8 @@ const newId = () =>
 // first load stays inside the guest JS budget.
 const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
+// "Last time here": fetched only on a phone that has ordered at this café.
+const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.OrderAgain })));
 // The allergy filter: fetched on the first tap of its button only.
 const AllergenFilter = lazy(() => import("./allergen-filter").then((m) => ({ default: m.AllergenFilter })));
 const warmSheet = () => {
@@ -88,6 +91,7 @@ export function GuestMenu({
   // the chooser is open.
   const [avoid, setAvoidState] = useState<Allergen[]>([]);
   const [choosingAvoid, setChoosingAvoid] = useState(false);
+  const [hasLast, setHasLast] = useState(false);
   // Dishes the database said sold out while sending (the menu was loaded earlier).
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
@@ -136,6 +140,8 @@ export function GuestMenu({
   useEffect(warmSheet, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setAvoidState(loadAvoid(window.localStorage)), []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
+  useEffect(() => setHasLast(hasLastOrder(window.localStorage, menu.locationId)), [menu.locationId]);
   const setAvoid = useCallback((next: Allergen[]) => {
     setAvoidState(next);
     saveAvoid(window.localStorage, next);
@@ -156,6 +162,14 @@ export function GuestMenu({
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
   useEffect(() => {
+    // Arriving straight at the cart (the order page's "Order the same
+    // again"): put the menu under it in history, so closing the cart lands
+    // on the menu and not back on the order page.
+    if (window.location.hash === CART_HASH) {
+      const { pathname, search } = window.location;
+      window.history.replaceState(window.history.state, "", pathname + search);
+      window.history.pushState(null, "", CART_HASH);
+    }
     const sync = () => setView(window.location.hash === CART_HASH ? "cart" : "menu");
     sync();
     window.addEventListener("popstate", sync);
@@ -209,6 +223,12 @@ export function GuestMenu({
   const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
+  };
+  const addAgain = (again: SavedLine[]) => {
+    updateCart((current) =>
+      again.reduce((l, a) => addLine(l, { ...a, modifierIds: [...a.modifierIds], note: "" }, newId), current),
+    );
+    setToast({ key: Date.now(), text: t("again.added") });
   };
   const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) => {
     sparkFrom(from);
@@ -384,6 +404,11 @@ export function GuestMenu({
               </Notice>
             )}
           </div>
+        )}
+        {canOrder && hasLast && lines.length === 0 && (
+          <Suspense fallback={null}>
+            <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
+          </Suspense>
         )}
         <div className="flex items-center gap-2 pt-5 pb-2">
           <div className="relative min-w-0 flex-1 md:max-w-[440px]">

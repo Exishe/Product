@@ -1,24 +1,27 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { localized } from "@/features/menu/guest-menu/view-model";
-import { CheckIcon, Notice, Txt } from "@/features/menu/guest-menu/ui";
+import { CheckIcon, MinusIcon, Notice, PlusIcon, Txt } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { formatAmd } from "@/lib/format/money";
 import { useGuestChannel } from "@/lib/realtime/use-guest-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/lib/supabase/database";
+import { addToCart, cartKey } from "./cart-store";
+import { MAX_PEOPLE, repeatLines, shareOf } from "./repeat";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ConciergeBell, Gamepad2, ReceiptText, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
 import {
   displayStatus,
   isActive,
@@ -32,16 +35,18 @@ type Db = SupabaseClient<Database>;
 type Names = Record<string, string | null> | null;
 type Line = {
   id: string;
+  item_id: string | null;
   name_i18n: Names;
   quantity: number;
   cancelled_quantity: number;
   line_total: number;
   note: string | null;
   sort: number;
-  order_item_modifiers: { name_i18n: Names }[];
+  order_item_modifiers: { name_i18n: Names; modifier_id: string | null }[];
 };
 type Order = OrderState & {
   id: string;
+  location_id: string;
   number: number;
   total: number;
   placed_at: string;
@@ -55,8 +60,8 @@ type Data = { orders: Order[]; requests: Request[]; closed: boolean };
 const waiting = new Set<DisplayStatus>(["received", "accepted", "cooking"]);
 
 const ORDER_COLUMNS =
-  "id, number, status, kitchen_status, paid_at, total, placed_at, reject_reason, possible_duplicate_of, " +
-  "order_items(id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, order_item_modifiers(name_i18n))";
+  "id, location_id, number, status, kitchen_status, paid_at, total, placed_at, reject_reason, possible_duplicate_of, " +
+  "order_items(id, item_id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, order_item_modifiers(name_i18n, modifier_id))";
 
 // The guest session of this phone at this table: remembered from ordering,
 // or (another tab, cleared storage) the newest one RLS lets this user read.
@@ -177,7 +182,18 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   );
 }
 
-function OrderCard({ order, latest, below }: { order: Order; latest: boolean; below?: ReactNode }) {
+function OrderCard({
+  order,
+  latest,
+  below,
+  onRepeat,
+}: {
+  order: Order;
+  latest: boolean;
+  below?: ReactNode;
+  /** "Order the same again": back to the menu with these dishes in the cart. */
+  onRepeat?: (order: Order) => void;
+}) {
   const { t, locale } = useGuestI18n();
   const status = displayStatus(order);
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
@@ -271,6 +287,18 @@ function OrderCard({ order, latest, below }: { order: Order; latest: boolean; be
           {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
         </span>
       </div>
+      {onRepeat && status !== "rejected" && status !== "cancelled" && repeatLines(order).length > 0 && (
+        <p className={latest ? "-mt-1 pb-5" : "-mt-2 pb-2"}>
+          <button
+            type="button"
+            onClick={() => onRepeat(order)}
+            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-sm font-semibold"
+          >
+            <RotateCcw size={16} aria-hidden />
+            {t("order.sameAgain")}
+          </button>
+        </p>
+      )}
     </article>
   );
 }
@@ -296,6 +324,8 @@ export function OrderStatusView({
   const [told, setTold] = useState<{ kind: Request["kind"] | "error"; key: number } | null>(null);
   const [asking, setAsking] = useState<Request["kind"] | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [people, setPeople] = useState(1);
+  const router = useRouter();
 
   useEffect(() => {
     if (!db) return;
@@ -398,6 +428,17 @@ export function OrderStatusView({
     .reduce((s, o) => s + o.total, 0);
   const secondary =
     "min-h-[52px] rounded-pill border [border-color:var(--guest-field-edge)] bg-surface px-4 font-semibold shadow-card disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
+  // Back to the menu with an earlier round in the cart (this table's cart).
+  const repeat = (order: Order) => {
+    const newId = () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    addToCart(cartKey(order.location_id, tableId), repeatLines(order), newId);
+    router.push(`${menuHref}#cart`);
+  };
+  const stepButton =
+    "bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]";
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
   const smooth = (): ScrollBehavior =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -458,6 +499,7 @@ export function OrderStatusView({
         <OrderCard
           order={latest}
           latest
+          onRepeat={closed ? undefined : repeat}
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
           below={
@@ -516,6 +558,45 @@ export function OrderStatusView({
               data-testid="pay-choice"
               className="mt-3 grid gap-2"
             >
+              {grand > 0 && (
+                <div
+                  className="bg-surface shadow-card rounded-card mb-2 grid gap-2 border [border-color:var(--guest-card-border)] px-4 py-3"
+                  data-testid="split"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="font-semibold">{t("order.splitLabel")}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        className={stepButton}
+                        aria-label={t("order.splitFewer")}
+                        disabled={people <= 1}
+                        onClick={() => setPeople((n) => Math.max(1, n - 1))}
+                      >
+                        <MinusIcon />
+                      </button>
+                      <output className="num min-w-[5.5rem] text-center font-semibold" aria-live="polite">
+                        {t("order.splitPeople", { count: people })}
+                      </output>
+                      <button
+                        type="button"
+                        className={stepButton}
+                        aria-label={t("order.splitMore")}
+                        disabled={people >= MAX_PEOPLE}
+                        onClick={() => setPeople((n) => Math.min(MAX_PEOPLE, n + 1))}
+                      >
+                        <PlusIcon />
+                      </button>
+                    </span>
+                  </div>
+                  {people > 1 && (
+                    <p className="num text-accent-text text-xl font-semibold" data-testid="split-share">
+                      {t("order.splitEach", { amount: formatAmd(shareOf(grand, people), locale as Locale) })}
+                    </p>
+                  )}
+                  <p className="text-muted text-sm">{t("order.splitNote")}</p>
+                </div>
+              )}
               <p className="m-0 font-semibold">{t("order.payTitle")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button type="button" className={secondary} onClick={() => void ask("bring_bill", "card")}>
@@ -557,7 +638,7 @@ export function OrderStatusView({
             {t("order.earlier")}
           </h2>
           {earlier.map((o) => (
-            <OrderCard key={o.id} order={o} latest={false} />
+            <OrderCard key={o.id} order={o} latest={false} onRepeat={closed ? undefined : repeat} />
           ))}
           <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">
             <span>{t("order.allRounds")}</span>

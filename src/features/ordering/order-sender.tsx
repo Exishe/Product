@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "@/features/menu/guest-menu/guest.module.css";
 import type { Locale } from "@/i18n/routing";
-import { toOrderLines, type CartSummary } from "./cart";
+import { toOrderLines, type CartLine, type CartSummary } from "./cart";
 import { useGuestI18n } from "./guest-i18n-context";
 import type { OrderErrorKind } from "./order-errors";
+import { saveLastOrder } from "./last-order";
 import { beginPending, clearPending, loadPending } from "./pending-order";
 
 type Phase =
@@ -45,6 +46,8 @@ export function OrderSender({
   );
   const busy = useRef(false);
   const placed = useRef(false);
+  // The lines this press sent, remembered as "last time here" once placed.
+  const sent = useRef<CartLine[]>([]);
 
   const send = useCallback(async () => {
     if (busy.current) return;
@@ -61,6 +64,7 @@ export function OrderSender({
       });
       if (result.kind === "placed" || result.kind === "already_sent") {
         clearPending(window.localStorage, { locationId, tableId: table.id });
+        saveLastOrder(window.localStorage, locationId, sent.current);
         placed.current = true;
         router.push(orderHref);
         return;
@@ -114,6 +118,7 @@ export function OrderSender({
   );
 
   const start = () => {
+    sent.current = summary.lines.map((p) => p.line);
     beginPending(window.localStorage, scope, toOrderLines(summary.lines.map((p) => p.line)));
     void send();
   };

@@ -1,10 +1,11 @@
 import { useCallback, useSyncExternalStore } from "react";
-import type { CartLine } from "./cart";
+import { addLine, type CartLine } from "./cart";
 
 // One cart per location and table, kept in localStorage so it survives a
 // reload, a language switch or a lost connection. Storage can be missing or
 // blocked (private mode): the cart then lives in memory for this visit.
-export const cartKey = (locationId: string, tableId: string | null) => `pativ:cart:v1:${locationId}:${tableId ?? "menu"}`;
+export const cartKey = (locationId: string, tableId: string | null) =>
+  `pativ:cart:v1:${locationId}:${tableId ?? "menu"}`;
 
 const isLine = (x: unknown): x is CartLine => {
   if (typeof x !== "object" || x === null) return false;
@@ -86,12 +87,27 @@ function subscribeBrowser(listener: () => void) {
   };
 }
 
+/** Adds lines to a cart outside React (the order page's "Order the same again"). */
+export function addToCart(
+  key: string,
+  adds: readonly { itemId: string; modifierIds: string[]; quantity: number; note: string }[],
+  newId: () => string,
+) {
+  browserStore.set(
+    key,
+    adds.reduce((lines, add) => addLine(lines, add, newId), browserStore.get(key)),
+  );
+}
+
 export function useCart(key: string): [CartLine[], (update: (lines: CartLine[]) => CartLine[]) => void] {
   const lines = useSyncExternalStore(
     subscribeBrowser,
     () => browserStore.get(key),
     () => EMPTY,
   );
-  const update = useCallback((fn: (lines: CartLine[]) => CartLine[]) => browserStore.set(key, fn(browserStore.get(key))), [key]);
+  const update = useCallback(
+    (fn: (lines: CartLine[]) => CartLine[]) => browserStore.set(key, fn(browserStore.get(key))),
+    [key],
+  );
   return [lines, update];
 }
