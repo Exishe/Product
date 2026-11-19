@@ -1019,7 +1019,7 @@
     "period": "Sales from {from} to {to}",
     "periodLabel": "Period",
     "days": "{count} days",
-    "error": "Couldn't load the analysis. Refresh the page in a minute.",
+    "error": "Couldn't load the analysis. Try again later.",
     "matrix": {
       "title": "What sells and what earns",
       "hint": "Each dish is compared with the other dishes in its section: how often it's ordered, and how much it brings in per portion.",
