@@ -1,6 +1,5 @@
 "use client";
 
-import { List } from "lucide-react";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motionNow, reducedMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
@@ -15,6 +14,12 @@ export const sectionId = (id: string) => `cat-${id}`;
 const SectionList = lazy(() => import("./section-list").then((m) => ({ default: m.SectionList })));
 /** From this many sections the tabs get the "all sections" button. */
 const LIST_FROM = 6;
+
+/** Scrolls to a section; returns until when it stays the current one. */
+function scrollToSection(id: string): number {
+  document.getElementById(sectionId(id))?.scrollIntoView({ behavior: smooth(), block: "start" });
+  return performance.now() + 1500;
+}
 
 const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
@@ -48,8 +53,7 @@ export function CategoryNav({
   const [listing, setListing] = useState(false);
   const go = (id: string) => {
     setActive(id);
-    holdUntil.current = performance.now() + 1500;
-    document.getElementById(sectionId(id))?.scrollIntoView({ behavior: smooth(), block: "start" });
+    holdUntil.current = scrollToSection(id);
   };
 
   useEffect(() => {
@@ -155,7 +159,16 @@ export function CategoryNav({
             data-testid="all-sections"
             className={`bg-surface text-ink rounded-pill sticky left-0 z-[2] flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 font-semibold whitespace-nowrap ${styles.allSections}`}
           >
-            <List size={18} aria-hidden />
+            {/* Three lines, drawn here: lighter than one more icon in the first load. */}
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 6h16M4 12h16M4 18h16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
             {t("menu.sections")}
           </button>
         )}

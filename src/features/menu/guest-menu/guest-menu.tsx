@@ -1,6 +1,6 @@
 "use client";
 
-import { ConciergeBell, ReceiptText, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import {
   Suspense,
   lazy,
@@ -31,9 +31,9 @@ import { DishRow } from "./dish-row";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { BrandMark, GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
-import { CartBar, OrderPanel } from "./order-panel";
+import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, dishPhotoUrl } from "./ui";
+import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
 import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -51,6 +51,8 @@ const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
 // "Last time here": fetched only on a phone that has ordered at this café.
 const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.OrderAgain })));
+// The desktop's order rail: fetched only at 1024 px and up.
+const OrderRail = lazy(() => import("./order-rail").then((m) => ({ default: m.OrderRail })));
 // The allergy filter: fetched on the first tap of its button only.
 const AllergenFilter = lazy(() => import("./allergen-filter").then((m) => ({ default: m.AllergenFilter })));
 const warmSheet = () => {
@@ -451,7 +453,8 @@ export function GuestMenu({
         data-testid="slim-bar"
         inert={!scrolled}
       >
-        <div className={`${COLUMN} flex h-16 items-center gap-3`}>
+        {/* 63 px and the hairline: 64 in all. */}
+        <div className={`${COLUMN} flex h-[63px] items-center gap-3`}>
           <BrandMark
             cafeName={menu.restaurantName}
             logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
@@ -666,40 +669,44 @@ export function GuestMenu({
           </main>
           <div className="hidden pt-8 lg:block">
             <div className="sticky top-36">
-              <OrderPanel
-                summary={summary}
-                items={items}
-                ambiguous={ambiguous}
-                locked={locked}
-                onQuantity={changeQuantity}
-                onOpen={openCart}
-                // Only where the rail is on screen: a phone sends from the order view.
-                send={wide && !summary.blocked ? sender : null}
-                below={
-                  table.kind === "ok" && (canOrder || orderHref) ? (
-                    <>
-                      {canOrder && (
-                        <button
-                          type="button"
-                          aria-pressed={waiter.state !== "idle"}
-                          onClick={waiter.ask}
-                          data-testid="call-waiter-rail"
-                          className={railAction}
-                        >
-                          <ConciergeBell size={18} aria-hidden />
-                          {t("order.callWaiter")}
-                        </button>
-                      )}
-                      {orderHref && (
-                        <a href={orderHref} className={railAction}>
-                          <ReceiptText size={18} aria-hidden />
-                          {t("panel.sent")}
-                        </a>
-                      )}
-                    </>
-                  ) : null
-                }
-              />
+              {/* Only where the rail is on screen: a phone sends from the order view. */}
+              {wide && (
+                <Suspense fallback={null}>
+                  <OrderRail
+                    summary={summary}
+                    items={items}
+                    ambiguous={ambiguous}
+                    locked={locked}
+                    onQuantity={changeQuantity}
+                    onOpen={openCart}
+                    send={summary.blocked ? null : sender}
+                    below={
+                      table.kind === "ok" && (canOrder || orderHref) ? (
+                        <>
+                          {canOrder && (
+                            <button
+                              type="button"
+                              aria-pressed={waiter.state !== "idle"}
+                              onClick={waiter.ask}
+                              data-testid="call-waiter-rail"
+                              className={railAction}
+                            >
+                              <ConciergeBell size={18} aria-hidden />
+                              {t("order.callWaiter")}
+                            </button>
+                          )}
+                          {orderHref && (
+                            <a href={orderHref} className={railAction}>
+                              <CheckIcon />
+                              {t("panel.sent")}
+                            </a>
+                          )}
+                        </>
+                      ) : null
+                    }
+                  />
+                </Suspense>
+              )}
             </div>
           </div>
         </div>
@@ -739,11 +746,12 @@ export function GuestMenu({
           <AllergenFilter avoid={avoid} onChange={setAvoid} onClose={() => setChoosingAvoid(false)} />
         </Suspense>
       )}
+      {/* On a phone and a tablet; a desktop sees the dish land in the order rail. */}
       {toast && (
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:bottom-8 ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
         >
           {toast.text}
         </p>

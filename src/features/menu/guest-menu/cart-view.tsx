@@ -9,11 +9,14 @@ import type { WaitRange } from "./hints";
 import { BackIcon, MinusIcon, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
-function LineRow({
+// One line of the order: the order view's, and the desktop rail's in a
+// narrower cut (`dense`: no plate, smaller name, 44 px buttons).
+export function LineRow({
   priced,
   item,
   detail,
   locked,
+  dense = false,
   onQuantity,
 }: {
   priced: PricedLine;
@@ -21,10 +24,12 @@ function LineRow({
   /** Another dish has this name: its description tells the two apart. */
   detail: boolean;
   locked: boolean;
+  dense?: boolean;
   onQuantity: (id: string, quantity: number) => void;
 }) {
   const { t, locale } = useGuestI18n();
   const { line, status } = priced;
+  const step = `${STEP} ${dense ? "size-11" : "size-12"}`;
   const name = item?.name.text ?? "";
   const options = (item?.groups ?? []).flatMap((g) =>
     g.modifiers.filter((m) => line.modifierIds.includes(m.id)),
@@ -33,12 +38,12 @@ function LineRow({
   const available = status === "ok";
   // A plate only for a real photo: an empty plate per line tells the guest
   // nothing, so photoless lines read like a receipt.
-  const photo = item?.image ? dishPhotoUrl(item.image) : null;
+  const photo = !dense && item?.image ? dishPhotoUrl(item.image) : null;
   const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className={`border-line grid gap-x-4 gap-y-1 border-b py-5 last:border-b-0 ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
-      data-testid="cart-line"
+      className={`border-line grid gap-x-4 gap-y-1 border-b last:border-b-0 ${dense ? "py-3" : "py-5"} ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
         <span className="row-span-5">
@@ -49,7 +54,7 @@ function LineRow({
         <Txt
           value={item.name}
           locale={locale}
-          className={`display-face text-[1.375rem] leading-tight break-words hyphens-auto ${available ? "" : "text-muted line-through"}`}
+          className={`display-face leading-tight break-words hyphens-auto ${dense ? "text-[1.125rem]" : "text-[1.375rem]"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
@@ -87,7 +92,7 @@ function LineRow({
           <span className="inline-flex items-center gap-1">
             <button
               type="button"
-              className={`${STEP} size-12`}
+              className={step}
               disabled={locked}
               aria-label={line.quantity === 1 ? t("cart.remove", { name }) : t("cart.decrease", { name })}
               onClick={() => onQuantity(line.id, line.quantity - 1)}
@@ -97,7 +102,7 @@ function LineRow({
             <output className="num min-w-7 text-center font-semibold">{line.quantity}</output>
             <button
               type="button"
-              className={`${STEP} size-12`}
+              className={step}
               disabled={locked || line.quantity >= MAX_QUANTITY}
               aria-label={t("cart.increase", { name })}
               onClick={() => onQuantity(line.id, line.quantity + 1)}

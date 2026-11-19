@@ -431,7 +431,7 @@
 
   .cover {
     flex: none;
-    width: min(46%, 26rem);
+    width: min(42%, 22rem);
     aspect-ratio: 2 / 1;
     margin-bottom: 0;
   }
