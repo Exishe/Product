@@ -408,7 +408,7 @@ function App(p: WaiterAppProps) {
             <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
           </button>
         )}
-        <ConnectionPill state={connection} waiting={0} />
+        <ConnectionPill state={connection} />
         <button
           type="button"
           data-testid="shift-open"
@@ -443,7 +443,7 @@ function App(p: WaiterAppProps) {
             table && "max-md:hidden",
           )}
         >
-          <main className="grid min-h-0 grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
+          <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
             <div className="grid gap-1">
               <h1 className="page-title m-0 text-[2.5rem]">{tabTitle}</h1>
               <p

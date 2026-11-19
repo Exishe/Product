@@ -128,7 +128,7 @@ export function FloorMap({
           style={
             layout.placed
               ? {
-                  gridTemplateColumns: `repeat(${layout.columns}, minmax(4.75rem, 1fr))`,
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(4.75rem, 10rem))`,
                   gridTemplateRows: `repeat(${layout.rows}, auto)`,
                 }
               : undefined
@@ -195,6 +195,10 @@ function TableButton({
   // it has been open, or that it has gone quiet (no order, call or plate for 20 min).
   const age = tileAge(table, now);
   const minutes = age?.minutes ?? (table.state === "busy" ? table.openMinutes : null);
+  const duration = (m: number) =>
+    m >= 60
+      ? t("hoursShort", { hours: Math.floor(m / 60), minutes: m % 60 })
+      : t("minutesShort", { minutes: m });
   return (
     <button
       type="button"
@@ -240,19 +244,20 @@ function TableButton({
       <span className="max-w-full text-[0.8125rem] leading-tight font-semibold break-words">{state}</span>
       {age?.kind === "quiet" ? (
         <span className="num text-amber-text text-[0.8125rem] leading-tight font-semibold">
-          {t("quiet", { minutes: age.minutes })}
+          {t("quiet", { time: duration(age.minutes) })}
         </span>
       ) : (
-        minutes !== null && (
-          <span className="num text-[0.8125rem] leading-tight">{t("minutesShort", { minutes })}</span>
-        )
+        minutes !== null && <span className="num text-[0.8125rem] leading-tight">{duration(minutes)}</span>
       )}
       {/* A tap on this table still waits in the outbox (header «Չուղարկված»). */}
       {pending && (
         <span
           aria-hidden="true"
           data-testid="pending-dot"
-          className="bg-amber ring-ink absolute top-2.5 right-2.5 size-3 rounded-full ring-2"
+          className={clsx(
+            "bg-amber ring-ink absolute size-3 rounded-full ring-2",
+            table.shape === "round" ? "top-[16%] right-[16%]" : "top-2.5 right-2.5",
+          )}
         />
       )}
     </button>

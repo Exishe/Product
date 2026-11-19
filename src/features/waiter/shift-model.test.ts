@@ -6,7 +6,6 @@ const pay = (method: string, amount: number, over: Partial<ShiftBill["payments"]
   method,
   amount,
   status: "succeeded",
-  recorded_by: ME,
   ...over,
 });
 const bill = (payments: ShiftBill["payments"], over: Partial<ShiftBill> = {}): ShiftBill => ({

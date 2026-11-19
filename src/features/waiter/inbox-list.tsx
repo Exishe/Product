@@ -112,11 +112,11 @@ export function InboxList({
                 onClick={run}
                 className={button(
                   row.kind === "call" ? "destructive" : "primary",
-                  "max-w-[45%] shrink-0 px-4 text-[0.9375rem]",
+                  "max-w-[50%] shrink-0 px-4 py-1.5 text-center text-[0.9375rem]",
                 )}
               >
                 <QuickIcon aria-hidden="true" />
-                <span className="truncate">{quickText}</span>
+                <span className="min-w-0">{quickText}</span>
               </button>
             )}
           </li>

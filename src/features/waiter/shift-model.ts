@@ -13,7 +13,7 @@ export type ShiftBill = {
   status: string;
   total: number;
   closed_by: string | null;
-  payments: { method: string; status: string; amount: number; recorded_by: string | null }[];
+  payments: { method: string; status: string; amount: number }[];
 };
 
 export type ShiftOrder = {
@@ -44,7 +44,7 @@ export function summarizeShift(
   let cash = 0;
   let card = 0;
   for (const p of mine.flatMap((b) => b.payments)) {
-    if (p.status !== "succeeded" || p.recorded_by !== memberId) continue;
+    if (p.status !== "succeeded") continue;
     if (p.method === "cash") cash += p.amount;
     else card += p.amount;
   }
@@ -73,7 +73,7 @@ export async function fetchShift(
   const [bills, orders] = await Promise.all([
     supabase
       .from("bills")
-      .select("status, total, closed_by, payments(method, status, amount, recorded_by)")
+      .select("status, total, closed_by, payments(method, status, amount)")
       .eq("location_id", locationId)
       .eq("business_date", businessDate)
       .eq("closed_by", memberId),

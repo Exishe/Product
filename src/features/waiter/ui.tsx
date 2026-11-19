@@ -121,16 +121,11 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
   );
 }
 
-export function ConnectionPill({ state, waiting }: { state: Connection; waiting: number }) {
+// The count of waiting taps is not repeated here: the «Չուղարկված» chip next
+// to it shows it, online or not, and opens the list.
+export function ConnectionPill({ state }: { state: Connection }) {
   const t = useTranslations("waiter.connection");
-  const label =
-    state === "online"
-      ? t("online")
-      : state === "connecting"
-        ? t("connecting")
-        : waiting > 0
-          ? t("offlineWaiting", { count: waiting })
-          : t("offline");
+  const label = state === "online" ? t("online") : state === "connecting" ? t("connecting") : t("offline");
   const Icon = state === "online" ? Wifi : state === "connecting" ? RefreshCw : WifiOff;
   return (
     <span

@@ -344,7 +344,6 @@
       "online": "Online",
       "connecting": "Connecting…",
       "offline": "No connection",
-      "offlineWaiting": "No connection, {count} waiting",
       "banner": "No connection. The map shows the last data from {time}. Taps will be sent when the connection is back."
     },
     "revoked": {
@@ -375,7 +374,7 @@
       "action": "{action}, table {label}",
       "closeBill": "Close the bill"
     },
-    "quiet": "quiet {minutes} min",
+    "quiet": "quiet {time}",
     "timeline": {
       "title": "What happened",
       "seated": "Guests sat down",
@@ -414,7 +413,7 @@
     "shift": {
       "open": "My shift",
       "title": "My shift",
-      "subtitle": "Business day {date}. Only what this device recorded.",
+      "subtitle": "Business day {date}. Only what you recorded.",
       "tables": "Tables closed",
       "cash": "Cash to hand over",
       "card": "Paid by card",
@@ -427,7 +426,8 @@
       "loading": "Loading…",
       "error": "Couldn't load it. Check the connection and open it again.",
       "close": "Close"
-    }
+    },
+    "hoursShort": "{hours} h {minutes} min"
   },
   "menu": {
     "title": "Menu",

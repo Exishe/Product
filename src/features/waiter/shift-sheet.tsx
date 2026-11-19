@@ -75,7 +75,7 @@ export function ShiftSheet({
           <>
             <dl data-testid="shift-money" className="m-0 grid overflow-hidden rounded-2xl bg-white">
               <Row label={t("cash")} value={money(state.data.cash)} strong />
-              <Row label={t("card")} value={money(state.data.card)} />
+              <Row testId="shift-card" label={t("card")} value={money(state.data.card)} />
               <Row label={t("total")} value={money(state.data.cash + state.data.card)} />
             </dl>
             <dl data-testid="shift-work" className="m-0 grid overflow-hidden rounded-2xl bg-white">
@@ -94,11 +94,24 @@ export function ShiftSheet({
   );
 }
 
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function Row({
+  label,
+  value,
+  strong,
+  testId,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  testId?: string;
+}) {
   return (
     <div className="border-staff-sep flex min-h-12 items-center justify-between gap-4 border-b px-4 py-2 last:border-b-0">
       <dt className="text-[1.0625rem]">{label}</dt>
-      <dd className={strong ? "num m-0 text-[1.25rem] font-bold" : "num m-0 text-[1.0625rem] font-semibold"}>
+      <dd
+        data-testid={testId}
+        className={strong ? "num m-0 text-[1.25rem] font-bold" : "num m-0 text-[1.0625rem] font-semibold"}
+      >
         {value}
       </dd>
     </div>

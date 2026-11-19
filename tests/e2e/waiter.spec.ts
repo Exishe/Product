@@ -287,7 +287,7 @@ test.describe("waiter app", () => {
     await page.getByTestId("shift-open").click();
     const shift = page.getByRole("dialog", { name: "Իմ հերթափոխը" });
     await expect(shift.getByTestId("shift-work")).toContainText("Փակված սեղաններ");
-    await expect(shift.getByTestId("shift-money")).toContainText("Վճարված քարտով");
+    await expect(shift.getByTestId("shift-card")).not.toHaveText("0 ֏");
     await shot(page, "73-shift", info.project.name);
     await shift.getByRole("button", { name: "Փակել" }).click();
     await expect(shift).toHaveCount(0);
