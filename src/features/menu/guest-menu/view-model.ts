@@ -72,6 +72,8 @@ export type GuestItem = {
   image: string | null;
   /** Every language's name, normalized for cross-script search (one per line). */
   search: string;
+  /** A wine's grape and region, when its description is that and nothing else. */
+  origin: { grape: string; region: string } | null;
 };
 export type GuestCategory = {
   id: string;
@@ -79,6 +81,8 @@ export type GuestCategory = {
   items: GuestItem[];
   /** Storage path of the section's cover photo (ADR-058). */
   cover: string | null;
+  /** Every language's section name, normalized like a dish's. */
+  search: string;
 };
 export type GuestMenuData = {
   restaurantName: string;
@@ -124,6 +128,60 @@ function searchKey(names: I18n): string {
     .join("\n");
 }
 
+// A wine card's second line. Importers and owners write it the way the
+// printed list does, «Sauvignon Blanc / Loire Valley, France», the same in
+// every language; a translated description («with honey / jam») is a
+// dish's, and stays a description.
+export function originOf(description: I18n): GuestItem["origin"] {
+  const texts = Object.values(description ?? {}).flatMap((d) => (d?.trim() ? [d.trim()] : []));
+  const first = texts[0];
+  if (texts.length < 2 || !first || texts.some((d) => d !== first)) return null;
+  const parts = first.split(" / ");
+  const [grape, region] = parts;
+  return parts.length === 2 && grape && region && region.includes(",") ? { grape, region } : null;
+}
+
+/** The sizes of a dish sold in two or three (glass and bottle), each with its full price. */
+export function sizesOf(
+  item: Pick<GuestItem, "price" | "groups">,
+): { id: string; name: Text; price: number }[] {
+  const required = item.groups.filter((g) => g.min > 0);
+  const [g] = required;
+  if (!g || required.length !== 1 || g.min !== 1 || g.max !== 1) return [];
+  if (g.modifiers.length < 2 || g.modifiers.length > 3 || g.modifiers.every((m) => m.delta === 0)) return [];
+  return g.modifiers.map((m) => ({ id: m.id, name: m.name, price: item.price + m.delta }));
+}
+
+/** Dishes that share their name with another one: the cart tells them apart by description. */
+export function sameNamed(categories: readonly GuestCategory[]): Set<string> {
+  const byName = new Map<string, string[]>();
+  for (const c of categories)
+    for (const i of c.items) byName.set(i.name.text, [...(byName.get(i.name.text) ?? []), i.id]);
+  return new Set([...byName.values()].filter((ids) => ids.length > 1).flat());
+}
+
+/**
+ * For the order status page, which shows the names the order was placed
+ * with: the description of every dish that shares its name with another, by
+ * dish id, in the page's language.
+ */
+export function sameNameDetails(data: PublicMenu, locale: Locale): Record<string, string> {
+  const byName = new Map<string, string[]>();
+  for (const [id, raw] of Object.entries(data.menu.items)) {
+    const name = localized(raw.name, locale)?.text;
+    if (name) byName.set(name, [...(byName.get(name) ?? []), id]);
+  }
+  const out: Record<string, string> = {};
+  for (const ids of byName.values()) {
+    if (ids.length < 2) continue;
+    for (const id of ids) {
+      const text = localized(data.menu.items[id]?.description ?? null, locale)?.text;
+      if (text) out[id] = text;
+    }
+  }
+  return out;
+}
+
 // Only the wordmark path is needed here; the rest of the brand is parsed by
 // GuestThemeScope on the server (brand.ts stays out of the client bundle).
 export function wordmarkOf(brand: unknown): string | null {
@@ -138,6 +196,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
     const name = raw && localized(raw.name, locale);
     if (!raw || !name) return null;
     const unit = UNITS.find((u) => u === raw.portion?.unit);
+    const origin = originOf(raw.description);
     return {
       id,
       name,
@@ -158,7 +217,11 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
           return mName ? [{ id: m.id, name: mName, delta: m.price_delta, isDefault: m.is_default }] : [];
         }),
       })),
-      search: searchKey(raw.name),
+      // A wine is also found by its grape or region («Malbec», «Bordeaux»).
+      search: origin
+        ? `${searchKey(raw.name)}\n${normalizeForSearch(`${origin.grape} ${origin.region}`)}`
+        : searchKey(raw.name),
+      origin,
     };
   };
 
@@ -173,6 +236,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
               name: localized(c.name, locale),
               items,
               cover: typeof cover === "string" && cover ? cover : null,
+              search: searchKey(c.name),
             },
           ]
         : [];

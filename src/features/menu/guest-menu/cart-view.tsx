@@ -6,17 +6,20 @@ import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import type { WaitRange } from "./hints";
-import { BackIcon, MinusIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
+import { BackIcon, MinusIcon, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 function LineRow({
   priced,
   item,
+  detail,
   locked,
   onQuantity,
 }: {
   priced: PricedLine;
   item: GuestItem | undefined;
+  /** Another dish has this name: its description tells the two apart. */
+  detail: boolean;
   locked: boolean;
   onQuantity: (id: string, quantity: number) => void;
 }) {
@@ -38,7 +41,7 @@ function LineRow({
       data-testid="cart-line"
     >
       {photo && (
-        <span className="row-span-4">
+        <span className="row-span-5">
           <Plate src={photo} size={64} muted={!available} className="size-16" />
         </span>
       )}
@@ -54,6 +57,9 @@ function LineRow({
       <span className="num text-right font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
+      {detail && item?.description && (
+        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-sm break-words`} />
+      )}
       {options.length > 0 && (
         <span className={`text-muted ${col} text-sm`}>
           {options.map((m, i) => (
@@ -81,7 +87,7 @@ function LineRow({
           <span className="inline-flex items-center gap-1">
             <button
               type="button"
-              className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
+              className={`${STEP} size-12`}
               disabled={locked}
               aria-label={line.quantity === 1 ? t("cart.remove", { name }) : t("cart.decrease", { name })}
               onClick={() => onQuantity(line.id, line.quantity - 1)}
@@ -91,7 +97,7 @@ function LineRow({
             <output className="num min-w-7 text-center font-semibold">{line.quantity}</output>
             <button
               type="button"
-              className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
+              className={`${STEP} size-12`}
               disabled={locked || line.quantity >= MAX_QUANTITY}
               aria-label={t("cart.increase", { name })}
               onClick={() => onQuantity(line.id, line.quantity + 1)}
@@ -120,6 +126,7 @@ function LineRow({
 export function CartView({
   summary,
   items,
+  ambiguous,
   locked,
   notice,
   footer,
@@ -129,6 +136,8 @@ export function CartView({
 }: {
   summary: CartSummary;
   items: Record<string, GuestItem>;
+  /** Dishes that share a name with another dish (view-model sameNamed). */
+  ambiguous: ReadonlySet<string>;
   locked: boolean;
   notice: ReactNode;
   footer: ReactNode;
@@ -162,6 +171,7 @@ export function CartView({
             key={p.line.id}
             priced={p}
             item={items[p.line.itemId]}
+            detail={ambiguous.has(p.line.itemId)}
             locked={locked}
             onQuantity={onQuantity}
           />

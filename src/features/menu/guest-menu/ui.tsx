@@ -48,6 +48,13 @@ export function dishPhotoUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
 }
 
+// A round − or + (cart, featured card, dish sheet, bill split): the card's
+// own fill inside a ring that keeps 3:1 against it in every preset and with
+// any brand (the field-border grey, darkened a quarter towards the ink), so
+// the control never fades into a cream page. The glyph is the ink.
+export const STEP =
+  "bg-surface text-ink border-[1.5px] [border-color:color-mix(in_srgb,var(--guest-line-strong)_75%,var(--guest-ink))] disabled:text-line-strong disabled:[border-color:var(--guest-line-strong)] grid flex-none place-items-center rounded-full [&_svg]:size-[18px]";
+
 // − n + : the dish sheet's and the featured card's quantity, 1 to `max`.
 export function Stepper({
   value,
@@ -60,10 +67,10 @@ export function Stepper({
   max: number;
   onChange: (value: number) => void;
   labels: { decrease: string; increase: string; quantity: string };
-  /** The round buttons' fill and size. */
+  /** The round buttons' size. */
   button: string;
 }) {
-  const round = `${button} disabled:text-line-strong grid place-items-center rounded-full [&_svg]:size-[18px]`;
+  const round = `${STEP} ${button}`;
   return (
     <>
       <button

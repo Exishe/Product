@@ -714,6 +714,9 @@
       "callYes": "Yes, call",
       "callCancel": "No",
       "waiterCalled": "Waiter called",
+      "sections": "Sections",
+      "sectionSearch": "Find a section",
+      "noSection": "No section matches that.",
       "searchOpen": "Search"
     },
     "sheet": {
@@ -858,7 +861,8 @@
       "waiter": "Waiter"
     },
     "panel": {
-      "empty": "Add dishes and they appear here."
+      "empty": "Add dishes and they appear here.",
+      "sent": "Orders already sent"
     },
     "allergens": {
       "gluten": "gluten",

@@ -26,6 +26,10 @@ export type DockItem = {
 // indicator (safe-area inset), and every item is at least 48 px tall. The
 // Order item is where a dish added on a phone flies to (fly.ts), its count
 // bouncing as it lands.
+//
+// From 1024 px the pages carry these actions themselves (the menu's order
+// rail, the status page's own buttons), so the bar is a phone and tablet
+// thing: on a desktop it would float over the dishes' prices.
 export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNode }) {
   const { t } = useGuestI18n();
   if (items.length === 0 && !above) return null;
@@ -39,7 +43,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
         {items.length > 0 && (
           <nav
             aria-label={t("nav.label")}
-            className="bg-dock text-dock-ink shadow-float pointer-events-auto flex gap-1 rounded-[calc(var(--guest-r-pill)+4px)] border border-[color:color-mix(in_srgb,var(--guest-line)_70%,transparent)] p-1.5 backdrop-blur-md"
+            className="bg-dock text-dock-ink shadow-float pointer-events-auto flex gap-1 rounded-[calc(var(--guest-r-pill)+4px)] border border-[color:color-mix(in_srgb,var(--guest-line)_70%,transparent)] p-1.5 backdrop-blur-md lg:hidden"
             data-testid="guest-dock"
           >
             {items.map((item) => {
