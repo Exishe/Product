@@ -22,9 +22,14 @@ import {
 } from "./actions";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
+import { AllDayStrip } from "./all-day";
 import {
+  allDay,
+  allLinesStruck,
   applyPending,
   groupTickets,
+  lineKey,
+  pruneStruck,
   toBoardTickets,
   type BoardTicket,
   type KitchenAction,
@@ -93,11 +98,49 @@ const subscribeOnline = (cb: () => void) => {
   };
 };
 
+// Struck lines (item-level bump) are kept per tab in sessionStorage, or in
+// memory when storage is blocked; the raw JSON string is the store's value.
+const BUMPED_EVENT = "pativ-kitchen-bumped";
+const bumpedMemory = new Map<string, string>();
+
+function readBumped(key: string): string {
+  try {
+    return window.sessionStorage.getItem(key) ?? bumpedMemory.get(key) ?? "[]";
+  } catch {
+    return bumpedMemory.get(key) ?? "[]";
+  }
+}
+
+function writeBumped(key: string, keys: ReadonlySet<string>) {
+  const raw = JSON.stringify([...keys]);
+  bumpedMemory.set(key, raw);
+  try {
+    window.sessionStorage.setItem(key, raw);
+  } catch {
+    // Storage is blocked: the strikes last until the page reloads.
+  }
+  window.dispatchEvent(new Event(BUMPED_EVENT));
+}
+
+function parseBumped(raw: string): Set<string> {
+  try {
+    const saved = JSON.parse(raw) as unknown;
+    return new Set(Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+const subscribeBumped = (cb: () => void) => {
+  window.addEventListener(BUMPED_EVENT, cb);
+  return () => window.removeEventListener(BUMPED_EVENT, cb);
+};
+
 function Board(p: KitchenBoardProps) {
   const t = useTranslations("kitchen");
   const locale = useLocale() as Locale;
   const now = useServerClock(p.renderedAt);
-  const shift = useShift();
+  const shift = useShift(p.station.id);
   const outbox = useOutbox<KitchenAction>();
   const browserOnline = useSyncExternalStore(
     subscribeOnline,
@@ -156,7 +199,12 @@ function Board(p: KitchenBoardProps) {
         setSent((list) => list.filter((s) => s.at > startedAt));
         if (arrived.length > 0) {
           setFresh(new Set(arrived.map((x) => x.id)));
-          if (arrived.some((x) => x.kind === "void" || x.status === "new")) notifyRef.current();
+          // One sound per refresh, the most urgent one: allergy, then a
+          // cancellation, then a plain new order.
+          const orders = arrived.filter((x) => x.kind === "order" && x.status === "new");
+          if (orders.some((x) => x.allergy)) notifyRef.current("allergy");
+          else if (arrived.some((x) => x.kind === "void")) notifyRef.current("void");
+          else if (orders.length > 0) notifyRef.current("new");
         }
       } while (again.current);
     } finally {
@@ -282,6 +330,36 @@ function Board(p: KitchenBoardProps) {
   );
   const columns = groupTickets(shown);
 
+  // --- All day and item-level bump ----------------------------------------
+  const allDayRows = useMemo(() => allDay(shown), [shown]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const pickedRow = allDayRows.find((r) => r.key === picked) ?? null;
+  const highlighted = useMemo(() => new Set(pickedRow?.ticketIds ?? []), [pickedRow]);
+
+  // Struck lines live on this screen only (sessionStorage survives a reload);
+  // the ticket moves to Ready through the usual action once all are struck.
+  const bumpKey = `pativ-kitchen-bumped-${p.station.id}`;
+  const bumpedRaw = useSyncExternalStore(
+    subscribeBumped,
+    () => readBumped(bumpKey),
+    () => "[]",
+  );
+  const live = useMemo(() => pruneStruck(parseBumped(bumpedRaw), shown), [bumpedRaw, shown]);
+
+  const toggleLine = useCallback(
+    (ticket: ShownTicket, lineId: string) => {
+      const key = lineKey(ticket.id, lineId);
+      const next = new Set(live);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      writeBumped(bumpKey, next);
+      if (allLinesStruck(ticket, next)) {
+        act({ kind: "set_ticket_status", ticketId: ticket.id, expected: "cooking", next: "ready" });
+      }
+    },
+    [live, act, bumpKey],
+  );
+
   // --- Bookkeeping ---------------------------------------------------------
   useEffect(() => {
     if (fresh.size === 0) return;
@@ -362,7 +440,7 @@ function Board(p: KitchenBoardProps) {
   return (
     <div
       lang={locale}
-      className="kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+      className="kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden"
     >
       <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
         <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
@@ -405,6 +483,13 @@ function Board(p: KitchenBoardProps) {
         </div>
       </header>
 
+      <AllDayStrip
+        stationId={p.station.id}
+        rows={allDayRows}
+        selected={pickedRow?.key ?? null}
+        onSelect={setPicked}
+      />
+
       <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
@@ -415,13 +500,21 @@ function Board(p: KitchenBoardProps) {
             tickets={columns[col]}
             now={now}
             fresh={fresh}
+            highlighted={highlighted}
+            bumped={live}
+            onToggleLine={toggleLine}
             onAction={act}
           />
         ))}
       </main>
 
       {!shift.on && !revoked && (
-        <StartShiftOverlay localHour={Number(clock.slice(0, 2))} onStart={shift.start} />
+        <StartShiftOverlay
+          localHour={Number(clock.slice(0, 2))}
+          tone={shift.tone}
+          onTone={shift.chooseTone}
+          onStart={shift.start}
+        />
       )}
       {revoked && <DisconnectedScreen />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
@@ -436,6 +529,9 @@ function BoardColumn({
   tickets,
   now,
   fresh,
+  highlighted,
+  bumped,
+  onToggleLine,
   onAction,
 }: {
   column: Column;
@@ -444,6 +540,9 @@ function BoardColumn({
   tickets: ShownTicket[];
   now: number;
   fresh: ReadonlySet<string>;
+  highlighted: ReadonlySet<string>;
+  bumped: ReadonlySet<string>;
+  onToggleLine: (ticket: ShownTicket, lineId: string) => void;
   onAction: (action: KitchenAction) => void;
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
@@ -503,6 +602,9 @@ function BoardColumn({
                 column={column}
                 now={now}
                 fresh={fresh.has(ticket.id)}
+                highlighted={highlighted.has(ticket.id)}
+                done={bumped}
+                onToggleLine={onToggleLine}
                 onAction={onAction}
               />
             ),

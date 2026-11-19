@@ -130,7 +130,7 @@
       "source": {
         "qr": "QR",
         "waiter": "Waiter",
-        "kiosk": "Kiosk",
+        "kiosk": "Terminal",
         "online": "Online"
       },
       "justNow": "just now",
@@ -146,7 +146,9 @@
       "voidOrder": "Order {number}",
       "acknowledge": "Got it",
       "pending": "Waiting for connection",
-      "was": "Was {quantity}"
+      "was": "Was {quantity}",
+      "hours": "{hours} h",
+      "allergy": "Allergy: read the note"
     },
     "connection": {
       "online": "Online",
@@ -161,7 +163,14 @@
       "evening": "Good evening",
       "hint": "Tap to turn on the new-order sound and keep the screen awake.",
       "start": "Start shift",
-      "end": "End shift"
+      "end": "End shift",
+      "tone": "This screen's sound",
+      "tones": {
+        "high": "High",
+        "mid": "Middle",
+        "low": "Low"
+      },
+      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound."
     },
     "conflict": "Already changed",
     "actionFailed": "That didn't work. The screen has been refreshed.",
@@ -190,6 +199,12 @@
       "empty": "No dishes on the menu for this screen.",
       "close": "Close",
       "failed": "That didn't work. Check the connection and try again."
+    },
+    "allDay": {
+      "title": "All day",
+      "quantity": "{quantity}×",
+      "plain": "{quantity} plain",
+      "empty": "Nothing to cook."
     }
   },
   "waiter": {
