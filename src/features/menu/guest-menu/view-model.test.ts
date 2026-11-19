@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "@/lib/format/search";
 import { buildGuestMenu, localized, type PublicMenu } from "./view-model";
 
-const item = (over: Partial<PublicMenu["menu"]["items"][string]> = {}): PublicMenu["menu"]["items"][string] => ({
+const item = (
+  over: Partial<PublicMenu["menu"]["items"][string]> = {},
+): PublicMenu["menu"]["items"][string] => ({
   name: { hy: "Տոլմա", ru: "Толма", en: "Tolma" },
   description: null,
   price: 3200,
@@ -12,7 +14,10 @@ const item = (over: Partial<PublicMenu["menu"]["items"][string]> = {}): PublicMe
   ...over,
 });
 
-const menu = (items: PublicMenu["menu"]["items"], categories: { id: string; item_ids: string[] }[]): PublicMenu => ({
+const menu = (
+  items: PublicMenu["menu"]["items"],
+  categories: { id: string; item_ids: string[] }[],
+): PublicMenu => ({
   restaurant: { name: "Դեմո սրճարան" },
   location: { id: "loc-1", name: "Main", locales: ["hy", "ru", "en"], ordering: true },
   menu: {
@@ -104,16 +109,19 @@ describe("buildGuestMenu", () => {
     expect(dish.portion).toEqual({ amount: 250, unit: "ml" });
     expect(dish.tags).toEqual(["popular"]);
     expect(dish.groups[0]!.name).toEqual({ text: "Size", lang: "en" });
-    expect(dish.groups[0]!.modifiers.map((x) => [x.id, x.name.text, x.name.lang, x.delta, x.isDefault])).toEqual([
+    expect(
+      dish.groups[0]!.modifiers.map((x) => [x.id, x.name.text, x.name.lang, x.delta, x.isDefault]),
+    ).toEqual([
       ["s", "Փոքր", "hy", 0, true],
       ["l", "Large", "en", 300, false],
     ]);
   });
 
   it("indexes every language's name so «խորոված», «хоровац» and khorovats all find it", () => {
-    const m = menu({ k: item({ name: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" } }) }, [
-      { id: "1", item_ids: ["k"] },
-    ]);
+    const m = menu(
+      { k: item({ name: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" } }) },
+      [{ id: "1", item_ids: ["k"] }],
+    );
     const dish = buildGuestMenu(m, "hy").categories[0]!.items[0]!;
     for (const q of ["խորոված", "хоровац", "khorovats", "KHOROVATS", "курицы"]) {
       expect(dish.search.includes(normalizeForSearch(q)), q).toBe(true);
@@ -128,5 +136,20 @@ describe("buildGuestMenu", () => {
     m.restaurant = { name: "Café", guest_theme: "wine", brand_color: "#c2185b", logo: "r1/logo/1.webp" };
     const after = buildGuestMenu(m, "hy");
     expect([after.theme, after.brandColor, after.logo]).toEqual(["wine", "#c2185b", "r1/logo/1.webp"]);
+  });
+
+  it("reads the wordmark from the brand and a cover per section (ADR-057)", () => {
+    const k = { name: { hy: "Խորոված" }, description: null, price: 100, portion: null, tags: null, groups: null };
+    const m = menu({ k }, [
+      { id: "1", item_ids: ["k"] },
+      { id: "2", item_ids: ["k"] },
+    ]);
+    expect(buildGuestMenu(m, "hy").wordmark).toBeNull();
+    expect(buildGuestMenu(m, "hy").categories.map((c) => c.cover)).toEqual([null, null]);
+    m.restaurant = { name: "Café", brand: { wordmark: "r1/brand/1.webp" } };
+    m.covers = { "2": "r1/covers/2/1.webp" };
+    const after = buildGuestMenu(m, "hy");
+    expect(after.wordmark).toBe("r1/brand/1.webp");
+    expect(after.categories.map((c) => c.cover)).toEqual([null, "r1/covers/2/1.webp"]);
   });
 });

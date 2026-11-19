@@ -6,6 +6,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { getPublicMenu } from "@/features/menu/guest-menu/load.server";
+import { wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { OrderStatusView } from "@/features/ordering/order-status-view";
@@ -39,29 +40,45 @@ export async function generateViewport({ params }: { params: Params }): Promise<
 // Order status: /{locale}/m/{café}/{location}/order?t=<token>. The token
 // names the table; the guest's orders are read in the browser with the
 // guest's own session (RLS), so this page holds no guest data on the server.
-export default async function OrderStatusPage({ params, searchParams }: { params: Params; searchParams: Search }) {
+export default async function OrderStatusPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Search;
+}) {
   const { locale, restaurant, location } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const token = first((await searchParams).t);
-  const [resolved, look] = await Promise.all([token ? resolveTable(token) : null, lookOf(restaurant, location)]);
-  const table = resolved && resolved.restaurant_slug === restaurant && resolved.location_slug === location ? resolved : null;
+  const [resolved, look] = await Promise.all([
+    token ? resolveTable(token) : null,
+    lookOf(restaurant, location),
+  ]);
+  const table =
+    resolved && resolved.restaurant_slug === restaurant && resolved.location_slug === location
+      ? resolved
+      : null;
   const query = token ? `?t=${encodeURIComponent(token)}` : "";
   const menuHref = `/${locale}/m/${restaurant}/${location}${query}`;
   const languages = (table?.guest_locales ?? []).flatMap((l) =>
-    routing.locales.includes(l as Locale) ? [{ locale: l as Locale, href: `/${l}/m/${restaurant}/${location}/order${query}` }] : [],
+    routing.locales.includes(l as Locale)
+      ? [{ locale: l as Locale, href: `/${l}/m/${restaurant}/${location}/order${query}` }]
+      : [],
   );
   const t = await getTranslations({ locale, namespace: "guest" });
   // The public key goes to the phone for «Notify me when it's ready» (ADR-049).
   const vapidPublicKey = vapidPublicKeyOrNull(process.env);
+  const wordmark = wordmarkOf(look?.brand);
 
   return (
-    <GuestThemeScope theme={guestTheme(look?.guest_theme)} brandColor={look?.brand_color}>
+    <GuestThemeScope theme={guestTheme(look?.guest_theme)} brandColor={look?.brand_color} brand={look?.brand}>
       {table ? (
         <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
           <GuestHeader
             cafeName={table.restaurant_name}
             logoUrl={look?.logo ? dishPhotoUrl(look.logo) : null}
+            wordmarkUrl={wordmark ? dishPhotoUrl(wordmark) : null}
             tableLabel={table.table_label}
             languages={languages}
           />

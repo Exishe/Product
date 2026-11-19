@@ -592,6 +592,74 @@ body:has(.admin-shell) {
   --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 3px 12px rgb(0 0 0 / 0.28);
 }
 
+/* Brand profile (ADR-057). A café's brand sets --brand-* and some --guest-*
+   tokens inline on its .guest-lux root (brand.ts, only where contrast holds);
+   the rules below are the parts that need selectors. With no brand none of
+   the data attributes is set and the preset looks exactly as above. */
+
+/* Plate styles: white porcelain (the photo sits in a white rim, an empty
+   plate shows the initial in the brand's highlight), the dark plate of Pure,
+   or no plate at all (the photo itself, round). */
+.guest-lux[data-plate="porcelain"] {
+  --guest-dish: #ffffff;
+  --guest-dish-rim: var(--guest-line);
+  --guest-dish-well: color-mix(in srgb, var(--guest-line) 40%, #ffffff);
+  --guest-dish-ink: var(--brand-plate-ink, var(--guest-accent-text));
+  --guest-dish-inset: 5%;
+  --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  --guest-shadow-plate:
+    0 0 0 1px var(--guest-line),
+    0 12px 22px -12px color-mix(in srgb, var(--brand-header, #1b1d21) 50%, transparent);
+}
+.guest-lux[data-plate="dark"] {
+  --guest-dish: #1e2126;
+  --guest-dish-rim: rgb(255 255 255 / 0.1);
+  --guest-dish-well: #272b31;
+  --guest-dish-ink: #e9ecef; /* 13.6:1 on the plate */
+  --guest-dish-inset: 3.5%;
+  --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 3px 12px rgb(0 0 0 / 0.28);
+  --guest-shadow-plate:
+    inset 0 1px 1px rgb(255 255 255 / 0.14), inset 0 0 0 1px rgb(255 255 255 / 0.04),
+    0 16px 26px -12px rgb(16 18 22 / 0.5), 0 3px 6px rgb(16 18 22 / 0.14);
+}
+.guest-lux[data-plate="none"] {
+  --guest-dish: var(--guest-chip);
+  --guest-dish-rim: var(--guest-line);
+  --guest-dish-well: var(--guest-chip);
+  --guest-dish-ink: var(--guest-accent-text);
+  --guest-dish-inset: 0%;
+  --guest-photo-edge: none;
+  --guest-shadow-plate: none;
+}
+
+/* The header band: the café's name, wordmark, table and languages on the
+   brand's header colour. Text inside reads the band's own ink; the round
+   white tool buttons keep the header colour for their icons. */
+.guest-lux[data-brand-header] .guest-head {
+  --guest-title: var(--brand-on-header);
+  --guest-flourish: var(--brand-on-header);
+  --color-ink: var(--brand-on-header);
+  --color-muted: var(--brand-on-header-muted);
+  --color-line-strong: var(--brand-on-header-muted);
+  background: var(--brand-header);
+  color: var(--brand-on-header);
+  padding-bottom: 1rem;
+}
+.guest-lux[data-brand-header] .guest-head .bg-surface {
+  color: var(--brand-header);
+}
+.guest-lux[data-brand-header] .guest-head :focus-visible {
+  outline-color: var(--brand-on-header);
+}
+
+/* The script accent: one line per screen (the rotating category name). */
+.guest-lux[data-brand-script] .guest-flourish {
+  font-family: var(--brand-font-script);
+  font-weight: 400;
+  font-stretch: 100%;
+  letter-spacing: 0;
+}
+
 /* The photo's round edge, shaded like food on a plate (ui.tsx Plate); a grid
    item over the photo, the same size. */
 .guest-lux .dish-photo::after {

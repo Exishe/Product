@@ -29,6 +29,8 @@ export type PublicMenu = {
     brand_color?: string | null;
     /** Missing until migration 20261117120000_guest_theme is applied. */
     guest_theme?: string | null;
+    /** The brand profile (ADR-057); missing until migration 20261119100000_brand_profile. */
+    brand?: unknown;
   };
   location: { id: string; name: string; locales: string[]; ordering: boolean };
   menu: {
@@ -38,6 +40,8 @@ export type PublicMenu = {
     items: Record<string, SnapshotItem>;
   };
   sold_out: string[] | null;
+  /** Section cover photos by category id (ADR-057). */
+  covers?: Record<string, string> | null;
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
 };
 
@@ -65,7 +69,13 @@ export type GuestItem = {
   /** Every language's name, normalized for cross-script search (one per line). */
   search: string;
 };
-export type GuestCategory = { id: string; name: Text | null; items: GuestItem[] };
+export type GuestCategory = {
+  id: string;
+  name: Text | null;
+  items: GuestItem[];
+  /** Storage path of the section's cover photo (ADR-057). */
+  cover: string | null;
+};
 export type GuestMenuData = {
   restaurantName: string;
   /** The café's guest theme preset (ADR-052). */
@@ -73,6 +83,8 @@ export type GuestMenuData = {
   brandColor: string | null;
   /** Storage path of the café's logo in the menu-images bucket. */
   logo: string | null;
+  /** Storage path of the café's wordmark, from the brand. */
+  wordmark: string | null;
   locationId: string;
   locales: string[];
   ordering: boolean;
@@ -103,6 +115,13 @@ function searchKey(names: I18n): string {
     .filter((n): n is string => Boolean(n?.trim()))
     .map(normalizeForSearch)
     .join("\n");
+}
+
+// Only the wordmark path is needed here; the rest of the brand is parsed by
+// GuestThemeScope on the server (brand.ts stays out of the client bundle).
+export function wordmarkOf(brand: unknown): string | null {
+  const w = brand && typeof brand === "object" ? (brand as { wordmark?: unknown }).wordmark : null;
+  return typeof w === "string" && w ? w : null;
 }
 
 export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData {
@@ -138,7 +157,17 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
   const categories = (data.menu.menus ?? []).flatMap((m) =>
     (m.categories ?? []).flatMap((c) => {
       const items = c.item_ids.map(item).filter((i): i is GuestItem => i !== null);
-      return items.length ? [{ id: c.id, name: localized(c.name, locale), items }] : [];
+      const cover = data.covers?.[c.id];
+      return items.length
+        ? [
+            {
+              id: c.id,
+              name: localized(c.name, locale),
+              items,
+              cover: typeof cover === "string" && cover ? cover : null,
+            },
+          ]
+        : [];
     }),
   );
 
@@ -147,6 +176,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
     theme: guestTheme(data.restaurant.guest_theme),
     brandColor: data.restaurant.brand_color ?? null,
     logo: data.restaurant.logo || null,
+    wordmark: wordmarkOf(data.restaurant.brand),
     locationId: data.location.id,
     locales: data.location.locales,
     ordering: data.location.ordering,

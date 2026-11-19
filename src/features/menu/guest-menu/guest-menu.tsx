@@ -254,6 +254,7 @@ export function GuestMenu({
     <GuestHeader
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
+      wordmarkUrl={menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
@@ -263,7 +264,7 @@ export function GuestMenu({
             {t("menu.todayIn")}{" "}
             <RotatingText
               words={rotating}
-              className="display-face max-w-full text-[1.875rem] leading-[1.1] text-[color:var(--guest-flourish)] md:text-[2.5rem]"
+              className="display-face guest-flourish max-w-full text-[1.875rem] leading-[1.1] text-[color:var(--guest-flourish)] md:text-[2.5rem]"
             />
           </p>
         ) : null
@@ -421,6 +422,19 @@ export function GuestMenu({
                     aria-labelledby={`h-${c.id}`}
                     className="scroll-mt-36 pt-8"
                   >
+                    {/* The section's cover photo (brand profile, ADR-057): decoration, the title names it. */}
+                    {c.cover && (
+                      // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                      <img
+                        src={dishPhotoUrl(c.cover)}
+                        alt=""
+                        width={1200}
+                        height={514}
+                        loading={at === 0 ? undefined : "lazy"}
+                        decoding="async"
+                        className="rounded-card shadow-card bg-plate mb-5 block aspect-[21/9] h-auto w-full object-cover"
+                      />
+                    )}
                     {c.name && (
                       <SplitText
                         as="h2"

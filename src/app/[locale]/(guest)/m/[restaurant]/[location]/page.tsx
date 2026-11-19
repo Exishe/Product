@@ -89,7 +89,7 @@ export default async function GuestMenuPage({
 
   const menu = buildGuestMenu(published, locale);
   return (
-    <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor}>
+    <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor} brand={published.restaurant.brand}>
       <GuestI18nProvider locale={locale} messages={messages}>
         <GuestMenu
           menu={menu}

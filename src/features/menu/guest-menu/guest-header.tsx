@@ -17,6 +17,7 @@ export type LanguageLink = { locale: Locale; href: string };
 export function GuestHeader({
   cafeName,
   logoUrl,
+  wordmarkUrl = null,
   tableLabel,
   languages,
   tools,
@@ -24,6 +25,8 @@ export function GuestHeader({
 }: {
   cafeName: string;
   logoUrl: string | null;
+  /** The café's name as a picture (brand profile, ADR-057); replaces the set name. */
+  wordmarkUrl?: string | null;
   tableLabel: string | null;
   languages: readonly LanguageLink[];
   /** Small round buttons on the right of the top row (search, order). */
@@ -35,7 +38,8 @@ export function GuestHeader({
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
   const nameLang = scriptLang(cafeName);
   return (
-    <header className="text-ink">
+    // guest-head: the brand's header band hooks here (globals.css).
+    <header className="guest-head text-ink">
       <div className="mx-auto grid w-full max-w-[1360px] min-w-0 gap-5 px-4 pt-4 pb-2 md:px-8 md:pt-7">
         {/* Two groups that wrap: the logo and table on the left; languages and
             the round buttons on the right, dropping to their own line when a
@@ -85,13 +89,27 @@ export function GuestHeader({
           </div>
         </div>
         <div className="min-w-0">
-          <SplitText
-            as="h1"
-            reveal="load"
-            text={cafeName}
-            lang={nameLang && nameLang !== locale ? nameLang : undefined}
-            className="display-face text-title block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
-          />
+          {wordmarkUrl ? (
+            <h1 className="m-0">
+              {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+              <img
+                src={wordmarkUrl}
+                alt={cafeName}
+                decoding="async"
+                fetchPriority="high"
+                height={96}
+                className="block h-20 w-auto max-w-full object-contain object-left md:h-28"
+              />
+            </h1>
+          ) : (
+            <SplitText
+              as="h1"
+              reveal="load"
+              text={cafeName}
+              lang={nameLang && nameLang !== locale ? nameLang : undefined}
+              className="display-face text-title block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
+            />
+          )}
           {below}
           <p className="text-muted mt-2 text-sm">{t("payHint")}</p>
         </div>

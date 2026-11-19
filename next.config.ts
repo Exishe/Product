@@ -5,7 +5,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // Content Security Policy (security-review.md, M-2). Every script and service
 // worker is our own, and so are styles and fonts, except the guest display
-// face Stardom from the Fontshare API and CDN (ADR-051). The browser talks
+// face Stardom from the Fontshare API and CDN (ADR-051) and a café's brand
+// fonts from the Google Fonts API and CDN (ADR-057; stylesheets and font
+// files only, no scripts). The browser talks
 // only to us and to the Supabase project (REST, Realtime over wss, Storage images). The guest menu is
 // rendered statically, so the policy is static too: Next.js's inline bootstrap
 // scripts need 'unsafe-inline' until a nonce-based policy is worth making every
@@ -23,12 +25,12 @@ function contentSecurityPolicy(): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
+    "style-src 'self' 'unsafe-inline' https://api.fontshare.com https://fonts.googleapis.com",
     `img-src 'self' data: blob: ${supabase}`,
-    "font-src 'self' data: https://cdn.fontshare.com",
-    // Fontshare in connect-src too: tools that read the page's stylesheets
-    // (axe in our e2e tests, devtools) fetch them.
-    `connect-src 'self' ${supabase} ${realtime} https://api.fontshare.com${dev ? " ws:" : ""}`,
+    "font-src 'self' data: https://cdn.fontshare.com https://fonts.gstatic.com",
+    // The font stylesheets in connect-src too: tools that read the page's
+    // stylesheets (axe in our e2e tests, devtools) fetch them.
+    `connect-src 'self' ${supabase} ${realtime} https://api.fontshare.com https://fonts.googleapis.com${dev ? " ws:" : ""}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "media-src 'self'",
