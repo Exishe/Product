@@ -440,7 +440,8 @@
     "namesSection": "Name",
     "photoAfterSave": "Save the dish first. Then add a photo.",
     "priceAndKitchen": "Price and kitchen",
-    "edit": "Edit"
+    "edit": "Edit",
+    "addPhotoFor": "Add a photo of {name}"
   },
   "optionGroups": {
     "title": "Options",
@@ -917,7 +918,7 @@
     "qr": "QR code",
     "waiter": "Waiter",
     "kitchen": "Kitchen time",
-    "kitchenHint": "From the ticket to «ready»",
+    "kitchenHint": "From the ticket to “Ready”",
     "kitchenAvg": "{minutes} min on average",
     "kitchenOver": "{over} of {tickets} over 20 min",
     "defaultStation": "Kitchen",

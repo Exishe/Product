@@ -49,7 +49,7 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
         <div className="flex min-w-0 flex-col gap-1">
           <Link
             href="/admin/tables"
-            className="text-tarragon -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
+            className="text-ink -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
           >
             <ChevronLeft aria-hidden="true" className="size-5" />
             {t("print.back")}
@@ -64,7 +64,7 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
       {!floor.menuPublished && (
         <p
           role="status"
-          className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem] print:hidden"
+          className="bg-amber-tint m-0 flex items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem] print:hidden"
         >
           <CircleAlert aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
           {t("print.notPublished")}

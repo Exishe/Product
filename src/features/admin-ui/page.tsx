@@ -32,7 +32,7 @@ export function AdminPage({
           {back && (
             <Link
               href={back.href}
-              className="text-tarragon -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
+              className="text-ink -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
             >
               <ChevronLeft aria-hidden="true" className="size-5" />
               {back.label}
@@ -111,7 +111,7 @@ export function Notice({
         {
           info: "text-ink [&>svg]:text-staff-label2 bg-white shadow-[var(--shadow-soft)]",
           ok: "bg-tarragon-tint text-ink [&>svg]:text-tarragon",
-          wait: "text-ink [&>svg]:text-amber-text bg-[#fdf0dc]",
+          wait: "text-ink [&>svg]:text-amber-text bg-amber-tint",
           alert: "bg-pom-tint text-pomegranate",
         }[tone],
         className,

@@ -53,7 +53,7 @@ export default async function TelegramPage() {
         {!botReady && (
           <p
             role="status"
-            className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]"
+            className="bg-amber-tint m-0 flex items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]"
             data-testid="bot-not-ready"
           >
             <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />

@@ -18,11 +18,7 @@ export function ImportSteps({ current }: { current: Step }) {
           key={step}
           aria-current={i === at ? "step" : undefined}
           className={`flex min-h-9 items-center gap-2 rounded-full py-1 pr-3.5 pl-1 font-semibold ${
-            i === at
-              ? "bg-tarragon text-white"
-              : i < at
-                ? "bg-tarragon-tint text-tarragon"
-                : "text-staff-label2 bg-white"
+            i === at ? "bg-ink text-white" : i < at ? "bg-staff-fill text-ink" : "text-staff-label2 bg-white"
           }`}
         >
           <span

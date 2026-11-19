@@ -13,15 +13,25 @@ export function AcceptInviteForm({ token }: { token: string }) {
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-semibold text-muted">{t("name")}</span>
-        <input name="name" required maxLength={80} autoComplete="name" className="h-12 rounded-input border border-line-strong bg-white px-3" />
+        <span className="text-muted text-sm font-semibold">{t("name")}</span>
+        <input
+          name="name"
+          required
+          maxLength={80}
+          autoComplete="name"
+          className="rounded-input border-line-strong h-12 border bg-white px-3"
+        />
       </label>
       {state.error && (
-        <p role="alert" className="rounded-chip bg-pom-tint px-3 py-2 text-pomegranate">
+        <p role="alert" className="rounded-chip bg-pom-tint text-pomegranate px-3 py-2">
           {t(`errors.${state.error}`)}
         </p>
       )}
-      <button type="submit" disabled={pending} className="h-12 rounded-input bg-tarragon font-semibold text-white disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={pending}
+        className="bg-ink h-12 rounded-full font-semibold text-white disabled:opacity-60"
+      >
         {t("submit")}
       </button>
     </form>

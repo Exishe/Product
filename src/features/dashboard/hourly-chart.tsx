@@ -13,7 +13,7 @@ export type HourlyText = {
 
 const pad = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
 
-// Orders per hour as columns (tarragon), with the comparison period as a dark
+// Orders per hour as ink columns, with the comparison period as an amber-text
 // level mark in each column (a bar and a line: two shapes, not two colours). Plain HTML, no chart library and no client JS:
 // the native tooltip and the table below carry the exact numbers.
 export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: HourlyText }) {
@@ -30,11 +30,11 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
         </h2>
         <ul className="text-staff-label2 m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[0.9375rem]">
           <li className="flex items-center gap-2">
-            <span aria-hidden className="bg-tarragon inline-block h-3 w-3 rounded-[3px]" />
+            <span aria-hidden className="bg-ink inline-block h-3 w-3 rounded-[3px]" />
             {text.seriesNow}
           </li>
           <li className="flex items-center gap-2">
-            <span aria-hidden className="bg-ink inline-block h-1 w-4 rounded-full" />
+            <span aria-hidden className="bg-amber-text inline-block h-1 w-4 rounded-full" />
             {text.seriesBefore}
           </li>
         </ul>
@@ -60,12 +60,12 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
                 className="group hover:bg-staff-fill/70 relative flex h-full flex-1 items-end justify-center rounded-t-md px-px"
               >
                 <div
-                  className="bg-tarragon w-full max-w-7 rounded-t-md"
+                  className="bg-ink w-full max-w-7 rounded-t-md"
                   style={{ height: `${(r.orders / top) * 100}%` }}
                 />
                 {r.compare_orders > 0 && (
                   <div
-                    className="bg-ink absolute inset-x-1 h-1 rounded-full ring-2 ring-white"
+                    className="bg-amber-text absolute inset-x-1 h-1 rounded-full ring-2 ring-white"
                     style={{ bottom: `calc(${(r.compare_orders / top) * 100}% - 1px)` }}
                   />
                 )}
@@ -84,7 +84,7 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
       </div>
 
       <details>
-        <summary className="text-tarragon inline-flex min-h-11 cursor-pointer items-center rounded-lg font-semibold">
+        <summary className="text-ink inline-flex min-h-11 cursor-pointer items-center rounded-lg font-semibold underline underline-offset-4">
           {text.showTable}
         </summary>
         <table className="num mt-2 w-full max-w-md border-collapse text-left text-[0.9375rem]">

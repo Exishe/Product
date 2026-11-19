@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {t("auth.login.noAccount")}{" "}
           <Link
             href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
-            className="text-tarragon inline-flex min-h-11 items-center rounded-lg font-semibold underline underline-offset-4"
+            className="text-ink inline-flex min-h-11 items-center rounded-lg font-semibold underline underline-offset-4"
           >
             {t("auth.login.signupLink")}
           </Link>

@@ -1,8 +1,8 @@
 import { clsx } from "clsx";
 
 // The owner admin's controls (ADR-055): the waiter app's HIG language
-// (ADR-054) on the neutral staff greys. One filled green button per group is
-// the main action; the others are grey; red tint only for what removes
+// (ADR-054) on the neutral staff greys. one filled black button per group is
+// the main action; the others are white or grey; red tint only for what removes
 // something. Every control is at least 44 px tall (48 px for buttons).
 const base =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed aria-disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0";
@@ -11,10 +11,10 @@ const kinds = {
   primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
   secondary:
     "bg-white text-ink shadow-[var(--shadow-soft)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
-  tinted: "bg-tarragon-tint text-tarragon disabled:bg-staff-fill disabled:text-staff-label2",
+  tinted: "bg-staff-fill text-ink disabled:bg-staff-fill disabled:text-staff-label2",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
-  plain: "px-2 text-tarragon disabled:text-staff-label2",
+  plain: "px-2 text-ink underline underline-offset-4 disabled:text-staff-label2",
 } as const;
 
 export type ButtonKind = keyof typeof kinds;
@@ -41,12 +41,12 @@ export const chip = {
   base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",
   plain: "bg-staff-fill text-staff-label2",
   ok: "bg-tarragon-tint text-tarragon",
-  wait: "bg-[#fdf0dc] text-amber-text",
+  wait: "bg-amber-tint text-amber-text",
   alert: "bg-pom-tint text-pomegranate",
 };
 
 // Checkboxes and radios: native, tinted, 24 px.
-export const check = "size-6 shrink-0 accent-tarragon";
+export const check = "size-6 shrink-0 accent-ink";
 
 // Shared table styles (a shadcn/ui-style data table in our tokens).
 export const table = {

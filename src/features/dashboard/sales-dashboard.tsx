@@ -42,7 +42,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
           value={money(s.avg_bill)}
           hint={t("bills", { count: s.bills })}
         >
-          <Delta t={t} now={s.avg_bill} before={c.avg_bill} label={compareLabel} />
+          <Delta t={t} now={s.avg_bill} before={c.avg_bill} label={compareLabel} onDark />
         </Kpi>
         <Kpi testId="kpi-revenue" label={t("revenue")} value={money(s.revenue)}>
           <Delta t={t} now={s.revenue} before={c.revenue} label={compareLabel} />
@@ -108,7 +108,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
       <div className="grid gap-3 lg:grid-cols-3">
         <Card testId="sources">
           <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("sources")}</h2>
-          <ShareRow label={t("qr")} count={s.qr_orders} pct={qrPct} tone="bg-tarragon" locale={locale} />
+          <ShareRow label={t("qr")} count={s.qr_orders} pct={qrPct} tone="bg-ink" locale={locale} />
           <ShareRow
             label={t("waiter")}
             count={s.waiter_orders}
@@ -201,9 +201,9 @@ function Kpi({
   return (
     <div
       data-testid={testId}
-      className={`flex min-w-0 flex-col gap-1 rounded-2xl p-4 sm:p-5 ${hero ? "bg-tarragon-tint" : "bg-white"}`}
+      className={`flex min-w-0 flex-col gap-1 rounded-2xl p-4 sm:p-5 ${hero ? "bg-ink text-white" : "bg-white"}`}
     >
-      <span className={`text-[0.9375rem] font-semibold ${hero ? "text-tarragon" : "text-staff-label2"}`}>
+      <span className={`text-[0.9375rem] font-semibold ${hero ? "text-white/80" : "text-staff-label2"}`}>
         {label}
       </span>
       <span
@@ -212,15 +212,30 @@ function Kpi({
       >
         {value}
       </span>
-      {hint && <span className="text-staff-label2 text-[0.9375rem]">{hint}</span>}
+      {hint && (
+        <span className={`text-[0.9375rem] ${hero ? "text-white/80" : "text-staff-label2"}`}>{hint}</span>
+      )}
       {children}
     </div>
   );
 }
 
-function Delta({ t, now, before, label }: { t: T; now: number; before: number; label: string }) {
+function Delta({
+  t,
+  now,
+  before,
+  label,
+  onDark,
+}: {
+  t: T;
+  now: number;
+  before: number;
+  label: string;
+  onDark?: boolean;
+}) {
+  const muted = onDark ? "text-white/80" : "text-staff-label2";
   const pct = deltaPercent(now, before);
-  if (pct === null) return <span className="text-staff-label2 text-[0.9375rem]">{t("noCompare")}</span>;
+  if (pct === null) return <span className={`${muted} text-[0.9375rem]`}>{t("noCompare")}</span>;
   // The word (↑ 12 %), an icon and the colour together, never colour alone.
   const [text, tone, Icon] =
     pct > 0
@@ -234,7 +249,7 @@ function Delta({ t, now, before, label }: { t: T; now: number; before: number; l
         <Icon aria-hidden="true" />
         {text}
       </span>
-      <span className="text-staff-label2">{label}</span>
+      <span className={muted}>{label}</span>
     </span>
   );
 }
