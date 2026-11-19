@@ -652,6 +652,41 @@ body:has(.admin-shell) {
   outline-color: var(--brand-on-header);
 }
 
+/* The wordmark in place of the set name, and a section's cover photo
+   (plain classes: the guest menu's own JS stays inside its budget). */
+.guest-lux .guest-wordmark {
+  display: block;
+  height: 5rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left;
+}
+.guest-lux .guest-cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  margin-bottom: 1.25rem;
+  border-radius: var(--guest-r-card);
+  background: var(--guest-plate);
+  box-shadow: var(--guest-shadow-card);
+}
+@media (min-width: 768px) {
+  .guest-lux .guest-wordmark {
+    height: 7rem;
+  }
+  .guest-lux .guest-cover {
+    aspect-ratio: 3 / 1;
+  }
+}
+@media (min-width: 1280px) {
+  .guest-lux .guest-cover {
+    aspect-ratio: 4 / 1;
+  }
+}
+
 /* The script accent: one line per screen (the rotating category name). */
 .guest-lux[data-brand-script] .guest-flourish {
   font-family: var(--brand-font-script);

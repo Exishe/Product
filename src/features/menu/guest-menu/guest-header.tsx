@@ -92,14 +92,7 @@ export function GuestHeader({
           {wordmarkUrl ? (
             <h1 className="m-0">
               {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-              <img
-                src={wordmarkUrl}
-                alt={cafeName}
-                decoding="async"
-                fetchPriority="high"
-                height={96}
-                className="block h-20 w-auto max-w-full object-contain object-left md:h-28"
-              />
+              <img src={wordmarkUrl} alt={cafeName} height={96} className="guest-wordmark" />
             </h1>
           ) : (
             <SplitText
