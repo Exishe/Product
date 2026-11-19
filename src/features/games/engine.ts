@@ -3,7 +3,7 @@
 // frame loop that pauses itself and lowers the resolution on a slow phone,
 // and on-screen buttons for the action games. Plain canvas 2D, no game
 // library: each game is a few kilobytes and loads only when the guest taps
-// it (ADR-057).
+// it (ADR-059).
 
 export type Locale = "hy" | "ru" | "en";
 

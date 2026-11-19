@@ -1,4 +1,4 @@
--- Guest hints from the café's own orders (ADR-057). Two aggregates the guest
+-- Guest hints from the café's own orders (ADR-060). Two aggregates the guest
 -- menu shows next to api.public_menu:
 --  * pairs: for each dish, up to two dishes from another section that guests
 --    here ordered in the same round at least 3 times in the last 60 days

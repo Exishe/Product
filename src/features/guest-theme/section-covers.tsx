@@ -17,7 +17,7 @@ export type CoverSection = { id: string; name: string | null; cover: string | nu
 const coverUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
 
-// «Բաժինների շապիկներ» (ADR-057): a wide photo per menu section. Each one is
+// «Բաժինների շապիկներ» (ADR-058): a wide photo per menu section. Each one is
 // saved as soon as it is uploaded or removed; guests read covers live.
 export function SectionCovers({
   restaurantId,

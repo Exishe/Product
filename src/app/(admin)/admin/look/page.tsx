@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const NAME_ORDER = ["hy", "ru", "en"];
 
-// «Հյուրի էջի տեսքը» (ADR-052) and the café's brand profile (ADR-057): theme,
+// «Հյուրի էջի տեսքը» (ADR-052) and the café's brand profile (ADR-058): theme,
 // colours, logo and wordmark, fonts, plates and section covers.
 export default async function LookPage() {
   const me = await requireMember(["owner", "manager"]);

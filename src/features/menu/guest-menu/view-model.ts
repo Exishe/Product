@@ -31,7 +31,7 @@ export type PublicMenu = {
     brand_color?: string | null;
     /** Missing until migration 20261117120000_guest_theme is applied. */
     guest_theme?: string | null;
-    /** The brand profile (ADR-057); missing until migration 20261119100000_brand_profile. */
+    /** The brand profile (ADR-058); missing until migration 20261119100000_brand_profile. */
     brand?: unknown;
   };
   location: { id: string; name: string; locales: string[]; ordering: boolean };
@@ -42,7 +42,7 @@ export type PublicMenu = {
     items: Record<string, SnapshotItem>;
   };
   sold_out: string[] | null;
-  /** Section cover photos by category id (ADR-057). */
+  /** Section cover photos by category id (ADR-058). */
   covers?: Record<string, string> | null;
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
 };
@@ -77,7 +77,7 @@ export type GuestCategory = {
   id: string;
   name: Text | null;
   items: GuestItem[];
-  /** Storage path of the section's cover photo (ADR-057). */
+  /** Storage path of the section's cover photo (ADR-058). */
   cover: string | null;
 };
 export type GuestMenuData = {

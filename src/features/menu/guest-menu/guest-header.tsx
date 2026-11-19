@@ -24,7 +24,7 @@ export function GuestHeader({
 }: {
   cafeName: string;
   logoUrl: string | null;
-  /** The café's name as a picture (brand profile, ADR-057); replaces the set name. */
+  /** The café's name as a picture (brand profile, ADR-058); replaces the set name. */
   wordmarkUrl?: string | null;
   tableLabel: string | null;
   languages: readonly LanguageLink[];

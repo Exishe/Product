@@ -1,4 +1,4 @@
--- Per-café brand profile (ADR-057). On top of the guest theme preset
+-- Per-café brand profile (ADR-058). On top of the guest theme preset
 -- (ADR-052) a café can bring its own look: a wordmark, up to five colours
 -- with fixed roles, a heading, body and script font from a curated list of
 -- free Google fonts (Latin and Cyrillic; Armenian always falls back to the

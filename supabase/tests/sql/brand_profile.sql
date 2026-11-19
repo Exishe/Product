@@ -1,4 +1,4 @@
--- Per-café brand profile (ADR-057): restaurants.brand, api.set_brand,
+-- Per-café brand profile (ADR-058): restaurants.brand, api.set_brand,
 -- api.set_section_cover and their place in api.public_menu. Uses the test.*
 -- helpers of 90-smoke-test.sql.
 \set ON_ERROR_STOP 1

@@ -183,7 +183,7 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   );
 }
 
-// "Usually ready in 10–15 min" from the café's own rounds (ADR-057), and,
+// "Usually ready in 10–15 min" from the café's own rounds (ADR-060), and,
 // well past that, a calm "taking longer than usual" with the waiter as the
 // way out. Re-checked every 30 seconds; never a countdown.
 function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
@@ -339,7 +339,7 @@ export function OrderStatusView({
   tableId: string;
   menuHref: string;
   vapidPublicKey?: string | null;
-  /** The café's usual wait (ADR-057); null when it can't say, or the kitchen set its own. */
+  /** The café's usual wait (ADR-060); null when it can't say, or the kitchen set its own. */
   wait?: WaitRange | null;
 }) {
   const { t, locale } = useGuestI18n();

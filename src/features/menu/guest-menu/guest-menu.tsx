@@ -80,7 +80,7 @@ export function GuestMenu({
   /** The order status page for this table. */
   orderHref: string | null;
   languages: LanguageLink[];
-  /** Pairs and the usual wait from the café's own rounds (ADR-057). */
+  /** Pairs and the usual wait from the café's own rounds (ADR-060). */
   hints?: MenuHints;
 }) {
   const { t, locale } = useGuestI18n();
@@ -483,7 +483,7 @@ export function GuestMenu({
                     aria-labelledby={`h-${c.id}`}
                     className="scroll-mt-36 pt-8"
                   >
-                    {/* The section's cover photo (brand profile, ADR-057): decoration, the title names it. */}
+                    {/* The section's cover photo (brand profile, ADR-058): decoration, the title names it. */}
                     {c.cover && (
                       // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
                       <img

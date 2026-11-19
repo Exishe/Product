@@ -622,7 +622,7 @@ body:has(.admin-shell) {
   --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.3), inset 0 3px 12px rgb(0 0 0 / 0.28);
 }
 
-/* Brand profile (ADR-057). A café's brand sets --brand-* and some --guest-*
+/* Brand profile (ADR-058). A café's brand sets --brand-* and some --guest-*
    tokens inline on its .guest-lux root (brand.ts, only where contrast holds);
    the rules below are the parts that need selectors. With no brand none of
    the data attributes is set and the preset looks exactly as above. */

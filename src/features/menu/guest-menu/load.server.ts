@@ -19,7 +19,7 @@ export const getPublicMenu = cache(
   },
 );
 
-// Hints from the café's own orders (ADR-057). Optional: any failure (the
+// Hints from the café's own orders (ADR-060). Optional: any failure (the
 // function not deployed yet, a slow database) means no hints, never an error
 // page, and never holds the menu up for long.
 export const getMenuHints = cache(async (restaurant: string, location: string): Promise<MenuHints> => {

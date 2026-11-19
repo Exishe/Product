@@ -1,4 +1,4 @@
--- Guest hints (ADR-057): dishes ordered together and the usual wait, as
+-- Guest hints (ADR-060): dishes ordered together and the usual wait, as
 -- aggregates of the café's own orders. Runs after 90-smoke-test.sql and
 -- adr038.sql and reuses their test.* helpers.
 \set ON_ERROR_STOP 1

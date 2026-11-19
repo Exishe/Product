@@ -12,7 +12,7 @@ const overscroll = (page: string) =>
 // The café's own theme around one guest page. The guest layout wears the
 // default preset; a page that knows the café (menu, cart, order status)
 // wraps its content in this, which re-applies .guest-lux with the café's
-// preset, brand colour and brand profile (ADR-057), so every token
+// preset, brand colour and brand profile (ADR-058), so every token
 // underneath follows. Without a brand nothing but the preset is set.
 export function GuestThemeScope({
   theme,

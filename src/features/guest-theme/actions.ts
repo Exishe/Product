@@ -56,7 +56,7 @@ const brandInput = z
   .strict()
   .nullable();
 
-// The brand profile (ADR-057): api.set_brand checks the role, the font list
+// The brand profile (ADR-058): api.set_brand checks the role, the font list
 // and the wordmark's folder. null removes the brand.
 export async function saveBrand(value: unknown): Promise<{ ok: boolean }> {
   const me = await requireMember(["owner", "manager"]);

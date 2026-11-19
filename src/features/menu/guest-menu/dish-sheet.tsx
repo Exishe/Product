@@ -35,7 +35,7 @@ export function DishSheet({
 }: {
   item: GuestItem;
   canOrder: boolean;
-  /** "Guests here often add" (ADR-057): dishes from the café's own rounds. */
+  /** "Guests here often add" (ADR-060): dishes from the café's own rounds. */
   pairs?: GuestItem[];
   onAdd: (add: { modifierIds: string[]; quantity: number; note: string }) => void;
   /** One tap adds a pair that needs no choice, as the menu's "+" does. */

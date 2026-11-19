@@ -1,4 +1,4 @@
-// Hints from the café's own orders (api.public_menu_hints, ADR-057): dishes
+// Hints from the café's own orders (api.public_menu_hints, ADR-060): dishes
 // guests here order together, and how long a round usually takes. Both are
 // optional: a café without enough orders, or a database without the
 // function yet, gets none and the menu looks as before.

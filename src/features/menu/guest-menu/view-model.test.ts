@@ -138,7 +138,7 @@ describe("buildGuestMenu", () => {
     expect([after.theme, after.brandColor, after.logo]).toEqual(["wine", "#c2185b", "r1/logo/1.webp"]);
   });
 
-  it("reads the wordmark from the brand and a cover per section (ADR-057)", () => {
+  it("reads the wordmark from the brand and a cover per section (ADR-058)", () => {
     const k = {
       name: { hy: "Խորոված" },
       description: null,

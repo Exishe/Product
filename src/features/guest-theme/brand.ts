@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { THEME_FACTS, brandStyle, contrast, type GuestTheme } from "./themes";
 
-// The café's brand profile (ADR-057): restaurants.brand, read with the menu.
+// The café's brand profile (ADR-058): restaurants.brand, read with the menu.
 // It sits on top of the theme preset: every role below replaces some of the
 // preset's --guest-* tokens, but only where the result keeps WCAG contrast;
 // a role that would not is ignored on the guest page and flagged in the

@@ -133,7 +133,7 @@ export function CartView({
   locked: boolean;
   notice: ReactNode;
   footer: ReactNode;
-  /** The café's usual wait (ADR-057), when it has enough rounds to say. */
+  /** The café's usual wait (ADR-060), when it has enough rounds to say. */
   wait?: WaitRange | null;
   onQuantity: (id: string, quantity: number) => void;
   onBack: () => void;
