@@ -71,6 +71,7 @@ export default async function LookPage() {
 
   return (
     <AdminPage
+      width="xl"
       title={t("title")}
       subtitle={<p className="m-0">{t("intro")}</p>}
       actions={

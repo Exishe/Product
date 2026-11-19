@@ -432,7 +432,7 @@ export function GuestMenu({
                         height={514}
                         loading={at === 0 ? undefined : "lazy"}
                         decoding="async"
-                        className="rounded-card shadow-card bg-plate mb-5 block aspect-[21/9] h-auto w-full object-cover"
+                        className="rounded-card shadow-card bg-plate mb-5 block aspect-[21/9] h-auto w-full object-cover md:aspect-[3/1] xl:aspect-[4/1]"
                       />
                     )}
                     {c.name && (

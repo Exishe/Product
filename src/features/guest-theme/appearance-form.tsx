@@ -282,7 +282,7 @@ export function AppearanceForm({
         </div>
       </fieldset>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
         <fieldset className="m-0 flex min-w-0 flex-col gap-6 border-0 p-0" disabled={!ready}>
           <legend className="sr-only">{b("title")}</legend>
           <Group id={`${ids}-colors`} title={b("colors")} hint={b("colorsHint")}>
@@ -292,8 +292,9 @@ export function AppearanceForm({
                 const on = Boolean(value);
                 const shown = value ?? off[role] ?? startColor(theme, role);
                 const name = b(`roles.${role}.name`);
+                // Only the roles that are text on the page get a ratio (badges carry their own text).
                 const ratio =
-                  value && role !== "page" && role !== "line" ? contrast(value, pageColor).toFixed(1) : null;
+                  value && (role === "header" || role === "accent") ? contrast(value, pageColor).toFixed(1) : null;
                 // The brand only colours text where it can; brand.ts says which roles it ignored.
                 const weak = on && (role === "accent" || role === "page") && ignored.includes(role);
                 return (
