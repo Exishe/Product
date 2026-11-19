@@ -4,6 +4,7 @@ import hy from "../../messages/hy.json" with { type: "json" };
 import ru from "../../messages/ru.json" with { type: "json" };
 import { createCafeWithMenu, newClient, type TestCafe } from "./guest-helpers";
 import { unique } from "./helpers";
+import { signInAsRunOwner, withRateLimitRetry } from "./run-owner";
 
 // Every screen of the app, reachable without cloud migrations that aren't
 // applied yet, with the longest strings we can give it. Shared by the
@@ -81,6 +82,18 @@ async function signInState(browser: Browser, baseURL: string | undefined, email:
   await page.locator('input[name="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/admin(\/new)?$/);
+  const state = await context.storageState();
+  await context.close();
+  return state;
+}
+
+// The run's owner, looking at this café (no sign-in form: run-owner.ts).
+async function ownerState(browser: Browser, baseURL: string | undefined, cafe: TestCafe): Promise<StorageState> {
+  const context = await browser.newContext({ baseURL });
+  await signInAsRunOwner(context, cafe.restaurantId, baseURL);
+  const page = await context.newPage();
+  await page.goto("/admin");
+  await page.waitForURL(/\/admin$/);
   const state = await context.storageState();
   await context.close();
   return state;
@@ -195,11 +208,11 @@ export async function buildWorld(browser: Browser, baseURL: string | undefined):
 
   // Someone who signed up but has no café yet: /admin/new.
   const newcomerEmail = `e2e-new-${unique()}@pativ.test`;
-  const signUp = await newClient().auth.signUp({ email: newcomerEmail, password: "e2e-password-123" });
+  const signUp = await withRateLimitRetry("newcomer sign-up", () => newClient().auth.signUp({ email: newcomerEmail, password: "e2e-password-123" }));
   if (signUp.error) throw new Error(`sign-up: ${signUp.error.message}`);
 
   const [owner, kitchen, waiter, newcomer, migrations] = await Promise.all([
-    signInState(browser, baseURL, cafe.email, cafe.password),
+    ownerState(browser, baseURL, cafe),
     pairState(browser, baseURL, cafe, "kitchen"),
     pairState(browser, baseURL, cafe, "waiter"),
     signInState(browser, baseURL, newcomerEmail, "e2e-password-123"),

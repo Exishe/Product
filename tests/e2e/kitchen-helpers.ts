@@ -2,7 +2,7 @@ import { expect, type Browser, type BrowserContext, type Page } from "@playwrigh
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../src/lib/supabase/database";
 import type { Json } from "../../src/lib/supabase/types";
-import { ownerEmail, ownerPassword, unique } from "./helpers";
+import { unique } from "./helpers";
 
 // Helpers for the kitchen board specs: the demo owner acts through the same
 // api.* functions the waiter tablet will use (never SQL, never a secret key),
@@ -14,13 +14,6 @@ export function newClient(): Api {
   return createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL as string, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-export async function signedInOwner(email = ownerEmail as string, password = ownerPassword as string): Promise<Api> {
-  const api = newClient();
-  const { error } = await api.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return api;
 }
 
 type MenuItem = { id: string; name: Record<string, string>; groups: { min: number; modifiers: { id: string }[] }[] };
@@ -144,7 +137,7 @@ export async function pairKitchenDevice(browser: Browser, api: Api, cafe: Cafe, 
   await page.getByLabel("Վեցանիշ կոդը").fill(code);
   await page.getByRole("button", { name: "Միացնել" }).click();
   await expect(page).toHaveURL(new RegExp(`/kitchen/${cafe.kitchenStationId}$`));
-  const { data: member } = await api.from("members").select("id").eq("display_name", label).single();
+  const { data: member } = await api.from("members").select("id").eq("restaurant_id", cafe.restaurantId).eq("display_name", label).single();
   if (!member) throw new Error("device member not found");
   return { context, page, memberId: member.id, label };
 }

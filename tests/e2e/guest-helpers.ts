@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../src/lib/supabase/database";
 import { ownerEmail, ownerPassword, unique } from "./helpers";
+import { runOwner } from "./run-owner";
 
 // Guest tests talk to the dev project the same way the app does: with the
 // publishable key and a signed-in owner's own session (RLS applies).
@@ -55,9 +56,8 @@ export type TestDish = {
 };
 
 export type TestCafe = {
+  // The run's one owner (run-owner.ts): the same session for every café of this worker.
   owner: Db;
-  email: string;
-  password: string;
   slug: string;
   name: string;
   restaurantId: string;
@@ -66,8 +66,9 @@ export type TestCafe = {
   tables: Record<string, { id: string; token: string }>;
 };
 
-// A brand-new café with its own owner, menu, tables and a published menu, so
-// guest tests never change the demo café's menu.
+// A brand-new café with its own menu, tables and a published menu, so guest
+// tests never change the demo café's menu. It belongs to the run's one owner,
+// who owns every test café: queries through `owner` must name their café.
 export async function createCafeWithMenu(opts: {
   categories: { key: string; names: Names }[];
   dishes: TestDish[];
@@ -76,11 +77,7 @@ export async function createCafeWithMenu(opts: {
   ownerName?: string;
 }): Promise<TestCafe> {
   const id = unique();
-  const owner = newClient();
-  const email = `e2e-guest-${id}@pativ.test`;
-  const password = "e2e-password-123";
-  const signedUp = await owner.auth.signUp({ email, password });
-  if (signedUp.error) throw new Error(`sign-up: ${signedUp.error.message}`);
+  const owner = (await runOwner()).client;
   const name = opts.name ?? `Թեստ ${id}`;
   const slug = `e2e-${id}`;
   const restaurantId = must(
@@ -163,7 +160,7 @@ export async function createCafeWithMenu(opts: {
   }
 
   must(await owner.schema("api").rpc("publish_menu", { p_location_id: locationId }), "publish");
-  return { owner, email, password, slug, name, restaurantId, locationId, items, tables };
+  return { owner, slug, name, restaurantId, locationId, items, tables };
 }
 
 // Base64url helpers for building tampered and forged tokens in tests.

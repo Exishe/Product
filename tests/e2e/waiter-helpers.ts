@@ -65,7 +65,7 @@ export async function pairWaiterDevice(browser: Browser, cafe: TestCafe, baseURL
   await expect(page).toHaveURL(/\/waiter$/);
   const storageState = await context.storageState();
   await context.close();
-  const { data: member } = await cafe.owner.from("members").select("id").eq("display_name", label).single();
+  const { data: member } = await cafe.owner.from("members").select("id").eq("restaurant_id", cafe.restaurantId).eq("display_name", label).single();
   if (!member) throw new Error("device member not found");
   return { storageState, memberId: member.id };
 }
