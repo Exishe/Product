@@ -213,7 +213,9 @@ function TableButton({
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
         "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150 motion-reduce:transition-none",
-        table.shape === "round" ? "rounded-full sm:aspect-square" : "rounded-2xl",
+        // A true circle only where a column is wide enough for its four lines;
+        // narrower, the round table is an oval that stays inside its column.
+        table.shape === "round" ? "rounded-full xl:aspect-square xl:self-center" : "rounded-2xl",
         wide && "col-span-2",
         STATE_CLASS[table.state],
         selected && "outline-ink outline-[3px] outline-offset-[3px] outline-solid",
