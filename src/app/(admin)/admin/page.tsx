@@ -104,12 +104,16 @@ export default async function AdminHome() {
     todos.push({ key: "stops", href: "/admin/menu", text: t("stopList", { count: stops.count ?? 0 }) });
 
   const delta = data ? deltaPercent(data.summary.revenue, data.compare.revenue) : null;
-  const subtitle = location
-    ? t("date", {
-        date: formatDate(new Date(), locale, location.timezone),
-        time: formatTime(new Date(), location.timezone),
-      })
-    : null;
+  const subtitle = (
+    <p className="num m-0">
+      {t("welcome", { name: member.displayName })}
+      {location &&
+        ` · ${t("date", {
+          date: formatDate(new Date(), locale, location.timezone),
+          time: formatTime(new Date(), location.timezone),
+        })}`}
+    </p>
+  );
 
   return (
     <AdminPage title={restaurant?.name} subtitle={subtitle} width="md">

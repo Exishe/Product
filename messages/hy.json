@@ -33,6 +33,7 @@
   },
   "admin": {
     "home": {
+      "welcome": "Բարի գալուստ, {name}",
       "date": "{date}, {time}",
       "today": "Այսօր",
       "allSales": "Բոլոր վաճառքները",

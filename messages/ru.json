@@ -33,6 +33,7 @@
   },
   "admin": {
     "home": {
+      "welcome": "Добро пожаловать, {name}",
       "date": "{date}, {time}",
       "today": "Сегодня",
       "allSales": "Все продажи",
