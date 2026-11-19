@@ -161,10 +161,10 @@ test.describe("kitchen board", () => {
       let board = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { clockAheadMs: 8 * 60_000 + 10_000 });
       let s = slip(board.page, order.ticketId);
       await expect(s).toHaveAttribute("data-lateness", "hurry");
-      await expect(s.getByTestId("ticket-age")).toHaveText("Շտապել");
+      await expect(s.getByTestId("ticket-age")).toHaveText("Շտապ");
       await expect(s.getByTestId("ticket-timer")).toHaveText("8 ր");
       // The colour fades in over 200 ms (ADR-054), so wait for it to settle.
-      await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(242, 162, 58)");
+      await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(201, 120, 15)");
       await board.context.close();
 
       board = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { clockAheadMs: 12 * 60_000 + 10_000 });
@@ -172,8 +172,8 @@ test.describe("kitchen board", () => {
       await expect(s).toHaveAttribute("data-lateness", "late");
       await expect(s.getByTestId("ticket-age")).toHaveText("Ուշանում է");
       await expect(s.getByTestId("ticket-timer")).toHaveText("12 ր");
-      // The dark board's red (ADR-054): 3.4:1 against the column, white text on it 4.8:1.
-      await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(208, 56, 74)");
+      // The board's one deep red (ADR-057): white text on it 6.7:1.
+      await expect.poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor)).toBe("rgb(176, 33, 58)");
 
       // Ready food waits for the waiter: never marked late.
       await moveTicket(api, order.ticketId, "new", "ready");
@@ -230,6 +230,77 @@ test.describe("kitchen board", () => {
     } finally {
       await context.close();
       await serveOrders(api, [order.orderId]);
+    }
+  });
+
+  test("an allergy note gets the red banner and its own sound; all-day counts dishes; struck lines bump the ticket", async ({
+    browser,
+    api,
+    cafe,
+    device,
+    viewportSize,
+    consoleErrors,
+  }) => {
+    const [dish, side] = simpleItems(cafe).slice(5);
+    const orders: string[] = [];
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors, { instrument: true });
+    try {
+      const a = await placeOrder(api, cafe, "3", [
+        { item: dish!, quantity: 2, note: "Ալերգիա ընկույզի նկատմամբ" },
+        { item: side!, quantity: 1 },
+      ]);
+      orders.push(a.orderId);
+      const b = await placeOrder(api, cafe, "4", [{ item: dish!, quantity: 1, note: "Առանց սոխի" }]);
+      orders.push(b.orderId);
+      await page.reload();
+      await startShift(page);
+      const beepsAtStart = await page.evaluate(() => (window as unknown as { __beeps: number }).__beeps);
+
+      // Allergy: a red banner with a word and a shield, and the note itself red-edged.
+      const sa = slip(page, a.ticketId);
+      await expect(sa).toHaveAttribute("data-allergy", "true");
+      await expect(sa.getByTestId("ticket-allergy")).toHaveText("Ալերգիա․ կարդացեք նշումը");
+      await expect(sa.getByTestId("line-note")).toHaveAttribute("data-allergy", "true");
+      const sb = slip(page, b.ticketId);
+      await expect(sb.getByTestId("ticket-allergy")).toHaveCount(0);
+      await expect(sb.getByTestId("line-note")).not.toHaveAttribute("data-allergy");
+
+      // A new allergy order plays the four-beep alarm (not the two-beep new order).
+      const c = await placeOrder(api, cafe, "6", [{ item: side!, quantity: 1 }], "Аллергия на орехи");
+      orders.push(c.orderId);
+      await expect(slip(page, c.ticketId).getByTestId("ticket-allergy")).toBeVisible();
+      await expect
+        .poll(() => page.evaluate(() => (window as unknown as { __beeps: number }).__beeps))
+        .toBe(beepsAtStart + 4);
+
+      // All day: 3 of the dish over two tickets; tapping it outlines both.
+      const dishName = dish!.name.hy as string;
+      const row = page.getByTestId("all-day-row").filter({ hasText: dishName });
+      await expect(row.getByTestId("all-day-qty")).toHaveText("3×");
+      expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(56);
+      await row.click();
+      await expect(sa).toHaveAttribute("data-highlighted", "true");
+      await expect(sb).toHaveAttribute("data-highlighted", "true");
+      await expect(slip(page, c.ticketId)).not.toHaveAttribute("data-highlighted");
+      await row.click();
+      await expect(sa).not.toHaveAttribute("data-highlighted");
+
+      // Item-level bump: strike each line in Cooking; the last one sends the ticket to Ready.
+      await sa.getByRole("button", { name: "Սկսել" }).click();
+      await expect(inColumn(page, "cooking", a.ticketId)).toBeVisible();
+      const lineButton = (name: string) => sa.getByRole("button", { name, exact: false }).filter({ hasText: name });
+      const first = lineButton(dishName);
+      expect((await first.boundingBox())!.height).toBeGreaterThanOrEqual(56);
+      await first.click();
+      await expect(first).toHaveAttribute("aria-pressed", "true");
+      await expect(row.getByTestId("all-day-qty")).toHaveText("3×"); // still cooking until the ticket is done
+      await lineButton(side!.name.hy as string).click();
+      await expect(inColumn(page, "ready", a.ticketId)).toBeVisible();
+      await expect.poll(async () => (await ticketStatus(api, a.ticketId))?.status).toBe("ready");
+      await expect(row.getByTestId("all-day-qty")).toHaveText("1×");
+    } finally {
+      await context.close();
+      await serveOrders(api, orders);
     }
   });
 
