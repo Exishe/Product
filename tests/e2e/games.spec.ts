@@ -70,6 +70,9 @@ test.describe("games while the order cooks", () => {
       await expect(layer.locator(`img[src="/games/${id}.webp"]`)).toBeVisible();
       // The order is still cooking: the header says so.
       await expect(layer.getByTestId("game-cooking")).toHaveText("Պատվերը պատրաստվում է");
+      // Two lines at most, inside the 56 px header (no lone "է" spilling out).
+      const cooking = (await layer.getByTestId("game-cooking").boundingBox())!;
+      expect(cooking.height).toBeLessThanOrEqual(32);
 
       const before = scripts.length;
       await layer.getByTestId("game-start").click();

@@ -131,6 +131,14 @@ test.describe("guest menu edge cases at a fresh café", () => {
     }
   });
 
+  test("a dish row without photo or description still opens from a 44 px target", async ({ page }) => {
+    await page.goto(`/hy/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
+    const opens = page.locator('[data-testid="dish"][data-layout="row"] > button:first-child');
+    await expect(opens.first()).toBeVisible();
+    const heights = await opens.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+    expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+  });
+
   test("missing translations fall back to Armenian, then Russian, marked with lang (Review focus 5)", async ({ page }) => {
     await page.goto(`/en/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
     await expect(dish(page, "Tolma").getByText("Tolma", { exact: true })).not.toHaveAttribute("lang");

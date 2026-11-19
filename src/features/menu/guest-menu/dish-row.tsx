@@ -41,7 +41,7 @@ export function DishRow({
         type="button"
         disabled={item.soldOut}
         onClick={() => onOpen(item)}
-        className="flex min-w-0 flex-1 items-start gap-3 rounded-[0.5rem] text-left disabled:cursor-default"
+        className="flex min-h-11 min-w-0 flex-1 items-start gap-3 self-stretch rounded-[0.5rem] text-left disabled:cursor-default"
       >
         {item.image && (
           <Plate

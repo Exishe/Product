@@ -234,7 +234,10 @@ function GameLayer({
           <span className="block truncate font-semibold">{t(`games.${id}.name`)}</span>
           {/* A quiet line that the kitchen is still on it: the game yields to the real wait. */}
           {waiting && !ready && (
-            <span className="text-slip-dim line-clamp-2 text-xs leading-tight" data-testid="game-cooking">
+            <span
+              className="text-slip-dim block max-h-[2lh] overflow-hidden text-xs leading-tight text-balance"
+              data-testid="game-cooking"
+            >
               <span
                 aria-hidden="true"
                 className="bg-slip-dim me-1.5 inline-block size-1.5 rounded-full align-middle motion-safe:animate-pulse"
