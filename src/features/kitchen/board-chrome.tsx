@@ -79,14 +79,14 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
             onClick={() => onDismiss(toast.id)}
             className={clsx(
               "bg-basalt-3 text-slip shadow-float pointer-events-auto flex max-w-xl items-start gap-4 rounded-2xl border-4 px-6 py-4 text-left",
-              toast.tone === "conflict" ? "border-apricot" : "border-late-on-dark",
+              toast.tone === "conflict" ? "border-apricot-deep" : "border-late-on-dark",
             )}
           >
             <Icon
               aria-hidden="true"
               className={clsx(
                 "mt-0.5 size-8 shrink-0",
-                toast.tone === "conflict" ? "text-apricot" : "text-pom-on-dark",
+                toast.tone === "conflict" ? "text-amber-text" : "text-pom-on-dark",
               )}
             />
             <span className="grid">

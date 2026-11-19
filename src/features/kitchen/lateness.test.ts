@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyLateness, elapsedMinutes, HURRY_AFTER_MS, LATE_AFTER_MS } from "./lateness";
+import { ageLabel, classifyLateness, elapsedMinutes, HURRY_AFTER_MS, LATE_AFTER_MS } from "./lateness";
 
 const min = (m: number) => m * 60_000;
 
@@ -37,5 +37,15 @@ describe("elapsedMinutes", () => {
     expect(elapsedMinutes(59_999)).toBe(0);
     expect(elapsedMinutes(60_000)).toBe(1);
     expect(elapsedMinutes(min(12) + 30_000)).toBe(12);
+  });
+});
+
+describe("ageLabel", () => {
+  it("says just now, then minutes up to 99, then whole hours", () => {
+    expect(ageLabel(30_000)).toEqual({ unit: "now" });
+    expect(ageLabel(min(8))).toEqual({ unit: "minutes", value: 8 });
+    expect(ageLabel(min(99) + 59_000)).toEqual({ unit: "minutes", value: 99 });
+    expect(ageLabel(min(100))).toEqual({ unit: "hours", value: 1 });
+    expect(ageLabel(min(2290))).toEqual({ unit: "hours", value: 38 });
   });
 });

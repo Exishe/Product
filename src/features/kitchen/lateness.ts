@@ -18,3 +18,16 @@ export function classifyLateness(ageMs: number, status: "new" | "cooking" | "rea
 export function elapsedMinutes(ageMs: number): number {
   return Math.floor(Math.max(0, ageMs) / 60_000);
 }
+
+// The timer in the ticket's band: minutes up to 99, whole hours after that, so
+// a ticket forgotten overnight reads "38 h" instead of a four-digit number
+// that crowds out the «Ուշանում է» badge.
+export type AgeLabel =
+  { unit: "now" } | { unit: "minutes"; value: number } | { unit: "hours"; value: number };
+
+export function ageLabel(ageMs: number): AgeLabel {
+  const minutes = elapsedMinutes(ageMs);
+  if (minutes === 0) return { unit: "now" };
+  if (minutes <= 99) return { unit: "minutes", value: minutes };
+  return { unit: "hours", value: Math.floor(minutes / 60) };
+}

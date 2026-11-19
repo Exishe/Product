@@ -61,10 +61,10 @@ export function StopList({
       <dialog
         ref={dialog}
         aria-labelledby="stop-list-title"
-        className="border-basalt-3 bg-basalt-2 text-slip mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l p-0 backdrop:bg-black/40"
+        className="bg-basalt-2 text-slip mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l border-(--kds-frame) p-0 backdrop:bg-black/40"
       >
         <div className="flex h-full flex-col">
-          <div className="border-basalt-3 flex items-start justify-between gap-4 border-b px-6 py-4">
+          <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
               <h2 id="stop-list-title" className="text-2xl font-bold">
                 {t("title")}
@@ -133,8 +133,8 @@ export function StopList({
                             >
                               <span
                                 className={clsx(
-                                  "absolute top-1 size-6 rounded-full bg-white transition-[left] duration-150",
-                                  out ? "left-7" : "left-1",
+                                  "absolute top-1 left-1 size-6 rounded-full bg-white transition-transform duration-150 motion-reduce:transition-none",
+                                  out && "translate-x-6",
                                 )}
                               />
                             </span>

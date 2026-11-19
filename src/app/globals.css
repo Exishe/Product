@@ -175,7 +175,7 @@
         .bg-basalt-2,
         .bg-basalt-3,
         [class*="aria-pressed:bg-ink"][aria-pressed="true"]
-      ):hover:not(:disabled),
+      ):hover:not(:disabled, .kitchen-light *),
     :where(.bg-basalt, .bg-basalt-2, .bg-deep) :is(button, [role="button"], a):hover:not(:disabled) {
       filter: brightness(1.3);
     }
@@ -343,26 +343,54 @@ body:has(.admin-shell) {
    this scope maps them onto the light palette. Amber (8 min) and red
    (12 min) stay exactly as they were: amber with black text 8.0:1, the red
    with white text 4.8:1, and both still pair a colour with an icon and a
-   word. */
+   word. The arena pass (ADR-062) gave white things an edge they can be
+   seen by from 1.5 m, and made the board's red the one deep red. */
 .kitchen-light {
   --color-basalt: #eceef1; /* the page */
   --color-basalt-2: #f6f7f9; /* header bar, columns */
   --color-basalt-3: #ffffff; /* tickets, buttons */
-  --color-basalt-4: #e3e6eb; /* the on-time band, counts */
+  --color-basalt-4: #dde0e6; /* the on-time band, counts; ink on it 13.3:1, slip-dim 4.9:1 */
   --color-slip: #1b1d21; /* ink: 16.9:1 on white */
   --color-slip-dim: #565d67; /* secondary: 6.6:1 on white, 5.7:1 on the page */
   --color-pom-on-dark: #b0213a;
+  --color-late-on-dark: #b0213a; /* late band, allergy banner: white on it 6.7:1 */
   --color-tarragon-on-dark: #1d6a43;
   --color-apricot-on-dark: #8a5300;
+  --kds-frame: #c4c9d1; /* the frame of an on-time ticket, dividers */
+  --kds-edge: var(--color-staff-field); /* the edge of white controls: 3.4:1 on white */
+  --kds-note: #fce8c8; /* a guest's note; ink on it 14.0:1 */
+  --kds-note-edge: #d9a24a;
   color-scheme: light;
 }
 .kitchen-light .rounded-2xl.bg-basalt-3,
 .kitchen-light .rounded-2xl.bg-basalt-2 {
   border-radius: var(--radius-soft);
 }
-.kitchen-light [data-testid="ticket"],
-.kitchen-light .rounded-full.bg-basalt-3 {
+.kitchen-light [data-testid="ticket"] {
   box-shadow: var(--shadow-soft);
+}
+/* White controls on the near-white header and drawers (1.07:1 alone). */
+.kitchen-light :is(button, a, [role="status"]).bg-basalt-3 {
+  box-shadow:
+    inset 0 0 0 2px var(--kds-edge),
+    var(--shadow-soft);
+}
+@media (hover: hover) {
+  /* The ink buttons («Սկսել») get lighter on hover, like ink elsewhere. */
+  .kitchen-light :is(button, a).bg-slip:hover:not(:disabled) {
+    filter: brightness(1.6);
+  }
+}
+@keyframes kds-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .kitchen-light .kds-in {
+    animation: kds-in 200ms ease-out;
+  }
 }
 
 /* Guest theme presets (ADR-051, ADR-052). Each café picks one in /admin
