@@ -81,13 +81,19 @@ export function DishSheet({
         {/* The expanded card (owner's reference): the plate bleeds off the
             top-right corner, a round × floats top-left, and the name,
             description and price sit beside the plate. */}
-        <div className="relative -mx-5 -mt-7 min-h-[13.5rem] overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:min-h-[16rem] md:px-9 md:pt-7">
-          <Plate
-            src={item.image ? dishPhotoUrl(item.image) : null}
-            size={440}
-            lazy={false}
-            className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
-          />
+        {/* Without a photo there is no plate: an empty dark disc would be
+            the largest thing on the sheet and say nothing. */}
+        <div
+          className={`relative -mx-5 -mt-7 overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:px-9 md:pt-7 ${item.image ? "min-h-[13.5rem] md:min-h-[16rem]" : ""}`}
+        >
+          {item.image && (
+            <Plate
+              src={dishPhotoUrl(item.image)}
+              size={440}
+              lazy={false}
+              className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
+            />
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -96,7 +102,7 @@ export function DishSheet({
           >
             <CloseIcon />
           </button>
-          <div className="relative mt-5 pr-[44%] md:pr-[46%]">
+          <div className={`relative mt-5 ${item.image ? "pr-[44%] md:pr-[46%]" : ""}`}>
             <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
               <Txt
                 value={item.name}
