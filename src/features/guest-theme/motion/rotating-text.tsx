@@ -15,10 +15,7 @@ const INTERVAL = 2200;
 
 export function RotatingText({ words, className }: { words: string[]; className?: string }) {
   const box = useRef<HTMLSpanElement>(null);
-  const [{ current, prev }, setShown] = useState<{ current: number; prev: number | null }>({
-    current: 0,
-    prev: null,
-  });
+  const [{ current, prev }, setShown] = useState<{ current: number; prev: number | null }>({ current: 0, prev: null });
   const at = useRef(0);
 
   useEffect(() => {
@@ -35,24 +32,12 @@ export function RotatingText({ words, className }: { words: string[]; className?
       const ease = { type: m.spring, duration: 0.6, bounce: 0.3 };
       m.animate(
         chars(from),
-        {
-          transform: [
-            "perspective(400px) translateY(0) rotateX(0deg)",
-            "perspective(400px) translateY(-110%) rotateX(70deg)",
-          ],
-          opacity: [1, 0],
-        },
+        { transform: ["perspective(400px) translateY(0) rotateX(0deg)", "perspective(400px) translateY(-110%) rotateX(70deg)"], opacity: [1, 0] },
         { ...ease, bounce: 0, delay: (i: number) => i * 0.02 },
       );
       m.animate(
         chars(to),
-        {
-          transform: [
-            "perspective(400px) translateY(110%) rotateX(-70deg)",
-            "perspective(400px) translateY(0) rotateX(0deg)",
-          ],
-          opacity: [0, 1],
-        },
+        { transform: ["perspective(400px) translateY(110%) rotateX(-70deg)", "perspective(400px) translateY(0) rotateX(0deg)"], opacity: [0, 1] },
         { ...ease, delay: (i: number) => 0.1 + i * 0.024 },
       );
       at.current = to;
