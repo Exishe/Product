@@ -917,7 +917,7 @@
     "qr": "QR code",
     "waiter": "Waiter",
     "kitchen": "Kitchen time",
-    "kitchenHint": "From the ticket to «ready»",
+    "kitchenHint": "From the ticket to “Ready”",
     "kitchenAvg": "{minutes} min on average",
     "kitchenOver": "{over} of {tickets} over 20 min",
     "defaultStation": "Kitchen",
