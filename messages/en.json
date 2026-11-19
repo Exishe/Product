@@ -1028,7 +1028,8 @@
       "contrast": "{ratio}:1 against the page",
       "weak": {
         "accent": "Too light or too dark for small text on your page. Guests see the theme's colour for prices and the tab.",
-        "page": "Text is hard to read on this colour with this theme. Guests keep the theme's page colour."
+        "page": "Text is hard to read on this colour with this theme. Guests keep the theme's page colour.",
+        "line": "Text on tags would be hard to read on this colour. Guests see it in the thin lines; tags get a shade closer to your page."
       },
       "wordmark": "Wordmark",
       "wordmarkHint": "Your name as a picture. It replaces the typed name at the top of the menu. A PNG with a transparent background works best.",

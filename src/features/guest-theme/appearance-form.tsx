@@ -298,7 +298,8 @@ export function AppearanceForm({
                     ? contrast(value, pageColor).toFixed(1)
                     : null;
                 // The brand only colours text where it can; brand.ts says which roles it ignored.
-                const weak = on && (role === "accent" || role === "page") && ignored.includes(role);
+                const weak =
+                  on && (role === "accent" || role === "page" || role === "line") && ignored.includes(role);
                 return (
                   <li key={role} className="flex flex-col gap-2" data-testid={`role-${role}`}>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -352,7 +353,7 @@ export function AppearanceForm({
                     {ratio && (
                       <span className="text-staff-label2 text-[0.8125rem]">{b("contrast", { ratio })}</span>
                     )}
-                    {weak && <Warning>{b(`weak.${role as "accent" | "page"}`)}</Warning>}
+                    {weak && <Warning>{b(`weak.${role as "accent" | "page" | "line"}`)}</Warning>}
                   </li>
                 );
               })}

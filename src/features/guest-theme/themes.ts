@@ -18,11 +18,12 @@ export const isGuestTheme = (v: unknown): v is GuestTheme =>
 /** The theme a café chose, or Evening while the database doesn't say (before the migration). */
 export const guestTheme = (v: unknown): GuestTheme => (isGuestTheme(v) ? v : DEFAULT_THEME);
 
-type Facts = { page: string; surface: string; ink: string; dark: boolean };
+/** accentText: the preset's small accent text (prices), as in globals.css. */
+type Facts = { page: string; surface: string; ink: string; accentText: string; dark: boolean };
 export const THEME_FACTS: Record<GuestTheme, Facts> = {
-  evening: { page: "#f6f1e7", surface: "#fffdf8", ink: "#1b1712", dark: false },
-  wine: { page: "#260212", surface: "#4f0423", ink: "#ffffff", dark: true },
-  soft: { page: "#eceef1", surface: "#ffffff", ink: "#1b1d21", dark: false },
+  evening: { page: "#f6f1e7", surface: "#fffdf8", ink: "#1b1712", accentText: "#7f6135", dark: false },
+  wine: { page: "#260212", surface: "#4f0423", ink: "#ffffff", accentText: "#ffc7c6", dark: true },
+  soft: { page: "#eceef1", surface: "#ffffff", ink: "#1b1d21", accentText: "#8a5a00", dark: false },
 };
 
 /** The browser bar matches the page (the meta tag needs a literal colour). */

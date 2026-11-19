@@ -603,7 +603,7 @@ body:has(.admin-shell) {
 .guest-lux[data-plate="porcelain"] {
   --guest-dish: #ffffff;
   --guest-dish-rim: var(--guest-line);
-  --guest-dish-well: color-mix(in srgb, var(--guest-line) 40%, #ffffff);
+  --guest-dish-well: color-mix(in srgb, var(--brand-well-line, var(--guest-line)) 40%, #ffffff);
   --guest-dish-ink: var(--brand-plate-ink, var(--guest-accent-text));
   --guest-dish-inset: 5%;
   --guest-photo-edge: inset 0 0 0 1px rgb(0 0 0 / 0.06);

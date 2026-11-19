@@ -12,7 +12,7 @@ import {
   parseBrand,
   type Brand,
 } from "./brand";
-import { brandStyle, contrast, GUEST_THEMES } from "./themes";
+import { brandStyle, contrast, GUEST_THEMES, THEME_FACTS } from "./themes";
 
 // Blanca by Melonpan, from the approved design (Brand.dc.html).
 const BLANCA: Brand = {
@@ -104,6 +104,53 @@ describe("brandTokens", () => {
     expect(brandPage(pale, "soft")).toBeNull();
     // Wine is dark: a light page would turn its white ink unreadable.
     expect(ignoredRoles("wine", { ...EMPTY_BRAND, colors: { page: "#f9f0e3" } })).toEqual(["page"]);
+  });
+
+  it("keeps the line colour for hairlines but never puts text on a dark chip", () => {
+    for (const theme of GUEST_THEMES) {
+      for (const line of ["#3e312f", "#000000", "#7f7f7f", "#ffffff", "#ead7bf", "#c2185b"]) {
+        const brand: Brand = { ...EMPTY_BRAND, colors: { line } };
+        const { style, check } = brandTokens(theme, brand);
+        const v = vars(style);
+        expect(v["--guest-line"]).toBe(line);
+        expect(v["--guest-tab-border"]).toBe(line);
+        const chip = v["--guest-chip"];
+        if (chip) {
+          // Tags, the "popular" badge and pressed buttons: ink text on the chip;
+          // with plate "none" the dish's large initial in accent text.
+          expect(contrast(THEME_FACTS[theme].ink, chip)).toBeGreaterThanOrEqual(4.5);
+          expect(contrast(THEME_FACTS[theme].accentText, chip)).toBeGreaterThanOrEqual(3);
+        }
+        expect(check.ignored.includes("line")).toBe(chip !== line);
+      }
+    }
+    // A dark espresso line on Pure: lightened for chips, and the editor is told.
+    const dark = brandTokens("soft", { ...EMPTY_BRAND, colors: { line: "#3e312f" } });
+    expect(dark.check.ignored).toEqual(["line"]);
+    expect(vars(dark.style)["--guest-chip"]).not.toBe("#3e312f");
+    // Blanca's pale sand line reads as it is.
+    expect(vars(brandTokens("soft", BLANCA).style)["--guest-chip"]).toBe("#ead7bf");
+  });
+
+  it("drops the header as accent text when it doesn't read on the brand's page", () => {
+    // #7a5c2e is 5.3:1 on Pure's grey-white page but 3.8:1 on this sand page.
+    const brand: Brand = { ...EMPTY_BRAND, colors: { header: "#7a5c2e", page: "#d8c9a8" } };
+    expect(vars(brandStyle("soft", "#7a5c2e"))["--guest-accent-text"]).toBe("#7a5c2e");
+    const v = vars(brandTokens("soft", brand).style);
+    expect(v["--guest-page"]).toBe("#d8c9a8");
+    expect(v["--guest-accent-text"]).toBeUndefined();
+    for (const theme of GUEST_THEMES) {
+      const t = vars(brandTokens(theme, brand).style);
+      const page = t["--guest-page"] ?? THEME_FACTS[theme].page;
+      if (t["--guest-accent-text"])
+        expect(contrast(t["--guest-accent-text"], page)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("knows the accent text each preset really uses", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    for (const theme of GUEST_THEMES)
+      expect(css).toContain(`--guest-accent-text: ${THEME_FACTS[theme].accentText};`);
   });
 });
 

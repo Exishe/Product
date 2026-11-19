@@ -186,7 +186,11 @@ function readableOn(bg: string, ...candidates: (string | undefined)[]): string {
 }
 
 export type BrandCheck = {
-  /** Roles the guest page ignores because they would not keep contrast. */
+  /**
+   * Roles the guest page ignores, wholly or in part, because they would not
+   * keep contrast: a page or accent is dropped; a line still draws the
+   * hairlines, but chips behind text get a lighter shade of it.
+   */
   ignored: BrandColorRole[];
 };
 
@@ -229,6 +233,10 @@ export function brandTokens(
     } else check.ignored.push("page");
   }
   const surface = facts.surface;
+  // brandStyle checked the header as accent text against the theme's page;
+  // on the brand's own page it must read too, else the theme's stays.
+  const headerText = vars["--guest-accent-text"];
+  if (headerText && contrast(headerText, page) < 4.5) delete vars["--guest-accent-text"];
 
   // Header: the band behind the café's name, and filled buttons (brandStyle
   // above already made it the accent). Its text is the page colour when that
@@ -266,13 +274,27 @@ export function brandTokens(
     if (contrast(highlight, "#ffffff") >= 3) vars["--brand-plate-ink"] = highlight;
   }
 
-  // Line: hairlines, chips and the outline of the inactive tabs; decoration,
-  // so no contrast rule (field borders keep the theme's line-strong).
+  // Line: hairlines and the outline of the inactive tabs are decoration, so
+  // they take the colour as it is (field borders keep the theme's
+  // line-strong). Chips are a fill behind ink text (tags, the "popular"
+  // badge, the "calm" status, pressed buttons, the soft portion chip): the
+  // ink must keep 4.5:1 on them, and without a plate style the dish's large
+  // initial (accent text) 3:1. A line colour that is too dark (too light on
+  // Wine) is lightened towards the page until both hold, and the editor
+  // says so.
   if (line) {
     vars["--guest-line"] = line;
-    vars["--guest-chip"] = line;
     vars["--guest-tab-border"] = line;
     vars["--brand-line"] = line;
+    const accentText = vars["--guest-accent-text"] ?? facts.accentText;
+    const chip = [1, 0.6, 0.4, 0.25, 0.12]
+      .map((t) => mix(line, page, t))
+      .find((c) => contrast(facts.ink, c) >= 4.5 && contrast(accentText, c) >= 3);
+    // None reads: the theme's own chip stays.
+    if (chip) vars["--guest-chip"] = chip;
+    // The porcelain plate's empty well is a paler cut of the chip, not of a dark line.
+    vars["--brand-well-line"] = chip ?? "#ffffff";
+    if (chip !== line) check.ignored.push("line");
   }
 
   // Fonts: the brand's family first, then the Armenian and Cyrillic fallbacks.
