@@ -20,6 +20,9 @@ export type OrderRow = {
   status: OrderStatus;
   kitchen_status: Enums["kitchen_status"];
   placed_at: string;
+  // Optional: test rows and outbox previews have none.
+  accepted_at?: string | null;
+  accepted_by?: string | null;
   guest_note: string | null;
   total: number;
   reject_reason: string | null;
@@ -35,7 +38,14 @@ export type OrderRow = {
     station_id: string | null;
     order_item_modifiers: { name_i18n: Json }[];
   }[];
-  kitchen_tickets: { id: string; station_id: string; kind: Enums["ticket_kind"]; status: TicketStatus }[];
+  kitchen_tickets: {
+    id: string;
+    station_id: string;
+    kind: Enums["ticket_kind"];
+    status: TicketStatus;
+    ready_at?: string | null;
+    served_at?: string | null;
+  }[];
 };
 
 export type SessionRow = {
@@ -95,6 +105,8 @@ export type WaiterTicket = {
   stationId: string;
   stationName: string | null;
   status: TicketStatus;
+  readyAt: number | null;
+  servedAt: number | null;
 };
 
 export type WaiterOrder = {
@@ -103,6 +115,8 @@ export type WaiterOrder = {
   source: OrderSource;
   status: OrderStatus;
   placedAt: number;
+  /** When a staff member accepted a guest's order; null when it went straight to the kitchen. */
+  acceptedAt: number | null;
   note: string | null;
   total: number;
   rejectReason: string | null;
@@ -120,11 +134,12 @@ export type FloorTable = {
   pos: { x: number; y: number } | null;
   state: TableState;
   sessionId: string | null;
+  openedAt: number | null;
   openMinutes: number | null;
   orders: WaiterOrder[]; // newest first
   waiting: { sessionId: string; minutes: number; orders: WaiterOrder[] } | null;
-  call: { id: string; minutes: number } | null;
-  bill: { id: string; minutes: number; payment: "card" | "cash" | null } | null;
+  call: { id: string; minutes: number; at: number } | null;
+  bill: { id: string; minutes: number; at: number; payment: "card" | "cash" | null } | null;
   total: number;
 };
 
@@ -150,6 +165,7 @@ export type WaiterAction =
     };
 
 const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
+const msOrNull = (iso: string | null | undefined) => (iso ? Date.parse(iso) : null);
 
 // The system's default station is shown by role («Խոհանոց»), named ones by name.
 const SYSTEM_STATION_NAME = "Kitchen";
@@ -164,7 +180,14 @@ function toOrder(
     .map((k) => {
       const st = stations.get(k.station_id);
       const stationName = !st || (st.is_default && st.name === SYSTEM_STATION_NAME) ? null : st.name;
-      return { id: k.id, stationId: k.station_id, stationName, status: k.status };
+      return {
+        id: k.id,
+        stationId: k.station_id,
+        stationName,
+        status: k.status,
+        readyAt: msOrNull(k.ready_at),
+        servedAt: msOrNull(k.served_at),
+      };
     })
     .sort(
       (a, b) => Number(a.stationName !== null) - Number(b.stationName !== null) || a.id.localeCompare(b.id),
@@ -189,6 +212,9 @@ function toOrder(
     source: row.source,
     status: row.status,
     placedAt: Date.parse(row.placed_at),
+    // Auto-accepted guest orders carry no accepted_by; a waiter's own order is
+    // accepted as it is placed. Neither is a moment of its own.
+    acceptedAt: row.source !== "waiter" && row.accepted_by ? msOrNull(row.accepted_at) : null,
     note: row.guest_note?.trim() || null,
     total: row.total,
     rejectReason: row.reject_reason,
@@ -235,6 +261,7 @@ export function buildFloor(rows: FloorRows, locale: Locale, now: number): Floor 
       shape: (["square", "round", "rect"] as const).find((s) => s === tr.shape) ?? "square",
       pos: tr.pos_x !== null && tr.pos_y !== null ? { x: tr.pos_x, y: tr.pos_y } : null,
       sessionId: open?.id ?? null,
+      openedAt: open ? Date.parse(open.opened_at) : null,
       openMinutes: open ? minutesSince(open.opened_at, now) : null,
       orders: (open?.orders ?? []).map((o) => toOrder(o, locale, stations)).sort(newestFirst),
       waiting: waiting
@@ -244,11 +271,14 @@ export function buildFloor(rows: FloorRows, locale: Locale, now: number): Floor 
             orders: waiting.orders.map((o) => toOrder(o, locale, stations)).sort(newestFirst),
           }
         : null,
-      call: call ? { id: call.id, minutes: minutesSince(call.created_at, now) } : null,
+      call: call
+        ? { id: call.id, minutes: minutesSince(call.created_at, now), at: Date.parse(call.created_at) }
+        : null,
       bill: bill
         ? {
             id: bill.id,
             minutes: minutesSince(bill.created_at, now),
+            at: Date.parse(bill.created_at),
             payment: (["card", "cash"] as const).find((m) => m === bill.payment_preference) ?? null,
           }
         : null,
@@ -273,6 +303,15 @@ const NEEDS: readonly TableState[] = ["new", "ready", "call", "bill"];
 export const needCount = (tables: readonly FloorTable[]) =>
   tables.filter((t) => NEEDS.includes(t.state)).length;
 
+// When the food of these orders first stood ready at the pass (the order's
+// time when the ticket carries no ready time).
+const readySince = (orders: readonly WaiterOrder[]) =>
+  Math.min(
+    ...orders.flatMap((o) =>
+      o.tickets.filter((k) => k.status === "ready").map((k) => k.readyAt ?? o.placedAt),
+    ),
+  );
+
 // The Orders and Calls tabs (ADR-054): one row per table and kind of request,
 // the longest-waiting first. Only a different view of the floor; nothing new.
 export type InboxRow = { table: FloorTable; kind: "new" | "ready" | "call" | "bill"; minutes: number };
@@ -288,13 +327,115 @@ export function inbox(tables: readonly FloorTable[], now: number): { orders: Inb
     const ready = table.orders.filter(
       (o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"),
     );
-    if (ready.length > 0)
-      orders.push({ table, kind: "ready", minutes: since(Math.min(...ready.map((o) => o.placedAt))) });
+    if (ready.length > 0) orders.push({ table, kind: "ready", minutes: since(readySince(ready)) });
     if (table.call) calls.push({ table, kind: "call", minutes: table.call.minutes });
     if (table.bill) calls.push({ table, kind: "bill", minutes: table.bill.minutes });
   }
   const oldestFirst = (a: InboxRow, b: InboxRow) => b.minutes - a.minutes;
   return { orders: orders.sort(oldestFirst), calls: calls.sort(oldestFirst) };
+}
+
+// The one obvious thing to do for a row of the Orders or Calls tab, without
+// opening the table. Only when it can't be the wrong thing: an order that may
+// be a repeat, a party waiting for the old bill or two new rounds at once need
+// the full panel, and a bill with an order still to accept can't be closed.
+export type QuickAction =
+  { kind: "accept" | "serve" | "going"; actions: WaiterAction[] } | { kind: "settle"; sessionId: string };
+
+export function quickAction(row: InboxRow): QuickAction | null {
+  const { table } = row;
+  switch (row.kind) {
+    case "call":
+      return table.call ? { kind: "going", actions: [{ kind: "resolve", requestId: table.call.id }] } : null;
+    case "ready": {
+      const actions: WaiterAction[] = table.orders
+        .filter((o) => o.status === "accepted" && o.number !== null && !o.pending)
+        .flatMap((o) =>
+          o.tickets
+            .filter((k) => k.status === "ready")
+            .map((k) => ({ kind: "serve" as const, ticketId: k.id })),
+        );
+      return actions.length > 0 ? { kind: "serve", actions } : null;
+    }
+    case "new": {
+      if (table.waiting) return null;
+      const placed = table.orders.filter((o) => o.status === "placed");
+      const only = placed.length === 1 ? placed[0] : undefined;
+      return only && !only.duplicate && !only.pending
+        ? { kind: "accept", actions: [{ kind: "accept", orderId: only.id }] }
+        : null;
+    }
+    case "bill":
+      return table.sessionId && closeBlocker(table) === null && !table.waiting
+        ? { kind: "settle", sessionId: table.sessionId }
+        : null;
+  }
+}
+
+// --- What happened at the table ---------------------------------------------------
+
+// A table's evening as a list of moments, oldest first (the panel's «Ինչ է
+// եղել»). Only what the floor already reads: a call that was answered is no
+// longer fetched, so it is not on the list.
+export type TimelineEvent =
+  | { kind: "seated"; at: number }
+  | { kind: "placed" | "accepted"; at: number; number: number; source: OrderSource }
+  | { kind: "ready" | "served"; at: number; number: number; station: string | null }
+  | { kind: "call" | "bill"; at: number };
+
+export function timeline(table: FloorTable): TimelineEvent[] {
+  const events: TimelineEvent[] = [];
+  if (table.openedAt !== null) events.push({ kind: "seated", at: table.openedAt });
+  for (const o of table.orders) {
+    if (o.number === null || o.status === "rejected") continue;
+    const number = o.number;
+    events.push({ kind: "placed", at: o.placedAt, number, source: o.source });
+    if (o.acceptedAt !== null) events.push({ kind: "accepted", at: o.acceptedAt, number, source: o.source });
+    const several = o.tickets.length > 1;
+    for (const k of o.tickets) {
+      const station = several ? k.stationName : null;
+      if (k.readyAt !== null) events.push({ kind: "ready", at: k.readyAt, number, station });
+      if (k.servedAt !== null) events.push({ kind: "served", at: k.servedAt, number, station });
+    }
+  }
+  if (table.call) events.push({ kind: "call", at: table.call.at });
+  if (table.bill) events.push({ kind: "bill", at: table.bill.at });
+  return events.sort((a, b) => a.at - b.at);
+}
+
+// A seated table with nothing new for this long gets a «լուռ է» cue on the
+// map: with QR ordering the risk is that nobody walks over (scout finding).
+export const QUIET_MINUTES = 20;
+
+// The minutes the table's most urgent thing has waited, for the badge on its
+// tile; for a seated table, how long it has been quiet (null below the cue).
+export function tileAge(table: FloorTable, now: number): { kind: "wait" | "quiet"; minutes: number } | null {
+  const since = (at: number) => Math.max(0, Math.floor((now - at) / 60_000));
+  switch (table.state) {
+    case "call":
+      return table.call ? { kind: "wait", minutes: table.call.minutes } : null;
+    case "new": {
+      const placed = [...table.orders, ...(table.waiting?.orders ?? [])].filter((o) => o.status === "placed");
+      const at = Math.min(...placed.map((o) => o.placedAt));
+      return Number.isFinite(at) && at <= now ? { kind: "wait", minutes: since(at) } : null;
+    }
+    case "ready": {
+      const ready = table.orders.filter(
+        (o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"),
+      );
+      return { kind: "wait", minutes: since(readySince(ready)) };
+    }
+    case "bill":
+      return table.bill ? { kind: "wait", minutes: table.bill.minutes } : null;
+    case "busy": {
+      const last = Math.max(...timeline(table).map((e) => e.at));
+      if (!Number.isFinite(last) || last > now) return null;
+      const minutes = since(last);
+      return minutes >= QUIET_MINUTES ? { kind: "quiet", minutes } : null;
+    }
+    default:
+      return null;
+  }
 }
 
 // Saved floor positions (tables.pos_x/pos_y) draw the room; without them for
@@ -396,6 +537,7 @@ export function applyPending(tables: readonly FloorTable[], overlay: readonly Ov
           source: "waiter",
           status: "accepted",
           placedAt: Number.MAX_SAFE_INTEGER,
+          acceptedAt: null,
           note: action.note,
           total: action.preview.total,
           rejectReason: null,
@@ -418,4 +560,24 @@ export function applyPending(tables: readonly FloorTable[], overlay: readonly Ov
     }
   }
   return out.map((t) => ({ ...t, state: stateOf(t), total: sumAccepted(t.orders) }));
+}
+
+// Which table a queued tap is about, for the «Չուղարկված» list and the dot on
+// the map. Read against the server's floor (before the taps are applied: a
+// resolved call is gone from the overlaid one).
+export function tableOfAction(tables: readonly FloorTable[], action: WaiterAction): FloorTable | null {
+  const orders = (t: FloorTable) => [...t.orders, ...(t.waiting?.orders ?? [])];
+  switch (action.kind) {
+    case "place":
+      return tables.find((t) => t.id === action.tableId) ?? null;
+    case "accept":
+    case "reject":
+      return tables.find((t) => orders(t).some((o) => o.id === action.orderId)) ?? null;
+    case "serve":
+      return (
+        tables.find((t) => orders(t).some((o) => o.tickets.some((k) => k.id === action.ticketId))) ?? null
+      );
+    case "resolve":
+      return tables.find((t) => t.call?.id === action.requestId || t.bill?.id === action.requestId) ?? null;
+  }
 }

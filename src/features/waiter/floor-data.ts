@@ -8,7 +8,7 @@ import type { FloorRows, SessionRow } from "./floor-model";
 type Client = SupabaseClient<Database>;
 
 const ORDER_SELECT =
-  "id, number, source, status, kitchen_status, placed_at, guest_note, total, reject_reason, possible_duplicate_of, order_items(id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, station_id, order_item_modifiers(name_i18n)), kitchen_tickets!kitchen_tickets_restaurant_id_order_id_fkey(id, station_id, kind, status)";
+  "id, number, source, status, kitchen_status, placed_at, accepted_at, accepted_by, guest_note, total, reject_reason, possible_duplicate_of, order_items(id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, station_id, order_item_modifiers(name_i18n)), kitchen_tickets!kitchen_tickets_restaurant_id_order_id_fkey(id, station_id, kind, status, ready_at, served_at)";
 
 const SESSION_SELECT = `id, table_id, status, opened_at, orders!orders_restaurant_id_table_session_id_fkey(${ORDER_SELECT})`;
 
@@ -26,7 +26,11 @@ export async function fetchFloor(supabase: Client, locationId: string): Promise<
       .eq("is_active", true),
     // Open and waiting sessions; "not in (closed, void)" also works before the
     // 'waiting' value exists in the database.
-    supabase.from("table_sessions").select(SESSION_SELECT).eq("location_id", locationId).not("status", "in", "(closed,void)"),
+    supabase
+      .from("table_sessions")
+      .select(SESSION_SELECT)
+      .eq("location_id", locationId)
+      .not("status", "in", "(closed,void)"),
     supabase
       .from("service_requests")
       // "*": payment_preference exists only once migration 20261110120000_bill_payment_preference
@@ -46,7 +50,10 @@ export async function fetchFloor(supabase: Client, locationId: string): Promise<
       areas: areas.data ?? [],
       tables: tables.data ?? [],
       sessions: sessionRows,
-      requests: (requests.data ?? []).map((r) => ({ ...r, payment_preference: r.payment_preference ?? null })),
+      requests: (requests.data ?? []).map((r) => ({
+        ...r,
+        payment_preference: r.payment_preference ?? null,
+      })),
       stations: stations.data ?? [],
     },
   };

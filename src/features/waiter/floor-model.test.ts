@@ -7,6 +7,9 @@ import {
   inbox,
   needCount,
   settlement,
+  tableOfAction,
+  tileAge,
+  timeline,
   type FloorRows,
   type OrderRow,
   type SessionRow,
@@ -192,7 +195,7 @@ describe("table states (screens.md §5)", () => {
       T0,
     );
     expect(byId(call, "t1").state).toBe("call");
-    expect(byId(call, "t1").call).toEqual({ id: "r2", minutes: 3 });
+    expect(byId(call, "t1").call).toMatchObject({ id: "r2", minutes: 3 });
   });
 
   it("priority: calling > new order > ready > bill > busy", () => {
@@ -372,8 +375,8 @@ describe("orders in the panel", () => {
     });
     const t = byId(buildFloor(rows({ sessions: [session("s1", "t1", [o])] }), "hy", T0), "t1");
     expect(t.orders[0]?.tickets).toEqual([
-      { id: "k1", stationId: "kitchen", stationName: null, status: "ready" },
-      { id: "k2", stationId: "bar", stationName: "Բար", status: "served" },
+      { id: "k1", stationId: "kitchen", stationName: null, status: "ready", readyAt: null, servedAt: null },
+      { id: "k2", stationId: "bar", stationName: "Բար", status: "served", readyAt: null, servedAt: null },
     ]);
   });
 
@@ -566,5 +569,150 @@ describe("floor layout", () => {
       { id: "terrace", name: "Պատշգամբ" },
       { id: null, name: null },
     ]);
+  });
+});
+
+describe("what happened at the table", () => {
+  const evening = () => {
+    const first = order("o1", {
+      number: 3,
+      placed_at: iso(-25),
+      accepted_at: iso(-25),
+      kitchen_status: "served",
+      kitchen_tickets: [
+        {
+          id: "k1",
+          station_id: "kitchen",
+          kind: "order",
+          status: "served",
+          ready_at: iso(-15),
+          served_at: iso(-13),
+        },
+      ],
+    });
+    const second = order("o2", {
+      number: 5,
+      placed_at: iso(-10),
+      accepted_at: iso(-7),
+      accepted_by: "waiter-member",
+      kitchen_tickets: [
+        { id: "k2", station_id: "kitchen", kind: "order", status: "cooking" },
+        { id: "k3", station_id: "bar", kind: "order", status: "ready", ready_at: iso(-4) },
+      ],
+    });
+    const rejected = order("o3", { number: 6, status: "rejected", placed_at: iso(-9), kitchen_tickets: [] });
+    return buildFloor(
+      rows({
+        sessions: [session("s1", "t1", [first, second, rejected])],
+        requests: [
+          {
+            id: "r1",
+            table_id: "t1",
+            table_session_id: "s1",
+            kind: "call_waiter",
+            status: "open",
+            created_at: iso(-2),
+            payment_preference: null,
+          },
+        ],
+      }),
+      "hy",
+      T0,
+    );
+  };
+
+  it("lists the moments oldest first; auto-accepts and rejected orders are not moments", () => {
+    const events = timeline(byId(evening(), "t1"));
+    expect(
+      events.map((e) => [e.kind, Math.round((e.at - T0) / 60_000), "number" in e ? e.number : null]),
+    ).toEqual([
+      ["seated", -30, null],
+      ["placed", -25, 3],
+      ["ready", -15, 3],
+      ["served", -13, 3],
+      ["placed", -10, 5],
+      ["accepted", -7, 5],
+      ["ready", -4, 5],
+      ["call", -2, null],
+    ]);
+    // Several stations: the ready moment names the station («Բար»).
+    expect(events.find((e) => e.kind === "ready" && e.number === 5)).toMatchObject({ station: "Բար" });
+  });
+
+  it("the Orders tab and the tile count ready food from when it became ready", () => {
+    const floor = evening();
+    const t1 = { ...byId(floor, "t1"), call: null };
+    const ready = { ...t1, state: "ready" as const };
+    expect(tileAge(ready, T0)).toEqual({ kind: "wait", minutes: 4 });
+    expect(inbox([ready], T0).orders).toEqual([expect.objectContaining({ kind: "ready", minutes: 4 })]);
+    expect(tileAge(byId(floor, "t1"), T0)).toEqual({ kind: "wait", minutes: 2 }); // calling wins
+  });
+
+  it("a seated table with nothing new for 20 minutes is quiet", () => {
+    const served = order("o1", {
+      placed_at: iso(-40),
+      kitchen_status: "served",
+      kitchen_tickets: [
+        {
+          id: "k1",
+          station_id: "kitchen",
+          kind: "order",
+          status: "served",
+          ready_at: iso(-30),
+          served_at: iso(-25),
+        },
+      ],
+    });
+    const quiet = byId(
+      buildFloor(rows({ sessions: [session("s1", "t1", [served], { opened_at: iso(-45) })] }), "hy", T0),
+      "t1",
+    );
+    expect(quiet.state).toBe("busy");
+    expect(tileAge(quiet, T0)).toEqual({ kind: "quiet", minutes: 25 });
+    expect(tileAge(quiet, T0 - 10 * 60_000)).toBeNull();
+    expect(tileAge(byId(buildFloor(rows(), "hy", T0), "t1"), T0)).toBeNull();
+  });
+});
+
+describe("taps waiting in the outbox", () => {
+  it("each tap points at its table", () => {
+    const placed = order("o1", {
+      status: "placed",
+      kitchen_tickets: [{ id: "k1", station_id: "kitchen", kind: "order", status: "ready" }],
+    });
+    const floor = buildFloor(
+      rows({
+        sessions: [session("s1", "t1", [placed])],
+        requests: [
+          {
+            id: "r1",
+            table_id: "t2",
+            table_session_id: null,
+            kind: "call_waiter",
+            status: "open",
+            created_at: iso(-1),
+            payment_preference: null,
+          },
+        ],
+      }),
+      "hy",
+      T0,
+    );
+    const label = (a: Parameters<typeof tableOfAction>[1]) => tableOfAction(floor.tables, a)?.label ?? null;
+    expect(label({ kind: "accept", orderId: "o1" })).toBe("1");
+    expect(label({ kind: "serve", ticketId: "k1" })).toBe("1");
+    expect(label({ kind: "resolve", requestId: "r1" })).toBe("2");
+    expect(label({ kind: "resolve", requestId: "gone" })).toBeNull();
+    expect(
+      label({
+        kind: "place",
+        key: "x",
+        tableId: "t10",
+        lines: [],
+        note: null,
+        locale: "hy",
+        preview: { lines: [], total: 0 },
+      }),
+    ).toBe("10");
   });
 });

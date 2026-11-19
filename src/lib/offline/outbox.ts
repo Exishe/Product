@@ -49,7 +49,8 @@ export type OutboxOptions<A> = {
 };
 
 // 1 s, 2 s, 4 s … up to 30 s (realtime.md).
-export const defaultBackoff = (attempts: number): number => Math.min(30_000, 1_000 * 2 ** Math.max(0, attempts - 1));
+export const defaultBackoff = (attempts: number): number =>
+  Math.min(30_000, 1_000 * 2 ** Math.max(0, attempts - 1));
 
 export class MemoryStore<A> implements OutboxStore<A> {
   private rows = new Map<string, OutboxEntry<A>>();
@@ -110,11 +111,27 @@ export class Outbox<A> {
     const same = this.queue.find((e) => this.opts.sameAction(e.action, action));
     if (same) return { ...same };
     const now = this.now();
-    const entry: OutboxEntry<A> = { id: this.newId(), seq: ++this.seq, action, createdAt: now, attempts: 0, nextAttemptAt: now };
+    const entry: OutboxEntry<A> = {
+      id: this.newId(),
+      seq: ++this.seq,
+      action,
+      createdAt: now,
+      attempts: 0,
+      nextAttemptAt: now,
+    };
     this.queue.push(entry);
     this.emit({ type: "changed", entries: this.entries() });
     await this.safe(() => this.opts.store.put(entry), undefined);
     return { ...entry };
+  }
+
+  // The user takes a tap back (the waiter app's «Չուղարկված» list). Not the
+  // one being sent right now: its answer may already be on the way.
+  async discard(id: string): Promise<boolean> {
+    const entry = this.queue.find((e) => e.id === id);
+    if (!entry || (this.running && this.queue[0]?.id === id)) return false;
+    await this.remove([entry]);
+    return true;
   }
 
   // Sends waiting taps in order. One replay runs at a time; a call made while

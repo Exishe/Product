@@ -24,12 +24,12 @@ export const button = (kind: keyof Omit<typeof btn, "base">, extra?: string) =>
 // A choice in a list (reason, payment): selected is tinted, ringed and ticked,
 // so it never relies on colour alone.
 export const choice =
-  "inline-flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink shadow-[var(--shadow-soft)] ring-0 aria-pressed:bg-tarragon-tint aria-pressed:text-tarragon aria-pressed:ring-2 aria-pressed:ring-tarragon [&_svg]:size-5 [&_svg]:shrink-0";
+  "inline-flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink shadow-[var(--shadow-soft)] ring-0 aria-pressed:bg-ink aria-pressed:text-white aria-pressed:ring-2 aria-pressed:ring-ink [&_svg]:size-5 [&_svg]:shrink-0";
 
 export const chip = {
   base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",
   plain: "bg-staff-fill text-staff-label2",
-  wait: "bg-apricot text-ink",
+  wait: "bg-amber text-ink",
   ready: "bg-tarragon text-white",
   done: "bg-tarragon-tint text-tarragon",
   alert: "bg-pom-tint text-pomegranate",
@@ -121,16 +121,11 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
   );
 }
 
-export function ConnectionPill({ state, waiting }: { state: Connection; waiting: number }) {
+// The count of waiting taps is not repeated here: the «Չուղարկված» chip next
+// to it shows it, online or not, and opens the list.
+export function ConnectionPill({ state }: { state: Connection }) {
   const t = useTranslations("waiter.connection");
-  const label =
-    state === "online"
-      ? t("online")
-      : state === "connecting"
-        ? t("connecting")
-        : waiting > 0
-          ? t("offlineWaiting", { count: waiting })
-          : t("offline");
+  const label = state === "online" ? t("online") : state === "connecting" ? t("connecting") : t("offline");
   const Icon = state === "online" ? Wifi : state === "connecting" ? RefreshCw : WifiOff;
   return (
     <span
@@ -138,12 +133,12 @@ export function ConnectionPill({ state, waiting }: { state: Connection; waiting:
       data-testid="connection"
       data-state={state}
       className={clsx(
-        "inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
+        "inline-flex min-h-8 max-w-full shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
         state === "offline"
           ? "bg-pomegranate text-white"
           : state === "connecting"
-            ? "bg-apricot text-ink"
-            : "bg-tarragon-tint text-tarragon",
+            ? "bg-amber text-ink"
+            : "bg-staff-fill text-staff-label2",
       )}
     >
       <Icon aria-hidden="true" className="size-4 shrink-0" />
