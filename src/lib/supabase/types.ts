@@ -2749,6 +2749,7 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          brand: Json | null
           brand_color: string | null
           created_at: string
           created_by: string | null
@@ -2765,6 +2766,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          brand?: Json | null
           brand_color?: string | null
           created_at?: string
           created_by?: string | null
@@ -2781,6 +2783,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          brand?: Json | null
           brand_color?: string | null
           created_at?: string
           created_by?: string | null

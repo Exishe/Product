@@ -314,6 +314,13 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    set_brand: {
+      Args: {
+        p_restaurant_id: string;
+        p_brand: Json;
+      };
+      Returns: undefined;
+    };
     set_guest_appearance: {
       Args: {
         p_restaurant_id: string;
@@ -329,6 +336,13 @@ export type ApiSchema = {
         p_minutes: number;
       };
       Returns: string;
+    };
+    set_section_cover: {
+      Args: {
+        p_category_id: string;
+        p_path: string;
+      };
+      Returns: undefined;
     };
     set_ticket_status: {
       Args: {
