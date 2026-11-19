@@ -1,4 +1,4 @@
-import { CircleAlert, Download, Receipt } from "lucide-react";
+import { CircleAlert, Download, Grid2x2, Receipt } from "lucide-react";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -59,10 +59,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }
       width="lg"
       actions={
-        <Link href="/admin/export" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
-          <Download aria-hidden="true" className="!size-4" />
-          {t("export")}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/dashboard/menu"
+            className={button("secondary", "min-h-11 text-[0.9375rem]")}
+            data-testid="menu-analysis-link"
+          >
+            <Grid2x2 aria-hidden="true" className="!size-4" />
+            {t("menuAnalysis")}
+          </Link>
+          <Link href="/admin/export" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
+            <Download aria-hidden="true" className="!size-4" />
+            {t("export")}
+          </Link>
+        </div>
       }
     >
       {me.role === "owner" && <PlanBanner restaurantId={me.restaurantId} locale={locale} />}

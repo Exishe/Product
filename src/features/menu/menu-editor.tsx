@@ -48,12 +48,13 @@ const FORM_ID = "menu-editor-form";
 type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
   id?: string;
   priceText: string;
+  costText: string;
   needsReview: boolean;
   markReviewed: boolean;
 };
 type CategoryDraft = { id?: string; names: Names; prepAreaId: string | null };
 type Panel = { kind: "dish"; draft: DishDraft } | { kind: "category"; draft: CategoryDraft } | null;
-type Status = "idle" | "saving" | "saved" | "failed" | "priceInvalid" | "nameRequired";
+type Status = "idle" | "saving" | "saved" | "failed" | "priceInvalid" | "costInvalid" | "nameRequired";
 
 // Resizes the photo in the browser, stores it and points the dish at it.
 async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
@@ -110,11 +111,17 @@ export function MenuEditor({ data }: { data: EditorData }) {
     open({
       kind: "dish",
       draft: d
-        ? { ...d, priceText: String(d.price), markReviewed: false }
+        ? {
+            ...d,
+            priceText: String(d.price),
+            costText: d.id in data.costs ? String(data.costs[d.id]) : "",
+            markReviewed: false,
+          }
         : {
             categoryId: selected as string,
             imagePath: null,
             priceText: "",
+            costText: "",
             prepAreaId: null,
             tags: [],
             names: emptyNames(),
@@ -166,6 +173,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
         const price = parsePriceInput(panel.draft.priceText);
         if (price === null) return setStatus("priceInvalid");
         const d = panel.draft;
+        const cost = d.costText.trim() === "" ? null : parsePriceInput(d.costText);
+        if (data.isOwner && d.costText.trim() !== "" && cost === null) return setStatus("costInvalid");
         const result = await saveDish({
           id: d.id,
           categoryId: d.categoryId,
@@ -176,6 +185,10 @@ export function MenuEditor({ data }: { data: EditorData }) {
           tags: d.tags as (typeof DISH_TAGS)[number][],
           modifierGroupIds: d.modifierGroupIds,
           markReviewed: d.markReviewed,
+          // Only when it changed: the cost lives in its own owner-only table.
+          ...(data.isOwner && cost !== (d.id && d.id in data.costs ? data.costs[d.id] : null)
+            ? { cost }
+            : {}),
         });
         if (!result.ok) return setStatus("failed");
         setPanel({
@@ -329,6 +342,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "saved" && t("saved")}
       {status === "failed" && t("saveFailed")}
       {status === "priceInvalid" && t("priceInvalid")}
+      {status === "costInvalid" && t("costInvalid")}
       {status === "nameRequired" && t("nameRequired")}
     </p>
   );
@@ -447,6 +461,13 @@ export function MenuEditor({ data }: { data: EditorData }) {
               className={clsx(input, "num")}
             />
           </label>
+        )}
+        {panel.kind === "dish" && data.isOwner && (
+          <CostField
+            costText={panel.draft.costText}
+            priceText={panel.draft.priceText}
+            onChange={(costText) => setPanel({ kind: "dish", draft: { ...panel.draft, costText } })}
+          />
         )}
         <label className="flex flex-col gap-1.5">
           <span className={panel.kind === "dish" ? fieldLabel : "sr-only"}>{t("prepArea")}</span>
@@ -945,6 +966,42 @@ function QuickPhoto({
           if (file) onPick(file);
         }}
       />
+    </label>
+  );
+}
+
+// The owner's cost price for a dish (ingredients per portion), with the
+// margin it leaves. Only the owner sees it; the menu analysis uses it.
+function CostField({
+  costText,
+  priceText,
+  onChange,
+}: {
+  costText: string;
+  priceText: string;
+  onChange: (costText: string) => void;
+}) {
+  const t = useTranslations("menu");
+  const locale = useLocale() as Locale;
+  const price = parsePriceInput(priceText);
+  const cost = costText.trim() === "" ? null : parsePriceInput(costText);
+  const margin = price !== null && cost !== null && price > 0 ? price - cost : null;
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{t("cost")}</span>
+      <input
+        inputMode="numeric"
+        value={costText}
+        onChange={(e) => onChange(e.target.value)}
+        aria-describedby="cost-hint"
+        className={clsx(input, "num")}
+        data-testid="cost-input"
+      />
+      <span id="cost-hint" className="text-staff-label2 num text-[0.9375rem]">
+        {margin !== null && price
+          ? t("margin", { amount: formatAmd(margin, locale), pct: Math.round((margin / price) * 100) })
+          : t("costHint")}
+      </span>
     </label>
   );
 }

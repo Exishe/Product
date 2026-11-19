@@ -40,6 +40,12 @@ export async function saveDish(input: DishInput): Promise<SaveResult> {
     } as Json,
   });
   if (error || !data) return { ok: false, error: "failed" };
+  if (me.role === "owner" && d.cost !== undefined) {
+    const { error: costError } = await supabase
+      .schema("api")
+      .rpc("set_item_cost", { p_item_id: data, p_cost: d.cost as number });
+    if (costError) return { ok: false, error: "failed" };
+  }
   revalidatePath("/admin/menu");
   return { ok: true, id: data };
 }

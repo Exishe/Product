@@ -11,7 +11,7 @@ function names(rows: Tr[] | null | undefined, field: "name" | "description" = "n
 }
 
 // Everything the editor shows, read with the owner's session (RLS applies).
-export async function loadMenuEditor(restaurantId: string): Promise<EditorData> {
+export async function loadMenuEditor(restaurantId: string, isOwner = false): Promise<EditorData> {
   const supabase = await createClient();
   await supabase.schema("api").rpc("ensure_menu", { p_restaurant_id: restaurantId });
 
@@ -24,7 +24,7 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
     .single();
   const locationId = location?.id as string;
 
-  const [cats, dishes, groups, areas, stops, version] = await Promise.all([
+  const [cats, dishes, groups, areas, stops, version, costs] = await Promise.all([
     supabase
       .from("categories")
       .select("id, sort, prep_area_id, updated_at, category_translations(locale, name)")
@@ -52,6 +52,10 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
           .select("published_at, item_count")
           .eq("id", location.published_menu_version_id)
           .single()
+      : Promise.resolve({ data: null }),
+    // RLS returns cost prices to the owner only.
+    isOwner
+      ? supabase.from("item_costs").select("item_id, cost").eq("restaurant_id", restaurantId)
       : Promise.resolve({ data: null }),
   ]);
 
@@ -86,6 +90,8 @@ export async function loadMenuEditor(restaurantId: string): Promise<EditorData> 
   return {
     restaurantId,
     locationId,
+    isOwner,
+    costs: Object.fromEntries((costs.data ?? []).map((c) => [c.item_id, c.cost])),
     soldOut: (stops.data ?? []).filter((s) => !s.until || Date.parse(s.until) > now).map((s) => s.item_id),
     publish,
     categories: (cats.data ?? []).map((c) => ({

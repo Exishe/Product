@@ -22,6 +22,8 @@ export const dishInput = z.object({
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length),
   modifierGroupIds: z.array(z.uuid()).max(20),
   markReviewed: z.boolean(),
+  // Owner only; null clears it, undefined leaves it as it is.
+  cost: z.number().int().min(0).max(10_000_000).nullable().optional(),
 });
 export type DishInput = z.infer<typeof dishInput>;
 
