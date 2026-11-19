@@ -5,6 +5,7 @@ import { AdminPage, Notice, Section } from "@/features/admin-ui/page";
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { deltaPercent, parseDashboard, type Dashboard } from "@/features/dashboard/model";
 import { businessDate } from "@/features/dashboard/range";
+import { menuHasChanges } from "@/features/menu/publish-state";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { formatAmd, formatInteger } from "@/lib/format/money";
@@ -34,7 +35,7 @@ export default async function AdminHome() {
 
   const today = location ? businessDate(new Date(), location.timezone, location.business_day_starts) : null;
   const count = { count: "exact", head: true } as const;
-  const [sales, noPhoto, tables, devices, stops, version, lastItem, lastCat] = await Promise.all([
+  const [sales, noPhoto, tables, devices, stops, version, items, cats, groups] = await Promise.all([
     location && today
       ? supabase
           .schema("api")
@@ -63,22 +64,15 @@ export default async function AdminHome() {
     location?.published_menu_version_id
       ? supabase
           .from("menu_versions")
-          .select("published_at")
+          .select("published_at, item_count")
           .eq("id", location.published_menu_version_id)
           .single()
       : Promise.resolve({ data: null }),
-    supabase
-      .from("items")
-      .select("updated_at")
-      .eq("restaurant_id", rid)
-      .order("updated_at", { ascending: false })
-      .limit(1),
-    supabase
-      .from("categories")
-      .select("updated_at")
-      .eq("restaurant_id", rid)
-      .order("updated_at", { ascending: false })
-      .limit(1),
+    // The same rows the menu editor checks, so both pages agree on
+    // "unpublished changes" (menuHasChanges).
+    supabase.from("items").select("updated_at, is_active").eq("restaurant_id", rid),
+    supabase.from("categories").select("updated_at").eq("restaurant_id", rid),
+    supabase.from("modifier_groups").select("updated_at").eq("restaurant_id", rid),
   ]);
 
   let data: Dashboard | null = null;
@@ -88,13 +82,18 @@ export default async function AdminHome() {
     data = null;
   }
 
-  const publishedAt = version.data?.published_at ? Date.parse(version.data.published_at) : null;
-  const lastEdit = Math.max(
-    ...[lastItem.data?.[0]?.updated_at, lastCat.data?.[0]?.updated_at].map((x) => (x ? Date.parse(x) : 0)),
-  );
+  const publishedAt = version.data?.published_at ?? null;
   const todos: Todo[] = [];
   if (publishedAt === null) todos.push({ key: "publish", href: "/admin/menu", text: t("notPublished") });
-  else if (lastEdit > publishedAt)
+  else if (
+    menuHasChanges({
+      publishedAt,
+      publishedItemCount: version.data?.item_count,
+      categories: cats.data,
+      items: items.data,
+      groups: groups.data,
+    })
+  )
     todos.push({ key: "publish", href: "/admin/menu", text: t("unpublished") });
   if ((tables.count ?? 0) === 0) todos.push({ key: "tables", href: "/admin/tables", text: t("noTables") });
   if ((devices.count ?? 0) === 0) todos.push({ key: "devices", href: "/admin/staff", text: t("noDevices") });

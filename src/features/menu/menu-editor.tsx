@@ -54,7 +54,8 @@ type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
 };
 type CategoryDraft = { id?: string; names: Names; prepAreaId: string | null };
 type Panel = { kind: "dish"; draft: DishDraft } | { kind: "category"; draft: CategoryDraft } | null;
-type Status = "idle" | "saving" | "saved" | "failed" | "priceInvalid" | "costInvalid" | "nameRequired";
+type Status =
+  "idle" | "saving" | "saved" | "failed" | "costFailed" | "priceInvalid" | "costInvalid" | "nameRequired";
 
 // Resizes the photo in the browser, stores it and points the dish at it.
 async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
@@ -195,6 +196,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
           kind: "dish",
           draft: { ...d, id: result.id, needsReview: d.needsReview && !d.markReviewed },
         });
+        // The dish is saved; keep the sheet open so the cost can be retried.
+        if (!result.costSaved) {
+          setStatus("costFailed");
+          return router.refresh();
+        }
         // On a phone or tablet the sheet steps aside; the inspector stays.
         setCollapsed(true);
       }
@@ -343,6 +349,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "failed" && t("saveFailed")}
       {status === "priceInvalid" && t("priceInvalid")}
       {status === "costInvalid" && t("costInvalid")}
+      {status === "costFailed" && t("costFailed")}
       {status === "nameRequired" && t("nameRequired")}
     </p>
   );

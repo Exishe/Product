@@ -35,7 +35,12 @@ const matrixSchema = z.object({
 });
 
 export type Matrix = z.infer<typeof matrixSchema>;
-export type MatrixDish = z.infer<typeof matrixDish> & { section: Record<string, string> | null };
+// `basis` is the dish's section basis: in a 'price' section `margin` holds the
+// price, so only a 'margin' dish may show it as what a portion earns.
+export type MatrixDish = z.infer<typeof matrixDish> & {
+  section: Record<string, string> | null;
+  basis: Matrix["sections"][number]["basis"];
+};
 
 export function parseMatrix(json: unknown): Matrix {
   return matrixSchema.parse(json);
@@ -46,7 +51,7 @@ export function parseMatrix(json: unknown): Matrix {
 export function byQuadrant(matrix: Matrix): Record<Quadrant, MatrixDish[]> {
   const out: Record<Quadrant, MatrixDish[]> = { star: [], plowhorse: [], puzzle: [], dog: [] };
   for (const s of matrix.sections)
-    for (const d of s.dishes) if (d.quadrant) out[d.quadrant].push({ ...d, section: s.name });
+    for (const d of s.dishes) if (d.quadrant) out[d.quadrant].push({ ...d, section: s.name, basis: s.basis });
   for (const q of QUADRANTS) out[q].sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
   return out;
 }

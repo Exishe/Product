@@ -22,7 +22,9 @@
   grid-template-rows: 1fr 1fr;
   background: #fff;
   color: var(--color-ink);
-  box-shadow: 0 0 0 1px var(--color-line), var(--shadow-float);
+  box-shadow:
+    0 0 0 1px var(--color-line),
+    var(--shadow-float);
 }
 
 .card {

@@ -16,10 +16,13 @@ import {
 import { endOfBusinessDay } from "./stop-list";
 
 export type SaveResult = { ok: true; id: string } | { ok: false; error: "invalid" | "failed" };
+// A dish is saved before its cost (the cost lives in an owner-only table), so
+// a failed cost call must not read as a failed save.
+export type SaveDishResult = (SaveResult & { ok: true; costSaved: boolean }) | (SaveResult & { ok: false });
 
 // Each action checks the session, validates, and makes exactly one database
 // call; the rules (roles, prices, translations) are enforced in Postgres.
-export async function saveDish(input: DishInput): Promise<SaveResult> {
+export async function saveDish(input: DishInput): Promise<SaveDishResult> {
   const me = await requireMember(["owner", "manager"]);
   const parsed = dishInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid" };
@@ -40,14 +43,15 @@ export async function saveDish(input: DishInput): Promise<SaveResult> {
     } as Json,
   });
   if (error || !data) return { ok: false, error: "failed" };
+  let costSaved = true;
   if (me.role === "owner" && d.cost !== undefined) {
     const { error: costError } = await supabase
       .schema("api")
       .rpc("set_item_cost", { p_item_id: data, p_cost: d.cost as number });
-    if (costError) return { ok: false, error: "failed" };
+    costSaved = !costError;
   }
   revalidatePath("/admin/menu");
-  return { ok: true, id: data };
+  return { ok: true, id: data, costSaved };
 }
 
 export async function saveCategory(input: CategoryInput): Promise<SaveResult> {

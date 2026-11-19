@@ -118,7 +118,7 @@ function QuadrantCard({
               <span className="num flex shrink-0 flex-col items-end text-[0.9375rem]">
                 <span>{t("sold", { count: d.qty, qty: formatInteger(d.qty, locale) })}</span>
                 <span className="text-staff-label2">
-                  {d.cost !== null
+                  {d.basis === "margin"
                     ? t("perPortion", { amount: formatAmd(d.margin, locale) })
                     : formatAmd(d.price, locale)}
                 </span>

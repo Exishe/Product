@@ -456,7 +456,8 @@
     "cost": "Cost price, ֏ (only you see it)",
     "costHint": "What the ingredients of one portion cost. The menu analysis uses it to find your most profitable dishes.",
     "costInvalid": "Enter the cost price in whole drams, for example 900, or leave it empty.",
-    "margin": "You keep {amount} per portion, {pct} % of the price."
+    "costFailed": "The dish is saved, but the cost price isn't. Try again.",
+    "margin": "You keep {amount} per portion, {pct}% of the price."
   },
   "optionGroups": {
     "title": "Options",

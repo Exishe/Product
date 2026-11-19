@@ -44,7 +44,8 @@ export function AdminNav({
       <div className="flex min-h-14 items-center gap-3 px-4 pt-2 lg:hidden print:hidden">
         <Link href="/admin" className="flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-lg">
           <span className="text-staff-label2 text-[0.8125rem] leading-tight font-semibold">{brand}</span>
-          <span className="page-title truncate text-[1.5rem]">{cafe}</span>
+          {/* The home page's h1 is already the café name; say it once. */}
+          {pathname !== "/admin" && <span className="page-title truncate text-[1.5rem]">{cafe}</span>}
         </Link>
       </div>
       <nav

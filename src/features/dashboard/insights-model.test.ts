@@ -52,6 +52,12 @@ describe("byQuadrant", () => {
     expect(q.dog.map((d) => d.id)).toEqual(["d"]);
   });
 
+  it("carries each section's basis, so a price-ranked dish never reads as a margin", () => {
+    const q = byQuadrant(matrix);
+    expect(q.star.find((d) => d.id === "b")?.basis).toBe("margin");
+    expect(q.star.find((d) => d.id === "e")?.basis).toBe("price");
+  });
+
   it("leaves out dishes of sections without sales", () => {
     const all = Object.values(byQuadrant(matrix)).flat();
     expect(all.some((d) => d.id === "g")).toBe(false);

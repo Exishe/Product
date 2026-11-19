@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { menuHasChanges } from "./publish-state";
 import type { EditorData, Names } from "./types";
 
 type Tr = { locale: "hy" | "ru" | "en"; name: string; description?: string | null };
@@ -59,23 +60,18 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
       : Promise.resolve({ data: null }),
   ]);
 
-  // Unpublished: never published, something edited after publishing, or a dish
-  // removed (the active count no longer matches the snapshot).
   const now = Date.now();
   const publishedAt = version.data?.published_at ?? null;
-  const since = publishedAt ? Date.parse(publishedAt) : 0;
-  const editedSince = (rows: { updated_at: string }[] | null) =>
-    (rows ?? []).some((r) => Date.parse(r.updated_at) > since);
-  const activeCount = (dishes.data ?? []).filter((d) => d.is_active).length;
   const publish = {
     published: Boolean(publishedAt),
     publishedAt,
-    hasChanges:
-      !publishedAt ||
-      editedSince(cats.data) ||
-      editedSince(dishes.data) ||
-      editedSince(groups.data) ||
-      activeCount !== version.data?.item_count,
+    hasChanges: menuHasChanges({
+      publishedAt,
+      publishedItemCount: version.data?.item_count,
+      categories: cats.data,
+      items: dishes.data,
+      groups: groups.data,
+    }),
   };
 
   // Groups with size options read from a photo that nobody has checked yet.
