@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
-import { getPublicMenu } from "@/features/menu/guest-menu/load.server";
+import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
@@ -51,9 +51,13 @@ export default async function OrderStatusPage({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const token = first((await searchParams).t);
-  const [resolved, look] = await Promise.all([
+  const [resolved, look, hints, busy] = await Promise.all([
     token ? resolveTable(token) : null,
     lookOf(restaurant, location),
+    getMenuHints(restaurant, location),
+    getPublicMenu(restaurant, location)
+      .then((m) => Boolean(m?.kitchen_busy))
+      .catch(() => false),
   ]);
   const table =
     resolved && resolved.restaurant_slug === restaurant && resolved.location_slug === location
@@ -82,11 +86,17 @@ export default async function OrderStatusPage({
             tableLabel={table.table_label}
             languages={languages}
           />
-          <OrderStatusView tableId={table.table_id} menuHref={menuHref} vapidPublicKey={vapidPublicKey} />
+          <OrderStatusView
+            tableId={table.table_id}
+            menuHref={menuHref}
+            vapidPublicKey={vapidPublicKey}
+            // The kitchen's own "busy" wait wins over the usual one.
+            wait={busy ? null : hints.wait}
+          />
         </GuestI18nProvider>
       ) : (
         <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
-          <Notice tone="alert">{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
+          <Notice tone={token ? "alert" : "info"}>{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
           <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
             {t("order.toMenu")}
           </a>

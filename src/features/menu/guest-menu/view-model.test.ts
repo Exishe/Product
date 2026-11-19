@@ -159,4 +159,27 @@ describe("buildGuestMenu", () => {
     expect(after.wordmark).toBe("r1/brand/1.webp");
     expect(after.categories.map((c) => c.cover)).toEqual([null, "r1/covers/2/1.webp"]);
   });
+
+  it("keeps the EU allergen codes and diet tags it knows, in a fixed order", () => {
+    const m = menu(
+      {
+        a: item({ allergens: ["milk", "gluten", "made-up"], tags: ["lactose_free", "vegetarian", "keto"] }),
+        b: item(),
+      },
+      [{ id: "1", item_ids: ["a", "b"] }],
+    );
+    const built = buildGuestMenu(m, "en");
+    const [a, b] = built.categories[0]!.items;
+    expect(a!.allergens).toEqual(["gluten", "milk"]);
+    expect(a!.tags).toEqual(["vegetarian", "lactose_free"]);
+    expect(b!.allergens).toEqual([]);
+    expect(built.hasAllergens).toBe(true);
+  });
+
+  it("offers no allergy filter when no dish lists allergens", () => {
+    const m = menu({ a: item({ allergens: [] }), b: item({ allergens: null }) }, [
+      { id: "1", item_ids: ["a", "b"] },
+    ]);
+    expect(buildGuestMenu(m, "hy").hasAllergens).toBe(false);
+  });
 });

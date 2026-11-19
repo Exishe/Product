@@ -5,6 +5,7 @@ import type { CartSummary, PricedLine } from "@/features/ordering/cart";
 import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
+import type { WaitRange } from "./hints";
 import { BackIcon, MinusIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
@@ -36,7 +37,6 @@ function LineRow({
         {item && (
           <Plate
             src={item.image ? dishPhotoUrl(item.image) : null}
-            name={item.name.text}
             size={64}
             muted={!available}
             className="size-16"
@@ -124,6 +124,7 @@ export function CartView({
   locked,
   notice,
   footer,
+  wait = null,
   onQuantity,
   onBack,
 }: {
@@ -132,6 +133,8 @@ export function CartView({
   locked: boolean;
   notice: ReactNode;
   footer: ReactNode;
+  /** The café's usual wait (ADR-057), when it has enough rounds to say. */
+  wait?: WaitRange | null;
   onQuantity: (id: string, quantity: number) => void;
   onBack: () => void;
 }) {
@@ -171,7 +174,14 @@ export function CartView({
           {formatAmd(summary.total, locale)}
         </span>
       </div>
-      <p className="text-muted mb-4 text-sm">{t("cart.payNote")}</p>
+      <p className="text-muted mb-4 text-sm">
+        {wait && (
+          <span className="text-ink block font-semibold" data-testid="cart-wait">
+            {t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
+          </span>
+        )}
+        {t("cart.payNote")}
+      </p>
       {notice && <div className="mb-4">{notice}</div>}
       {footer}
     </main>

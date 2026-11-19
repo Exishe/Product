@@ -37,11 +37,14 @@ export function DishCard({
   featured = false,
   priority = false,
   index = ENTER_FIRST,
+  warning,
   onOpen,
   onQuickAdd,
 }: {
   item: GuestItem;
   canOrder: boolean;
+  /** What the guest's allergy filter says about this dish, if anything. */
+  warning?: { text: string; strong: boolean } | null;
   featured?: boolean;
   /** The page's first featured photo: fetched at high priority. */
   priority?: boolean;
@@ -100,6 +103,11 @@ export function DishCard({
       {item.tags.map((tag) => (
         <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
       ))}
+      {warning && (
+        <span className={`basis-full font-semibold ${warning.strong ? "text-alert" : "text-muted"}`}>
+          {warning.text}
+        </span>
+      )}
     </span>
   );
   const price = (
@@ -114,7 +122,6 @@ export function DishCard({
     <>
       <Plate
         src={photo}
-        name={item.name.text}
         size={360}
         priority={priority}
         muted={item.soldOut}
@@ -147,6 +154,7 @@ export function DishCard({
       data-testid="dish"
       data-dish-id={item.id}
       data-featured={featured || undefined}
+      data-warning={warning ? (warning.strong ? "contains" : "unknown") : undefined}
     >
       <article
         ref={card}
@@ -170,7 +178,6 @@ export function DishCard({
             <>
               <Plate
                 src={photo}
-                name={item.name.text}
                 size={240}
                 muted={item.soldOut}
                 className={`mx-auto w-[74%] max-w-[10.5rem] ${motionStyles.spin}`}
@@ -181,7 +188,7 @@ export function DishCard({
                 className={`display-face mt-4 block text-[1.25rem] leading-[1.12] ${WRAP} sm:text-[1.375rem] ${muted}`}
               />
               <span className="mt-1 block">{price}</span>
-              {(item.portion || item.tags.length > 0 || item.soldOut) && (
+              {(item.portion || item.tags.length > 0 || item.soldOut || warning) && (
                 <span className="mt-1.5 block">{facts}</span>
               )}
             </>

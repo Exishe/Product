@@ -21,7 +21,6 @@ export function GuestHeader({
   tableLabel,
   languages,
   tools,
-  below,
 }: {
   cafeName: string;
   logoUrl: string | null;
@@ -31,8 +30,6 @@ export function GuestHeader({
   languages: readonly LanguageLink[];
   /** Small round buttons on the right of the top row (search, order). */
   tools?: ReactNode;
-  /** Under the name: the rotating line on the menu. */
-  below?: ReactNode;
 }) {
   const { t, locale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
@@ -103,7 +100,6 @@ export function GuestHeader({
               className="display-face text-title block text-[clamp(2.75rem,12.5vw,6.5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
             />
           )}
-          {below}
           <p className="text-muted mt-2 text-sm">{t("payHint")}</p>
         </div>
       </div>

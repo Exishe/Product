@@ -2,7 +2,6 @@
 
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
-import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useEffect, useRef, useState } from "react";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -16,7 +15,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl, initial } from "./ui";
+import { CheckIcon, CloseIcon, Plate, PlusIcon, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -28,12 +27,20 @@ const NOTE_COUNTER_FROM = 160;
 export function DishSheet({
   item,
   canOrder,
+  pairs = [],
   onAdd,
+  onAddPair,
+  onOpenPair,
   onClose,
 }: {
   item: GuestItem;
   canOrder: boolean;
+  /** "Guests here often add" (ADR-057): dishes from the café's own rounds. */
+  pairs?: GuestItem[];
   onAdd: (add: { modifierIds: string[]; quantity: number; note: string }) => void;
+  /** One tap adds a pair that needs no choice, as the menu's "+" does. */
+  onAddPair?: (pair: GuestItem, from: HTMLElement) => void;
+  onOpenPair?: (pair: GuestItem) => void;
   onClose: () => void;
 }) {
   const { t, locale } = useGuestI18n();
@@ -42,6 +49,7 @@ export function DishSheet({
   const [selection, setSelection] = useState<Selection>(() => initialSelection(item.groups));
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
+  const [addedPairs, setAddedPairs] = useState<string[]>([]);
   const valid = isSelectionValid(item.groups, selection);
   const price = unitPrice(item.price, item.groups, selection) * quantity;
 
@@ -73,14 +81,19 @@ export function DishSheet({
         {/* The expanded card (owner's reference): the plate bleeds off the
             top-right corner, a round × floats top-left, and the name,
             description and price sit beside the plate. */}
-        <div className="relative -mx-5 -mt-7 min-h-[13.5rem] overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:min-h-[16rem] md:px-9 md:pt-7">
-          <Plate
-            src={item.image ? dishPhotoUrl(item.image) : null}
-            name={item.name.text}
-            size={440}
-            lazy={false}
-            className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
-          />
+        {/* Without a photo there is no plate: an empty dark disc would be
+            the largest thing on the sheet and say nothing. */}
+        <div
+          className={`relative -mx-5 -mt-7 overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:px-9 md:pt-7 ${item.image ? "min-h-[13.5rem] md:min-h-[16rem]" : ""}`}
+        >
+          {item.image && (
+            <Plate
+              src={dishPhotoUrl(item.image)}
+              size={440}
+              lazy={false}
+              className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
+            />
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -89,7 +102,7 @@ export function DishSheet({
           >
             <CloseIcon />
           </button>
-          <div className="relative mt-5 pr-[44%] md:pr-[46%]">
+          <div className={`relative mt-5 ${item.image ? "pr-[44%] md:pr-[46%]" : ""}`}>
             <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
               <Txt
                 value={item.name}
@@ -119,6 +132,23 @@ export function DishSheet({
         )}
         <p className="num text-accent-text mt-3 text-[1.625rem] font-semibold">
           {formatAmd(item.price, locale)}
+        </p>
+        {/* Allergens as the café listed them; when it listed none, say so
+            (an empty list is not "free of"), and always send serious
+            allergies to the waiter. */}
+        <p className="text-muted mt-3 text-[0.875rem] leading-snug" data-testid="allergens">
+          {item.allergens.length > 0 ? (
+            <>
+              <span className="text-ink font-semibold">
+                {t("diet.contains", {
+                  list: item.allergens.map((a) => t(`allergens.${a}`)).join(", "),
+                })}
+              </span>{" "}
+              {t("diet.tellWaiter")}
+            </>
+          ) : (
+            t("diet.sheetNone")
+          )}
         </p>
 
         {item.groups.map((group) => {
@@ -199,6 +229,64 @@ export function DishSheet({
           </label>
         )}
 
+        {pairs.length > 0 && (
+          <section aria-labelledby="pairs-title" className="mt-5" data-testid="pairs">
+            <h3 id="pairs-title" className="text-muted text-[0.8125rem] font-semibold">
+              {t("pairs.title")}
+            </h3>
+            <ul className="mt-1">
+              {pairs.map((pair) => {
+                const needsChoice = pair.groups.some((g) => g.min > 0);
+                const added = addedPairs.includes(pair.id);
+                return (
+                  <li
+                    key={pair.id}
+                    className="border-line flex items-center gap-3 border-b py-2 last:border-b-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onOpenPair?.(pair)}
+                      className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      {pair.image && (
+                        <Plate src={dishPhotoUrl(pair.image)} size={44} className="size-11 flex-none" />
+                      )}
+                      <Txt
+                        value={pair.name}
+                        locale={locale}
+                        className="min-w-0 flex-1 font-semibold break-words"
+                      />
+                      <span className="num text-accent-text flex-none text-sm font-semibold whitespace-nowrap">
+                        {formatAmd(pair.price, locale)}
+                      </span>
+                    </button>
+                    {canOrder && (
+                      <button
+                        type="button"
+                        aria-label={
+                          added
+                            ? t("pairs.added", { name: pair.name.text })
+                            : t("menu.add", { name: pair.name.text })
+                        }
+                        aria-haspopup={needsChoice ? "dialog" : undefined}
+                        disabled={added}
+                        onClick={(e) => {
+                          if (needsChoice) return onOpenPair?.(pair);
+                          onAddPair?.(pair, e.currentTarget);
+                          setAddedPairs((ids) => [...ids, pair.id]);
+                        }}
+                        className="text-ink hover:bg-chip disabled:bg-chip grid size-11 flex-none place-items-center rounded-full border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] [&_svg]:size-[18px]"
+                      >
+                        {added ? <CheckIcon /> : <PlusIcon />}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         <div
           className={
             canOrder
@@ -221,21 +309,22 @@ export function DishSheet({
                   button="bg-surface shadow-card size-12"
                 />
               </span>
-              <ThemedStarBorder
+              <button
+                type="button"
                 disabled={!valid}
                 onClick={(e) => {
                   sparkFrom(e.currentTarget);
                   flyToCart(e.currentTarget, {
                     photo: item.image ? dishPhotoUrl(item.image) : null,
-                    initial: initial(item.name.text),
+                    initial: "",
                   });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"
+                className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold`}
               >
                 <span>{t("sheet.add")}</span>
                 <span className="num whitespace-nowrap">{formatAmd(price, locale)}</span>
-              </ThemedStarBorder>
+              </button>
             </div>
           ) : null}
         </div>

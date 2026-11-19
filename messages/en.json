@@ -618,14 +618,16 @@
         "vegan": "vegan",
         "spicy": "spicy",
         "new": "new",
-        "popular": "popular"
+        "popular": "popular",
+        "vegetarian": "vegetarian",
+        "gluten_free": "gluten-free",
+        "lactose_free": "lactose-free"
       },
       "callConfirm": "Call the waiter?",
       "callYes": "Yes, call",
       "callCancel": "No",
       "waiterCalled": "Waiter called",
-      "searchOpen": "Search",
-      "todayIn": "Today on the menu:"
+      "searchOpen": "Search"
     },
     "sheet": {
       "required": "Required",
@@ -706,7 +708,16 @@
       "total": "Total",
       "allRounds": "All rounds",
       "earlier": "Earlier orders",
-      "placedAt": "Sent at {time}"
+      "placedAt": "Sent at {time}",
+      "sameAgain": "Order the same again",
+      "splitLabel": "Split evenly",
+      "splitPeople": "{count, plural, one {# person} other {# people}}",
+      "splitEach": "about {amount} each",
+      "splitNote": "Counted from the orders sent from this phone.",
+      "splitFewer": "Fewer people",
+      "splitMore": "More people",
+      "wait": "Usually ready in about {minutes} min.",
+      "waitLong": "Taking longer than usual. You can call your waiter."
     },
     "games": {
       "title": "Games while you wait",
@@ -760,6 +771,50 @@
     },
     "panel": {
       "empty": "Add dishes and they appear here."
+    },
+    "allergens": {
+      "gluten": "gluten",
+      "crustaceans": "crustaceans",
+      "eggs": "eggs",
+      "fish": "fish",
+      "peanuts": "peanuts",
+      "soy": "soy",
+      "milk": "milk",
+      "nuts": "tree nuts",
+      "celery": "celery",
+      "mustard": "mustard",
+      "sesame": "sesame",
+      "sulphites": "sulphites",
+      "lupin": "lupin",
+      "molluscs": "molluscs"
+    },
+    "diet": {
+      "open": "Allergies",
+      "openCount": "Allergies: {count}",
+      "title": "What do you avoid?",
+      "hint": "We'll mark dishes that list these allergens, and dishes whose allergens aren't listed.",
+      "done": "Done",
+      "clear": "Clear",
+      "contains": "Contains {list}",
+      "unknown": "Allergens not listed. Ask your waiter.",
+      "active": "Marking dishes with {list}.",
+      "tellWaiter": "Tell your waiter about any allergy so the kitchen can check.",
+      "sheetNone": "Allergens aren't listed for this dish. If you have an allergy, tell your waiter."
+    },
+    "again": {
+      "title": "Last time here",
+      "add": "Add again",
+      "added": "Added from your last order",
+      "more": "+{count} more"
+    },
+    "pairs": {
+      "title": "Often ordered with this",
+      "added": "Added: {name}"
+    },
+    "wait": {
+      "usual": "Usually ready in {low}–{high} min.",
+      "usualOne": "Usually ready in about {low} min.",
+      "late": "Taking longer than usual. You can call the waiter."
     }
   },
   "telegram": {

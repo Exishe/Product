@@ -183,6 +183,13 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    public_menu_hints: {
+      Args: {
+        p_restaurant_slug: string;
+        p_location_slug: string;
+      };
+      Returns: Json;
+    };
     publish_menu: {
       Args: {
         p_location_id: string;

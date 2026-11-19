@@ -1,6 +1,7 @@
 import { guestTheme, type GuestTheme } from "@/features/guest-theme/themes";
 import type { Locale } from "@/i18n/routing";
 import { normalizeForSearch } from "@/lib/format/search";
+import { ALLERGENS, type Allergen } from "./allergens";
 
 // The shape of api.public_menu (published snapshot from api.publish_menu,
 // plus today's stop list and the kitchen-busy notice).
@@ -19,6 +20,7 @@ type SnapshotItem = {
   price: number;
   portion: { amount: number; unit: string } | null;
   tags: string[] | null;
+  allergens?: string[] | null;
   groups: SnapshotGroup[] | null;
   image?: string | null;
 };
@@ -62,6 +64,8 @@ export type GuestItem = {
   price: number;
   portion: { amount: number; unit: "g" | "ml" | "pcs" } | null;
   tags: GuestTag[];
+  /** EU allergen codes the café listed; empty means "not listed", not "none". */
+  allergens: Allergen[];
   soldOut: boolean;
   groups: GuestGroup[];
   /** Storage path of the dish photo in the menu-images bucket. */
@@ -89,10 +93,13 @@ export type GuestMenuData = {
   locales: string[];
   ordering: boolean;
   kitchenBusy: { minutes: number | null } | null;
+  /** Some dish lists its allergens: the "I avoid…" filter is worth offering. */
+  hasAllergens: boolean;
   categories: GuestCategory[];
 };
 
-const TAGS = ["vegan", "spicy", "new", "popular"] as const;
+// Diet tags first (they answer "can I eat this?"), then the café's own notes.
+const TAGS = ["vegan", "vegetarian", "gluten_free", "lactose_free", "spicy", "new", "popular"] as const;
 export type GuestTag = (typeof TAGS)[number];
 const UNITS = ["g", "ml", "pcs"] as const;
 
@@ -138,6 +145,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
       price: raw.price,
       portion: raw.portion && unit ? { amount: raw.portion.amount, unit } : null,
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
+      allergens: ALLERGENS.filter((a) => raw.allergens?.includes(a)),
       soldOut: soldOut.has(id),
       image: typeof raw.image === "string" && raw.image ? raw.image : null,
       groups: (raw.groups ?? []).map((g) => ({
@@ -181,6 +189,7 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
     locales: data.location.locales,
     ordering: data.location.ordering,
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
+    hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
     categories,
   };
 }
