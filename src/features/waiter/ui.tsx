@@ -133,7 +133,7 @@ export function ConnectionPill({ state }: { state: Connection }) {
       data-testid="connection"
       data-state={state}
       className={clsx(
-        "inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
+        "inline-flex min-h-8 max-w-full shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
         state === "offline"
           ? "bg-pomegranate text-white"
           : state === "connecting"
