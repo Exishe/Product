@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { IdbStore } from "./idb-store";
 import { Outbox, type OutboxEntry, type OutboxEvent, type SendResult } from "./outbox";
 
@@ -8,6 +17,10 @@ type OutboxApi<A> = {
   entries: readonly OutboxEntry<A>[];
   enqueue: (action: A) => Promise<void>;
   subscribe: (listener: (e: OutboxEvent<A>) => void) => () => void;
+  /** Send now, ignoring the backoff (a «try again» button). */
+  retry: () => void;
+  /** Take a waiting tap back; false when it is being sent right now. */
+  discard: (id: string) => Promise<boolean>;
 };
 
 const OutboxContext = createContext<OutboxApi<unknown> | null>(null);
@@ -29,7 +42,8 @@ export function OutboxProvider<A>({ name, send, sameAction, groupKey, children }
     sendRef.current = send;
   }, [send]);
   const [outbox] = useState(
-    () => new Outbox<A>({ store: new IdbStore<A>(name), send: (a) => sendRef.current(a), sameAction, groupKey }),
+    () =>
+      new Outbox<A>({ store: new IdbStore<A>(name), send: (a) => sendRef.current(a), sameAction, groupKey }),
   );
   const [entries, setEntries] = useState<readonly OutboxEntry<A>[]>([]);
   const timer = useRef<number | undefined>(undefined);
@@ -69,6 +83,8 @@ export function OutboxProvider<A>({ name, send, sameAction, groupKey, children }
         void kick();
       },
       subscribe: (listener) => outbox.subscribe(listener),
+      retry: () => void kick(true),
+      discard: (id) => outbox.discard(id),
     }),
     [entries, outbox, kick],
   );

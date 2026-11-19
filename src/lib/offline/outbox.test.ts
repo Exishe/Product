@@ -64,7 +64,9 @@ describe("Outbox", () => {
 
   it("keeps a tap when the network fails and retries it later with backoff, never out of order", async () => {
     let online = false;
-    const { make, sent, tick } = setup(() => (online ? { kind: "ok" } : { kind: "retry", reason: "TypeError: Failed to fetch" }));
+    const { make, sent, tick } = setup(() =>
+      online ? { kind: "ok" } : { kind: "retry", reason: "TypeError: Failed to fetch" },
+    );
     const box = make();
     await box.enqueue(start("a"));
     await box.enqueue(start("b"));
@@ -99,7 +101,9 @@ describe("Outbox", () => {
   });
 
   it("on a conflict drops that tap and the later taps on the same ticket, and goes on with the others", async () => {
-    const { make, sent, events } = setup((m) => (m.ticket === "a" ? { kind: "stale", current: "served" } : { kind: "ok" }));
+    const { make, sent, events } = setup((m) =>
+      m.ticket === "a" ? { kind: "stale", current: "served" } : { kind: "ok" },
+    );
     const box = make();
     await box.enqueue(start("a"));
     await box.enqueue(start("b"));
@@ -179,8 +183,30 @@ describe("Outbox", () => {
     const box = make();
     await box.enqueue(start("a"));
     await box.replay();
-    const sizes = events.filter((e) => e.type === "changed").map((e) => (e.type === "changed" ? e.entries.length : -1));
+    const sizes = events
+      .filter((e) => e.type === "changed")
+      .map((e) => (e.type === "changed" ? e.entries.length : -1));
     expect(sizes).toEqual([1, 0]);
     expect(events.find((e) => e.type === "sent")).toMatchObject({ entry: { action: start("a") } });
+  });
+
+  it("lets the user take back a waiting tap, but not the one being sent", async () => {
+    let release = () => {};
+    const { make, store, sent } = setup((m) =>
+      m.ticket === "a" ? new Promise<SendResult>((r) => (release = () => r({ kind: "ok" }))) : { kind: "ok" },
+    );
+    const box = make();
+    const a = await box.enqueue(start("a"));
+    const b = await box.enqueue(start("b"));
+    const c = await box.enqueue(start("c"));
+    const run = box.replay();
+    expect(await box.discard(a.id)).toBe(false); // on the wire
+    expect(await box.discard(b.id)).toBe(true);
+    expect(await box.discard("nope")).toBe(false);
+    release();
+    await run;
+    expect(sent).toEqual([start("a"), start("c")]);
+    expect(await store.list()).toEqual([]);
+    expect(c.id).toBeTruthy();
   });
 });
