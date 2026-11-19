@@ -18,7 +18,12 @@ export type TicketRow = {
   ready_at: string | null;
   first_seen_at: string | null;
   acknowledged_at: string | null;
-  orders: { source: OrderSource; guest_note: string | null; paid_at: string | null; tables: { label: string } | null } | null;
+  orders: {
+    source: OrderSource;
+    guest_note: string | null;
+    paid_at: string | null;
+    tables: { label: string } | null;
+  } | null;
   kitchen_ticket_items: {
     quantity: number;
     order_items: {
@@ -43,6 +48,7 @@ export type BoardLine = {
   nameLocale: Locale;
   note: string | null;
   modifiers: LocalizedText[];
+  allergy: boolean; // the line's note mentions an allergy
 };
 
 export type BoardTicket = {
@@ -56,6 +62,8 @@ export type BoardTicket = {
   table: string | null;
   source: OrderSource;
   orderNote: string | null;
+  orderAllergy: boolean; // the order's note mentions an allergy
+  allergy: boolean; // the order's note or the note of a line still wanted does
   lines: BoardLine[];
 };
 
@@ -71,12 +79,56 @@ const FALLBACK: readonly Locale[] = ["hy", "ru", "en"];
 // Order lines keep the dish name in every language (i18n.md); the kitchen reads
 // its own language, then Armenian, Russian, English. Never an empty line.
 export function pickName(names: Json, locale: Locale): LocalizedText {
-  const map = names && typeof names === "object" && !Array.isArray(names) ? (names as Record<string, Json | undefined>) : {};
+  const map =
+    names && typeof names === "object" && !Array.isArray(names)
+      ? (names as Record<string, Json | undefined>)
+      : {};
   for (const l of [locale, ...FALLBACK]) {
     const v = map[l];
     if (typeof v === "string" && v.trim()) return { text: v.trim(), locale: l };
   }
   return { text: "—", locale };
+}
+
+// Guest notes are free text in three languages. A note that names an allergy
+// or an intolerance gets the red allergy banner on the ticket and its own
+// sound; a plain wish ("no onion") stays an ordinary note. Stems match at the
+// start of a word (the three languages inflect at the end), so «ալերգիա»,
+// «аллергия», "allergic" and "nuts" count, and "minute" or "donut" don't.
+const ALLERGY_STEMS = [
+  // Armenian
+  "ալերգ",
+  "գլյուտեն",
+  "սնձան",
+  "լակտոզ",
+  "ընկույզ",
+  "գետնանուշ",
+  "ցելիակ",
+  "անտանել",
+  // Russian
+  "аллерг",
+  "глютен",
+  "лактоз",
+  "орех",
+  "арахис",
+  "целиак",
+  "непереносим",
+  "анафилак",
+  // English
+  "allerg",
+  "gluten",
+  "lactose",
+  "coeliac",
+  "celiac",
+  "peanut",
+  "intoleran",
+  "anaphyla",
+  "epipen",
+];
+const ALLERGY = new RegExp(`(?<!\\p{L})(?:${ALLERGY_STEMS.join("|")}|nuts?(?!\\p{L}))`, "iu");
+
+export function mentionsAllergy(note: string | null | undefined): boolean {
+  return !!note && ALLERGY.test(note);
 }
 
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
@@ -90,7 +142,9 @@ export function toBoardTickets(rows: readonly TicketRow[], locale: Locale): Boar
     if (r.kind === "order" && r.status === "ready" && r.orders?.paid_at) continue;
 
     const lines: BoardLine[] = [];
-    const items = [...r.kitchen_ticket_items].sort((a, b) => (a.order_items?.sort ?? 0) - (b.order_items?.sort ?? 0));
+    const items = [...r.kitchen_ticket_items].sort(
+      (a, b) => (a.order_items?.sort ?? 0) - (b.order_items?.sort ?? 0),
+    );
     for (const k of items) {
       const oi = k.order_items;
       if (!oi) continue;
@@ -106,9 +160,13 @@ export function toBoardTickets(rows: readonly TicketRow[], locale: Locale): Boar
         nameLocale: name.locale,
         note: oi.note?.trim() || null,
         modifiers: oi.order_item_modifiers.map((m) => pickName(m.name_i18n, locale)),
+        allergy: mentionsAllergy(oi.note),
       });
     }
     if (r.kind === "order" && lines.every((l) => l.quantity === 0)) continue;
+
+    const orderNote = r.orders?.guest_note?.trim() || null;
+    const orderAllergy = mentionsAllergy(orderNote);
 
     out.push({
       id: r.id,
@@ -120,7 +178,9 @@ export function toBoardTickets(rows: readonly TicketRow[], locale: Locale): Boar
       firstSeen: r.first_seen_at !== null,
       table: r.orders?.tables?.label ?? null,
       source: r.orders?.source ?? "waiter",
-      orderNote: r.orders?.guest_note?.trim() || null,
+      orderNote,
+      orderAllergy,
+      allergy: r.kind === "order" && (orderAllergy || lines.some((l) => l.allergy && l.quantity > 0)),
       lines,
     });
   }
@@ -149,7 +209,10 @@ export type OverlayAction = { action: KitchenAction; waiting: boolean };
 // The board shows the server's state with the cook's own taps on top: taps
 // still in the outbox (waiting) and taps sent but not yet seen in a refresh.
 // A move applies only from the status it expected (compare-and-set).
-export function applyPending(tickets: readonly BoardTicket[], overlay: readonly OverlayAction[]): ShownTicket[] {
+export function applyPending(
+  tickets: readonly BoardTicket[],
+  overlay: readonly OverlayAction[],
+): ShownTicket[] {
   const shown = new Map<string, ShownTicket>(tickets.map((t) => [t.id, { ...t, pending: false }]));
   for (const { action, waiting } of overlay) {
     const t = shown.get(action.ticketId);
@@ -170,4 +233,74 @@ export function applyPending(tickets: readonly BoardTicket[], overlay: readonly 
     if (waiting) t.pending = true;
   }
   return [...shown.values()];
+}
+
+// "All day" (the kitchen's word for it): how many of each dish is still to be
+// cooked across every order ticket in New and Cooking, so a cook can fire a
+// batch instead of reading eight tickets. Lines that differ only in their
+// options count together; the options are listed under the dish.
+export type AllDayRow = {
+  key: string;
+  name: string;
+  nameLocale: Locale;
+  quantity: number;
+  variants: { text: string; quantity: number }[]; // empty when every line is plain
+  ticketIds: string[];
+};
+
+export function allDay(tickets: readonly BoardTicket[]): AllDayRow[] {
+  type Acc = AllDayRow & { byVariant: Map<string, number> };
+  const rows = new Map<string, Acc>();
+  for (const t of tickets) {
+    if (t.kind !== "order" || (t.status !== "new" && t.status !== "cooking")) continue;
+    for (const l of t.lines) {
+      if (l.quantity <= 0) continue;
+      const key = `${l.nameLocale}:${l.name}`;
+      let row = rows.get(key);
+      if (!row) {
+        row = {
+          key,
+          name: l.name,
+          nameLocale: l.nameLocale,
+          quantity: 0,
+          variants: [],
+          ticketIds: [],
+          byVariant: new Map(),
+        };
+        rows.set(key, row);
+      }
+      row.quantity += l.quantity;
+      if (!row.ticketIds.includes(t.id)) row.ticketIds.push(t.id);
+      const variant = l.modifiers.map((m) => m.text).join(", ");
+      row.byVariant.set(variant, (row.byVariant.get(variant) ?? 0) + l.quantity);
+    }
+  }
+  const out: AllDayRow[] = [];
+  for (const { byVariant, ...row } of rows.values()) {
+    const plain = byVariant.size === 1 && byVariant.has("");
+    const variants = plain
+      ? []
+      : [...byVariant]
+          .map(([text, quantity]) => ({ text, quantity }))
+          .sort((a, b) => b.quantity - a.quantity || a.text.localeCompare(b.text));
+    out.push({ ...row, variants });
+  }
+  return out.sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name));
+}
+
+// Item-level bump: the lines a cook has struck on tickets in Cooking. A ticket
+// is done when every line still wanted is struck.
+export const lineKey = (ticketId: string, lineId: string) => `${ticketId}/${lineId}`;
+
+export function allLinesStruck(ticket: BoardTicket, struck: ReadonlySet<string>): boolean {
+  const wanted = ticket.lines.filter((l) => l.quantity > 0);
+  return wanted.length > 0 && wanted.every((l) => struck.has(lineKey(ticket.id, l.id)));
+}
+
+// Keeps only the strikes of tickets still cooking on the board.
+export function pruneStruck(struck: ReadonlySet<string>, tickets: readonly BoardTicket[]): Set<string> {
+  const cooking = new Set(
+    tickets.filter((t) => t.kind === "order" && t.status === "cooking").map((t) => t.id),
+  );
+  return new Set([...struck].filter((k) => cooking.has(k.slice(0, k.indexOf("/")))));
 }

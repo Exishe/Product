@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { applyPending, groupTickets, pickName, toBoardTickets, type BoardTicket, type TicketRow } from "./board-model";
+import {
+  allDay,
+  allLinesStruck,
+  applyPending,
+  groupTickets,
+  lineKey,
+  mentionsAllergy,
+  pickName,
+  pruneStruck,
+  toBoardTickets,
+  type BoardTicket,
+  type TicketRow,
+} from "./board-model";
 
 function first<T>(list: readonly T[]): T {
   if (list.length === 0) throw new Error("empty list");
@@ -60,6 +72,8 @@ function ticket(over: Partial<BoardTicket> & Pick<BoardTicket, "id">): BoardTick
     table: "1",
     source: "qr",
     orderNote: null,
+    orderAllergy: false,
+    allergy: false,
     lines: [],
     ...over,
   };
@@ -67,7 +81,10 @@ function ticket(over: Partial<BoardTicket> & Pick<BoardTicket, "id">): BoardTick
 
 describe("pickName", () => {
   it("uses the kitchen's language, then Armenian, Russian, English", () => {
-    expect(pickName({ hy: "Տոլմա", ru: "Толма", en: "Tolma" }, "ru")).toEqual({ text: "Толма", locale: "ru" });
+    expect(pickName({ hy: "Տոլմա", ru: "Толма", en: "Tolma" }, "ru")).toEqual({
+      text: "Толма",
+      locale: "ru",
+    });
     expect(pickName({ hy: "Տոլմա", en: "Tolma" }, "ru")).toEqual({ text: "Տոլմա", locale: "hy" });
     expect(pickName({ ru: "Толма", en: "Tolma" }, "en")).toEqual({ text: "Tolma", locale: "en" });
     expect(pickName({ en: "Tolma", ru: "  " }, "hy")).toEqual({ text: "Tolma", locale: "en" });
@@ -80,8 +97,21 @@ describe("pickName", () => {
 
 describe("toBoardTickets", () => {
   it("turns a row into a slip in the kitchen's language, lines in menu order", () => {
-    const t = first(toBoardTickets([row({ orders: { source: "qr", guest_note: "Առանց սոխի", paid_at: null, tables: { label: "5" } } })], "hy"));
-    expect(t).toMatchObject({ id: "t1", kind: "order", status: "new", number: 17, table: "5", source: "qr", orderNote: "Առանց սոխի" });
+    const t = first(
+      toBoardTickets(
+        [row({ orders: { source: "qr", guest_note: "Առանց սոխի", paid_at: null, tables: { label: "5" } } })],
+        "hy",
+      ),
+    );
+    expect(t).toMatchObject({
+      id: "t1",
+      kind: "order",
+      status: "new",
+      number: 17,
+      table: "5",
+      source: "qr",
+      orderNote: "Առանց սոխի",
+    });
     expect(t.createdAt).toBe(Date.UTC(2026, 10, 13, 18, 0));
     expect(t.lines.map((l) => [l.quantity, l.name])).toEqual([
       [1, "Ամառային աղցան"],
@@ -149,43 +179,200 @@ describe("groupTickets", () => {
 });
 
 describe("applyPending", () => {
-  const board = [ticket({ id: "a" }), ticket({ id: "v", kind: "void" }), ticket({ id: "b", status: "cooking" })];
+  const board = [
+    ticket({ id: "a" }),
+    ticket({ id: "v", kind: "void" }),
+    ticket({ id: "b", status: "cooking" }),
+  ];
 
   it("moves a slip at once when the cook taps, and marks it as waiting to send", () => {
-    const shown = applyPending(board, [{ action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" }, waiting: true }]);
+    const shown = applyPending(board, [
+      {
+        action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" },
+        waiting: true,
+      },
+    ]);
     expect(shown.find((t) => t.id === "a")).toMatchObject({ status: "cooking", pending: true });
     expect(shown.find((t) => t.id === "b")).toMatchObject({ status: "cooking", pending: false });
   });
 
   it("chains taps made while offline", () => {
     const shown = applyPending(board, [
-      { action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" }, waiting: true },
-      { action: { kind: "set_ticket_status", ticketId: "a", expected: "cooking", next: "ready" }, waiting: true },
+      {
+        action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" },
+        waiting: true,
+      },
+      {
+        action: { kind: "set_ticket_status", ticketId: "a", expected: "cooking", next: "ready" },
+        waiting: true,
+      },
     ]);
     expect(shown.find((t) => t.id === "a")?.status).toBe("ready");
   });
 
   it("hides a cancellation once it is acknowledged", () => {
-    const shown = applyPending(board, [{ action: { kind: "acknowledge_void", ticketId: "v" }, waiting: false }]);
+    const shown = applyPending(board, [
+      { action: { kind: "acknowledge_void", ticketId: "v" }, waiting: false },
+    ]);
     expect(shown.map((t) => t.id)).toEqual(["a", "b"]);
   });
 
   it("keeps a sent move without the waiting mark until the next refresh confirms it", () => {
-    const shown = applyPending(board, [{ action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" }, waiting: false }]);
+    const shown = applyPending(board, [
+      {
+        action: { kind: "set_ticket_status", ticketId: "a", expected: "new", next: "cooking" },
+        waiting: false,
+      },
+    ]);
     expect(shown.find((t) => t.id === "a")).toMatchObject({ status: "cooking", pending: false });
   });
 
   it("does not apply a move the server state no longer allows", () => {
-    const shown = applyPending(board, [{ action: { kind: "set_ticket_status", ticketId: "b", expected: "new", next: "cooking" }, waiting: true }]);
+    const shown = applyPending(board, [
+      {
+        action: { kind: "set_ticket_status", ticketId: "b", expected: "new", next: "cooking" },
+        waiting: true,
+      },
+    ]);
     expect(shown.find((t) => t.id === "b")).toMatchObject({ status: "cooking", pending: true });
-    const ready = applyPending(board, [{ action: { kind: "set_ticket_status", ticketId: "b", expected: "new", next: "ready" }, waiting: false }]);
+    const ready = applyPending(board, [
+      {
+        action: { kind: "set_ticket_status", ticketId: "b", expected: "new", next: "ready" },
+        waiting: false,
+      },
+    ]);
     expect(ready.find((t) => t.id === "b")?.status).toBe("cooking");
   });
 
   it("takes a slip off the board when it is served", () => {
-    const shown = applyPending([ticket({ id: "r", status: "ready" })], [
-      { action: { kind: "set_ticket_status", ticketId: "r", expected: "ready", next: "served" }, waiting: true },
-    ]);
+    const shown = applyPending(
+      [ticket({ id: "r", status: "ready" })],
+      [
+        {
+          action: { kind: "set_ticket_status", ticketId: "r", expected: "ready", next: "served" },
+          waiting: true,
+        },
+      ],
+    );
     expect(shown).toEqual([]);
+  });
+});
+
+describe("mentionsAllergy", () => {
+  it("finds allergies and intolerances in Armenian, Russian and English", () => {
+    for (const note of [
+      "Ալերգիա ընկույզի նկատմամբ",
+      "ալերգիկ է կաթի նկատմամբ",
+      "առանց գլյուտենի",
+      "Аллергия на орехи",
+      "без глютена, непереносимость лактозы",
+      "Allergic to peanuts",
+      "NO NUTS please",
+      "coeliac",
+    ]) {
+      expect(mentionsAllergy(note), note).toBe(true);
+    }
+  });
+
+  it("leaves plain wishes and look-alike words alone", () => {
+    for (const note of [
+      null,
+      "",
+      "Առանց սոխի",
+      "Լավ եփած",
+      "без лука",
+      "well done",
+      "in 5 minutes",
+      "donut on the side",
+      "Երեխայի համար՝ առանց համեմունքի",
+    ]) {
+      expect(mentionsAllergy(note), String(note)).toBe(false);
+    }
+  });
+
+  it("flags the ticket when the order note or a line still wanted names an allergy", () => {
+    const orderNote = {
+      source: "qr" as const,
+      guest_note: "Аллергия на мёд",
+      paid_at: null,
+      tables: { label: "5" },
+    };
+    expect(first(toBoardTickets([row({ orders: orderNote })], "hy"))).toMatchObject({
+      orderAllergy: true,
+      allergy: true,
+    });
+
+    const r = row();
+    first(r.kitchen_ticket_items).order_items!.note = "nut allergy";
+    const t = first(toBoardTickets([r], "hy"));
+    expect(t).toMatchObject({ orderAllergy: false, allergy: true });
+    expect(t.lines.map((l) => l.allergy)).toEqual([false, true]);
+
+    first(r.kitchen_ticket_items).order_items!.cancelled_quantity = 2; // that line is no longer wanted
+    expect(first(toBoardTickets([r], "hy")).allergy).toBe(false);
+    expect(first(toBoardTickets([row()], "hy")).allergy).toBe(false);
+  });
+});
+
+describe("allDay", () => {
+  const line = (id: string, name: string, quantity: number, modifiers: string[] = []) => ({
+    id,
+    quantity,
+    orderedQuantity: quantity,
+    name,
+    nameLocale: "hy" as const,
+    note: null,
+    modifiers: modifiers.map((text) => ({ text, locale: "hy" as const })),
+    allergy: false,
+  });
+
+  it("adds up each dish over New and Cooking, the biggest batch first", () => {
+    const rows = allDay([
+      ticket({ id: "a", lines: [line("1", "Խորոված", 2, ["Միջին"]), line("2", "Տոլմա", 1)] }),
+      ticket({
+        id: "b",
+        status: "cooking",
+        lines: [line("3", "Խորոված", 1, ["Լավ եփած"]), line("4", "Խորոված", 1, ["Միջին"])],
+      }),
+      ticket({ id: "c", status: "ready", lines: [line("5", "Տոլմա", 5)] }),
+      ticket({ id: "v", kind: "void", lines: [line("6", "Տոլմա", 3)] }),
+      ticket({ id: "d", lines: [line("7", "Տոլմա", 0), line("8", "Աղցան", 1)] }),
+    ]);
+    expect(rows.map((r) => [r.name, r.quantity])).toEqual([
+      ["Խորոված", 4],
+      ["Աղցան", 1],
+      ["Տոլմա", 1],
+    ]);
+    expect(rows[0]).toMatchObject({
+      ticketIds: ["a", "b"],
+      variants: [
+        { text: "Միջին", quantity: 3 },
+        { text: "Լավ եփած", quantity: 1 },
+      ],
+    });
+    expect(rows[2]!.variants).toEqual([]);
+  });
+});
+
+describe("item-level bump", () => {
+  const plain = { orderedQuantity: 1, nameLocale: "hy" as const, note: null, modifiers: [], allergy: false };
+  const cooking = ticket({
+    id: "t",
+    status: "cooking",
+    lines: [
+      { ...plain, id: "a", quantity: 1, name: "A" },
+      { ...plain, id: "b", quantity: 0, name: "B" },
+    ],
+  });
+
+  it("is done when every line still wanted is struck", () => {
+    expect(allLinesStruck(cooking, new Set())).toBe(false);
+    expect(allLinesStruck(cooking, new Set([lineKey("t", "a")]))).toBe(true);
+  });
+
+  it("forgets strikes of tickets that left Cooking", () => {
+    const struck = new Set([lineKey("t", "a"), lineKey("gone", "x")]);
+    expect([...pruneStruck(struck, [cooking])]).toEqual([lineKey("t", "a")]);
+    expect([...pruneStruck(struck, [{ ...cooking, status: "ready" }])]).toEqual([]);
   });
 });
