@@ -220,7 +220,7 @@ export function StartShiftOverlay({
                 data-testid={`tone-${option}`}
                 onClick={() => onTone(option)}
                 className={clsx(
-                  "min-h-14 min-w-28 rounded-full px-5 text-lg font-semibold",
+                  "min-h-14 min-w-24 rounded-full px-4 text-lg font-semibold sm:min-w-28 sm:px-5",
                   tone === option ? "bg-basalt-3 text-slip shadow-[var(--shadow-soft)]" : "text-slip-dim",
                 )}
               >

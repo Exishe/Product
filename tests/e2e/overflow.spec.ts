@@ -58,7 +58,9 @@ async function sideways(page: Page) {
           culprits.push(`text ${describe(el)} runs out of ${describe(box)}`);
           break;
         }
-        if (s.overflowX !== "visible") break;
+        // A fixed layer (the game, a sheet) is laid out against the screen, not
+        // against the boxes it happens to sit in.
+        if (s.overflowX !== "visible" || s.position === "fixed") break;
       }
     }
     // Boxes that scroll sideways without meaning to (tab rows say so with overflow-x-auto).

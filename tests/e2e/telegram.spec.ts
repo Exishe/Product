@@ -16,7 +16,7 @@ test.describe("Telegram alerts page", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "hy");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Telegram ծանուցումներ");
     await expect(
-      page.getByText("Ըստ նախնականի գալիս են միայն բացառությունները", { exact: false }),
+      page.getByText("Սկզբում գալիս են միայն բացառությունները", { exact: false }),
     ).toBeVisible();
     await expect(page.getByTestId("no-chats")).toHaveText("Դեռ միացված զրույց չկա։");
 

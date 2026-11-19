@@ -237,6 +237,9 @@ test.describe("kitchen board", () => {
       await startShift(page);
       await slip(page, order.ticketId).getByRole("button", { name: "Սկսել" }).click();
       await expect(inColumn(page, "cooking", order.ticketId)).toBeVisible();
+      // The board moves the slip before the server has it; cancel only once the
+      // server agrees, or the two writes can deadlock on a slow database.
+      await expect.poll(async () => (await ticketStatus(api, order.ticketId))?.status).toBe("cooking");
 
       // The waiter cancels one of the two portions.
       const { data: line } = await api
