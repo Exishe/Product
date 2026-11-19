@@ -258,6 +258,16 @@ export const SCREENS: Screen[] = [
       await expect(page.getByTestId("order").first()).toBeVisible();
     },
   },
+  {
+    // A waiting-room game opened over the status page (its intro card).
+    name: "guest-game",
+    who: "guest",
+    path: (w, l) => `/${l}/m/${w.cafe.slug}/main/order?t=${w.cafe.tables[LONG.table]?.token}`,
+    prepare: async (page) => {
+      await page.getByTestId("game-fighter").click();
+      await expect(page.getByTestId("game-start")).toBeVisible();
+    },
+  },
   { name: "guest-old-qr", who: "anon", path: () => `/t/${"A".repeat(46)}`, status: 404 },
   { name: "not-found", who: "anon", path: (_, l) => `/${l}/no-such-page`, status: 404 },
 
