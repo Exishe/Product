@@ -294,7 +294,9 @@ export function AppearanceForm({
                 const name = b(`roles.${role}.name`);
                 // Only the roles that are text on the page get a ratio (badges carry their own text).
                 const ratio =
-                  value && (role === "header" || role === "accent") ? contrast(value, pageColor).toFixed(1) : null;
+                  value && (role === "header" || role === "accent")
+                    ? contrast(value, pageColor).toFixed(1)
+                    : null;
                 // The brand only colours text where it can; brand.ts says which roles it ignored.
                 const weak = on && (role === "accent" || role === "page") && ignored.includes(role);
                 return (

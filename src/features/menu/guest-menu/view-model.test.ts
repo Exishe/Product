@@ -139,7 +139,14 @@ describe("buildGuestMenu", () => {
   });
 
   it("reads the wordmark from the brand and a cover per section (ADR-057)", () => {
-    const k = { name: { hy: "Խորոված" }, description: null, price: 100, portion: null, tags: null, groups: null };
+    const k = {
+      name: { hy: "Խորոված" },
+      description: null,
+      price: 100,
+      portion: null,
+      tags: null,
+      groups: null,
+    };
     const m = menu({ k }, [
       { id: "1", item_ids: ["k"] },
       { id: "2", item_ids: ["k"] },
