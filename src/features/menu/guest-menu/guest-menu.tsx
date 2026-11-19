@@ -7,7 +7,7 @@ import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { SplitText } from "@/features/guest-theme/motion/split-text";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
-import { cartKey, useCart } from "@/features/ordering/cart-store";
+import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
 import { OrderSender } from "@/features/ordering/order-sender";
@@ -166,14 +166,16 @@ export function GuestMenu({
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
   useEffect(() => {
-    // Arriving straight at the cart (the order page's "Order the same
-    // again"): put the menu under it in history, so closing the cart lands
-    // on the menu and not back on the order page.
-    if (window.location.hash === CART_HASH) {
-      const { pathname, search } = window.location;
-      window.history.replaceState(window.history.state, "", pathname + search);
-      window.history.pushState(null, "", CART_HASH);
+    // Sent here to see the cart (the order page's "Order the same again"):
+    // open it as a tap would, so closing it lands on the menu.
+    let openNow = false;
+    try {
+      openNow = window.sessionStorage.getItem(OPEN_CART_KEY) !== null;
+      window.sessionStorage.removeItem(OPEN_CART_KEY);
+    } catch {
+      // storage blocked: the menu shows with the cart bar instead
     }
+    if (openNow && window.location.hash !== CART_HASH) window.history.pushState(null, "", CART_HASH);
     const sync = () => setView(window.location.hash === CART_HASH ? "cart" : "menu");
     sync();
     window.addEventListener("popstate", sync);

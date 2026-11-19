@@ -15,7 +15,7 @@ import { formatAmd } from "@/lib/format/money";
 import { useGuestChannel } from "@/lib/realtime/use-guest-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/lib/supabase/database";
-import { addToCart, cartKey } from "./cart-store";
+import { OPEN_CART_KEY, addToCart, cartKey } from "./cart-store";
 import { MAX_PEOPLE, repeatLines, shareOf } from "./repeat";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
@@ -462,7 +462,12 @@ export function OrderStatusView({
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     addToCart(cartKey(order.location_id, tableId), repeatLines(order), newId);
-    router.push(`${menuHref}#cart`);
+    try {
+      window.sessionStorage.setItem(OPEN_CART_KEY, "1");
+    } catch {
+      // storage blocked: the menu shows its cart bar instead
+    }
+    router.push(menuHref);
   };
   const stepButton =
     "bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]";

@@ -1,6 +1,9 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { addLine, type CartLine } from "./cart";
 
+/** Session flag: the menu opens its cart once on arrival ("Order the same again"). */
+export const OPEN_CART_KEY = "pativ:open-cart";
+
 // One cart per location and table, kept in localStorage so it survives a
 // reload, a language switch or a lost connection. Storage can be missing or
 // blocked (private mode): the cart then lives in memory for this visit.
