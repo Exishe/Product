@@ -4,11 +4,12 @@ import { useEffect, useRef, type CSSProperties, type ElementType } from "react";
 import { loadMotion, reducedMotion } from "./motion";
 import styles from "./motion.module.css";
 
-// Split Text, after React Bits (https://reactbits.dev/text-animations/split-text,
-// MIT + Commons Clause: used in our product, not resold): a heading rises in
-// letter by letter. Our version splits by grapheme (Intl.Segmenter), so
-// Armenian «և», accents and emoji stay whole, and keeps whole words
-// together so lines still break between words.
+// A heading that rises in letter by letter. The idea is a common one; the
+// owner picked it from the React Bits gallery ("Split Text"). This is our
+// own implementation (CSS keyframes, Intl.Segmenter, IntersectionObserver
+// and Motion's mini animate()); no React Bits code is used or copied here
+// (ADR-065). It splits by grapheme, so Armenian «և», accents and emoji stay
+// whole, and keeps whole words together so lines still break between words.
 // - reveal="load": plays at first paint in CSS, no JavaScript needed (the
 //   café name at the top must show at once, even before Motion arrives);
 // - reveal="view": plays once with Motion when the heading first scrolls

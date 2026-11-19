@@ -1,11 +1,12 @@
 import { loadMotion, reducedMotion } from "./motion";
 
-// Click Spark, after React Bits (https://reactbits.dev/animations/click-spark,
-// MIT + Commons Clause): rays burst from the tap and fade. Ours draws them
-// as small spans animated with Motion instead of a page-wide canvas, in two
-// of the theme's colours (the accent and the star: red and blush in Wine),
-// with a soft flash at the centre, inside the café's theme wrapper. "big" is
-// the celebration when the order is ready.
+// A spark at the tap: rays burst out and fade. The idea is a common one; the
+// owner picked it from the React Bits gallery ("Click Spark"). This is our
+// own implementation; no React Bits code is used or copied here (ADR-065).
+// The rays are small spans animated with Motion (no canvas), in two of the
+// theme's colours (the glow and the star: red and blush in Wine), with a
+// soft flash at the centre, inside the café's theme wrapper. "big" is the
+// celebration when the order is ready.
 // The drawing lives in the engine chunk (burst.ts).
 export function sparkFrom(target: Element | null, size: "normal" | "big" = "normal") {
   if (!target || reducedMotion()) return;

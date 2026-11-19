@@ -263,7 +263,7 @@ export function brandTokens(
     } else check.ignored.push("accent");
   }
 
-  // Highlight: badges, the glow and the StarBorder star, the initial on an
+  // Highlight: badges, the glow and the lighter spark colour, the initial on an
   // empty porcelain plate (large text: 3:1 is enough there).
   if (highlight) {
     vars["--guest-badge"] = highlight;
