@@ -137,7 +137,7 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
                       {search.saved === c.location_id && (
                         <span
                           role="status"
-                          className="text-tarragon flex min-h-11 items-center gap-1 font-semibold"
+                          className="text-ink flex min-h-11 items-center gap-1 font-semibold underline underline-offset-4"
                         >
                           <CircleCheck aria-hidden="true" className="size-4" />
                           {t("saved")}

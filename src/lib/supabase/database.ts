@@ -156,6 +156,14 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    menu_engineering: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: Json;
+    };
     place_waiter_order: {
       Args: {
         p_table_id: string;
@@ -266,6 +274,13 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    sales_heatmap: {
+      Args: {
+        p_location_id: string;
+        p_weeks: number;
+      };
+      Returns: Json;
+    };
     save_category: {
       Args: {
         p_restaurant_id: string;
@@ -334,6 +349,13 @@ export type ApiSchema = {
         p_theme: string;
         p_brand_color: string;
         p_logo_path: string;
+      };
+      Returns: undefined;
+    };
+    set_item_cost: {
+      Args: {
+        p_item_id: string;
+        p_cost: number;
       };
       Returns: undefined;
     };

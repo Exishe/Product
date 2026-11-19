@@ -24,7 +24,7 @@ export function TelegramConnect({
   return (
     <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
       <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <Send aria-hidden="true" className="text-tarragon size-5 shrink-0" />
+        <Send aria-hidden="true" className="text-ink size-5 shrink-0" />
         {t("connectTitle")}
       </h2>
       <p className="text-staff-label2 m-0">{t("connectHint")}</p>

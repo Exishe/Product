@@ -13,7 +13,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   const next = encodeURIComponent(`/invite/${code}`);
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-6">
-      <p className="display-face text-3xl text-tarragon">{t("brand.name")}</p>
+      <p className="display-face text-ink text-3xl">{t("brand.name")}</p>
       <h1 className="text-2xl font-semibold">{t("invite.title")}</h1>
       {signedIn ? (
         <NextIntlClientProvider>
@@ -22,10 +22,16 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
       ) : (
         <div className="flex flex-col gap-3">
           <p>{t("invite.signInFirst")}</p>
-          <Link href={`/signup?next=${next}`} className="flex h-12 items-center justify-center rounded-input bg-tarragon font-semibold text-white">
+          <Link
+            href={`/signup?next=${next}`}
+            className="bg-ink flex h-12 items-center justify-center rounded-full font-semibold text-white"
+          >
             {t("auth.signup.submit")}
           </Link>
-          <Link href={`/login?next=${next}`} className="flex h-12 items-center justify-center rounded-input border border-tarragon font-semibold text-tarragon">
+          <Link
+            href={`/login?next=${next}`}
+            className="text-ink flex h-12 items-center justify-center rounded-full bg-white font-semibold shadow-[var(--shadow-soft)]"
+          >
             {t("auth.login.submit")}
           </Link>
         </div>

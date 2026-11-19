@@ -10,7 +10,7 @@ import { requireMember } from "@/lib/auth/require-member";
 
 export default async function MenuPage() {
   const me = await requireMember(["owner", "manager"]);
-  const data = await loadMenuEditor(me.restaurantId);
+  const data = await loadMenuEditor(me.restaurantId, me.role === "owner");
   const t = await getTranslations("menu");
   return (
     <AdminPage

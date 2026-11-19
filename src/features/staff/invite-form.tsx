@@ -17,7 +17,7 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
   return (
     <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
       <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <UserPlus aria-hidden="true" className="text-tarragon size-5" />
+        <UserPlus aria-hidden="true" className="text-ink size-5" />
         {t("inviteTitle")}
       </h2>
       <label className="flex flex-col gap-1.5">

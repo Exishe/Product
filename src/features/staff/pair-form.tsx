@@ -6,7 +6,12 @@ import { useState } from "react";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
 type PairError = "invalid_pairing_code" | "rate_limited" | "anonymous_session_required" | "failed";
-type Redeemed = { member_id: string; role: "kitchen" | "waiter"; location_id: string; station_id: string | null };
+type Redeemed = {
+  member_id: string;
+  role: "kitchen" | "waiter";
+  location_id: string;
+  station_id: string | null;
+};
 
 // The device signs in anonymously, then redeems the owner's code (ADR-038).
 export function PairForm() {
@@ -29,7 +34,9 @@ export function PairForm() {
         return;
       }
     }
-    const { data, error: rpcError } = await supabase.schema("api").rpc("redeem_device_pairing", { p_code: code });
+    const { data, error: rpcError } = await supabase
+      .schema("api")
+      .rpc("redeem_device_pairing", { p_code: code });
     const result = data as ({ error?: PairError } & Partial<Redeemed>) | null;
     if (rpcError || !result) {
       setPending(false);
@@ -41,13 +48,15 @@ export function PairForm() {
       setError(result.error);
       return;
     }
-    router.replace(result.role === "kitchen" && result.station_id ? `/kitchen/${result.station_id}` : "/waiter");
+    router.replace(
+      result.role === "kitchen" && result.station_id ? `/kitchen/${result.station_id}` : "/waiter",
+    );
   }
 
   return (
     <form action={submit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-semibold text-muted">{t("code")}</span>
+        <span className="text-muted text-sm font-semibold">{t("code")}</span>
         <input
           name="code"
           inputMode="numeric"
@@ -55,15 +64,19 @@ export function PairForm() {
           pattern="[0-9]{6}"
           maxLength={6}
           required
-          className="num h-16 rounded-input border border-line-strong bg-white px-3 text-center text-3xl tracking-[0.4em]"
+          className="num rounded-input border-line-strong h-16 border bg-white px-3 text-center text-3xl tracking-[0.4em]"
         />
       </label>
       {error && (
-        <p role="alert" className="rounded-chip bg-pom-tint px-3 py-2 text-pomegranate">
+        <p role="alert" className="rounded-chip bg-pom-tint text-pomegranate px-3 py-2">
           {t(`errors.${error}`)}
         </p>
       )}
-      <button type="submit" disabled={pending} className="h-14 rounded-input bg-tarragon text-lg font-semibold text-white disabled:opacity-60">
+      <button
+        type="submit"
+        disabled={pending}
+        className="bg-ink h-14 rounded-full text-lg font-semibold text-white disabled:opacity-60"
+      >
         {pending ? t("pending") : t("submit")}
       </button>
     </form>

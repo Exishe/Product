@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1d6a43",
+  themeColor: "#eceef1",
 };
 
 // One root layout for every surface: the language comes from the URL on guest

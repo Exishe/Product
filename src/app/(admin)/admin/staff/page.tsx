@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { Ban, CircleCheck, Clock, Monitor, UserRound } from "lucide-react";
+import { Ban, CircleCheck, Clock, Monitor } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
@@ -81,9 +81,9 @@ export default async function StaffPage() {
                 <span className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="bg-staff-fill text-staff-label2 grid size-10 shrink-0 place-items-center rounded-full max-sm:hidden"
+                    className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-[0.9375rem] font-semibold max-sm:hidden"
                   >
-                    {kind === "people" ? <UserRound className="size-5" /> : <Monitor className="size-5" />}
+                    {kind === "people" ? initials(m.display_name) : <Monitor className="size-5" />}
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="text-[1.0625rem] font-semibold break-words">{m.display_name}</span>
@@ -131,4 +131,12 @@ export default async function StaffPage() {
       </NextIntlClientProvider>
     </AdminPage>
   );
+}
+
+// Up to two letters from the name ("Anna Petrosyan" → "AP", "Karen" → "K"),
+// so people are told apart at a glance; works for Armenian and Cyrillic too.
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/u).filter(Boolean);
+  const letters = words.slice(0, 2).map((w) => Array.from(w)[0] ?? "");
+  return letters.join("").toLocaleUpperCase();
 }

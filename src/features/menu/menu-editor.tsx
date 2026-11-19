@@ -10,6 +10,7 @@ import {
   CircleAlert,
   CircleCheck,
   ImagePlus,
+  LoaderCircle,
   Pencil,
   Plus,
   ScanText,
@@ -47,12 +48,25 @@ const FORM_ID = "menu-editor-form";
 type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
   id?: string;
   priceText: string;
+  costText: string;
   needsReview: boolean;
   markReviewed: boolean;
 };
 type CategoryDraft = { id?: string; names: Names; prepAreaId: string | null };
 type Panel = { kind: "dish"; draft: DishDraft } | { kind: "category"; draft: CategoryDraft } | null;
-type Status = "idle" | "saving" | "saved" | "failed" | "priceInvalid" | "nameRequired";
+type Status =
+  "idle" | "saving" | "saved" | "failed" | "costFailed" | "priceInvalid" | "costInvalid" | "nameRequired";
+
+// Resizes the photo in the browser, stores it and points the dish at it.
+async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
+  const blob = await resizeToWebp(file);
+  const path = `${restaurantId}/items/${dishId}/${Date.now()}.webp`;
+  const { error } = await getBrowserClient()
+    .storage.from("menu-images")
+    .upload(path, blob, { contentType: "image/webp" });
+  if (error || !(await setDishPhoto(dishId, path))) throw error ?? new Error("save failed");
+  return path;
+}
 
 function photoUrl(path: string): string {
   return `${publicEnv().NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
@@ -82,6 +96,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
     "idle" | "publishing" | "published" | "unreviewed" | "failed"
   >("idle");
   const [photoStatus, setPhotoStatus] = useState<"idle" | "uploading" | "failed">("idle");
+  // Photos added straight from the list, one dish at a time, without opening it.
+  const [rowPhoto, setRowPhoto] = useState<Record<string, "uploading" | "failed">>({});
 
   const category = data.categories.find((c) => c.id === selected) ?? null;
   const dishes = data.dishes.filter((d) => d.categoryId === selected).sort((a, b) => a.sort - b.sort);
@@ -96,11 +112,17 @@ export function MenuEditor({ data }: { data: EditorData }) {
     open({
       kind: "dish",
       draft: d
-        ? { ...d, priceText: String(d.price), markReviewed: false }
+        ? {
+            ...d,
+            priceText: String(d.price),
+            costText: d.id in data.costs ? String(data.costs[d.id]) : "",
+            markReviewed: false,
+          }
         : {
             categoryId: selected as string,
             imagePath: null,
             priceText: "",
+            costText: "",
             prepAreaId: null,
             tags: [],
             names: emptyNames(),
@@ -152,6 +174,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
         const price = parsePriceInput(panel.draft.priceText);
         if (price === null) return setStatus("priceInvalid");
         const d = panel.draft;
+        const cost = d.costText.trim() === "" ? null : parsePriceInput(d.costText);
+        if (data.isOwner && d.costText.trim() !== "" && cost === null) return setStatus("costInvalid");
         const result = await saveDish({
           id: d.id,
           categoryId: d.categoryId,
@@ -162,12 +186,21 @@ export function MenuEditor({ data }: { data: EditorData }) {
           tags: d.tags as (typeof DISH_TAGS)[number][],
           modifierGroupIds: d.modifierGroupIds,
           markReviewed: d.markReviewed,
+          // Only when it changed: the cost lives in its own owner-only table.
+          ...(data.isOwner && cost !== (d.id && d.id in data.costs ? data.costs[d.id] : null)
+            ? { cost }
+            : {}),
         });
         if (!result.ok) return setStatus("failed");
         setPanel({
           kind: "dish",
           draft: { ...d, id: result.id, needsReview: d.needsReview && !d.markReviewed },
         });
+        // The dish is saved; keep the sheet open so the cost can be retried.
+        if (!result.costSaved) {
+          setStatus("costFailed");
+          return router.refresh();
+        }
         // On a phone or tablet the sheet steps aside; the inspector stays.
         setCollapsed(true);
       }
@@ -195,12 +228,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
   async function uploadPhoto(dishId: string, file: File) {
     setPhotoStatus("uploading");
     try {
-      const blob = await resizeToWebp(file);
-      const path = `${data.restaurantId}/items/${dishId}/${Date.now()}.webp`;
-      const { error } = await getBrowserClient()
-        .storage.from("menu-images")
-        .upload(path, blob, { contentType: "image/webp" });
-      if (error || !(await setDishPhoto(dishId, path))) throw error ?? new Error("save failed");
+      const path = await storeDishPhoto(data.restaurantId, dishId, file);
       setPhotoStatus("idle");
       setPanel((p) =>
         p?.kind === "dish" && p.draft.id === dishId
@@ -210,6 +238,17 @@ export function MenuEditor({ data }: { data: EditorData }) {
       router.refresh();
     } catch {
       setPhotoStatus("failed");
+    }
+  }
+
+  async function quickPhoto(dishId: string, file: File) {
+    setRowPhoto((r) => ({ ...r, [dishId]: "uploading" }));
+    try {
+      await storeDishPhoto(data.restaurantId, dishId, file);
+      setRowPhoto((r) => Object.fromEntries(Object.entries(r).filter(([id]) => id !== dishId)));
+      router.refresh();
+    } catch {
+      setRowPhoto((r) => ({ ...r, [dishId]: "failed" }));
     }
   }
 
@@ -235,7 +274,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
   if (data.categories.length === 0 && panel === null) {
     return (
       <section className="flex flex-col items-start gap-4 rounded-2xl bg-white p-6 sm:p-8">
-        <span className="bg-tarragon-tint text-tarragon grid size-12 place-items-center rounded-2xl">
+        <span className="bg-staff-fill text-ink grid size-12 place-items-center rounded-2xl">
           <BookOpen aria-hidden="true" className="size-6" />
         </span>
         <h2 className="m-0 text-[1.75rem] leading-tight font-bold">{t("emptyTitle")}</h2>
@@ -309,6 +348,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "saved" && t("saved")}
       {status === "failed" && t("saveFailed")}
       {status === "priceInvalid" && t("priceInvalid")}
+      {status === "costInvalid" && t("costInvalid")}
+      {status === "costFailed" && t("costFailed")}
       {status === "nameRequired" && t("nameRequired")}
     </p>
   );
@@ -428,6 +469,13 @@ export function MenuEditor({ data }: { data: EditorData }) {
             />
           </label>
         )}
+        {panel.kind === "dish" && data.isOwner && (
+          <CostField
+            costText={panel.draft.costText}
+            priceText={panel.draft.priceText}
+            onChange={(costText) => setPanel({ kind: "dish", draft: { ...panel.draft, costText } })}
+          />
+        )}
         <label className="flex flex-col gap-1.5">
           <span className={panel.kind === "dish" ? fieldLabel : "sr-only"}>{t("prepArea")}</span>
           <select
@@ -497,7 +545,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                   }
                   className={clsx(
                     "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[0.9375rem] font-semibold",
-                    on ? "bg-tarragon text-white" : "bg-staff-fill text-ink",
+                    on ? "bg-ink text-white" : "bg-staff-fill text-ink",
                   )}
                 >
                   {on && <Check aria-hidden="true" className="size-4" />}
@@ -508,7 +556,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
           </fieldset>
 
           {panel.draft.needsReview && (
-            <label className="flex min-h-12 items-center gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-2 text-[1.0625rem]">
+            <label className="bg-amber-tint flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2 text-[1.0625rem]">
               <input
                 type="checkbox"
                 className={check}
@@ -540,9 +588,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
         )}
       >
         <nav aria-label={t("categories")} className="flex min-w-0 flex-col gap-2 lg:self-start">
-          <h2 className="text-staff-label2 m-0 px-1 text-[0.8125rem] font-semibold tracking-wide uppercase">
-            {t("categories")}
-          </h2>
+          <h2 className="m-0 px-1 text-[1.1875rem] leading-tight font-semibold">{t("categories")}</h2>
           <ul className="relative flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:bg-white lg:p-2">
             {data.categories.map((c) => {
               const current = c.id === selected;
@@ -557,9 +603,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     aria-current={current ? "true" : undefined}
                     className={clsx(
                       "min-h-11 flex-1 rounded-full px-4 text-left text-[0.9375rem] font-semibold whitespace-nowrap lg:rounded-[0.625rem] lg:px-3 lg:whitespace-normal",
-                      current
-                        ? "bg-ink lg:bg-tarragon-tint lg:text-tarragon text-white lg:font-bold"
-                        : "text-ink bg-white lg:bg-transparent",
+                      current ? "bg-ink text-white lg:font-bold" : "text-ink bg-white lg:bg-transparent",
                     )}
                   >
                     {nameFor(c.names, locale)}
@@ -591,7 +635,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
               <button
                 type="button"
                 onClick={() => openCategory()}
-                className="border-staff-field text-tarragon inline-flex min-h-11 flex-1 items-center gap-2 rounded-full border border-dashed px-4 text-[0.9375rem] font-semibold whitespace-nowrap lg:rounded-[0.625rem] lg:border-0 lg:px-3"
+                className="border-staff-field text-ink inline-flex min-h-11 flex-1 items-center gap-2 rounded-full border border-dashed px-4 text-[0.9375rem] font-semibold whitespace-nowrap lg:rounded-[0.625rem] lg:border-0 lg:px-3"
               >
                 <Plus aria-hidden="true" className="size-[1.125rem]" />
                 <span className="sr-only">+ </span>
@@ -645,18 +689,10 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     key={d.id}
                     className={clsx(
                       "border-staff-sep flex flex-col gap-1 border-b px-3 py-2 last:border-0 sm:px-4",
-                      editing && "bg-tarragon-tint/50",
+                      editing && "bg-staff-fill/60",
                     )}
                   >
-                    <button
-                      type="button"
-                      onClick={() => openDish(d)}
-                      className={clsx(
-                        "flex min-h-14 w-full items-center gap-3 rounded-xl text-left",
-                        soldOut ? "text-staff-label2" : "text-ink",
-                      )}
-                      data-testid="dish-row"
-                    >
+                    <div className="flex items-center gap-3">
                       {d.imagePath ? (
                         // eslint-disable-next-line @next/next/no-img-element -- already a 600 px WebP from Storage
                         <img
@@ -667,23 +703,32 @@ export function MenuEditor({ data }: { data: EditorData }) {
                           className="size-11 shrink-0 rounded-[0.625rem] object-cover"
                         />
                       ) : (
-                        <span
-                          aria-hidden="true"
-                          className="bg-staff-fill text-staff-label2 grid size-11 shrink-0 place-items-center rounded-[0.625rem]"
-                        >
-                          <UtensilsCrossed className="size-5" />
-                        </span>
+                        <QuickPhoto
+                          name={nameFor(d.names, locale)}
+                          status={rowPhoto[d.id]}
+                          onPick={(file) => void quickPhoto(d.id, file)}
+                        />
                       )}
-                      <span
-                        className="min-w-0 flex-1 text-[1.0625rem] leading-snug font-semibold break-words"
-                        lang={d.names[locale] ? locale : "hy"}
+                      <button
+                        type="button"
+                        onClick={() => openDish(d)}
+                        className={clsx(
+                          "flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl text-left",
+                          soldOut ? "text-staff-label2" : "text-ink",
+                        )}
+                        data-testid="dish-row"
                       >
-                        {nameFor(d.names, locale)}
-                      </span>
-                      <span className="num shrink-0 text-[1.0625rem] font-semibold">
-                        {formatAmd(d.price, locale)}
-                      </span>
-                    </button>
+                        <span
+                          className="min-w-0 flex-1 text-[1.0625rem] leading-snug font-semibold break-words"
+                          lang={d.names[locale] ? locale : "hy"}
+                        >
+                          {nameFor(d.names, locale)}
+                        </span>
+                        <span className="num shrink-0 text-[1.0625rem] font-semibold">
+                          {formatAmd(d.price, locale)}
+                        </span>
+                      </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-1.5 sm:pl-14">
                       {LOCALES.map((l) =>
                         d.names[l] ? (
@@ -848,7 +893,7 @@ function PhotoPicker({
       <label
         className={button(
           "tinted",
-          "has-[:focus-visible]:outline-tarragon min-h-11 cursor-pointer text-[0.9375rem] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
+          "has-[:focus-visible]:outline-ink min-h-11 cursor-pointer text-[0.9375rem] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
         )}
       >
         <ImagePlus aria-hidden="true" />
@@ -874,5 +919,96 @@ function PhotoPicker({
         </p>
       )}
     </div>
+  );
+}
+
+// The empty photo slot in a dish row: a dashed square that opens the file
+// picker, so an owner can go down the list adding photos without opening
+// each dish.
+function QuickPhoto({
+  name,
+  status,
+  onPick,
+}: {
+  name: string;
+  status?: "uploading" | "failed";
+  onPick: (file: File) => void;
+}) {
+  const t = useTranslations("menu");
+  const label =
+    status === "uploading"
+      ? t("uploading")
+      : status === "failed"
+        ? t("photoFailed")
+        : t("addPhotoFor", { name });
+  return (
+    <label
+      title={label}
+      className={clsx(
+        "has-[:focus-visible]:outline-ink grid size-11 shrink-0 cursor-pointer place-items-center rounded-[0.625rem] border border-dashed has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
+        status === "failed"
+          ? "border-pomegranate bg-pom-tint text-pomegranate"
+          : "border-staff-field text-staff-label2 hover:border-ink hover:text-ink",
+      )}
+      data-testid="quick-photo"
+    >
+      {status === "uploading" ? (
+        <LoaderCircle aria-hidden="true" className="size-5 motion-safe:animate-spin" />
+      ) : status === "failed" ? (
+        <CircleAlert aria-hidden="true" className="size-5" />
+      ) : (
+        <ImagePlus aria-hidden="true" className="size-5" />
+      )}
+      <span className="sr-only" role={status === "failed" ? "alert" : undefined}>
+        {label}
+      </span>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        disabled={status === "uploading"}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onPick(file);
+        }}
+      />
+    </label>
+  );
+}
+
+// The owner's cost price for a dish (ingredients per portion), with the
+// margin it leaves. Only the owner sees it; the menu analysis uses it.
+function CostField({
+  costText,
+  priceText,
+  onChange,
+}: {
+  costText: string;
+  priceText: string;
+  onChange: (costText: string) => void;
+}) {
+  const t = useTranslations("menu");
+  const locale = useLocale() as Locale;
+  const price = parsePriceInput(priceText);
+  const cost = costText.trim() === "" ? null : parsePriceInput(costText);
+  const margin = price !== null && cost !== null && price > 0 ? price - cost : null;
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className={fieldLabel}>{t("cost")}</span>
+      <input
+        inputMode="numeric"
+        value={costText}
+        onChange={(e) => onChange(e.target.value)}
+        aria-describedby="cost-hint"
+        className={clsx(input, "num")}
+        data-testid="cost-input"
+      />
+      <span id="cost-hint" className="text-staff-label2 num text-[0.9375rem]">
+        {margin !== null && price
+          ? t("margin", { amount: formatAmd(margin, locale), pct: Math.round((margin / price) * 100) })
+          : t("costHint")}
+      </span>
+    </label>
   );
 }

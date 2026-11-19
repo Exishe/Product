@@ -93,7 +93,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
       data-testid="push-section"
     >
       <h2 id="push-title" className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <Smartphone aria-hidden="true" className="text-tarragon size-5 shrink-0" />
+        <Smartphone aria-hidden="true" className="text-ink size-5 shrink-0" />
         {t("title")}
       </h2>
       <p className="text-staff-label2 m-0">{t("hint")}</p>
@@ -112,7 +112,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
         <>
           <p
             role="status"
-            className="text-tarragon m-0 flex items-center gap-2 font-semibold"
+            className="text-ink m-0 flex items-center gap-2 font-semibold"
             data-testid="push-status"
           >
             <CircleCheck aria-hidden="true" className="size-5 shrink-0" />

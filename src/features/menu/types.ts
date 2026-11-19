@@ -15,11 +15,21 @@ export type EditorDish = {
   modifierGroupIds: string[];
 };
 export type EditorOption = { id: string; names: Names; priceDelta: number; isDefault: boolean };
-export type EditorGroup = { id: string; minSelect: number; maxSelect: number; names: Names; options: EditorOption[] };
+export type EditorGroup = {
+  id: string;
+  minSelect: number;
+  maxSelect: number;
+  names: Names;
+  options: EditorOption[];
+};
 export type PublishState = { published: boolean; hasChanges: boolean; publishedAt: string | null };
 
 export type EditorData = {
   restaurantId: string;
+  /** Only owners see and set cost prices (ADR-057). */
+  isOwner: boolean;
+  /** Cost price per dish id, owner only; empty for managers. */
+  costs: Record<string, number>;
   locationId: string;
   soldOut: string[];
   publish: PublishState;

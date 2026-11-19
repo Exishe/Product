@@ -34,7 +34,18 @@
   "admin": {
     "home": {
       "welcome": "Welcome, {name}",
-      "sections": "Sections"
+      "date": "{date}, {time}",
+      "today": "Today so far",
+      "allSales": "All sales",
+      "noSales": "Couldn't load today's sales. Open “All sales” to try again.",
+      "todo": "To do",
+      "allSet": "Nothing to do right now: the menu is published, tables and devices are set up.",
+      "notPublished": "The menu isn't published yet. Guests can't see it.",
+      "unpublished": "The menu has changes guests don't see yet. Publish them.",
+      "noTables": "No tables yet. Add them to print the QR codes.",
+      "noDevices": "No kitchen or waiter device is paired yet.",
+      "noPhotos": "{count, plural, one {# dish has} other {# dishes have}} no photo. Dishes with a photo get ordered more.",
+      "stopList": "{count, plural, one {# dish is} other {# dishes are}} sold out today."
     }
   },
   "forbidden": {
@@ -510,7 +521,13 @@
     "namesSection": "Name",
     "photoAfterSave": "Save the dish first. Then add a photo.",
     "priceAndKitchen": "Price and kitchen",
-    "edit": "Edit"
+    "edit": "Edit",
+    "addPhotoFor": "Add a photo of {name}",
+    "cost": "Cost price, ֏ (only you see it)",
+    "costHint": "What the ingredients of one portion cost. The menu analysis uses it to find your most profitable dishes.",
+    "costInvalid": "Enter the cost price in whole drams, for example 900, or leave it empty.",
+    "costFailed": "The dish is saved, but the cost price isn't. Try again.",
+    "margin": "You keep {amount} per portion, {pct}% of the price."
   },
   "optionGroups": {
     "title": "Options",
@@ -1054,7 +1071,8 @@
     "empty": "Sales will show here after the first order.",
     "emptyRange": "There were no orders on these days.",
     "error": "Couldn't load the sales. Refresh the page.",
-    "export": "Export to CSV"
+    "export": "Export to CSV",
+    "menuAnalysis": "Menu analysis"
   },
   "platform": {
     "title": "Cafés",
@@ -1191,6 +1209,54 @@
       "coverSaved": "Cover saved",
       "untitled": "Section without a name",
       "pending": "Brand settings start working after the next database update."
+    }
+  },
+  "insights": {
+    "title": "Menu analysis",
+    "back": "Sales",
+    "period": "Sales from {from} to {to}",
+    "periodLabel": "Period",
+    "days": "{count} days",
+    "error": "Couldn't load the analysis. Try again later.",
+    "matrix": {
+      "title": "What sells and what earns",
+      "hint": "Each dish is compared with the other dishes in its section: how often it's ordered, and how much it brings in per portion.",
+      "basisPrice": "Cost prices aren't entered yet, so dishes are ranked by price instead of by what you keep per portion.",
+      "basisMixed": "Some sections are missing cost prices. Those sections are ranked by price instead of by what you keep per portion.",
+      "basisManager": "Ranked by price. Only the owner sees cost prices.",
+      "addCosts": "Add cost prices in the menu",
+      "noSales": "No sales in this period yet. The analysis appears after the first accepted orders.",
+      "none": "No dishes here.",
+      "sold": "{qty} sold",
+      "perPortion": "{amount} per portion",
+      "more": "And {count} more",
+      "star": {
+        "title": "Ordered often, earn well",
+        "action": "Keep them as they are and show them first in the section."
+      },
+      "plowhorse": {
+        "title": "Ordered often, earn little",
+        "action": "Try a small price rise or a cheaper side. Guests already like them."
+      },
+      "puzzle": {
+        "title": "Earn well, ordered rarely",
+        "action": "Add a photo, rename them or make one the section's featured dish."
+      },
+      "dog": {
+        "title": "Ordered rarely, earn little",
+        "action": "Think about taking them off the menu or reworking them."
+      }
+    },
+    "heatmap": {
+      "title": "When you're busy",
+      "hint": "Average accepted orders per hour over the last {weeks} weeks.",
+      "empty": "No orders in the last weeks yet.",
+      "busiest": "Busiest: {day} {from}–{to}, about {avg} orders.",
+      "quietest": "Quietest while open: {day} {from}–{to}, about {avg}.",
+      "colDay": "Day",
+      "cell": "{day} {from}–{to}: {avg} orders on average",
+      "less": "Fewer",
+      "more": "More"
     }
   }
 }

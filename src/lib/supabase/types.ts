@@ -841,6 +841,35 @@ export type Database = {
           },
         ]
       }
+      item_costs: {
+        Row: {
+          cost: number
+          item_id: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          item_id: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          item_id?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_costs_restaurant_id_item_id_fkey"
+            columns: ["restaurant_id", "item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["restaurant_id", "id"]
+          },
+        ]
+      }
       item_modifier_groups: {
         Row: {
           group_id: string

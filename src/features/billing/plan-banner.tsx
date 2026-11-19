@@ -7,8 +7,8 @@ import { planState, SERVICE_PRICE_AMD, type PlanState } from "./plan";
 
 // Colour, icon and words together (ADR-055): never colour alone.
 const TONE: Record<Exclude<PlanState["kind"], "active">, { box: string; icon: LucideIcon }> = {
-  trial: { box: "bg-tarragon-tint [&>svg]:text-tarragon", icon: Gift },
-  past_due: { box: "bg-[#fdf0dc] [&>svg]:text-amber-text", icon: Hourglass },
+  trial: { box: "bg-white [&>svg]:text-amber-text", icon: Gift },
+  past_due: { box: "bg-amber-tint [&>svg]:text-amber-text", icon: Hourglass },
   trial_ended: { box: "bg-pom-tint [&>svg]:text-pomegranate", icon: CircleAlert },
   ordering_off: { box: "bg-pom-tint [&>svg]:text-pomegranate", icon: CircleAlert },
   menu: { box: "bg-white [&>svg]:text-staff-label2", icon: BookOpen },

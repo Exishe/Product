@@ -17,7 +17,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
           {t("auth.signup.haveAccount")}{" "}
           <Link
             href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
-            className="text-tarragon inline-flex min-h-11 items-center rounded-lg font-semibold underline underline-offset-4"
+            className="text-ink inline-flex min-h-11 items-center rounded-lg font-semibold underline underline-offset-4"
           >
             {t("auth.signup.loginLink")}
           </Link>

@@ -74,10 +74,10 @@ export function ImportUpload() {
       </div>
 
       {!busy && (
-        <label className="border-staff-field focus-within:outline-tarragon hover:border-tarragon flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed bg-white p-6 text-center focus-within:outline-3 focus-within:outline-offset-2 sm:p-10">
+        <label className="border-staff-field focus-within:outline-ink hover:border-ink flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed bg-white p-6 text-center focus-within:outline-3 focus-within:outline-offset-2 sm:p-10">
           <span
             aria-hidden="true"
-            className="bg-tarragon-tint text-tarragon grid size-14 place-items-center rounded-2xl"
+            className="bg-staff-fill text-ink grid size-14 place-items-center rounded-2xl"
           >
             <Camera className="size-7" />
           </span>

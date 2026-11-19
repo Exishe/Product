@@ -119,7 +119,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
           {t("discard")}
         </button>
       </div>
-      <p className="m-0 flex max-w-3xl items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]">
+      <p className="bg-amber-tint m-0 flex max-w-3xl items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]">
         <TriangleAlert aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
         {t("reviewNotice")}
       </p>
@@ -270,7 +270,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
             <p className="num m-0 font-semibold">{t("progress", { done: checked, total: items.length })}</p>
             <div className="bg-staff-fill h-2 overflow-hidden rounded-full" aria-hidden="true">
               <div
-                className="bg-tarragon h-full transition-[width] duration-200"
+                className="bg-ink h-full transition-[width] duration-200"
                 style={{ width: `${items.length ? (checked / items.length) * 100 : 0}%` }}
               />
             </div>
@@ -353,7 +353,7 @@ function DishRow({
       data-testid="import-dish"
       className={`flex flex-col gap-3 rounded-2xl border-l-4 p-4 ${
         item.reviewed
-          ? "border-tarragon bg-tarragon-tint/60"
+          ? "border-ink bg-staff-fill/60"
           : doubtful
             ? "border-apricot bg-white"
             : "border-transparent bg-white"
@@ -466,7 +466,7 @@ function DishRow({
 
       {hasDescription && (
         <details>
-          <summary className="text-tarragon inline-flex min-h-11 cursor-pointer items-center rounded-lg text-[0.9375rem] font-semibold">
+          <summary className="text-ink inline-flex min-h-11 cursor-pointer items-center rounded-lg text-[0.9375rem] font-semibold underline underline-offset-4">
             {t("descriptions")}
           </summary>
           <div className="mt-2 grid gap-2">
