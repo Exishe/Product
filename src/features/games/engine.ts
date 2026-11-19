@@ -1,8 +1,9 @@
 // Shared bits for the waiting-room games: the contract between the host and a
 // game, a canvas that follows its box at device resolution, a fixed-step-free
-// frame loop that pauses itself, and on-screen buttons for the action games.
-// Plain canvas 2D, no game library: each game is a few kilobytes and loads
-// only when the guest taps it.
+// frame loop that pauses itself and lowers the resolution on a slow phone,
+// and on-screen buttons for the action games. Plain canvas 2D, no game
+// library: each game is a few kilobytes and loads only when the guest taps
+// it (ADR-057).
 
 export type Locale = "hy" | "ru" | "en";
 
@@ -16,6 +17,8 @@ export type GameApi = {
   isPaused(): boolean;
   reducedMotion: boolean;
   locale: Locale;
+  /** The café's brand colour (a CSS colour), for accents a game draws itself. */
+  accent?: string;
   /**
    * Short synthesized sound effects; silent unless the guest turned sound on in
    * the host. `pitch` scales cartoon voices (0.8 a deep chef, 1.3 a squeaky one).
@@ -24,7 +27,21 @@ export type GameApi = {
 };
 
 /** Cartoon voices and noises, synthesized like the rest (see VOICES). */
-export type VoiceKind = "smooch" | "eek" | "oof" | "ouch" | "hah" | "yay" | "uhoh" | "whoa" | "meow" | "mmm" | "boing" | "slip" | "pop" | "splat";
+export type VoiceKind =
+  | "smooch"
+  | "eek"
+  | "oof"
+  | "ouch"
+  | "hah"
+  | "yay"
+  | "uhoh"
+  | "whoa"
+  | "meow"
+  | "mmm"
+  | "boing"
+  | "slip"
+  | "pop"
+  | "splat";
 
 export type SfxKind =
   | VoiceKind
@@ -71,11 +88,26 @@ export const C = {
 
 export type Size = { w: number; h: number };
 
+/** Backing-store scales tried in turn when frames run slow (see `loop`). */
+export const DPR_STEPS = [2, 1.5, 1] as const;
+
+/** The next lower resolution scale, or null at the floor. */
+export function lowerDpr(current: number): number | null {
+  const next = DPR_STEPS.find((d) => d < current - 0.01);
+  return next ?? null;
+}
+
+// The resolution control of each fitted canvas, for the loop to reach.
+const fitted = new WeakMap<HTMLCanvasElement, () => boolean>();
+
 /**
- * Keeps the canvas backing store at device pixels while drawing in CSS
- * pixels. Calls onResize with the CSS size now and on every change.
+ * Keeps the canvas backing store at device pixels (at most 2x) while drawing
+ * in CSS pixels. Calls onResize with the CSS size now and on every change.
  */
-export function fitCanvas(canvas: HTMLCanvasElement, onResize: (size: Size) => void): {
+export function fitCanvas(
+  canvas: HTMLCanvasElement,
+  onResize: (size: Size) => void,
+): {
   ctx: CanvasRenderingContext2D;
   size: () => Size;
   stop: () => void;
@@ -83,9 +115,10 @@ export function fitCanvas(canvas: HTMLCanvasElement, onResize: (size: Size) => v
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 2d unavailable");
   let size: Size = { w: 1, h: 1 };
+  let cap = 2;
   const apply = () => {
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, cap);
     size = { w: Math.max(1, rect.width), h: Math.max(1, rect.height) };
     canvas.width = Math.round(size.w * dpr);
     canvas.height = Math.round(size.h * dpr);
@@ -93,29 +126,95 @@ export function fitCanvas(canvas: HTMLCanvasElement, onResize: (size: Size) => v
     onResize(size);
   };
   apply();
+  fitted.set(canvas, () => {
+    const now = Math.min(window.devicePixelRatio || 1, cap);
+    const next = lowerDpr(now);
+    if (next === null) return false;
+    cap = next;
+    apply();
+    return true;
+  });
   const observer = new ResizeObserver(apply);
   observer.observe(canvas);
-  return { ctx, size: () => size, stop: () => observer.disconnect() };
+  return {
+    ctx,
+    size: () => size,
+    stop: () => {
+      observer.disconnect();
+      fitted.delete(canvas);
+    },
+  };
+}
+
+/**
+ * Watches frame times and says when to drop resolution: the average of a
+ * window of frames above `budgetMs` (a phone that can't hold ~40 fps). Fill
+ * rate is what low-end Android runs out of first, and a 1.5x canvas fills
+ * 44% fewer pixels than a 2x one. Pure, so it can be unit tested.
+ */
+export function createFrameMeter(frames = 45, budgetMs = 24) {
+  let sum = 0;
+  let n = 0;
+  let skip = 20; // the first frames after mount or a resize are noisy
+  return {
+    /** Adds one frame time; true when the window just closed over budget. */
+    add(ms: number): boolean {
+      if (skip > 0) {
+        skip--;
+        return false;
+      }
+      sum += ms;
+      n++;
+      if (n < frames) return false;
+      const slow = sum / n > budgetMs;
+      sum = 0;
+      n = 0;
+      if (slow) skip = 20;
+      return slow;
+    },
+    reset() {
+      sum = 0;
+      n = 0;
+      skip = 20;
+    },
+  };
 }
 
 /**
  * requestAnimationFrame loop with dt in seconds, clamped so a stalled tab or
  * a pause never makes things jump. Skips updates while paused but keeps
- * drawing, so the last frame stays on screen.
+ * drawing, so the last frame stays on screen. A hidden tab stops the loop
+ * altogether (no battery spent behind the menu) and it resumes without a
+ * jump. Slow frames step the canvas resolution down (DPR_STEPS).
  */
 export function loop(api: GameApi, frame: (dt: number, paused: boolean) => void): () => void {
   let last = performance.now();
   let id = 0;
+  const meter = createFrameMeter();
   const tick = (now: number) => {
     // The first frame's timestamp can be earlier than the performance.now()
     // taken at mount, so clamp at zero: a negative step made games twitch.
-    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    const ms = Math.max(0, now - last);
+    const dt = Math.min(0.05, ms / 1000);
     last = now;
-    frame(dt, api.isPaused() || document.hidden);
+    const paused = api.isPaused() || document.hidden;
+    frame(dt, paused);
+    if (!paused && meter.add(ms)) fitted.get(api.canvas)?.();
     id = requestAnimationFrame(tick);
   };
+  const onVisibility = () => {
+    cancelAnimationFrame(id);
+    if (document.hidden) return;
+    last = performance.now();
+    meter.reset();
+    id = requestAnimationFrame(tick);
+  };
+  document.addEventListener("visibilitychange", onVisibility);
   id = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(id);
+  return () => {
+    cancelAnimationFrame(id);
+    document.removeEventListener("visibilitychange", onVisibility);
+  };
 }
 
 /** Pointer position in canvas CSS pixels. */
@@ -124,7 +223,14 @@ export function pointerPos(canvas: HTMLCanvasElement, e: PointerEvent): { x: num
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
-export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rr, y);
@@ -133,14 +239,6 @@ export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w
   ctx.arcTo(x, y + h, x, y, rr);
   ctx.arcTo(x, y, x + w, y, rr);
   ctx.closePath();
-}
-
-/** Draws an emoji (or any glyph) centred at x, y with the given size in px. */
-export function glyph(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number) {
-  ctx.font = `${Math.round(size)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, x, y);
 }
 
 /** Numbers and short labels in the UI face. */
@@ -221,17 +319,21 @@ export function onSwipe(
 
 export type PadButton = "left" | "right" | "up" | "down" | "a" | "b" | "c";
 export type PadState = Record<PadButton, boolean>;
-type PadLayoutItem = { id: PadButton; x: number; y: number; r: number; icon: string };
+type PadLayoutItem = { id: PadButton; x: number; y: number; r: number };
 
 /**
  * Virtual buttons drawn on the canvas: a left cluster (arrows) and a right
  * cluster (actions). `layout` places them for the current size; `pressed`
- * edges (just went down this frame) are reported once via `consume`.
+ * edges (just went down this frame) are reported once via `consume`. The
+ * pad draws the discs; each game draws its own icons on top as shapes (no
+ * font glyphs: arrows and emoji render unevenly across phones). A pressed
+ * disc gets a ring in `accent`, the café's colour when the host passes it.
  * Keyboard works too: arrows, Space/Z = a, X = b, C = c.
  */
 export function createPad(
   canvas: HTMLCanvasElement,
   layout: (size: Size) => PadLayoutItem[],
+  accent: string = C.apricot,
 ): {
   state: PadState;
   /** True once per press. */
@@ -335,14 +437,20 @@ export function createPad(
         lastSize = size;
       }
       for (const it of items) {
-        ctx.globalAlpha = state[it.id] ? 0.55 : 0.32;
+        const on = state[it.id];
+        ctx.globalAlpha = on ? 0.55 : 0.32;
         ctx.fillStyle = C.ink;
         ctx.beginPath();
         ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 0.95;
-        ctx.fillStyle = C.matsoni;
-        glyph(ctx, it.icon, it.x, it.y + 1, it.r * 0.9);
+        if (on) {
+          ctx.globalAlpha = 0.9;
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(it.x, it.y, it.r - 1.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
         ctx.globalAlpha = 1;
       }
     },
@@ -378,7 +486,15 @@ export function saveBest(gameId: string, score: number): number {
 
 // --- Sound: tiny synthesized effects, no audio files ------------------------
 
-type Note = { f: number; to?: number; t: number; type?: OscillatorType; v?: number; noise?: boolean; with?: boolean };
+type Note = {
+  f: number;
+  to?: number;
+  t: number;
+  type?: OscillatorType;
+  v?: number;
+  noise?: boolean;
+  with?: boolean;
+};
 
 // Cartoon voices: a buzzy tone through two band-pass filters at the formants
 // of a vowel, gliding from vowel to vowel ("u-ə-u" + a breathy "f" = "oof").
@@ -440,10 +556,22 @@ const SFX: Record<Exclude<SfxKind, VoiceKind>, Note[]> = {
     { f: 988, t: 0.06, type: "square", v: 0.07 },
     { f: 1319, t: 0.12, type: "square", v: 0.07 },
   ],
-  hit: [{ f: 0, t: 0.08, noise: true, v: 0.35 }, { f: 180, to: 90, t: 0.1, type: "square", v: 0.12 }],
-  heavy: [{ f: 0, t: 0.16, noise: true, v: 0.45 }, { f: 110, to: 45, t: 0.18, type: "sawtooth", v: 0.14 }],
-  block: [{ f: 420, t: 0.05, type: "square", v: 0.1 }, { f: 0, t: 0.05, noise: true, v: 0.15 }],
-  slice: [{ f: 0, t: 0.07, noise: true, v: 0.25 }, { f: 1800, to: 900, t: 0.07, type: "sine", v: 0.06 }],
+  hit: [
+    { f: 0, t: 0.08, noise: true, v: 0.35 },
+    { f: 180, to: 90, t: 0.1, type: "square", v: 0.12 },
+  ],
+  heavy: [
+    { f: 0, t: 0.16, noise: true, v: 0.45 },
+    { f: 110, to: 45, t: 0.18, type: "sawtooth", v: 0.14 },
+  ],
+  block: [
+    { f: 420, t: 0.05, type: "square", v: 0.1 },
+    { f: 0, t: 0.05, noise: true, v: 0.15 },
+  ],
+  slice: [
+    { f: 0, t: 0.07, noise: true, v: 0.25 },
+    { f: 1800, to: 900, t: 0.07, type: "sine", v: 0.06 },
+  ],
   whoosh: [{ f: 0, t: 0.12, noise: true, v: 0.12 }],
   merge: [{ f: 523, to: 784, t: 0.1, type: "triangle", v: 0.14 }],
   bad: [{ f: 200, to: 80, t: 0.25, type: "sawtooth", v: 0.12 }],
@@ -478,7 +606,10 @@ const SFX: Record<Exclude<SfxKind, VoiceKind>, Note[]> = {
 };
 
 /** A synth for the host to hand to games as api.sfx; plays nothing while muted. */
-export function createSfx(isOn: () => boolean): { play: (kind: SfxKind, pitch?: number) => void; close: () => void } {
+export function createSfx(isOn: () => boolean): {
+  play: (kind: SfxKind, pitch?: number) => void;
+  close: () => void;
+} {
   let ac: AudioContext | null = null;
   let out: AudioNode | null = null;
   let noise: AudioBuffer | null = null;
@@ -523,7 +654,12 @@ export function createSfx(isOn: () => boolean): { play: (kind: SfxKind, pitch?: 
       }
       const osc = ctx.createOscillator();
       osc.type = s.tone ?? "sawtooth";
-      glide(osc.frequency, at, s.dur, s.p.map((p) => p * pitch));
+      glide(
+        osc.frequency,
+        at,
+        s.dur,
+        s.p.map((p) => p * pitch),
+      );
       // Vibrato: a voice that wobbles a little sounds alive (and a spring a lot)
       const [rate, depth] = s.vib ?? [5.5, 0.025];
       const lfo = ctx.createOscillator();
@@ -546,9 +682,20 @@ export function createSfx(isOn: () => boolean): { play: (kind: SfxKind, pitch?: 
           const bp = ctx.createBiquadFilter();
           bp.type = "bandpass";
           bp.Q.value = k ? 9 : 5;
-          glide(bp.frequency, at, s.dur, vowels.map((w) => w[k] * fm));
+          glide(
+            bp.frequency,
+            at,
+            s.dur,
+            vowels.map((w) => w[k] * fm),
+          );
           const g = ctx.createGain();
-          if (k) glide(g.gain, at, s.dur, vowels.map((w) => w[2] * 1.6));
+          if (k)
+            glide(
+              g.gain,
+              at,
+              s.dur,
+              vowels.map((w) => w[2] * 1.6),
+            );
           else g.gain.value = 1.6;
           osc.connect(bp).connect(g).connect(env);
         }
