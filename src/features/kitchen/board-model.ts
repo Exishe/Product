@@ -92,40 +92,48 @@ export function pickName(names: Json, locale: Locale): LocalizedText {
 
 // Guest notes are free text in three languages. A note that names an allergy
 // or an intolerance gets the red allergy banner on the ticket and its own
-// sound; a plain wish ("no onion") stays an ordinary note. Stems match at the
-// start of a word (the three languages inflect at the end), so «ալերգիա»,
-// «аллергия», "allergic" and "nuts" count, and "minute" or "donut" don't.
+// sound; a plain wish ("no onion", "extra nuts") stays an ordinary note.
+// Stems match at the start of a word (the three languages inflect at the
+// end), so «ալերգիա», «аллергия» and "allergic" count, and "minute" doesn't.
+//
+// Words that only name an allergy, an intolerance or a gluten/lactose diet
+// count on their own.
 const ALLERGY_STEMS = [
   // Armenian
   "ալերգ",
+  "անհանդուրժ", // անհանդուրժողականություն, intolerance
   "գլյուտեն",
   "սնձան",
   "լակտոզ",
-  "ընկույզ",
-  "գետնանուշ",
   "ցելիակ",
-  "անտանել",
+  "անաֆիլակ",
   // Russian
   "аллерг",
+  "непереносим",
   "глютен",
   "лактоз",
-  "орех",
-  "арахис",
   "целиак",
-  "непереносим",
   "анафилак",
   // English
   "allerg",
+  "intoleran",
   "gluten",
   "lactose",
   "coeliac",
   "celiac",
-  "peanut",
-  "intoleran",
   "anaphyla",
   "epipen",
 ];
-const ALLERGY = new RegExp(`(?<!\\p{L})(?:${ALLERGY_STEMS.join("|")}|nuts?(?!\\p{L}))`, "iu");
+// Nuts are also something guests ask for («ընկույզով», "extra nuts"), so a
+// nut word counts only after "without / no" or before "-free":
+// «առանց ընկույզի», «без орехов», "no peanuts", "nut-free".
+const NUT_STEMS = ["ընկույզ", "գետնանուշ", "орех", "ореш", "арахис", "(?:pea|hazel|wal)?nuts?(?!\\p{L})"];
+const WITHOUT = ["առանց", "ոչ", "без", "не", "нет", "no", "not", "without", "hold(?:\\s+the)?"];
+const NUT = `(?:${NUT_STEMS.join("|")})`;
+// Up to two words may sit between "without" and the nut ("без грецких орехов"),
+// but not a comma: "no onion, extra walnuts" is a wish.
+const NUT_AVOIDED = `(?:${WITHOUT.join("|")})(?!\\p{L})(?:\\s+\\p{L}+){0,2}?\\s+${NUT}|${NUT}\\p{L}*[\\s-]?free(?!\\p{L})`;
+const ALLERGY = new RegExp(`(?<!\\p{L})(?:${ALLERGY_STEMS.join("|")}|${NUT_AVOIDED})`, "iu");
 
 export function mentionsAllergy(note: string | null | undefined): boolean {
   return !!note && ALLERGY.test(note);

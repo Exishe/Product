@@ -343,7 +343,7 @@ body:has(.admin-shell) {
    this scope maps them onto the light palette. Amber (8 min) and red
    (12 min) stay exactly as they were: amber with black text 8.0:1, the red
    with white text 4.8:1, and both still pair a colour with an icon and a
-   word. The arena pass (ADR-057) gave white things an edge they can be
+   word. The arena pass (ADR-062) gave white things an edge they can be
    seen by from 1.5 m, and made the board's red the one deep red. */
 .kitchen-light {
   --color-basalt: #eceef1; /* the page */

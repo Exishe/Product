@@ -269,6 +269,13 @@ describe("mentionsAllergy", () => {
       "Allergic to peanuts",
       "NO NUTS please",
       "coeliac",
+      "Կաթի նկատմամբ անհանդուրժողականություն",
+      "առանց ընկույզի, խնդրում եմ",
+      "Без грецких орехов",
+      "без арахиса",
+      "hold the peanuts",
+      "nut-free please",
+      "no hazelnuts",
     ]) {
       expect(mentionsAllergy(note), note).toBe(true);
     }
@@ -285,6 +292,14 @@ describe("mentionsAllergy", () => {
       "in 5 minutes",
       "donut on the side",
       "Երեխայի համար՝ առանց համեմունքի",
+      "Ավելի շատ ընկույզով",
+      "անտանելի կծու չանեք",
+      "extra nuts on top",
+      "Побольше орехов",
+      "peanut butter on the side",
+      "no onion, extra walnuts",
+      "nutmeg",
+      "donuts",
     ]) {
       expect(mentionsAllergy(note), String(note)).toBe(false);
     }
