@@ -21,8 +21,7 @@ export type DockItem = {
 };
 
 // The floating bar at the bottom of the guest pages (owner's pick: a pill
-// with icon and label per item; the current one glows softly in the theme's
-// colour). Above it stack the cart bar on the menu and the waiter question,
+// with icon and label per item; the current one sits on a quiet chip fill). Above it stack the cart bar on the menu and the waiter question,
 // so nothing floats over the main action. It stays clear of the home
 // indicator (safe-area inset), and every item is at least 48 px tall. The
 // Order item is where a dish added on a phone flies to (fly.ts), its count
@@ -58,7 +57,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                 </>
               );
               const cls =
-                "text-dock-muted hover:text-dock-ink aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-pill px-1 text-xs font-semibold disabled:opacity-50 sm:flex-row sm:gap-2 sm:text-sm aria-[current=page]:bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--guest-glow)_26%,transparent),transparent_72%)] aria-pressed:bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--guest-glow)_26%,transparent),transparent_72%)]";
+                "text-dock-muted hover:text-dock-ink aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-pill px-1 text-xs font-semibold disabled:opacity-50 sm:flex-row sm:gap-2 sm:text-sm aria-[current=page]:bg-chip aria-pressed:bg-chip";
               return item.href ? (
                 <a
                   key={item.key}

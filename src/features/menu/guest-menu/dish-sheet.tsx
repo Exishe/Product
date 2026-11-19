@@ -2,7 +2,6 @@
 
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
-import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useEffect, useRef, useState } from "react";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -16,7 +15,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl, initial } from "./ui";
+import { CloseIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -76,7 +75,6 @@ export function DishSheet({
         <div className="relative -mx-5 -mt-7 min-h-[13.5rem] overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:min-h-[16rem] md:px-9 md:pt-7">
           <Plate
             src={item.image ? dishPhotoUrl(item.image) : null}
-            name={item.name.text}
             size={440}
             lazy={false}
             className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
@@ -119,6 +117,23 @@ export function DishSheet({
         )}
         <p className="num text-accent-text mt-3 text-[1.625rem] font-semibold">
           {formatAmd(item.price, locale)}
+        </p>
+        {/* Allergens as the café listed them; when it listed none, say so
+            (an empty list is not "free of"), and always send serious
+            allergies to the waiter. */}
+        <p className="text-muted mt-3 text-[0.875rem] leading-snug" data-testid="allergens">
+          {item.allergens.length > 0 ? (
+            <>
+              <span className="text-ink font-semibold">
+                {t("diet.contains", {
+                  list: item.allergens.map((a) => t(`allergens.${a}`)).join(", "),
+                })}
+              </span>{" "}
+              {t("diet.tellWaiter")}
+            </>
+          ) : (
+            t("diet.sheetNone")
+          )}
         </p>
 
         {item.groups.map((group) => {
@@ -221,21 +236,22 @@ export function DishSheet({
                   button="bg-surface shadow-card size-12"
                 />
               </span>
-              <ThemedStarBorder
+              <button
+                type="button"
                 disabled={!valid}
                 onClick={(e) => {
                   sparkFrom(e.currentTarget);
                   flyToCart(e.currentTarget, {
                     photo: item.image ? dishPhotoUrl(item.image) : null,
-                    initial: initial(item.name.text),
+                    initial: "",
                   });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold"
+                className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold`}
               >
                 <span>{t("sheet.add")}</span>
                 <span className="num whitespace-nowrap">{formatAmd(price, locale)}</span>
-              </ThemedStarBorder>
+              </button>
             </div>
           ) : null}
         </div>

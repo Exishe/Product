@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "@/lib/format/search";
 import { buildGuestMenu, localized, type PublicMenu } from "./view-model";
 
-const item = (over: Partial<PublicMenu["menu"]["items"][string]> = {}): PublicMenu["menu"]["items"][string] => ({
+const item = (
+  over: Partial<PublicMenu["menu"]["items"][string]> = {},
+): PublicMenu["menu"]["items"][string] => ({
   name: { hy: "Տոլմա", ru: "Толма", en: "Tolma" },
   description: null,
   price: 3200,
@@ -12,7 +14,10 @@ const item = (over: Partial<PublicMenu["menu"]["items"][string]> = {}): PublicMe
   ...over,
 });
 
-const menu = (items: PublicMenu["menu"]["items"], categories: { id: string; item_ids: string[] }[]): PublicMenu => ({
+const menu = (
+  items: PublicMenu["menu"]["items"],
+  categories: { id: string; item_ids: string[] }[],
+): PublicMenu => ({
   restaurant: { name: "Դեմո սրճարան" },
   location: { id: "loc-1", name: "Main", locales: ["hy", "ru", "en"], ordering: true },
   menu: {
@@ -104,16 +109,19 @@ describe("buildGuestMenu", () => {
     expect(dish.portion).toEqual({ amount: 250, unit: "ml" });
     expect(dish.tags).toEqual(["popular"]);
     expect(dish.groups[0]!.name).toEqual({ text: "Size", lang: "en" });
-    expect(dish.groups[0]!.modifiers.map((x) => [x.id, x.name.text, x.name.lang, x.delta, x.isDefault])).toEqual([
+    expect(
+      dish.groups[0]!.modifiers.map((x) => [x.id, x.name.text, x.name.lang, x.delta, x.isDefault]),
+    ).toEqual([
       ["s", "Փոքր", "hy", 0, true],
       ["l", "Large", "en", 300, false],
     ]);
   });
 
   it("indexes every language's name so «խորոված», «хоровац» and khorovats all find it", () => {
-    const m = menu({ k: item({ name: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" } }) }, [
-      { id: "1", item_ids: ["k"] },
-    ]);
+    const m = menu(
+      { k: item({ name: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" } }) },
+      [{ id: "1", item_ids: ["k"] }],
+    );
     const dish = buildGuestMenu(m, "hy").categories[0]!.items[0]!;
     for (const q of ["խորոված", "хоровац", "khorovats", "KHOROVATS", "курицы"]) {
       expect(dish.search.includes(normalizeForSearch(q)), q).toBe(true);
@@ -128,5 +136,28 @@ describe("buildGuestMenu", () => {
     m.restaurant = { name: "Café", guest_theme: "wine", brand_color: "#c2185b", logo: "r1/logo/1.webp" };
     const after = buildGuestMenu(m, "hy");
     expect([after.theme, after.brandColor, after.logo]).toEqual(["wine", "#c2185b", "r1/logo/1.webp"]);
+  });
+
+  it("keeps the EU allergen codes and diet tags it knows, in a fixed order", () => {
+    const m = menu(
+      {
+        a: item({ allergens: ["milk", "gluten", "made-up"], tags: ["lactose_free", "vegetarian", "keto"] }),
+        b: item(),
+      },
+      [{ id: "1", item_ids: ["a", "b"] }],
+    );
+    const built = buildGuestMenu(m, "en");
+    const [a, b] = built.categories[0]!.items;
+    expect(a!.allergens).toEqual(["gluten", "milk"]);
+    expect(a!.tags).toEqual(["vegetarian", "lactose_free"]);
+    expect(b!.allergens).toEqual([]);
+    expect(built.hasAllergens).toBe(true);
+  });
+
+  it("offers no allergy filter when no dish lists allergens", () => {
+    const m = menu({ a: item({ allergens: [] }), b: item({ allergens: null }) }, [
+      { id: "1", item_ids: ["a", "b"] },
+    ]);
+    expect(buildGuestMenu(m, "hy").hasAllergens).toBe(false);
   });
 });

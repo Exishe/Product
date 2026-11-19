@@ -1,15 +1,16 @@
 "use client";
 
-import { ThemedStarBorder } from "@/features/guest-theme/themed-star-border";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import styles from "@/features/menu/guest-menu/guest.module.css";
 import type { Locale } from "@/i18n/routing";
 import { toOrderLines, type CartSummary } from "./cart";
 import { useGuestI18n } from "./guest-i18n-context";
 import type { OrderErrorKind } from "./order-errors";
 import { beginPending, clearPending, loadPending } from "./pending-order";
 
-type Phase = { name: "idle" } | { name: "sending" } | { name: "offline" } | { name: "error"; why: OrderErrorKind };
+type Phase =
+  { name: "idle" } | { name: "sending" } | { name: "offline" } | { name: "error"; why: OrderErrorKind };
 
 const RETRY_MS = 10_000;
 const loadSender = () => import("./place-order");
@@ -39,7 +40,9 @@ export function OrderSender({
   const router = useRouter();
   const scope = { locationId, tableId: table.id };
   // Rendered only in the browser (the cart view opens after hydration).
-  const [phase, setPhase] = useState<Phase>(() => (loadPending(window.localStorage, scope) ? { name: "sending" } : { name: "idle" }));
+  const [phase, setPhase] = useState<Phase>(() =>
+    loadPending(window.localStorage, scope) ? { name: "sending" } : { name: "idle" },
+  );
   const busy = useRef(false);
   const placed = useRef(false);
 
@@ -50,7 +53,12 @@ export function OrderSender({
     onLocked(true);
     try {
       const { placeOrder } = await loadSender();
-      const result = await placeOrder({ token: table.token, tableId: table.id, locationId, locale: locale as Locale });
+      const result = await placeOrder({
+        token: table.token,
+        tableId: table.id,
+        locationId,
+        locale: locale as Locale,
+      });
       if (result.kind === "placed" || result.kind === "already_sent") {
         clearPending(window.localStorage, { locationId, tableId: table.id });
         placed.current = true;
@@ -114,19 +122,22 @@ export function OrderSender({
     phase.name === "offline"
       ? t("cart.offline")
       : phase.name === "error"
-        ? {
+        ? ({
             sold_out: t("cart.soldOut"),
             menu_changed: t("cart.menuChanged"),
             rate_limited: t("cart.rateLimited"),
             ordering_off: t("menu.orderingOff"),
-          }[phase.why.kind as string] ?? t("cart.failed")
+          }[phase.why.kind as string] ?? t("cart.failed"))
         : null;
 
-  const primary =
-    "flex min-h-14 w-full items-center justify-center rounded-pill bg-accent px-6 font-semibold text-on-accent shadow-float disabled:bg-mist disabled:text-muted disabled:shadow-none";
+  const primary = `${styles.cta} flex min-h-14 w-full items-center justify-center px-6 font-semibold shadow-float disabled:shadow-none`;
   return (
     <div className="grid gap-3">
-      <p role="status" aria-live="polite" className={message ? "rounded-card border border-alert bg-alert-tint px-4 py-3" : "sr-only"}>
+      <p
+        role="status"
+        aria-live="polite"
+        className={message ? "rounded-card border-alert bg-alert-tint border px-4 py-3" : "sr-only"}
+      >
         {message}
       </p>
       {phase.name === "error" && phase.why.kind === "menu_changed" ? (
@@ -138,22 +149,16 @@ export function OrderSender({
           {t("cart.retry")}
         </button>
       ) : (
-        // The page's one main action: a brighter, quicker star with a blush
-        // trail and sparkles (the default trail is the accent itself, which
-        // vanishes on the accent fill in Wine).
-        <ThemedStarBorder
-          trailColor="var(--guest-star)"
-          glow={1}
-          thickness={2}
-          duration={3.2}
-          trailLength={0.42}
-          sparkle
-          className="shadow-float flex min-h-14 w-full items-center justify-center px-6 font-semibold"
+        // The page's one main action: a plain pill, with one sweep of light
+        // round its edge as the order screen opens (ready to send).
+        <button
+          type="button"
+          className={`${primary} ${styles.ready}`}
           disabled={phase.name === "sending" || summary.blocked || summary.count === 0}
           onClick={start}
         >
           {phase.name === "sending" ? t("cart.sending") : t("cart.send")}
-        </ThemedStarBorder>
+        </button>
       )}
     </div>
   );

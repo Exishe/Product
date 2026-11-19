@@ -36,7 +36,6 @@ function LineRow({
         {item && (
           <Plate
             src={item.image ? dishPhotoUrl(item.image) : null}
-            name={item.name.text}
             size={64}
             muted={!available}
             className="size-16"

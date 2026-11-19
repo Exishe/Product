@@ -1,8 +1,7 @@
 "use client";
 
-import { ConciergeBell, Search, ShoppingBag, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RotatingText } from "@/features/guest-theme/motion/rotating-text";
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
@@ -12,16 +11,18 @@ import { cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { OrderSender } from "@/features/ordering/order-sender";
 import { normalizeForSearch } from "@/lib/format/search";
+import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
 import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
+import { DishRow } from "./dish-row";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
 import { CartBar, OrderPanel } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, dishPhotoUrl, initial } from "./ui";
+import { Notice, dishPhotoUrl } from "./ui";
 import type { GuestItem, GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -37,6 +38,8 @@ const newId = () =>
 // first load stays inside the guest JS budget.
 const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
+// The allergy filter: fetched on the first tap of its button only.
+const AllergenFilter = lazy(() => import("./allergen-filter").then((m) => ({ default: m.AllergenFilter })));
 const warmSheet = () => {
   const go = () => void loadSheet();
   if ("requestIdleCallback" in window) window.requestIdleCallback(go, { timeout: 2000 });
@@ -45,9 +48,6 @@ const warmSheet = () => {
 };
 
 const CART_HASH = "#cart";
-/** Category names short enough for the rotating line (graphemes, roughly). */
-const ROTATING_MAX = 22;
-const ROTATING_WORDS = 6;
 
 /** The guest pages' content column: full width on a phone, centred on a desktop. */
 const COLUMN = "mx-auto w-full max-w-[1360px] px-4 md:px-8";
@@ -84,6 +84,10 @@ export function GuestMenu({
   const [view, setView] = useState<"menu" | "cart">("menu");
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
   const [locked, setLocked] = useState(false);
+  // What the guest avoids (kept on this phone for every café) and whether
+  // the chooser is open.
+  const [avoid, setAvoidState] = useState<Allergen[]>([]);
+  const [choosingAvoid, setChoosingAvoid] = useState(false);
   // Dishes the database said sold out while sending (the menu was loaded earlier).
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
@@ -116,13 +120,6 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
-  const rotating = useMemo(
-    () =>
-      menu.categories
-        .flatMap((c) => (c.name && Array.from(c.name.text).length <= ROTATING_MAX ? [c.name.text] : []))
-        .slice(0, ROTATING_WORDS),
-    [menu.categories],
-  );
 
   const q = normalizeForSearch(query);
   const shown = useMemo(
@@ -137,6 +134,24 @@ export function GuestMenu({
 
   useEffect(() => warmMotion(), []);
   useEffect(warmSheet, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
+  useEffect(() => setAvoidState(loadAvoid(window.localStorage)), []);
+  const setAvoid = useCallback((next: Allergen[]) => {
+    setAvoidState(next);
+    saveAvoid(window.localStorage, next);
+  }, []);
+  const allergenList = (list: readonly Allergen[]) => list.map((a) => t(`allergens.${a}`)).join(", ");
+  // The line under a dish when the guest avoids something: what it contains,
+  // or that the café didn't say (never "safe").
+  const warningFor = (item: GuestItem) => {
+    const m = matchAllergens(item.allergens, avoid);
+    return m.kind === "contains"
+      ? { text: t("diet.contains", { list: allergenList(m.allergens) }), strong: true }
+      : m.kind === "unknown"
+        ? { text: t("diet.unknown"), strong: false }
+        : null;
+  };
+  const offerFilter = menu.hasAllergens || avoid.length > 0;
 
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
@@ -199,7 +214,7 @@ export function GuestMenu({
     sparkFrom(from);
     flyToCart(from, {
       photo: item.image ? dishPhotoUrl(item.image) : null,
-      initial: initial(item.name.text),
+      initial: "",
     });
     add(item, {
       modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
@@ -218,7 +233,7 @@ export function GuestMenu({
     ) : !menu.ordering ? (
       <Notice tone="calm">{t("menu.orderingOff")}</Notice>
     ) : table.kind === "none" ? (
-      <Notice tone="calm">{t("menu.noTable")}</Notice>
+      <Notice tone="info">{t("menu.noTable")}</Notice>
     ) : null;
 
   const count = summary.count;
@@ -257,17 +272,6 @@ export function GuestMenu({
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
-      below={
-        view === "menu" && rotating.length > 1 ? (
-          <p aria-hidden="true" className="text-muted mt-3 text-lg leading-snug">
-            {t("menu.todayIn")}{" "}
-            <RotatingText
-              words={rotating}
-              className="display-face max-w-full text-[1.875rem] leading-[1.1] text-[color:var(--guest-flourish)] md:text-[2.5rem]"
-            />
-          </p>
-        ) : null
-      }
     />
   );
 
@@ -381,27 +385,47 @@ export function GuestMenu({
             )}
           </div>
         )}
-        <div className="relative pt-5 pb-2">
-          <label className="sr-only" htmlFor="menu-search">
-            {t("menu.search")}
-          </label>
-          <Search
-            size={18}
-            aria-hidden
-            className="text-muted pointer-events-none absolute top-1/2 left-4 mt-1.5 -translate-y-1/2"
-          />
-          <input
-            ref={search}
-            id="menu-search"
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("menu.search")}
-            autoComplete="off"
-            enterKeyHint="search"
-            className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-5 pl-11 md:max-w-[440px]"
-          />
+        <div className="flex items-center gap-2 pt-5 pb-2">
+          <div className="relative min-w-0 flex-1 md:max-w-[440px]">
+            <label className="sr-only" htmlFor="menu-search">
+              {t("menu.search")}
+            </label>
+            <Search
+              size={18}
+              aria-hidden
+              className="text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2"
+            />
+            <input
+              ref={search}
+              id="menu-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("menu.search")}
+              autoComplete="off"
+              enterKeyHint="search"
+              className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-5 pl-11"
+            />
+          </div>
+          {offerFilter && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-pressed={avoid.length > 0}
+              onClick={() => setChoosingAvoid(true)}
+              data-testid="allergy-filter"
+              className="bg-surface shadow-card rounded-pill aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-12 flex-none items-center gap-2 border [border-color:var(--guest-field-edge)] px-4 text-sm font-semibold"
+            >
+              <ShieldAlert size={18} aria-hidden />
+              {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
+            </button>
+          )}
         </div>
+        {avoid.length > 0 && (
+          <p className="text-muted pb-1 text-sm" role="status">
+            {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
+          </p>
+        )}
         <CategoryNav categories={shown} belowBar={scrolled} />
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_14.5rem] xl:gap-14">
           <main className="min-w-0">
@@ -411,6 +435,11 @@ export function GuestMenu({
               </p>
             ) : (
               shown.map((c, at) => {
+                // Plates only where there is food to show: a section where at
+                // least half the dishes have photos is a grid of plates; any
+                // other reads as a printed menu (DishRow), led by its featured
+                // photo when it has one. No rows of identical empty plates.
+                const plates = c.items.filter((i) => i.image).length * 2 >= c.items.length;
                 const featured = featuredOf(c.items);
                 // The dish's place on the page, counted over the sections before.
                 const before = shown.slice(0, at).reduce((n, x) => n + x.items.length, 0);
@@ -430,23 +459,70 @@ export function GuestMenu({
                         className={`display-face text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
                       />
                     )}
-                    <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
-                      {/* The featured dish leads its section, so the grid below it stays whole. */}
-                      {[...c.items]
-                        .sort((a, b) => Number(b.id === featured) - Number(a.id === featured))
-                        .map((item, i) => (
-                          <DishCard
-                            key={item.id}
-                            item={item}
-                            canOrder={canOrder}
-                            featured={item.id === featured}
-                            priority={item.id === firstFeatured}
-                            index={before + i}
-                            onOpen={setSheet}
-                            onQuickAdd={quickAdd}
-                          />
-                        ))}
-                    </ul>
+                    {!plates ? (
+                      <div
+                        className={
+                          featured
+                            ? "grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
+                            : undefined
+                        }
+                      >
+                        {featured && (
+                          <ul className="grid grid-cols-2">
+                            {c.items
+                              .filter((item) => item.id === featured)
+                              .map((item) => (
+                                <DishCard
+                                  key={item.id}
+                                  item={item}
+                                  canOrder={canOrder}
+                                  warning={warningFor(item)}
+                                  featured
+                                  priority={item.id === firstFeatured}
+                                  index={before}
+                                  onOpen={setSheet}
+                                  onQuickAdd={quickAdd}
+                                />
+                              ))}
+                          </ul>
+                        )}
+                        <ul
+                          className={`bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7 ${featured ? "" : "md:columns-2 md:gap-12"}`}
+                        >
+                          {c.items
+                            .filter((item) => item.id !== featured)
+                            .map((item) => (
+                              <DishRow
+                                key={item.id}
+                                item={item}
+                                canOrder={canOrder}
+                                warning={warningFor(item)}
+                                onOpen={setSheet}
+                                onQuickAdd={quickAdd}
+                              />
+                            ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
+                        {/* The featured dish leads its section, so the grid below it stays whole. */}
+                        {[...c.items]
+                          .sort((a, b) => Number(b.id === featured) - Number(a.id === featured))
+                          .map((item, i) => (
+                            <DishCard
+                              key={item.id}
+                              item={item}
+                              canOrder={canOrder}
+                              warning={warningFor(item)}
+                              featured={item.id === featured}
+                              priority={item.id === firstFeatured}
+                              index={before + i}
+                              onOpen={setSheet}
+                              onQuickAdd={quickAdd}
+                            />
+                          ))}
+                      </ul>
+                    )}
                   </section>
                 );
               })
@@ -489,6 +565,11 @@ export function GuestMenu({
               setSheet(null);
             }}
           />
+        </Suspense>
+      )}
+      {choosingAvoid && (
+        <Suspense fallback={null}>
+          <AllergenFilter avoid={avoid} onChange={setAvoid} onClose={() => setChoosingAvoid(false)} />
         </Suspense>
       )}
       {toast && (

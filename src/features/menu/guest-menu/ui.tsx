@@ -1,4 +1,4 @@
-import { BellRing, Check, ChevronLeft, Minus, Plus, X } from "lucide-react";
+import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { GuestTag, Text } from "./view-model";
@@ -91,10 +91,14 @@ export function Stepper({
   );
 }
 
+const DIET = "bg-success-tint text-success";
 const TAG_STYLES: Record<GuestTag, string> = {
   popular: "bg-chip text-ink",
   spicy: "bg-alert-tint text-alert",
-  vegan: "bg-success-tint text-success",
+  vegan: DIET,
+  vegetarian: DIET,
+  gluten_free: DIET,
+  lactose_free: DIET,
   new: "bg-badge text-on-badge",
 };
 
@@ -106,29 +110,27 @@ export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
   );
 }
 
-export function Notice({ tone, children }: { tone: "calm" | "busy" | "alert"; children: ReactNode }) {
+// Guidance ("scan the QR code on your table") is a calm white card with a
+// QR mark; only real failures (a dead QR code, a sold-out dish) get the alert.
+export function Notice({
+  tone,
+  children,
+}: {
+  tone: "calm" | "info" | "busy" | "alert";
+  children: ReactNode;
+}) {
   const tones = {
     calm: "border-chip bg-chip text-ink",
+    info: "bg-surface text-ink shadow-card flex items-center gap-3 [border-color:var(--guest-card-border)]",
     busy: "border-glow bg-surface text-ink",
     alert: "border-alert bg-alert-tint text-ink",
   };
   return (
-    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>{children}</p>
+    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>
+      {tone === "info" && <QrCode size={22} strokeWidth={1.75} aria-hidden className="flex-none" />}
+      {tone === "info" ? <span>{children}</span> : children}
+    </p>
   );
-}
-
-let segmenter: Intl.Segmenter | null | undefined;
-/** The first letter of a name (a whole grapheme), for the monogram plate. */
-export function initial(text: string): string {
-  if (segmenter === undefined)
-    segmenter =
-      typeof Intl !== "undefined" && "Segmenter" in Intl
-        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
-        : null;
-  const first = segmenter
-    ? segmenter.segment(text)[Symbol.iterator]().next().value?.segment
-    : Array.from(text)[0];
-  return (first ?? "").toLocaleUpperCase();
 }
 
 // A dish on its plate (owner's reference, ADR-056): a round plate in the
@@ -136,7 +138,9 @@ export function initial(text: string): string {
 // highlight; the photo fills it up to a thin rim, --guest-dish-inset (0 in
 // Evening and Wine, where the photo is the plate), cropped round and shaded
 // at its edge like food on a real plate seen from above. Without a photo:
-// an empty plate with the dish's initial in the display face. Decorative:
+// an empty plate, rim and well only (no letter: a monogram tells the guest
+// nothing about the dish). Sections with no photos at all skip plates and
+// use DishRow, a printed-menu line. Decorative:
 // the dish name is always next to it. A grid, not positioned layers, so the
 // caller's own position (absolute on a featured card) always applies.
 // Photos are one 600 px WebP each (photo.ts; Storage's resizing is a paid
@@ -146,7 +150,6 @@ export function initial(text: string): string {
 // for it) but is fetched at high priority once it is near the screen.
 export function Plate({
   src,
-  name,
   size,
   lazy = true,
   priority = false,
@@ -154,7 +157,6 @@ export function Plate({
   className = "",
 }: {
   src: string | null;
-  name: string;
   /** Intrinsic size in px (for width/height, so nothing shifts while loading). */
   size: number;
   lazy?: boolean;
@@ -168,7 +170,7 @@ export function Plate({
   return (
     <span
       aria-hidden="true"
-      className={`bg-dish shadow-plate [container-type:inline-size] grid aspect-square place-items-center overflow-hidden rounded-full ${src ? "dish-photo" : ""} ${shade} ${className}`}
+      className={`bg-dish shadow-plate grid aspect-square place-items-center overflow-hidden rounded-full ${src ? "dish-photo" : ""} ${shade} ${className}`}
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
@@ -186,9 +188,6 @@ export function Plate({
         <>
           <span className={`${layer} size-[82%] border [border-color:var(--guest-dish-rim)]`} />
           <span className={`${layer} size-[56%] bg-[var(--guest-dish-well)]`} />
-          <span className="display-face text-dish-ink col-start-1 row-start-1 text-[40cqw] leading-none">
-            {initial(name)}
-          </span>
         </>
       )}
     </span>

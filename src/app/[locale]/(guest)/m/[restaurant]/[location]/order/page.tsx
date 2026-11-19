@@ -69,7 +69,7 @@ export default async function OrderStatusPage({ params, searchParams }: { params
         </GuestI18nProvider>
       ) : (
         <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
-          <Notice tone="alert">{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
+          <Notice tone={token ? "alert" : "info"}>{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
           <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
             {t("order.toMenu")}
           </a>

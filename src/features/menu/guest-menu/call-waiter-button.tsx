@@ -48,7 +48,12 @@ export function useCallWaiter() {
   useEffect(() => () => void (state === "confirm" && set("idle")), []);
   return {
     state: current,
-    ask: () => (state === "confirm" ? set("idle") : state === "idle" || state === "failed" ? set("confirm", 8000) : undefined),
+    ask: () =>
+      state === "confirm"
+        ? set("idle")
+        : state === "idle" || state === "failed"
+          ? set("confirm", 8000)
+          : undefined,
     cancel: () => set("idle"),
   };
 }
@@ -66,7 +71,8 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
     else set("failed", 4000);
   };
 
-  const pill = "inline-flex min-h-12 items-center justify-center gap-2 rounded-pill px-4 text-sm font-semibold";
+  const pill =
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-pill px-4 text-sm font-semibold";
   const hidden = useSyncExternalStore(
     subscribe,
     () => noteHidden,
@@ -75,16 +81,26 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
   if (current === "idle" || (current === "called" && hidden)) return null;
   return (
     <div
-      className={`bg-surface text-ink shadow-float pointer-events-auto rounded-card border border-line p-3 ${styles.pop}`}
+      className={`bg-surface text-ink shadow-float rounded-card border-line pointer-events-auto border p-3 ${styles.pop}`}
       data-testid="call-waiter"
     >
       {current === "confirm" || current === "sending" ? (
         <div role="group" aria-label={t("menu.callConfirm")} className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 flex-1 px-1 font-semibold">{t("menu.callConfirm")}</span>
-          <button type="button" disabled={current === "sending"} onClick={() => void send()} className={`${pill} bg-accent text-on-accent`}>
+          <button
+            type="button"
+            disabled={current === "sending"}
+            onClick={() => void send()}
+            className={`${pill} ${styles.cta}`}
+          >
             {t("menu.callYes")}
           </button>
-          <button type="button" disabled={current === "sending"} onClick={cancel} className={`${pill} border-line-strong border`}>
+          <button
+            type="button"
+            disabled={current === "sending"}
+            onClick={cancel}
+            className={`${pill} border-line-strong border`}
+          >
             {t("menu.callCancel")}
           </button>
         </div>
