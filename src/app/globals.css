@@ -692,6 +692,15 @@ body:has(.admin-shell) {
   object-fit: contain;
   object-position: left;
 }
+/* The same picture in the slim bar that stays while the menu scrolls. */
+.guest-lux .guest-wordmark-bar {
+  display: block;
+  height: 2.5rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left;
+}
 .guest-lux .guest-cover {
   display: block;
   width: 100%;

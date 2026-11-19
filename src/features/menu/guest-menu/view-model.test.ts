@@ -157,6 +157,17 @@ describe("buildGuestMenu", () => {
     m.covers = { "2": "r1/covers/2/1.webp" };
     const after = buildGuestMenu(m, "hy");
     expect(after.wordmark).toBe("r1/brand/1.webp");
+    // One picture only: the slim bar shows it too, whatever the backgrounds.
+    expect(after.wordmarkBar).toBe("r1/brand/1.webp");
+    expect(buildGuestMenu(m, "hy", { header: true, page: true }).wordmark).toBe("r1/brand/1.webp");
+    // Two pictures (ADR-065): the light-ink one on a dark band, the dark-ink one on a light page.
+    m.restaurant = { name: "Café", brand: { wordmark: "r1/brand/1.webp", wordmark_dark: "r1/brand/2.webp" } };
+    const blanca = buildGuestMenu(m, "hy", { header: true, page: false });
+    expect([blanca.wordmark, blanca.wordmarkBar]).toEqual(["r1/brand/2.webp", "r1/brand/1.webp"]);
+    const plain = buildGuestMenu(m, "hy");
+    expect([plain.wordmark, plain.wordmarkBar]).toEqual(["r1/brand/1.webp", "r1/brand/1.webp"]);
+    m.restaurant = { name: "Café", brand: { wordmark_dark: "r1/brand/2.webp" } };
+    expect(buildGuestMenu(m, "hy").wordmark).toBe("r1/brand/2.webp");
     expect(after.categories.map((c) => c.cover)).toEqual([null, "r1/covers/2/1.webp"]);
   });
 

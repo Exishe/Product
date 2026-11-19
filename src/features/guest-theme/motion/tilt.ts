@@ -31,7 +31,9 @@ export function useTilt(ref: RefObject<HTMLElement | null>, { max = 12, touchMax
       if (!m) return false;
       m.animate(
         el,
-        { transform: `perspective(${PERSPECTIVE}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${s})` },
+        {
+          transform: `perspective(${PERSPECTIVE}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${s})`,
+        },
         { type: m.spring, stiffness: 240, damping: 20, mass: 0.7 },
       );
       return true;

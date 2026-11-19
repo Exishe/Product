@@ -17,6 +17,7 @@ import {
   brandJson,
   brandTokens,
   ignoredRoles,
+  isDarkBackground,
   type Brand,
   type BrandColorRole,
   type BrandFont,
@@ -161,6 +162,24 @@ export function AppearanceForm({
   const ignored = ignoredRoles(theme, brand);
   const pageColor =
     brand.colors.page && !ignored.includes("page") ? brand.colors.page : THEME_FACTS[theme].page;
+
+  // The two wordmark slots, each shown on the kind of background it is for:
+  // the café's own page or header colour when that is light (dark), else a
+  // plain light (dark) chip.
+  const wordmarkSlots = [
+    {
+      key: "wordmark",
+      title: b("wordmarkLight"),
+      remove: b("wordmarkRemove"),
+      chip: [pageColor, header].find((c) => c && !isDarkBackground(c)) ?? "#ffffff",
+    },
+    {
+      key: "wordmarkDark",
+      title: b("wordmarkDark"),
+      remove: b("wordmarkRemoveDark"),
+      chip: [header, pageColor].find((c) => c && isDarkBackground(c)) ?? "#1e2126",
+    },
+  ] as const;
 
   const change = (next: Partial<Brand>) => {
     setBrand((cur) => ({ ...cur, ...next }));
@@ -400,35 +419,67 @@ export function AppearanceForm({
           </Group>
 
           <Group id={`${ids}-wordmark`} title={b("wordmark")} hint={b("wordmarkHint")}>
-            <div className="flex flex-wrap items-center gap-4">
-              {brand.wordmark && (
-                // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
-                <img
-                  src={logoUrl(brand.wordmark)}
-                  alt=""
-                  height={56}
-                  className="bg-staff-fill h-14 w-auto max-w-full rounded-xl object-contain p-1"
-                />
-              )}
-              <label className={fileLabel}>
-                <ImagePlus aria-hidden="true" />
-                {upload === "uploading" ? t("uploading") : b("wordmarkChoose")}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="sr-only"
-                  disabled={upload === "uploading" || !brandReady}
-                  onChange={(e) =>
-                    void uploadImage(e.target.files?.[0], "brand", (wordmark) => change({ wordmark }))
-                  }
-                />
-              </label>
-              {brand.wordmark && (
-                <button type="button" onClick={() => change({ wordmark: null })} className={button("danger")}>
-                  <Trash2 aria-hidden="true" />
-                  {b("wordmarkRemove")}
-                </button>
-              )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {wordmarkSlots.map((slot) => {
+                const path = brand[slot.key];
+                return (
+                  <div
+                    key={slot.key}
+                    role="group"
+                    aria-labelledby={`${ids}-${slot.key}`}
+                    className="flex min-w-0 flex-col gap-3"
+                    data-testid={`slot-${slot.key}`}
+                  >
+                    <h3 id={`${ids}-${slot.key}`} className="m-0 text-[1.0625rem] font-semibold">
+                      {slot.title}
+                    </h3>
+                    {/* The chip is the background the picture is meant for. */}
+                    <span
+                      className="border-staff-field grid h-24 place-items-center rounded-xl border p-3"
+                      style={{ background: slot.chip }}
+                      data-testid={`chip-${slot.key}`}
+                    >
+                      {path && (
+                        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                        <img
+                          src={logoUrl(path)}
+                          alt=""
+                          height={56}
+                          className="h-14 w-auto max-w-full object-contain"
+                        />
+                      )}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className={fileLabel}>
+                        <ImagePlus aria-hidden="true" />
+                        {upload === "uploading" ? t("uploading") : b("wordmarkChoose")}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="sr-only"
+                          aria-describedby={`${ids}-${slot.key}`}
+                          disabled={upload === "uploading" || !brandReady}
+                          onChange={(e) =>
+                            void uploadImage(e.target.files?.[0], "brand", (uploaded) =>
+                              change({ [slot.key]: uploaded }),
+                            )
+                          }
+                        />
+                      </label>
+                      {path && (
+                        <button
+                          type="button"
+                          onClick={() => change({ [slot.key]: null })}
+                          className={button("danger")}
+                        >
+                          <Trash2 aria-hidden="true" />
+                          {slot.remove}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             {upload === "failed" && (
               <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">

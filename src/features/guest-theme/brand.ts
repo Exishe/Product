@@ -24,8 +24,10 @@ export type BrandFont = {
 // Free Google fonts with Latin and Cyrillic (all SIL OFL 1.1), checked
 // against the css2 API on 2026-11-19. Armenian is in none of them: it falls
 // through per glyph to Noto Serif Armenian (serif, script) or Noto Sans
-// Armenian (sans), which the app already self-hosts. Keep in step with
-// private.brand_fonts() in 20261119100000_brand_profile.sql.
+// Armenian (sans), which the app already self-hosts. Mrs Saint Delafield is
+// the one Latin-only family (the owner asked for it): Cyrillic falls through
+// the same way there. Keep in step with private.brand_fonts() in the newest
+// migration that defines it (brand.test.ts finds it and compares).
 export const BRAND_FONTS: readonly BrandFont[] = [
   { family: "Cormorant", kind: "serif", weights: [300, 400, 500, 600, 700] },
   { family: "Cormorant Garamond", kind: "serif", weights: [300, 400, 500, 600, 700] },
@@ -54,6 +56,7 @@ export const BRAND_FONTS: readonly BrandFont[] = [
   { family: "Bad Script", kind: "script", weights: [400] },
   { family: "Caveat", kind: "script", weights: [400, 500, 600, 700] },
   { family: "Lobster", kind: "script", weights: [400] },
+  { family: "Mrs Saint Delafield", kind: "script", weights: [400] },
 ];
 
 const FONT = new Map(BRAND_FONTS.map((f) => [f.family, f]));
@@ -68,8 +71,10 @@ export type Brand = {
   bodyFont: string | null;
   scriptFont: string | null;
   plate: PlateStyle | null;
-  /** Storage path of the wordmark (the café's name as a picture). */
+  /** Storage path of the wordmark (the café's name as a picture), drawn for light backgrounds. */
   wordmark: string | null;
+  /** The same in light ink, for dark backgrounds (ADR-065); absent before its migration. */
+  wordmarkDark: string | null;
 };
 
 export const EMPTY_BRAND: Brand = {
@@ -79,6 +84,7 @@ export const EMPTY_BRAND: Brand = {
   scriptFont: null,
   plate: null,
   wordmark: null,
+  wordmarkDark: null,
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -102,6 +108,7 @@ export function parseBrand(raw: unknown): Brand | null {
     scriptFont: font(r.script_font, ["script"]),
     plate: PLATE_STYLES.find((p) => p === r.plate) ?? null,
     wordmark: typeof r.wordmark === "string" && r.wordmark ? r.wordmark : null,
+    wordmarkDark: typeof r.wordmark_dark === "string" && r.wordmark_dark ? r.wordmark_dark : null,
   };
   return isEmptyBrand(brand) ? null : brand;
 }
@@ -112,7 +119,8 @@ export const isEmptyBrand = (b: Brand) =>
   !b.bodyFont &&
   !b.scriptFont &&
   !b.plate &&
-  !b.wordmark;
+  !b.wordmark &&
+  !b.wordmarkDark;
 
 /** The jsonb api.set_brand takes (empty values left out). */
 export function brandJson(b: Brand): Record<string, unknown> | null {
@@ -124,6 +132,7 @@ export function brandJson(b: Brand): Record<string, unknown> | null {
   if (b.scriptFont) out.script_font = b.scriptFont;
   if (b.plate) out.plate = b.plate;
   if (b.wordmark) out.wordmark = b.wordmark;
+  if (b.wordmarkDark) out.wordmark_dark = b.wordmarkDark;
   return out;
 }
 
@@ -316,3 +325,32 @@ export function ignoredRoles(theme: GuestTheme, brand: Brand): BrandColorRole[] 
 /** The body overscroll colour for the brand's page (null: the theme's). */
 export const brandPage = (b: Brand | null, theme: GuestTheme) =>
   b?.colors.page && !ignoredRoles(theme, b).includes("page") ? b.colors.page : null;
+
+/** A background that light ink reads better on than dark ink. */
+export const isDarkBackground = (bg: string) => contrast("#ffffff", bg) > contrast("#000000", bg);
+
+/**
+ * The wordmark for a background colour (ADR-065): the light-ink picture on a
+ * dark one, the dark-ink picture on a light one. A café with only one of the
+ * two gets that one everywhere, as before the second slot existed.
+ */
+export function pickWordmark(b: Brand | null, background: string): string | null {
+  if (!b) return null;
+  return isDarkBackground(background) ? (b.wordmarkDark ?? b.wordmark) : (b.wordmark ?? b.wordmarkDark);
+}
+
+/**
+ * What sits behind the wordmark on a guest page: the header band (the
+ * brand's header colour, else the page) and the page itself, which is behind
+ * the slim bar that stays at the top while the menu scrolls.
+ */
+export function wordmarkBackgrounds(theme: GuestTheme, b: Brand | null): { header: string; page: string } {
+  const page = brandPage(b, theme) ?? THEME_FACTS[theme].page;
+  return { header: b?.colors.header ?? page, page };
+}
+
+/** The same as two yes/no answers ("is it dark?"), all the guest's client code needs. */
+export function wordmarkTones(theme: GuestTheme, b: Brand | null): { header: boolean; page: boolean } {
+  const bg = wordmarkBackgrounds(theme, b);
+  return { header: isDarkBackground(bg.header), page: isDarkBackground(bg.page) };
+}

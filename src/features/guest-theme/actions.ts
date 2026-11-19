@@ -52,12 +52,13 @@ const brandInput = z
     script_font: z.string().max(60).optional(),
     plate: z.enum(["porcelain", "dark", "none"]).optional(),
     wordmark: z.string().max(300).optional(),
+    wordmark_dark: z.string().max(300).optional(),
   })
   .strict()
   .nullable();
 
 // The brand profile (ADR-058): api.set_brand checks the role, the font list
-// and the wordmark's folder. null removes the brand.
+// and the wordmarks' folder. null removes the brand.
 export async function saveBrand(value: unknown): Promise<{ ok: boolean }> {
   const me = await requireMember(["owner", "manager"]);
   const parsed = brandInput.safeParse(value);
