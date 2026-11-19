@@ -15,7 +15,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { CheckIcon, CloseIcon, Plate, PlusIcon, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -27,12 +27,20 @@ const NOTE_COUNTER_FROM = 160;
 export function DishSheet({
   item,
   canOrder,
+  pairs = [],
   onAdd,
+  onAddPair,
+  onOpenPair,
   onClose,
 }: {
   item: GuestItem;
   canOrder: boolean;
+  /** "Guests here often add" (ADR-057): dishes from the café's own rounds. */
+  pairs?: GuestItem[];
   onAdd: (add: { modifierIds: string[]; quantity: number; note: string }) => void;
+  /** One tap adds a pair that needs no choice, as the menu's "+" does. */
+  onAddPair?: (pair: GuestItem, from: HTMLElement) => void;
+  onOpenPair?: (pair: GuestItem) => void;
   onClose: () => void;
 }) {
   const { t, locale } = useGuestI18n();
@@ -41,6 +49,7 @@ export function DishSheet({
   const [selection, setSelection] = useState<Selection>(() => initialSelection(item.groups));
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
+  const [addedPairs, setAddedPairs] = useState<string[]>([]);
   const valid = isSelectionValid(item.groups, selection);
   const price = unitPrice(item.price, item.groups, selection) * quantity;
 
@@ -212,6 +221,64 @@ export function DishSheet({
               </span>
             )}
           </label>
+        )}
+
+        {pairs.length > 0 && (
+          <section aria-labelledby="pairs-title" className="mt-5" data-testid="pairs">
+            <h3 id="pairs-title" className="text-muted text-[0.8125rem] font-semibold">
+              {t("pairs.title")}
+            </h3>
+            <ul className="mt-1">
+              {pairs.map((pair) => {
+                const needsChoice = pair.groups.some((g) => g.min > 0);
+                const added = addedPairs.includes(pair.id);
+                return (
+                  <li
+                    key={pair.id}
+                    className="border-line flex items-center gap-3 border-b py-2 last:border-b-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onOpenPair?.(pair)}
+                      className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      {pair.image && (
+                        <Plate src={dishPhotoUrl(pair.image)} size={44} className="size-11 flex-none" />
+                      )}
+                      <Txt
+                        value={pair.name}
+                        locale={locale}
+                        className="min-w-0 flex-1 font-semibold break-words"
+                      />
+                      <span className="num text-accent-text flex-none text-sm font-semibold whitespace-nowrap">
+                        {formatAmd(pair.price, locale)}
+                      </span>
+                    </button>
+                    {canOrder && (
+                      <button
+                        type="button"
+                        aria-label={
+                          added
+                            ? t("pairs.added", { name: pair.name.text })
+                            : t("menu.add", { name: pair.name.text })
+                        }
+                        aria-haspopup={needsChoice ? "dialog" : undefined}
+                        disabled={added}
+                        onClick={(e) => {
+                          if (needsChoice) return onOpenPair?.(pair);
+                          onAddPair?.(pair, e.currentTarget);
+                          setAddedPairs((ids) => [...ids, pair.id]);
+                        }}
+                        className="text-ink hover:bg-chip disabled:bg-chip grid size-11 flex-none place-items-center rounded-full border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] [&_svg]:size-[18px]"
+                      >
+                        {added ? <CheckIcon /> : <PlusIcon />}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
 
         <div

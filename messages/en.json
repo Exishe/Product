@@ -806,6 +806,15 @@
       "add": "Add again",
       "added": "Added from your last order",
       "more": "+{count} more"
+    },
+    "pairs": {
+      "title": "Often ordered with this",
+      "added": "Added: {name}"
+    },
+    "wait": {
+      "usual": "Usually ready in {low}–{high} min.",
+      "usualOne": "Usually ready in about {low} min.",
+      "late": "Taking longer than usual. You can call the waiter."
     }
   },
   "telegram": {

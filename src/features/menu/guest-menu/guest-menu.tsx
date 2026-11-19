@@ -12,6 +12,7 @@ import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
 import { OrderSender } from "@/features/ordering/order-sender";
 import { normalizeForSearch } from "@/lib/format/search";
+import { NO_HINTS, pairsFor, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
 import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
@@ -72,12 +73,15 @@ export function GuestMenu({
   table,
   orderHref,
   languages,
+  hints = NO_HINTS,
 }: {
   menu: GuestMenuData;
   table: TableState;
   /** The order status page for this table. */
   orderHref: string | null;
   languages: LanguageLink[];
+  /** Pairs and the usual wait from the café's own rounds (ADR-057). */
+  hints?: MenuHints;
 }) {
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
@@ -360,6 +364,7 @@ export function GuestMenu({
               />
             ) : null
           }
+          wait={menu.kitchenBusy ? null : hints.wait}
           onQuantity={(id, quantity) => {
             // removing the last line returns to the menu (screens.md)
             if (changeQuantity(id, quantity).length === 0) closeCart();
@@ -584,6 +589,9 @@ export function GuestMenu({
             key={sheet.id}
             item={sheet}
             canOrder={canOrder}
+            pairs={pairsFor(sheet.id, hints, items, soldOutNow)}
+            onAddPair={quickAdd}
+            onOpenPair={setSheet}
             onClose={() => setSheet(null)}
             onAdd={(a) => {
               add(sheet, a);

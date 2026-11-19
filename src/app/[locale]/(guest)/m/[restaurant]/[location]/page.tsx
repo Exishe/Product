@@ -6,7 +6,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
 import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
-import { getPublicMenu } from "@/features/menu/guest-menu/load.server";
+import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu } from "@/features/menu/guest-menu/view-model";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { resolveTable } from "@/features/ordering/resolve-table.server";
@@ -47,9 +47,10 @@ export default async function GuestMenuPage({
   setRequestLocale(locale);
   const token = first((await searchParams).t);
 
-  const [published, resolved] = await Promise.all([
+  const [published, resolved, hints] = await Promise.all([
     getPublicMenu(restaurant, location),
     token ? resolveTable(token) : null,
+    getMenuHints(restaurant, location),
   ]);
   const atThisCafe =
     resolved !== null && resolved.restaurant_slug === restaurant && resolved.location_slug === location;
@@ -95,6 +96,7 @@ export default async function GuestMenuPage({
           menu={menu}
           table={table}
           languages={languagesFor(menu.locales)}
+          hints={hints}
           orderHref={
             table.kind === "ok"
               ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`

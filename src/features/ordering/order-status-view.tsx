@@ -6,6 +6,7 @@ import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, us
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
+import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import { CheckIcon, MinusIcon, Notice, PlusIcon, Txt } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
@@ -182,15 +183,35 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   );
 }
 
+// "Usually ready in 10–15 min" from the café's own rounds (ADR-057), and,
+// well past that, a calm "taking longer than usual" with the waiter as the
+// way out. Re-checked every 30 seconds; never a countdown.
+function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
+  const { t } = useGuestI18n();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const late = waitState(wait, placedAt, now) === "late";
+  return (
+    <p className="text-muted -mt-2 mb-4 text-sm" data-testid="order-wait" data-late={late}>
+      {late ? t("wait.late") : t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
+    </p>
+  );
+}
+
 function OrderCard({
   order,
   latest,
   below,
+  wait = null,
   onRepeat,
 }: {
   order: Order;
   latest: boolean;
   below?: ReactNode;
+  wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
   onRepeat?: (order: Order) => void;
 }) {
@@ -236,7 +257,10 @@ function OrderCard({
           <Notice tone="alert">{t("order.cancelled")}</Notice>
         </div>
       ) : latest ? (
-        <Tracker order={order} status={status} />
+        <>
+          <Tracker order={order} status={status} />
+          {wait && waiting.has(status) && <WaitLine wait={wait} placedAt={order.placed_at} />}
+        </>
       ) : null}
       {below}
       <ul className="mt-2">
@@ -310,10 +334,13 @@ export function OrderStatusView({
   tableId,
   menuHref,
   vapidPublicKey = null,
+  wait = null,
 }: {
   tableId: string;
   menuHref: string;
   vapidPublicKey?: string | null;
+  /** The café's usual wait (ADR-057); null when it can't say, or the kitchen set its own. */
+  wait?: WaitRange | null;
 }) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
@@ -499,6 +526,7 @@ export function OrderStatusView({
         <OrderCard
           order={latest}
           latest
+          wait={wait}
           onRepeat={closed ? undefined : repeat}
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
