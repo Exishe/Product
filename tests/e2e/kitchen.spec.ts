@@ -2,6 +2,7 @@ import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { test as base, expect } from "./fixtures";
 import { createCafeWithMenu } from "./guest-helpers";
 import { createFreshCafe, ownerEmail, ownerPassword } from "./helpers";
+import { runOwner, signInAsRunOwner } from "./run-owner";
 import {
   allowConsoleErrors,
   column,
@@ -15,7 +16,6 @@ import {
   placeOrder,
   revokeDevice,
   serveOrders,
-  signedInOwner,
   simpleItems,
   slip,
   startShift,
@@ -367,9 +367,13 @@ test.describe("kitchen board", () => {
     viewportSize,
   }) => {
     // A fresh café (never the cafe café's menu) whose kitchen reads Russian.
-    const id = await createFreshCafe(page);
-    const owner = await signedInOwner(`e2e-${id}@pativ.test`, "e2e-password-123");
-    const { data: r } = await owner.from("restaurants").select("id, slug, locations(id)").single();
+    const fresh = await createFreshCafe(page);
+    const owner = (await runOwner()).client;
+    const { data: r } = await owner
+      .from("restaurants")
+      .select("id, slug, locations(id)")
+      .eq("id", fresh.restaurantId)
+      .single();
     const restaurantId = r!.id;
     const locationId = r!.locations[0]!.id;
     const { data: menu } = await owner
@@ -666,12 +670,9 @@ test.describe("kitchen board", () => {
     const tablet = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
     try {
       // Second screen: the owner's phone on the pass (RB2).
-      const owner = await workerCafe();
-      await page.goto("/login");
-      await page.getByLabel("Էլ․ փոստ").fill(owner.email);
-      await page.getByLabel("Գաղտնաբառ").fill(owner.password);
-      await page.getByRole("button", { name: "Մուտք գործել" }).click();
-      await expect(page).toHaveURL(/\/admin/);
+      await signInAsRunOwner(page.context(), cafe.restaurantId);
+      await page.goto("/admin");
+      await expect(page).toHaveURL(/\/admin$/);
       await page.goto(`/kitchen/${cafe.kitchenStationId}`);
       await startShift(page);
       await startShift(tablet.page);

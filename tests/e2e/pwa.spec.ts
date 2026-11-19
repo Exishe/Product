@@ -126,7 +126,13 @@ test.describe("installable staff app", () => {
 
       // The owner disconnects the tablet: the server sends it to /pair, and
       // its old floor no longer opens offline.
-      const { data: device } = await cafe.owner.from("members").select("id").eq("kind", "device").eq("role", "waiter").eq("is_active", true);
+      const { data: device } = await cafe.owner
+        .from("members")
+        .select("id")
+        .eq("restaurant_id", cafe.restaurantId)
+        .eq("kind", "device")
+        .eq("role", "waiter")
+        .eq("is_active", true);
       for (const d of device ?? []) await cafe.owner.schema("api").rpc("revoke_member", { p_member_id: d.id });
       await page.goto("/waiter");
       await expect(page).toHaveURL(/\/pair/);

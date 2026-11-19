@@ -97,6 +97,7 @@ test.describe("games while the order cooks", () => {
     const { data: tickets } = await cafe.owner
       .from("kitchen_tickets")
       .select("id, status")
+      .eq("location_id", cafe.locationId)
       .eq("kind", "order")
       .eq("status", "new");
     expect(tickets!.length).toBeGreaterThan(0);
