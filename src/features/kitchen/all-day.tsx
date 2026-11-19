@@ -98,11 +98,11 @@ export function AllDayStrip({
                     data-testid="all-day-row"
                     onClick={() => onSelect(on ? null : r.key)}
                     className={clsx(
-                      "grid min-h-14 max-w-80 content-center rounded-2xl px-4 py-1 text-left",
+                      "grid min-h-14 max-w-80 grid-cols-1 content-center rounded-2xl px-4 py-1 text-left",
                       on ? "bg-slip text-white" : "bg-basalt-3 text-slip",
                     )}
                   >
-                    <span className="flex items-baseline gap-2 text-xl leading-tight font-bold">
+                    <span className="flex min-w-0 items-baseline gap-2 text-xl leading-tight font-bold">
                       <span data-testid="all-day-qty" className="num text-2xl">
                         {t("quantity", { quantity: r.quantity })}
                       </span>
