@@ -19,7 +19,10 @@ const LONG_WORD = 14; // longer words rise as one piece and may wrap anywhere
 let segmenter: Intl.Segmenter | null | undefined;
 function graphemes(text: string): string[] {
   if (segmenter === undefined)
-    segmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+    segmenter =
+      typeof Intl !== "undefined" && "Segmenter" in Intl
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null;
   return segmenter ? Array.from(segmenter.segment(text), (s) => s.segment) : Array.from(text);
 }
 
@@ -60,7 +63,11 @@ export function SplitText({
           }
           // Rise out of a blur, letter by letter (no scale: a letter never grows
           // past its word box).
-          m.animate(chars, { filter: ["blur(6px)", "blur(0px)"] }, { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 });
+          m.animate(
+            chars,
+            { filter: ["blur(6px)", "blur(0px)"] },
+            { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 },
+          );
           const run = m.animate(
             chars,
             { opacity: [0, 1], transform: ["translateY(0.7em)", "translateY(0)"] },
@@ -90,7 +97,12 @@ export function SplitText({
   let index = 0;
   const words = text.split(/(\s+)/);
   return (
-    <Tag ref={ref} id={id} lang={lang} className={`${styles.split} ${reveal === "load" ? styles.load : ""} ${className ?? ""}`}>
+    <Tag
+      ref={ref}
+      id={id}
+      lang={lang}
+      className={`${styles.split} ${reveal === "load" ? styles.load : ""} ${className ?? ""}`}
+    >
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {words.map((word, w) => {
@@ -98,14 +110,24 @@ export function SplitText({
           const parts = graphemes(word);
           if (parts.length > LONG_WORD)
             return (
-              <span key={w} data-char="" className={`${styles.char} ${styles.long}`} style={{ "--i": index++ } as CSSProperties}>
+              <span
+                key={w}
+                data-char=""
+                className={`${styles.char} ${styles.long}`}
+                style={{ "--i": index++ } as CSSProperties}
+              >
                 {word}
               </span>
             );
           return (
             <span key={w} className={styles.word}>
               {parts.map((g, i) => (
-                <span key={i} data-char="" className={styles.char} style={{ "--i": index++ } as CSSProperties}>
+                <span
+                  key={i}
+                  data-char=""
+                  className={styles.char}
+                  style={{ "--i": index++ } as CSSProperties}
+                >
                   {g}
                 </span>
               ))}

@@ -995,6 +995,76 @@
     "saved": "Saved. Guests see the new look when they open the page.",
     "failed": "Couldn't save. Try again.",
     "pending": "Choosing a theme starts working after the next database update.",
-    "openMenu": "Open the menu"
+    "openMenu": "Open the menu",
+    "brand": {
+      "title": "Brand",
+      "intro": "Your own look on top of the theme: colours, fonts, plates and photos from your logo, website or menu. Anything you leave empty keeps the theme's.",
+      "colors": "Brand colours",
+      "colorsHint": "Up to five colours. Each one has one job on the guest page.",
+      "roles": {
+        "header": {
+          "name": "Header and buttons",
+          "hint": "The band behind your name, filled buttons, large titles"
+        },
+        "accent": {
+          "name": "Prices and current section",
+          "hint": "Prices, small accent text, the selected section tab"
+        },
+        "highlight": {
+          "name": "Badges",
+          "hint": "Counters, the glow on the order button, the letter on a plate without a photo"
+        },
+        "line": {
+          "name": "Lines",
+          "hint": "Thin lines, tags and section tab outlines"
+        },
+        "page": {
+          "name": "Page",
+          "hint": "The page background"
+        }
+      },
+      "use": "Use this colour",
+      "hex": "Colour code for “{role}”",
+      "contrast": "{ratio}:1 against the page",
+      "weak": {
+        "accent": "Too light or too dark for small text on your page. Guests see the theme's colour for prices and the tab.",
+        "page": "Text is hard to read on this colour with this theme. Guests keep the theme's page colour."
+      },
+      "wordmark": "Wordmark",
+      "wordmarkHint": "Your name as a picture. It replaces the typed name at the top of the menu. A PNG with a transparent background works best.",
+      "wordmarkChoose": "Choose a picture",
+      "wordmarkRemove": "Remove the wordmark",
+      "fonts": "Fonts",
+      "fontsHint": "Free Google fonts with Latin and Cyrillic letters. Armenian text always uses Noto Serif Armenian or Noto Sans Armenian.",
+      "heading": "Titles",
+      "body": "Text",
+      "script": "Script accent",
+      "scriptHint": "Only for the changing section name under your name.",
+      "themeFont": "The theme's font",
+      "plate": "Plates",
+      "plateHint": "How dish photos sit on the menu.",
+      "plates": {
+        "theme": "The theme's plates",
+        "porcelain": "White porcelain",
+        "dark": "Dark plate",
+        "none": "No plate"
+      },
+      "preview": "Preview",
+      "previewHint": "The top of your menu with these settings. Save to show it to guests.",
+      "previewSection": "Breakfast",
+      "previewDish1": "Omelette",
+      "previewDish2": "Flat white",
+      "previewPrice": "2 900 ֏",
+      "previewAdd": "Add",
+      "covers": "Section covers",
+      "coversHint": "A wide photo at the top of a section. It is saved at once: guests see it without publishing the menu again.",
+      "coverChoose": "Add a cover",
+      "coverChange": "Change",
+      "coverRemove": "Remove the cover for “{section}”",
+      "coversEmpty": "There are no sections yet. Add them in the menu editor.",
+      "coverSaved": "Cover saved",
+      "untitled": "Section without a name",
+      "pending": "Brand settings start working after the next database update."
+    }
   }
 }
