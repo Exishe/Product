@@ -4,18 +4,23 @@ import { AdminPage } from "@/features/admin-ui/page";
 import { button } from "@/features/admin-ui/styles";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppearanceForm } from "@/features/guest-theme/appearance-form";
+import { EMPTY_BRAND, parseBrand } from "@/features/guest-theme/brand";
+import { SectionCovers, type CoverSection } from "@/features/guest-theme/section-covers";
 import { guestTheme } from "@/features/guest-theme/themes";
 import { requireMember } from "@/lib/auth/require-member";
 import { createClient } from "@/lib/supabase/server";
 
-// «Հյուրի էջի տեսքը» (ADR-052): the café's guest theme, brand colour and logo.
+const NAME_ORDER = ["hy", "ru", "en"];
+
+// «Հյուրի էջի տեսքը» (ADR-052) and the café's brand profile (ADR-057): theme,
+// colours, logo and wordmark, fonts, plates and section covers.
 export default async function LookPage() {
   const me = await requireMember(["owner", "manager"]);
   const supabase = await createClient();
-  const [withTheme, location, t, locale] = await Promise.all([
+  const [withBrand, location, sections, t, locale] = await Promise.all([
     supabase
       .from("restaurants")
-      .select("slug, brand_color, logo_path, guest_theme")
+      .select("name, slug, brand_color, logo_path, guest_theme, brand")
       .eq("id", me.restaurantId)
       .single(),
     supabase
@@ -25,24 +30,48 @@ export default async function LookPage() {
       .order("created_at")
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("categories")
+      .select("id, image_path, menu_id, sort, category_translations(locale, name)")
+      .eq("restaurant_id", me.restaurantId)
+      .eq("is_active", true)
+      .order("menu_id")
+      .order("sort"),
     getTranslations("look"),
     getLocale(),
   ]);
-  // Before migration 20261117120000_guest_theme the column isn't there yet.
-  const ready = !withTheme.error;
-  const row = ready
-    ? withTheme.data
-    : (
-        await supabase
-          .from("restaurants")
-          .select("slug, brand_color, logo_path")
-          .eq("id", me.restaurantId)
-          .single()
-      ).data;
+  // Before migration 20261119100000_brand_profile there is no brand column,
+  // and before 20261117120000_guest_theme no theme either.
+  const brandReady = !withBrand.error;
+  const withTheme = brandReady
+    ? null
+    : await supabase
+        .from("restaurants")
+        .select("name, slug, brand_color, logo_path, guest_theme")
+        .eq("id", me.restaurantId)
+        .single();
+  const ready = brandReady || !withTheme?.error;
+  const row =
+    withBrand.data ??
+    withTheme?.data ??
+    (
+      await supabase
+        .from("restaurants")
+        .select("name, slug, brand_color, logo_path")
+        .eq("id", me.restaurantId)
+        .single()
+    ).data;
   const menuHref = row && location.data ? `/${locale}/m/${row.slug}/${location.data.slug}` : null;
+
+  const covers: CoverSection[] = (sections.data ?? []).map((c) => {
+    const names = c.category_translations ?? [];
+    const pick = [locale, ...NAME_ORDER].map((l) => names.find((n) => n.locale === l)?.name).find(Boolean);
+    return { id: c.id, name: pick ?? null, cover: c.image_path };
+  });
 
   return (
     <AdminPage
+      width="xl"
       title={t("title")}
       subtitle={<p className="m-0">{t("intro")}</p>}
       actions={
@@ -59,26 +88,31 @@ export default async function LookPage() {
         )
       }
     >
-      {!ready && (
+      {(!ready || !brandReady) && (
         <p
           role="status"
-          className="m-0 flex items-start gap-3 rounded-2xl bg-[#fdf0dc] px-4 py-3 text-[1.0625rem]"
+          className="border-amber bg-amber/15 m-0 flex items-start gap-3 rounded-2xl border px-4 py-3 text-[1.0625rem]"
           data-testid="look-pending"
         >
           <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
-          {t("pending")}
+          {ready ? t("brand.pending") : t("pending")}
         </p>
       )}
       <NextIntlClientProvider>
         <AppearanceForm
           restaurantId={me.restaurantId}
           ready={ready}
+          brandReady={brandReady}
+          cafeName={row?.name ?? ""}
+          cover={covers.find((c) => c.cover)?.cover ?? null}
           initial={{
             theme: guestTheme(row && "guest_theme" in row ? row.guest_theme : null),
             brandColor: row?.brand_color ?? null,
             logoPath: row?.logo_path ?? null,
           }}
+          initialBrand={(withBrand.data && parseBrand(withBrand.data.brand)) || EMPTY_BRAND}
         />
+        <SectionCovers restaurantId={me.restaurantId} ready={brandReady} sections={covers} />
       </NextIntlClientProvider>
     </AdminPage>
   );
