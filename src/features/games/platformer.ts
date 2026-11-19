@@ -147,8 +147,8 @@ export const game: Game = {
         { id: "right", x: 36 + r * 3, y: cy, r },
         { id: "a", x: s.w - 18 - r * 1.3, y: cy, r: r * 1.3 },
       ];
-      return padL.map((p) => ({ ...p, icon: "" }));
-    });
+      return padL;
+    }, api.accent);
 
     // Small drawing helpers. While `over` is set every fill is that colour:
     // drawing a figure four times offset in it gives the figure an outline.

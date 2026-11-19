@@ -333,7 +333,7 @@ export const game: Game = {
         { id: "b", x: R - r * 1.15, y: cy - r * 0.2, r: r * 1.15 },
         { id: "c", x: R - r * 3.4, y: cy - r * 1.5, r: r * 0.95 },
       ];
-      return btns.map((b) => ({ ...b, icon: "" }));
+      return btns;
     };
 
     const fit = fitCanvas(canvas, (s) => {
@@ -347,16 +347,21 @@ export const game: Game = {
       for (const f of [P, B]) f.x = clamp(f.x, 28, ww - 28);
     });
     const ctx = fit.ctx;
-    const pad = createPad(canvas, layout);
+    const pad = createPad(canvas, layout, api.accent);
 
     // Shading for the fighters: L is the light's direction in the fighter's
     // local x (the light is on the world's right, the fighter may be mirrored).
     let L = 1;
+    // The white hit flash: every material shifts one step towards white. It
+    // used to be ctx.filter = "brightness()", which software canvases (and
+    // many low-end Android GPUs) apply per draw call: a hit froze the frame
+    // for 100-200 ms. Shifting the gradient stops costs nothing.
+    let flashing = false;
     const paint = (path: () => void, m: Mat, x: number, y: number, r: number, lw = 2.4) => {
       const g = ctx.createLinearGradient(x + L * r, y - r, x - L * r * 0.6, y + r);
-      g.addColorStop(0, m[0]);
-      g.addColorStop(0.45, m[1]);
-      g.addColorStop(1, m[2]);
+      g.addColorStop(0, flashing ? "#ffffff" : m[0]);
+      g.addColorStop(0.45, flashing ? m[0] : m[1]);
+      g.addColorStop(1, flashing ? m[1] : m[2]);
       path();
       ctx.fillStyle = g;
       ctx.fill();
@@ -864,7 +869,7 @@ export const game: Game = {
       ctx.translate(sx + jit, floorY - (f.y + hop) * u);
       const q = (f.sq / 0.16) * 0.2;
       ctx.scale(f.face * u * (1 + q), u * (1 - q));
-      if (f.fl > 0 && !calm) ctx.filter = "brightness(1.6) saturate(0.6)";
+      flashing = f.fl > 0 && !calm;
       const top = cook ? M.shirt : M.coat;
       const pants = cook ? M.brown : M.navy;
       const ko = f.st === "ko";
@@ -1042,7 +1047,7 @@ export const game: Game = {
           ctx.stroke();
         }
       }
-      ctx.filter = "none";
+      flashing = false;
       ctx.restore();
     };
 

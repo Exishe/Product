@@ -824,27 +824,28 @@
       "keepPlaying": "Keep playing",
       "merge": {
         "name": "Kissing Dishes",
-        "howTo": "Swipe to slide the dishes: two of a kind kiss and turn into a bigger dish. Grow a bunch of greens into a whole festive table!"
+        "howTo": "Swipe to slide the dishes: two of a kind kiss and turn into a bigger dish. Grow a bunch of greens into a whole festive table."
       },
       "slice": {
         "name": "Salad Panic",
-        "howTo": "Swipe to slice the panicking veggies before they fall. Don't break grandma's teapot! The golden pomegranate scores ×10."
+        "howTo": "Swipe to slice the panicking veggies before they fall. Don't break grandma's teapot. The golden pomegranate scores ×10."
       },
       "runner": {
         "name": "Waiter Run",
-        "howTo": "Tap to jump, tap again in the air to jump higher. Swipe down to slide under awnings and signs. Collect the coffee cups!"
+        "howTo": "Tap to jump, tap again in the air to jump higher. Swipe down to slide under awnings and signs. Collect the coffee cups."
       },
       "fighter": {
         "name": "Kitchen Clash",
-        "howTo": "◀ ▶ walk, ▲ jump, ▼ hide behind a pot lid. Bonk with the spoon, whack with the pan, throw a tomato! Win two rounds to become head chef."
+        "howTo": "The arrows walk, jump and raise a pot lid (down). The round buttons swing the spoon, swing the pan and throw a tomato; on a keyboard, Z, X and C. Win two rounds to become head chef."
       },
       "platformer": {
         "name": "Café Cat",
-        "howTo": "◀ ▶ walk, ⤒ jump. Grab the fish and sausages, stomp the mice, dodge the hot burners and the chef's broom, and steal his plate of fish!"
+        "howTo": "The arrows walk, the big button or Space jumps. Grab the fish and sausages, stomp the mice, dodge the hot burners and the chef's broom, and steal his plate of fish."
       },
       "sound": "Sound",
       "play": "Play",
       "fab": "Play while you wait",
+      "cooking": "Your order is being made",
       "soundOff": "Turn sound on",
       "soundOn": "Sound is on"
     },

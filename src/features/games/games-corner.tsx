@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConciergeBell, Gamepad2 } from "lucide-react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
 import { GAMES, type GameId } from "./registry";
@@ -10,7 +11,6 @@ import { GAMES, type GameId } from "./registry";
 // the order turns ready, a banner covers the game and pauses it, so the
 // guest never misses their food.
 type Phase = "intro" | "loading" | "playing" | "over";
-const READY_ICON = "🍽️";
 const SOUND_KEY = "pativ:games:sound";
 
 function readSound(): boolean {
@@ -23,7 +23,7 @@ function readSound(): boolean {
 
 // The bottom bar's Games item brings the guest back here (#games) while the
 // order cooks (ADR-052; it replaced the floating "back to the games" button).
-export function GamesCorner({ ready }: { ready: boolean; waiting?: boolean }) {
+export function GamesCorner({ ready, waiting = false }: { ready: boolean; waiting?: boolean }) {
   const { t } = useGuestI18n();
   const [open, setOpen] = useState<GameId | null>(null);
   return (
@@ -35,7 +35,7 @@ export function GamesCorner({ ready }: { ready: boolean; waiting?: boolean }) {
         data-testid="games"
       >
         <div className="flex items-center gap-3">
-          <PadIcon className="text-apricot-on-dark size-9 flex-none" />
+          <Gamepad2 size={34} strokeWidth={1.75} className="text-apricot-on-dark flex-none" aria-hidden />
           <div>
             <h3 id="games-title" className="display-face text-2xl leading-tight">
               {t("games.title")}
@@ -75,28 +75,24 @@ export function GamesCorner({ ready }: { ready: boolean; waiting?: boolean }) {
           ))}
         </ul>
       </section>
-      {open && <GameLayer key={open} id={open} ready={ready} onClose={() => setOpen(null)} />}
+      {open && (
+        <GameLayer key={open} id={open} ready={ready} waiting={waiting} onClose={() => setOpen(null)} />
+      )}
     </>
   );
 }
 
-function PadIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" fill="currentColor">
-      <path d="M9.5 8h13a7.5 7.5 0 0 1 7.3 9.2l-1.4 6.2a3.6 3.6 0 0 1-6.3 1.4L19.6 22h-7.2l-2.5 2.8a3.6 3.6 0 0 1-6.3-1.4l-1.4-6.2A7.5 7.5 0 0 1 9.5 8Z" />
-      <path
-        d="M10 12.5v5M7.5 15h5"
-        stroke="var(--color-basalt, #0e1612)"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <circle cx="22.5" cy="13.5" r="1.6" fill="var(--color-basalt, #0e1612)" />
-      <circle cx="19.5" cy="16.5" r="1.6" fill="var(--color-basalt, #0e1612)" />
-    </svg>
-  );
-}
-
-function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose: () => void }) {
+function GameLayer({
+  id,
+  ready,
+  waiting,
+  onClose,
+}: {
+  id: GameId;
+  ready: boolean;
+  waiting: boolean;
+  onClose: () => void;
+}) {
   const { t, locale } = useGuestI18n();
   const def = GAMES.find((g) => g.id === id)!;
   const [phase, setPhase] = useState<Phase>("intro");
@@ -203,6 +199,9 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
       isPaused: () => paused.current,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       locale,
+      // The café's brand colour (guest theme tokens) for the few accents the
+      // games draw themselves, such as a pressed pad button.
+      accent: getComputedStyle(el).getPropertyValue("--guest-accent").trim() || undefined,
       sfx: (kind, pitch) => (sfx.current ??= createSfx(() => soundOn.current)).play(kind, pitch),
     };
     return game.mount(api);
@@ -230,7 +229,19 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </button>
-        <span className="min-w-0 flex-1 truncate font-semibold">{t(`games.${id}.name`)}</span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block truncate font-semibold">{t(`games.${id}.name`)}</span>
+          {/* A quiet line that the kitchen is still on it: the game yields to the real wait. */}
+          {waiting && !ready && (
+            <span className="text-slip-dim line-clamp-2 text-xs leading-tight" data-testid="game-cooking">
+              <span
+                aria-hidden="true"
+                className="bg-slip-dim me-1.5 inline-block size-1.5 rounded-full align-middle motion-safe:animate-pulse"
+              />
+              {t("games.cooking")}
+            </span>
+          )}
+        </span>
         <button
           type="button"
           onClick={() => setSound((on) => !on)}
@@ -262,9 +273,15 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
         {(phase === "intro" || phase === "loading") && (
           <div className="absolute inset-0 grid place-items-center p-6">
             <div className="grid max-w-sm justify-items-center gap-4 text-center">
-              <span aria-hidden="true" className="text-6xl">
-                {def.icon}
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- the same small static picture as the card */}
+              <img
+                src={`/games/${id}.webp`}
+                alt=""
+                width={480}
+                height={360}
+                decoding="async"
+                className="rounded-sheet ring-basalt-3 shadow-float aspect-[4/3] w-56 object-cover ring-1"
+              />
               <h2 className="display-face text-3xl">{t(`games.${id}.name`)}</h2>
               <p className="text-slip-dim">{t(`games.${id}.howTo`)}</p>
               {failed && <p className="text-pom-on-dark font-semibold">{t("games.loadFailed")}</p>}
@@ -272,7 +289,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
                 type="button"
                 onClick={() => void start()}
                 disabled={phase === "loading"}
-                className={`${button} bg-apricot text-ink hover:bg-apricot-on-dark min-w-40 disabled:opacity-70`}
+                className={`${button} bg-deep-accent text-on-deep-accent min-w-40 disabled:opacity-70`}
                 data-testid="game-start"
               >
                 {phase === "loading" ? t("games.loading") : t("games.start")}
@@ -303,7 +320,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
                 <button
                   type="button"
                   onClick={() => void start()}
-                  className={`${button} bg-apricot text-ink hover:bg-apricot-on-dark`}
+                  className={`${button} bg-deep-accent text-on-deep-accent`}
                 >
                   {t("games.again")}
                 </button>
@@ -326,9 +343,7 @@ function GameLayer({ id, ready, onClose }: { id: GameId; ready: boolean; onClose
             aria-labelledby="ready-title"
           >
             <div className="rounded-bottom-sheet bg-tarragon shadow-float grid max-w-sm justify-items-center gap-3 p-6 text-center text-white">
-              <span aria-hidden="true" className="text-5xl">
-                {READY_ICON}
-              </span>
+              <ConciergeBell size={48} strokeWidth={1.75} aria-hidden />
               <h2 id="ready-title" className="display-face text-3xl">
                 {t("games.ready")}
               </h2>
