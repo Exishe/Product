@@ -1,6 +1,6 @@
 import { animate } from "motion/mini";
 
-// The drawing half of Click Spark (spark.ts), shipped in the lazily loaded
+// The drawing half of the tap spark (spark.ts), shipped in the lazily loaded
 // engine chunk (engine.ts) so the menu's first JavaScript stays small.
 type Burst = { count: number; length: number; width: number; radius: number; duration: number };
 const SIZES: Record<"normal" | "big", Burst> = {

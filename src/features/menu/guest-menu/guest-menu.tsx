@@ -388,7 +388,20 @@ export function GuestMenu({
         inert={!scrolled}
       >
         <div className={`${COLUMN} flex h-16 items-center gap-3`}>
-          <span className="display-face min-w-0 flex-1 truncate text-2xl">{menu.restaurantName}</span>
+          {menu.wordmarkBar ? (
+            <span className="min-w-0 flex-1">
+              {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+              <img
+                src={dishPhotoUrl(menu.wordmarkBar)}
+                alt={menu.restaurantName}
+                height={40}
+                className="guest-wordmark-bar"
+                data-testid="slim-wordmark"
+              />
+            </span>
+          ) : (
+            <span className="display-face min-w-0 flex-1 truncate text-2xl">{menu.restaurantName}</span>
+          )}
           {table.kind === "ok" && (
             <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold">
               {t("table", { label: table.label })}

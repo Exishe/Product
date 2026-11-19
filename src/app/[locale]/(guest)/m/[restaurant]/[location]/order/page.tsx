@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
@@ -73,10 +74,12 @@ export default async function OrderStatusPage({
   const t = await getTranslations({ locale, namespace: "guest" });
   // The public key goes to the phone for «Notify me when it's ready» (ADR-049).
   const vapidPublicKey = vapidPublicKeyOrNull(process.env);
-  const wordmark = wordmarkOf(look?.brand);
+  const theme = guestTheme(look?.guest_theme);
+  // The wordmark that reads on the header band's colour (ADR-065).
+  const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).header);
 
   return (
-    <GuestThemeScope theme={guestTheme(look?.guest_theme)} brandColor={look?.brand_color} brand={look?.brand}>
+    <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>
       {table ? (
         <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
           <GuestHeader

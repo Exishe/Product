@@ -418,7 +418,7 @@ body:has(.admin-shell) {
   --guest-on-accent: #f6f1e7; /* 15.8:1 on noir */
   --guest-accent-text: #7f6135; /* small gold text: 5.1:1 on the page */
   --guest-glow: #a8844e; /* champagne: active glow, decoration only */
-  --guest-star: #d2b27a; /* the StarBorder star on noir */
+  --guest-star: #d2b27a; /* the second spark colour and the ring light on noir */
   --guest-soft: #6f655a; /* inactive tabs */
   --guest-dock: rgb(255 253 248 / 0.96);
   --guest-dock-ink: #1b1712;
@@ -501,7 +501,7 @@ body:has(.admin-shell) {
   font-family: var(--font-ui);
   background: var(--guest-page);
   color: var(--guest-ink);
-  /* Glows (StarBorder) bleed past their buttons; clip sideways overflow so
+  /* Glows and sparks bleed past their buttons; clip sideways overflow so
      they never widen the page (clip, unlike hidden, keeps sticky bars working). */
   overflow-x: clip;
 }
@@ -687,6 +687,15 @@ body:has(.admin-shell) {
 .guest-lux .guest-wordmark {
   display: block;
   height: 5rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left;
+}
+/* The same picture in the slim bar that stays while the menu scrolls. */
+.guest-lux .guest-wordmark-bar {
+  display: block;
+  height: 2.5rem;
   width: auto;
   max-width: 100%;
   object-fit: contain;

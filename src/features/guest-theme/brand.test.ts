@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   BRAND_FONTS,
@@ -10,6 +10,9 @@ import {
   ignoredRoles,
   mix,
   parseBrand,
+  pickWordmark,
+  wordmarkBackgrounds,
+  wordmarkTones,
   type Brand,
 } from "./brand";
 import { brandStyle, contrast, GUEST_THEMES, THEME_FACTS } from "./themes";
@@ -22,6 +25,7 @@ const BLANCA: Brand = {
   scriptFont: "Great Vibes",
   plate: "porcelain",
   wordmark: "r1/brand/1.webp",
+  wordmarkDark: "r1/brand/2.webp",
 };
 const vars = (s: unknown) => (s ?? {}) as Record<string, string>;
 
@@ -46,6 +50,26 @@ describe("parseBrand", () => {
       bodyFont: null,
       scriptFont: "Great Vibes",
       plate: "dark",
+      wordmark: "r1/brand/1.webp",
+      wordmarkDark: null,
+    });
+  });
+
+  it("reads the dark wordmark when the brand has one (ADR-065), alone or with the light one", () => {
+    expect(parseBrand({ wordmark: "r1/brand/1.webp", wordmark_dark: "r1/brand/2.webp" })).toMatchObject({
+      wordmark: "r1/brand/1.webp",
+      wordmarkDark: "r1/brand/2.webp",
+    });
+    expect(parseBrand({ wordmark_dark: "r1/brand/2.webp" })).toMatchObject({
+      wordmark: null,
+      wordmarkDark: "r1/brand/2.webp",
+    });
+    for (const bad of [7, "", null, { path: "x" }]) expect(parseBrand({ wordmark_dark: bad })).toBeNull();
+    expect(brandJson({ ...EMPTY_BRAND, wordmarkDark: "r1/brand/2.webp" })).toEqual({
+      wordmark_dark: "r1/brand/2.webp",
+    });
+    // A brand saved before the second slot never sends the new key.
+    expect(brandJson({ ...EMPTY_BRAND, wordmark: "r1/brand/1.webp" })).toEqual({
       wordmark: "r1/brand/1.webp",
     });
   });
@@ -164,6 +188,46 @@ describe("googleFontsHref", () => {
     expect(googleFontsHref({ ...EMPTY_BRAND, headingFont: "Prata", bodyFont: "PT Sans" })).toBe(
       "https://fonts.googleapis.com/css2?family=Prata&family=PT+Sans:wght@400;700&display=swap",
     );
+    expect(googleFontsHref({ ...EMPTY_BRAND, scriptFont: "Mrs Saint Delafield" })).toBe(
+      "https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap",
+    );
+  });
+});
+
+describe("pickWordmark", () => {
+  const both = { ...EMPTY_BRAND, wordmark: "light-bg.webp", wordmarkDark: "dark-bg.webp" };
+
+  it("takes the light-ink picture on a dark background and the dark-ink one on a light background", () => {
+    expect(pickWordmark(both, "#3e312f")).toBe("dark-bg.webp");
+    expect(pickWordmark(both, "#000000")).toBe("dark-bg.webp");
+    expect(pickWordmark(both, "#f9f0e3")).toBe("light-bg.webp");
+    expect(pickWordmark(both, "#ffffff")).toBe("light-bg.webp");
+  });
+
+  it("falls back to the only picture there is, and to none", () => {
+    expect(pickWordmark({ ...both, wordmarkDark: null }, "#3e312f")).toBe("light-bg.webp");
+    expect(pickWordmark({ ...both, wordmark: null }, "#f9f0e3")).toBe("dark-bg.webp");
+    expect(pickWordmark(EMPTY_BRAND, "#3e312f")).toBeNull();
+    expect(pickWordmark(null, "#3e312f")).toBeNull();
+  });
+
+  it("knows what is behind the wordmark: the header band, and the page under the slim bar", () => {
+    // Blanca: a dark band on a cream page.
+    expect(wordmarkBackgrounds("soft", BLANCA)).toEqual({ header: "#3e312f", page: "#f9f0e3" });
+    expect(wordmarkTones("soft", BLANCA)).toEqual({ header: true, page: false });
+    // No header colour: the name sits on the page.
+    expect(wordmarkTones("soft", { ...both })).toEqual({ header: false, page: false });
+    expect(wordmarkTones("wine", { ...both })).toEqual({ header: true, page: true });
+    expect(wordmarkTones("evening", null)).toEqual({ header: false, page: false });
+    // A page colour the theme ignores is not what guests see.
+    expect(wordmarkBackgrounds("wine", { ...both, colors: { page: "#f9f0e3" } }).page).toBe(
+      THEME_FACTS.wine.page,
+    );
+    // A light band on Wine's dark page.
+    expect(wordmarkTones("wine", { ...both, colors: { header: "#f9f0e3" } })).toEqual({
+      header: false,
+      page: true,
+    });
   });
 });
 
@@ -172,10 +236,20 @@ it("mix blends two colours", () => {
   expect(mix("#3e312f", "#3e312f", 0.3)).toBe("#3e312f");
 });
 
-it("the font list matches private.brand_fonts() in the migration", () => {
-  const sql = readFileSync("supabase/migrations/20261119100000_brand_profile.sql", "utf8");
-  const start = sql.indexOf("select array[", sql.indexOf("create function private.brand_fonts()"));
+it("the font list matches private.brand_fonts() in the newest migration that defines it", () => {
+  const dir = "supabase/migrations";
+  const defines = /create (or replace )?function private\.brand_fonts\(\)/;
+  const newest = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .reverse()
+    .map((f) => readFileSync(`${dir}/${f}`, "utf8"))
+    .find((sql) => defines.test(sql));
+  expect(newest).toBeDefined();
+  const sql = newest ?? "";
+  const start = sql.indexOf("select array[", sql.search(defines));
   const body = sql.slice(start, sql.indexOf("]", start));
   const inSql = [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
+  expect(inSql).toContain("Mrs Saint Delafield");
   expect(inSql).toEqual(BRAND_FONTS.map((f) => f.family).sort());
 });
