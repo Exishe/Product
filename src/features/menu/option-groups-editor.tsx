@@ -247,7 +247,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
                   onClick={() => edit(g)}
                   className={clsx(
                     "flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left",
-                    draft?.id === g.id && "bg-tarragon-tint/50",
+                    draft?.id === g.id && "bg-staff-fill",
                   )}
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
