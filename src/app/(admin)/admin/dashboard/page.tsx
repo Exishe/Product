@@ -1,14 +1,16 @@
 import { CircleAlert, Download, Grid2x2, Receipt } from "lucide-react";
 import Link from "next/link";
+import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AdminPage, Notice } from "@/features/admin-ui/page";
 import { button } from "@/features/admin-ui/styles";
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { parseDashboard } from "@/features/dashboard/model";
-import { businessDate, resolveRange } from "@/features/dashboard/range";
+import { businessDate, parseDateInput, resolveRange } from "@/features/dashboard/range";
 import { RangePicker } from "@/features/dashboard/range-picker";
 import { SalesDashboard } from "@/features/dashboard/sales-dashboard";
+import { TestDataPanel } from "@/features/dashboard/test-data-panel";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { createClient } from "@/lib/supabase/server";
@@ -31,7 +33,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   if (!location) notFound();
 
   const today = businessDate(new Date(), location.timezone, location.business_day_starts);
-  const range = resolveRange(await searchParams, today);
+  const params = await searchParams;
+  // hy and ru type dates as dd.mm.yyyy; the range code works with ISO.
+  const range = resolveRange(
+    { ...params, from: parseDateInput(params.from), to: parseDateInput(params.to) },
+    today,
+  );
   const [{ data: json, error }, t, locale] = await Promise.all([
     supabase
       .schema("api")
@@ -91,6 +98,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       ) : (
         <SalesDashboard data={data} locale={locale} />
       )}
+      <NextIntlClientProvider>
+        <TestDataPanel
+          from={range.from}
+          to={range.to}
+          period={
+            range.from === range.to
+              ? day(range.from)
+              : t("period", { from: day(range.from), to: day(range.to) })
+          }
+        />
+      </NextIntlClientProvider>
     </AdminPage>
   );
 }

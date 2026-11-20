@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, businessDate, resolveRange } from "./range";
+import { addDays, businessDate, parseDateInput, resolveRange, toDisplayDate } from "./range";
 
 describe("businessDate", () => {
   it("is the calendar date in Yerevan after the day starts", () => {
@@ -74,5 +74,23 @@ describe("resolveRange", () => {
       from: today,
       to: today,
     });
+  });
+});
+
+describe("date input", () => {
+  it("reads dd.mm.yyyy, other separators, short days and ISO", () => {
+    expect(parseDateInput("05.11.2026")).toBe("2026-11-05");
+    expect(parseDateInput(" 5/1/2026 ")).toBe("2026-01-05");
+    expect(parseDateInput("2026-11-05")).toBe("2026-11-05");
+  });
+
+  it("refuses dates that do not exist or are not dates", () => {
+    expect(parseDateInput("31.02.2026")).toBeUndefined();
+    expect(parseDateInput("yesterday")).toBeUndefined();
+    expect(parseDateInput("")).toBeUndefined();
+  });
+
+  it("shows ISO as dd.mm.yyyy", () => {
+    expect(toDisplayDate("2026-11-05")).toBe("05.11.2026");
   });
 });

@@ -1,13 +1,14 @@
 import { clsx } from "clsx";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { button, fieldLabel, input } from "@/features/admin-ui/styles";
+import { getLocale, getTranslations } from "next-intl/server";
+import { button, fieldLabel } from "@/features/admin-ui/styles";
+import { DateField } from "./date-field";
 import { addDays, MAX_DAYS, PRESETS, type Range } from "./range";
 
 // Presets as a segmented control of links and a custom range as a plain GET
 // form: works without JS.
 export async function RangePicker({ range, today }: { range: Range; today: string }) {
-  const t = await getTranslations("dashboard");
+  const [t, locale] = await Promise.all([getTranslations("dashboard"), getLocale()]);
   return (
     <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
       <nav aria-label={t("rangeLabel")} className="w-full sm:w-auto">
@@ -31,24 +32,17 @@ export async function RangePicker({ range, today }: { range: Range; today: strin
       <form method="get" action="/admin/dashboard" className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1">
           <span className={fieldLabel}>{t("from")}</span>
-          <input
-            type="date"
+          <DateField
             name="from"
-            defaultValue={range.from}
+            value={range.from}
             min={addDays(today, -(MAX_DAYS * 4))}
             max={today}
-            className={clsx(input, "num h-11 w-auto")}
+            locale={locale}
           />
         </label>
         <label className="flex flex-col gap-1">
           <span className={fieldLabel}>{t("to")}</span>
-          <input
-            type="date"
-            name="to"
-            defaultValue={range.to}
-            max={today}
-            className={clsx(input, "num h-11 w-auto")}
-          />
+          <DateField name="to" value={range.to} max={today} locale={locale} />
         </label>
         <button type="submit" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
           {t("apply")}

@@ -15,6 +15,23 @@ function valid(date: string | undefined): date is string {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === date;
 }
 
+// What a person types into a date field: dd.mm.yyyy (also with / or -, and
+// without leading zeros) or the ISO form. Returns ISO, or undefined.
+export function parseDateInput(raw: string | undefined): string | undefined {
+  const text = raw?.trim();
+  if (!text) return undefined;
+  if (valid(text)) return text;
+  const m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(text);
+  if (!m) return undefined;
+  const iso = `${m[3]}-${m[2]!.padStart(2, "0")}-${m[1]!.padStart(2, "0")}`;
+  return valid(iso) ? iso : undefined;
+}
+
+export function toDisplayDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
+
 export function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
