@@ -2,7 +2,6 @@ import { expect, type Browser, type BrowserContext, type Page } from "@playwrigh
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../src/lib/supabase/database";
 import type { Json } from "../../src/lib/supabase/types";
-import { noteAnonSignIn } from "./anon-count";
 import { createCafeWithMenu, newClient, type TestCafe } from "./guest-helpers";
 import { unique } from "./helpers";
 
@@ -75,7 +74,6 @@ export type Guest = { db: Db; sessionId: string };
 
 export async function seatGuest(cafe: TestCafe, table: string): Promise<Guest> {
   const db = newClient();
-  noteAnonSignIn("seatGuest");
   const { error } = await db.auth.signInAnonymously();
   if (error) throw new Error(`anonymous sign-in: ${error.message}`);
   const token = cafe.tables[table]?.token;

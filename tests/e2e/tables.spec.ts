@@ -17,7 +17,8 @@ test("an owner adds 12 tables, prints them on 3 A4 sheets, and reprints table 5"
     // The number field suggests the next free number.
     await expect(page.getByLabel("Համարը")).toHaveValue(String(n));
     await page.getByRole("button", { name: "Ավելացնել սեղան" }).click();
-    await expect(page.getByRole("status").filter({ hasText: `Ավելացվեց սեղան ${n}։` })).toBeVisible();
+    // The toast follows a remote write that can take seconds on a loaded dev database.
+    await expect(page.getByRole("status").filter({ hasText: `Ավելացվեց սեղան ${n}։` })).toBeVisible({ timeout: 15_000 });
   }
   await expect(page.getByTestId("table-row")).toHaveCount(12);
 

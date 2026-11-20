@@ -97,15 +97,19 @@ export async function createCafeWithMenu(opts: {
   must(await owner.from("menu_locations").insert({ ...r, menu_id: menuId, location_id: locationId }).select(), "menu location");
   must(await owner.from("menu_translations").insert(tr({ hy: "Ճաշացանկ", ru: "Меню", en: "Menu" }).map((x) => ({ ...x, menu_id: menuId }))).select(), "menu names");
 
+  // Independent inserts run side by side: each round trip to the dev database is
+  // slow from CI, and a café of ~50 sequential calls overran the 30 s hook limit.
   const categories: Record<string, string> = {};
-  for (const [sort, c] of opts.categories.entries()) {
-    const cid = must(await owner.from("categories").insert({ ...r, menu_id: menuId, sort }).select("id").single(), "category").id;
-    must(await owner.from("category_translations").insert(tr(c.names).map((x) => ({ ...x, category_id: cid }))).select(), "category names");
-    categories[c.key] = cid;
-  }
+  await Promise.all(
+    opts.categories.map(async (c, sort) => {
+      const cid = must(await owner.from("categories").insert({ ...r, menu_id: menuId, sort }).select("id").single(), "category").id;
+      must(await owner.from("category_translations").insert(tr(c.names).map((x) => ({ ...x, category_id: cid }))).select(), "category names");
+      categories[c.key] = cid;
+    }),
+  );
 
   const items: Record<string, string> = {};
-  for (const [sort, d] of opts.dishes.entries()) {
+  await Promise.all(opts.dishes.map(async (d, sort) => {
     const iid = must(
       await owner
         .from("items")
@@ -151,13 +155,15 @@ export async function createCafeWithMenu(opts: {
     }
     if (d.soldOut) must(await owner.from("stop_list").insert({ ...r, location_id: locationId, item_id: iid }).select(), "stop list");
     items[d.key] = iid;
-  }
+  }));
 
   const tables: TestCafe["tables"] = {};
-  for (const [sort, label] of (opts.tables ?? ["1", "2"]).entries()) {
-    const tid = must(await owner.from("tables").insert({ ...r, location_id: locationId, label, sort }).select("id").single(), "table").id;
-    tables[label] = { id: tid, token: must(await owner.schema("api").rpc("table_qr_token", { p_table_id: tid }), "token") };
-  }
+  await Promise.all(
+    (opts.tables ?? ["1", "2"]).map(async (label, sort) => {
+      const tid = must(await owner.from("tables").insert({ ...r, location_id: locationId, label, sort }).select("id").single(), "table").id;
+      tables[label] = { id: tid, token: must(await owner.schema("api").rpc("table_qr_token", { p_table_id: tid }), "token") };
+    }),
+  );
 
   must(await owner.schema("api").rpc("publish_menu", { p_location_id: locationId }), "publish");
   return { owner, slug, name, restaurantId, locationId, items, tables };
