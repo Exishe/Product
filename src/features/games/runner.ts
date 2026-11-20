@@ -29,7 +29,7 @@
 //   shade on right faces and undersides, soft elliptical contact shadows.
 // - Signature: the steaming coffee on the tray that tilts with every jump and
 //   never falls until the crash, under a warm-lit twin-peaked Ararat.
-import { C, clamp, fitCanvas, label, loop, pick, rand, roundRect, type Game, type Size } from "./engine";
+import { C, clamp, fitCanvas, hudPill, label, loop, pick, rand, roundRect, type Game, type Size } from "./engine";
 
 type Kind = "chair" | "cat" | "pot" | "puddle" | "crates" | "awning" | "laundry" | "sign";
 type Obstacle = { kind: Kind; x: number; w: number; h: number; hi: boolean; seed: number };
@@ -1096,11 +1096,7 @@ export const game: Game = {
       const s = clamp(u, 0.85, 1.2);
       const h = 36 * s;
       const y = 12;
-      const pill = (x: number, w: number) => {
-        ctx.fillStyle = "rgba(251,252,248,0.82)";
-        roundRect(ctx, x, y, w, h, h / 2);
-        ctx.fill();
-      };
+      const pill = (x: number, w: number) => hudPill(ctx, x, y, w, h);
       const cu = String(got);
       const sc = String(Math.max(0, score));
       pill(12, 52 * s + cu.length * 13 * s);

@@ -33,7 +33,7 @@
 //   juice, tea and stains in flat colour.
 // - Signature: the moustached chef popping up in the corner, lives as little
 //   pomegranates, and an arevakhach (eternity sign) burned faintly into the board.
-import { C, clamp, fitCanvas, label, loop, pointerPos, rand, roundRect } from "./engine";
+import { C, clamp, fitCanvas, hudPill, label, loop, pointerPos, rand, roundRect, textWidth } from "./engine";
 import type { Game } from "./engine";
 
 type G = CanvasRenderingContext2D;
@@ -1269,14 +1269,14 @@ export const game: Game = {
         blit(ctx, POM, 0, 11);
         ctx.restore();
       }
-      label(ctx, String(score), W - 15, 32, 34, C.ink, "right");
-      label(ctx, String(score), W - 16, 30, 34, C.matsoni, "right");
+      const sw = textWidth(ctx, String(score), 30);
+      hudPill(ctx, W - 28 - sw - 6, 12, sw + 28, 40);
+      label(ctx, String(score), W - 22, 32, 30, C.ink, "right");
       const m = mult();
       if (m > 1) {
-        const sw = ctx.measureText(String(score)).width;
         const s = 1 + multBump * 0.35;
         ctx.save();
-        ctx.translate(W - 16 - sw - 32, 30);
+        ctx.translate(W - 34 - sw - 32, 32);
         ctx.scale(s, s);
         roundRect(ctx, -22, -14, 44, 28, 14);
         F(ctx, C.apricot);

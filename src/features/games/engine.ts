@@ -64,8 +64,11 @@ export type SfxKind =
 /** A game mounts into the host's canvas and returns its cleanup. */
 export type Game = { mount(api: GameApi): () => void };
 
-// The café palette (globals.css), for drawing.
-export const C = {
+// The café palette (globals.css), for drawing. These are the defaults; the host
+// calls applyBrand() before a game loads, so the slots below that follow the
+// guest theme (accent, dark panel, ink, cream) take the café's colours.
+// Scenery and sprite colours (sky, tufa, tomato) stay fixed on purpose.
+const BASE = {
   matsoni: "#fbfcf8",
   ink: "#13241b",
   muted: "#4a5b51",
@@ -84,7 +87,107 @@ export const C = {
   sky: "#cfe6f2",
   tufa: "#d98c6a", // Yerevan's pink stone
   tufaDark: "#b06a4c",
-} as const;
+};
+export const C: Record<keyof typeof BASE, string> = { ...BASE };
+
+/** The font stack of the guest theme, for text drawn on the canvas. */
+let uiFont = '"Google Sans", system-ui, sans-serif';
+
+/** "#rrggbb" from a computed `rgb(...)` / `rgba(...)` string, or null. */
+export function rgbToHex(rgb: string): string | null {
+  const m = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(rgb.trim());
+  if (!m) return null;
+  return "#" + [m[1], m[2], m[3]].map((v) => Number(v).toString(16).padStart(2, "0")).join("");
+}
+
+/** Mixes a hex colour toward black (amount 0..1). */
+export function darken(hex: string, amount: number): string {
+  const k = 1 - amount;
+  return (
+    "#" +
+    [1, 3, 5]
+      .map((i) =>
+        Math.round(parseInt(hex.slice(i, i + 2), 16) * k)
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("")
+  );
+}
+
+function luma(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function rgbDistance(a: string, b: string): number {
+  const ch = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [p, q] = [ch(a), ch(b)];
+  return Math.hypot(p[0]! - q[0]!, p[1]! - q[1]!, p[2]! - q[2]!);
+}
+
+/** WCAG contrast ratio of two "#rrggbb" colours. */
+export function contrastRatio(a: string, b: string): number {
+  const [x, y] = [luma(a), luma(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * The palette for a café: `read` gives the resolved "#rrggbb" of a guest token
+ * (or null). A slot changes only when the result stays readable: the accent
+ * needs 3:1 against the dark panel (graphics), the ink 4.5:1 against the cream
+ * it is drawn on (text), the cream 3:1 against the panel. Pure, for tests.
+ */
+export function brandPalette(read: (token: string) => string | null): typeof BASE {
+  const p = { ...BASE };
+  const deep = read("--guest-deep");
+  const deep2 = read("--guest-deep-2");
+  const deep3 = read("--guest-deep-3");
+  const cream = read("--guest-deep-ink");
+  const accent = read("--guest-deep-accent");
+  if (deep && deep2 && deep3) {
+    p.basalt = deep;
+    p.basalt2 = deep2;
+    p.basalt3 = deep3;
+  }
+  if (deep && cream && contrastRatio(cream, deep) >= 3) p.matsoni = cream;
+  if (deep && contrastRatio(deep, BASE.matsoni) >= 4.5) p.ink = deep;
+  // An accent close to the tomato red would make the fighter's two attack
+  // buttons (spoon in the accent, pan in red) look alike: keep the default then.
+  if (deep && accent && contrastRatio(accent, deep) >= 3 && rgbDistance(accent, BASE.pomegranate) >= 100) {
+    p.apricot = accent;
+    p.apricotDeep = darken(accent, 0.25);
+  }
+  const good = read("--guest-success-on-deep");
+  if (deep && good && contrastRatio(good, deep) >= 3) p.tarragonLight = good;
+  return p;
+}
+
+/**
+ * Reads the café's colours and font from the guest theme tokens on `el`
+ * (--guest-*, set per café by brand.ts and per theme by data-guest-theme) into
+ * C. Call it before a game module loads: a few games build colour tables from C
+ * when the module is first evaluated.
+ */
+export function applyBrand(el: HTMLElement): void {
+  const probe = document.createElement("span");
+  probe.style.display = "none";
+  el.appendChild(probe);
+  const defined = getComputedStyle(el);
+  const read = (token: string): string | null => {
+    if (!defined.getPropertyValue(token).trim()) return null;
+    probe.style.color = "";
+    probe.style.color = `var(${token})`;
+    return rgbToHex(getComputedStyle(probe).color);
+  };
+  Object.assign(C, brandPalette(read));
+  const family = getComputedStyle(probe).fontFamily;
+  if (family) uiFont = family;
+  probe.remove();
+}
 
 export type Size = { w: number; h: number };
 
@@ -183,9 +286,12 @@ export function createFrameMeter(frames = 45, budgetMs = 24) {
 /**
  * requestAnimationFrame loop with dt in seconds, clamped so a stalled tab or
  * a pause never makes things jump. Skips updates while paused but keeps
- * drawing, so the last frame stays on screen. A hidden tab stops the loop
- * altogether (no battery spent behind the menu) and it resumes without a
- * jump. Slow frames step the canvas resolution down (DPR_STEPS).
+ * drawing, so the last frame stays on screen. A hidden tab (or a page sent to
+ * the back-forward cache) stops the loop altogether, so no frame callback or
+ * battery is spent in the background, and it resumes without a jump: the clock
+ * restarts on return, so time spent away never reaches a game. Games count
+ * time only from the dt they are given, never from the wall clock. Slow
+ * frames step the canvas resolution down (DPR_STEPS).
  */
 export function loop(api: GameApi, frame: (dt: number, paused: boolean) => void): () => void {
   let last = performance.now();
@@ -202,18 +308,27 @@ export function loop(api: GameApi, frame: (dt: number, paused: boolean) => void)
     if (!paused && meter.add(ms)) fitted.get(api.canvas)?.();
     id = requestAnimationFrame(tick);
   };
-  const onVisibility = () => {
+  const stop = () => {
     cancelAnimationFrame(id);
+    id = 0;
+  };
+  const resume = () => {
+    stop();
     if (document.hidden) return;
     last = performance.now();
     meter.reset();
     id = requestAnimationFrame(tick);
   };
+  const onVisibility = () => (document.hidden ? stop() : resume());
   document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", stop);
+  window.addEventListener("pageshow", resume);
   id = requestAnimationFrame(tick);
   return () => {
-    cancelAnimationFrame(id);
+    stop();
     document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", stop);
+    window.removeEventListener("pageshow", resume);
   };
 }
 
@@ -241,6 +356,19 @@ export function roundRect(
   ctx.closePath();
 }
 
+/**
+ * The one HUD plate of every game: a pill in the café's cream at 86%, so
+ * scores and counters (ink on it, 4.5:1 or better) read over any scenery.
+ */
+export function hudPill(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.globalAlpha = 0.86;
+  ctx.fillStyle = C.matsoni;
+  roundRect(ctx, x, y, w, h, h / 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 /** Numbers and short labels in the UI face. */
 export function label(
   ctx: CanvasRenderingContext2D,
@@ -252,11 +380,17 @@ export function label(
   align: CanvasTextAlign = "center",
   weight = 700,
 ) {
-  ctx.font = `${weight} ${Math.round(size)}px "Google Sans", system-ui, sans-serif`;
+  ctx.font = `${weight} ${Math.round(size)}px ${uiFont}`;
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
+}
+
+/** Width of `text` in the UI face (what `label` would draw). */
+export function textWidth(ctx: CanvasRenderingContext2D, text: string, size: number, weight = 700): number {
+  ctx.font = `${weight} ${Math.round(size)}px ${uiFont}`;
+  return ctx.measureText(text).width;
 }
 
 export function rand(min: number, max: number) {
