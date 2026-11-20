@@ -53,4 +53,33 @@ select test.act_as('e8000000-0000-0000-0000-000000000003', true);
 select test.fails(format('select api.set_orders_test(%L, %L, %L, true)', :'lt', :'today'::date, :'today'::date),
   'forbidden', 'a guest cannot flag orders');
 
+-- Paid bills of flagged orders leave revenue and the average check (ADR-066).
+reset role;
+insert into public.tables (restaurant_id, location_id, label) values (:'rt', :'lt', 'B1') returning id as tb \gset
+insert into public.table_sessions (restaurant_id, location_id, table_id, status) values (:'rt', :'lt', :'tb', 'closed') returning id as sb \gset
+insert into public.orders (id, restaurant_id, location_id, table_id, table_session_id, created_by_member, source, fulfillment, status,
+                           locale, business_date, number, idempotency_key, request_hash, placed_at)
+values ('e8a00000-0000-0000-0000-000000000009', :'rt', :'lt', :'tb', :'sb', :'owner_member', 'waiter', 'dine_in', 'accepted', 'hy',
+        :'today'::date - 3, 1, gen_random_uuid(), 'x', now() - interval '3 days');
+insert into public.bills (restaurant_id, location_id, table_session_id, business_date, number, status, subtotal, total, idempotency_key, closed_at)
+values (:'rt', :'lt', :'sb', :'today'::date - 3, 1, 'paid', 7000, 7000, gen_random_uuid(), now() - interval '3 days');
+
+select test.act_as('e8000000-0000-0000-0000-000000000001');
+select api.sales_dashboard(:'lt', :'today'::date - 3, :'today'::date - 3) as d1 \gset
+select test.ok((:'d1'::jsonb -> 'summary' ->> 'revenue')::int = 7000 and (:'d1'::jsonb -> 'summary' ->> 'bills')::int = 1, 'before flagging: the bill counts');
+select api.set_orders_test(:'lt', :'today'::date - 3, :'today'::date - 3, true);
+select api.sales_dashboard(:'lt', :'today'::date - 3, :'today'::date - 3) as d2 \gset
+select test.ok((:'d2'::jsonb -> 'summary' ->> 'revenue')::int = 0, 'after flagging: revenue is 0');
+select test.ok((:'d2'::jsonb -> 'summary' ->> 'bills')::int = 0 and (:'d2'::jsonb -> 'summary' ->> 'avg_bill')::int = 0, 'after flagging: no paid checks, average 0');
+reset role;
+select private.compute_metrics_daily(:'today'::date - 3);
+select test.ok((select revenue from public.metrics_daily m
+                where m.location_id = :'lt' and m.business_date = :'today'::date - 3) = 0, 'daily metrics revenue is 0 too');
+select test.ok(private.day_summary_payload(:'lt', :'today'::date - 3) ->> 'average_bill' is null, 'the day summary has no average bill');
+select test.act_as('e8000000-0000-0000-0000-000000000001');
+select api.set_orders_test(:'lt', :'today'::date - 3, :'today'::date - 3, false);
+select api.sales_dashboard(:'lt', :'today'::date - 3, :'today'::date - 3) as d3 \gset
+select test.ok((:'d3'::jsonb -> 'summary' ->> 'revenue')::int = 7000 and (:'d3'::jsonb -> 'summary' ->> 'bills')::int = 1, 'after un-flagging: the bill is back');
+reset role;
+
 \echo 'ORDERS TEST FLAG TESTS PASSED'

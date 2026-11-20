@@ -680,4 +680,6 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Consequences:
   - Existing dishes have no allergens until the owner fills them in; the guest filter keeps marking them "ask the waiter".
   - Flagging is by business day, so a café that wants to keep today's real orders must leave today out of the range.
+  - Amendment (migration `20261120100000_bills_test_orders`): paid bills were still summed with no test filter, so flagged orders kept their revenue and average check. A paid bill is test data when its table session has at least one order and every order of that session is `is_test`; bills with no session, or with one real order, still count.
+  - Fixed in `api.sales_dashboard` (paid, prev_paid), `private.compute_metrics_daily` and `private.day_summary_payload`; the bills CSV export stays a raw ledger (the orders export carries the test column).
   - The one-off flagging of Blanca's and the demo café's old orders is left to their owners, through the panel; no data was changed by hand.
