@@ -5,6 +5,7 @@ import {
   Banknote,
   BellRing,
   CircleDashed,
+  CircleHelp,
   ClipboardList,
   CreditCard,
   HandPlatter,
@@ -13,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useId, useState } from "react";
 import { areaLayout, tileAge, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
 // Every table state has a colour, an icon and a word (ADR-054), so it never
@@ -119,6 +121,8 @@ export function FloorMap({
 }) {
   const t = useTranslations("waiter");
   const layout = areaLayout(tables);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const legendId = useId();
   return (
     <section aria-label={t("floorMap")} className="grid content-start gap-4">
       <div className={clsx(layout.placed && "overflow-x-auto")}>
@@ -147,11 +151,22 @@ export function FloorMap({
           ))}
         </div>
       </div>
-      <section aria-labelledby="legend-title" className="grid gap-2">
-        <h2 id="legend-title" className="text-staff-label2 m-0 px-1 text-[0.8125rem] font-semibold">
+      <div className="grid gap-2">
+        <button
+          type="button"
+          aria-expanded={legendOpen}
+          aria-controls={legendId}
+          onClick={() => setLegendOpen((v) => !v)}
+          className="text-staff-label2 inline-flex min-h-11 items-center gap-1.5 justify-self-start rounded-xl px-2 text-[0.8125rem] font-semibold"
+        >
+          <CircleHelp aria-hidden="true" className="size-4 shrink-0" />
           {t("legend")}
-        </h2>
-        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-x-4 gap-y-2 rounded-2xl bg-white p-3">
+        </button>
+        <ul
+          id={legendId}
+          hidden={!legendOpen}
+          className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-x-4 gap-y-2 rounded-2xl bg-white p-3 [&[hidden]]:hidden"
+        >
           {STATES.map((s) => {
             return (
               <li key={s} className="flex min-w-0 items-center gap-2 text-[0.9375rem]">
@@ -166,7 +181,7 @@ export function FloorMap({
             );
           })}
         </ul>
-      </section>
+      </div>
     </section>
   );
 }

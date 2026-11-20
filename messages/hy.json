@@ -158,6 +158,8 @@
       "acknowledge": "Հասկացա",
       "pending": "Սպասում է կապի",
       "was": "Եղել է {quantity}",
+      "lineCancelled": "Չեղարկված է",
+      "units": { "g": "{amount} գ", "ml": "{amount} մլ", "pcs": "{amount} հատ" },
       "hours": "{hours} ժ",
       "allergy": "Ալերգիա․ կարդացեք նշումը"
     },

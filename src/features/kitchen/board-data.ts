@@ -10,7 +10,7 @@ type Client = SupabaseClient<Database>;
 // Live tickets of one station: what kitchen_tickets_live_idx covers. The order,
 // table and lines come along in one request.
 const TICKET_SELECT =
-  "id, kind, status, number, created_at, ready_at, first_seen_at, acknowledged_at, orders!kitchen_tickets_restaurant_id_order_id_fkey(source, guest_note, paid_at, tables(label)), kitchen_ticket_items(quantity, order_items(id, name_i18n, note, sort, quantity, cancelled_quantity, order_item_modifiers(name_i18n)))";
+  "id, kind, status, number, created_at, ready_at, first_seen_at, acknowledged_at, orders!kitchen_tickets_restaurant_id_order_id_fkey(source, guest_note, paid_at, tables(label)), kitchen_ticket_items(quantity, order_items(id, item_id, name_i18n, note, sort, quantity, cancelled_quantity, order_item_modifiers(name_i18n)))";
 
 export type Fetched<T> = { ok: true; data: T } | { ok: false; status: number };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { stationDishes } from "./station-dishes";
+import { sameNameDetails, stationDishes } from "./station-dishes";
 
 const snapshot = {
   menus: [
@@ -47,5 +47,34 @@ describe("stationDishes", () => {
   it("copes with a missing or empty menu", () => {
     expect(stationDishes(null, links, { id: "kitchen", isDefault: true }, "hy")).toEqual([]);
     expect(stationDishes({ menus: [], items: {} }, [], { id: "kitchen", isDefault: true }, "hy")).toEqual([]);
+  });
+});
+
+describe("sameNameDetails", () => {
+  const menu = {
+    menus: [
+      {
+        categories: [
+          { name: { en: "Starters" }, item_ids: ["a", "c"] },
+          { name: { en: "Mains" }, item_ids: ["b"] },
+        ],
+      },
+    ],
+    items: {
+      a: { name: { en: "Caesar" }, portion: { amount: 200, unit: "g" } },
+      b: { name: { en: "Caesar" }, portion: null },
+      c: { name: { en: "Soup" } },
+    },
+  };
+
+  it("describes only dishes that share a name", () => {
+    expect(sameNameDetails(menu, "en")).toEqual({
+      a: { section: "Starters", portion: { amount: 200, unit: "g" } },
+      b: { section: "Mains", portion: null },
+    });
+  });
+
+  it("is empty without a menu", () => {
+    expect(sameNameDetails(null, "en")).toEqual({});
   });
 });

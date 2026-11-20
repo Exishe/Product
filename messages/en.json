@@ -158,6 +158,8 @@
       "acknowledge": "Got it",
       "pending": "Waiting for connection",
       "was": "Was {quantity}",
+      "lineCancelled": "Cancelled",
+      "units": { "g": "{amount} g", "ml": "{amount} ml", "pcs": "{amount} pcs" },
       "hours": "{hours} h",
       "allergy": "Allergy: read the note"
     },
