@@ -306,7 +306,7 @@ export function DishSheet({
                     increase: t("sheet.increase"),
                     quantity: t("sheet.quantity"),
                   }}
-                  button="bg-surface shadow-card size-12"
+                  button="size-12"
                 />
               </span>
               <button

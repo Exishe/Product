@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motionNow, reducedMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -10,6 +10,17 @@ import type { GuestCategory } from "./view-model";
 
 export const sectionId = (id: string) => `cat-${id}`;
 
+// Every section on one sheet: fetched on the first tap of «Բաժիններ».
+const SectionList = lazy(() => import("./section-list").then((m) => ({ default: m.SectionList })));
+/** From this many sections the tabs get the "all sections" button. */
+const LIST_FROM = 6;
+
+/** Scrolls to a section; returns until when it stays the current one. */
+function scrollToSection(id: string): number {
+  document.getElementById(sectionId(id))?.scrollIntoView({ behavior: smooth(), block: "start" });
+  return performance.now() + 1500;
+}
+
 const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
 // Sticky section tabs. The tab of the section under the bar is highlighted
@@ -17,6 +28,10 @@ const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matc
 // element that slides from tab to tab on a spring (by transform, measured
 // from the tabs); without JavaScript or under reduced motion the current
 // tab simply has its own fill.
+//
+// A long menu (six sections or more) leads the tabs with «Բաժիններ», which
+// stays put while the tabs scroll and opens every section on one searchable
+// sheet (section-list.tsx): any section is two taps from anywhere.
 export function CategoryNav({
   categories,
   belowBar = false,
@@ -35,6 +50,11 @@ export function CategoryNav({
   const pill = useRef<HTMLSpanElement>(null);
   const shown = useRef<{ id: string | null; x: number; w: number } | null>(null);
   const place = useRef<(animate: boolean) => void>(() => {});
+  const [listing, setListing] = useState(false);
+  const go = (id: string) => {
+    setActive(id);
+    holdUntil.current = scrollToSection(id);
+  };
 
   useEffect(() => {
     let frame = 0;
@@ -114,7 +134,9 @@ export function CategoryNav({
     place.current(true);
     const tab = bar?.querySelector<HTMLElement>(`[data-cat="${current}"]`);
     if (!bar || !tab) return;
-    const left = tab.offsetLeft - 16;
+    // Clear of the «Բաժիններ» button, which stays at the tabs' left edge.
+    const lead = bar.querySelector<HTMLElement>("[data-testid=all-sections]");
+    const left = tab.offsetLeft - 16 - (lead ? lead.offsetWidth + 6 : 0);
     const right = tab.offsetLeft + tab.offsetWidth + 16 - bar.clientWidth;
     if (bar.scrollLeft > left) bar.scrollTo({ left, behavior: smooth() });
     else if (bar.scrollLeft < right) bar.scrollTo({ left: right, behavior: smooth() });
@@ -122,30 +144,65 @@ export function CategoryNav({
 
   if (categories.length < 2) return null;
   return (
-    <nav
-      ref={nav}
-      aria-label={t("menu.categories")}
-      data-current={current ?? undefined}
-      className={`bg-page/92 sticky z-10 -mx-4 flex gap-1.5 overflow-x-auto px-4 py-2.5 backdrop-blur-md transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"} ${styles.tabs} ${motionStyles.track}`}
-    >
-      <span ref={pill} aria-hidden="true" className={motionStyles.indicator} />
-      {categories.map((c) => (
-        <a
-          key={c.id}
-          href={`#${sectionId(c.id)}`}
-          data-cat={c.id}
-          aria-current={c.id === current ? "true" : undefined}
-          onClick={(e) => {
-            e.preventDefault();
-            setActive(c.id);
-            holdUntil.current = performance.now() + 1500;
-            document.getElementById(sectionId(c.id))?.scrollIntoView({ behavior: smooth(), block: "start" });
-          }}
-          className="text-soft hover:text-ink aria-[current=true]:bg-tab aria-[current=true]:text-on-tab rounded-pill flex min-h-11 flex-none items-center border [border-color:var(--guest-tab-border)] px-4 font-semibold whitespace-nowrap aria-[current=true]:border-transparent"
-        >
-          {c.name ? <Txt value={c.name} locale={locale} /> : null}
-        </a>
-      ))}
-    </nav>
+    <>
+      <nav
+        ref={nav}
+        aria-label={t("menu.categories")}
+        data-current={current ?? undefined}
+        className={`bg-page/92 sticky z-10 -mx-4 flex gap-1.5 overflow-x-auto px-4 py-2.5 backdrop-blur-md transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"} ${styles.tabs} ${motionStyles.track}`}
+      >
+        {categories.length >= LIST_FROM && (
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setListing(true)}
+            data-testid="all-sections"
+            className={`bg-surface text-ink rounded-pill sticky left-0 z-[2] flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 font-semibold whitespace-nowrap ${styles.allSections}`}
+          >
+            {/* Three lines, drawn here: lighter than one more icon in the first load. */}
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 6h16M4 12h16M4 18h16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            {t("menu.sections")}
+          </button>
+        )}
+        <span ref={pill} aria-hidden="true" className={motionStyles.indicator} />
+        {categories.map((c) => (
+          <a
+            key={c.id}
+            href={`#${sectionId(c.id)}`}
+            data-cat={c.id}
+            aria-current={c.id === current ? "true" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              go(c.id);
+            }}
+            className="text-soft hover:text-ink aria-[current=true]:bg-tab aria-[current=true]:text-on-tab rounded-pill flex min-h-11 flex-none items-center border [border-color:var(--guest-tab-border)] px-4 font-semibold whitespace-nowrap aria-[current=true]:border-transparent"
+          >
+            {c.name ? <Txt value={c.name} locale={locale} /> : null}
+          </a>
+        ))}
+      </nav>
+      {listing && (
+        <Suspense fallback={null}>
+          <SectionList
+            categories={categories}
+            current={current}
+            onClose={() => setListing(false)}
+            onPick={(id) => {
+              setListing(false);
+              // After the sheet has closed and given the page back its scroll.
+              requestAnimationFrame(() => go(id));
+            }}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }

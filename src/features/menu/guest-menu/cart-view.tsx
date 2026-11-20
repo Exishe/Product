@@ -6,22 +6,30 @@ import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import type { WaitRange } from "./hints";
-import { BackIcon, MinusIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
+import { BackIcon, MinusIcon, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
-function LineRow({
+// One line of the order: the order view's, and the desktop rail's in a
+// narrower cut (`dense`: no plate, smaller name, 44 px buttons).
+export function LineRow({
   priced,
   item,
+  detail,
   locked,
+  dense = false,
   onQuantity,
 }: {
   priced: PricedLine;
   item: GuestItem | undefined;
+  /** Another dish has this name: its description tells the two apart. */
+  detail: boolean;
   locked: boolean;
+  dense?: boolean;
   onQuantity: (id: string, quantity: number) => void;
 }) {
   const { t, locale } = useGuestI18n();
   const { line, status } = priced;
+  const step = `${STEP} ${dense ? "size-11" : "size-12"}`;
   const name = item?.name.text ?? "";
   const options = (item?.groups ?? []).flatMap((g) =>
     g.modifiers.filter((m) => line.modifierIds.includes(m.id)),
@@ -30,15 +38,15 @@ function LineRow({
   const available = status === "ok";
   // A plate only for a real photo: an empty plate per line tells the guest
   // nothing, so photoless lines read like a receipt.
-  const photo = item?.image ? dishPhotoUrl(item.image) : null;
+  const photo = !dense && item?.image ? dishPhotoUrl(item.image) : null;
   const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className={`border-line grid gap-x-4 gap-y-1 border-b py-5 last:border-b-0 ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
-      data-testid="cart-line"
+      className={`border-line grid gap-x-4 gap-y-1 border-b last:border-b-0 ${dense ? "py-3" : "py-5"} ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
-        <span className="row-span-4">
+        <span className="row-span-5">
           <Plate src={photo} size={64} muted={!available} className="size-16" />
         </span>
       )}
@@ -46,7 +54,7 @@ function LineRow({
         <Txt
           value={item.name}
           locale={locale}
-          className={`display-face text-[1.375rem] leading-tight break-words hyphens-auto ${available ? "" : "text-muted line-through"}`}
+          className={`display-face leading-tight break-words hyphens-auto ${dense ? "text-[1.125rem]" : "text-[1.375rem]"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
@@ -54,6 +62,9 @@ function LineRow({
       <span className="num text-right font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
+      {detail && item?.description && (
+        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-sm break-words`} />
+      )}
       {options.length > 0 && (
         <span className={`text-muted ${col} text-sm`}>
           {options.map((m, i) => (
@@ -81,7 +92,7 @@ function LineRow({
           <span className="inline-flex items-center gap-1">
             <button
               type="button"
-              className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
+              className={step}
               disabled={locked}
               aria-label={line.quantity === 1 ? t("cart.remove", { name }) : t("cart.decrease", { name })}
               onClick={() => onQuantity(line.id, line.quantity - 1)}
@@ -91,7 +102,7 @@ function LineRow({
             <output className="num min-w-7 text-center font-semibold">{line.quantity}</output>
             <button
               type="button"
-              className="bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]"
+              className={step}
               disabled={locked || line.quantity >= MAX_QUANTITY}
               aria-label={t("cart.increase", { name })}
               onClick={() => onQuantity(line.id, line.quantity + 1)}
@@ -120,6 +131,7 @@ function LineRow({
 export function CartView({
   summary,
   items,
+  ambiguous,
   locked,
   notice,
   footer,
@@ -129,6 +141,8 @@ export function CartView({
 }: {
   summary: CartSummary;
   items: Record<string, GuestItem>;
+  /** Dishes that share a name with another dish (view-model sameNamed). */
+  ambiguous: ReadonlySet<string>;
   locked: boolean;
   notice: ReactNode;
   footer: ReactNode;
@@ -162,6 +176,7 @@ export function CartView({
             key={p.line.id}
             priced={p}
             item={items[p.line.itemId]}
+            detail={ambiguous.has(p.line.itemId)}
             locked={locked}
             onQuantity={onQuantity}
           />

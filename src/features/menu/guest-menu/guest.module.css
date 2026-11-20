@@ -359,3 +359,153 @@
     animation: none;
   }
 }
+
+/* The café in a bar (guest-header.tsx BrandMark): the short header of the
+   order views and the slim bar that follows the scroll. Both wear the
+   brand's header band (.guest-head in globals.css) without its extra foot. */
+:global(.guest-lux[data-brand-header]) .bar.bar {
+  padding-bottom: 0;
+}
+
+.barWordmark {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 2.5rem;
+  object-fit: contain;
+  object-position: left;
+}
+
+/* The full name, never an ellipsis: it wraps to a second line, and a very
+   long one is set smaller on three. */
+.barName {
+  font-size: 1.25rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.barName[data-long] {
+  font-size: 0.9375rem;
+  line-height: 1.12;
+}
+
+/* The large wordmark shares its row with the controls from 768 px, so the
+   band stays low (5rem instead of globals.css's 7rem). */
+@media (min-width: 768px) {
+  :global(.guest-lux) img.wordmark {
+    height: 5rem;
+  }
+}
+
+/* A section's cover photo: a band above the title on a phone; from 768 px a
+   2:1 picture beside the title, so the whole plate stays in view instead of
+   a 1000 px strip of its top half. */
+.cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  margin-bottom: 1.25rem;
+  border-radius: var(--guest-r-card);
+  background: var(--guest-plate);
+  box-shadow: var(--guest-shadow-card);
+}
+
+@media (min-width: 768px) {
+  .sectionHead {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .sectionHead > h2 {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0.25rem;
+  }
+
+  .cover {
+    flex: none;
+    width: min(42%, 22rem);
+    aspect-ratio: 2 / 1;
+    margin-bottom: 0;
+  }
+}
+
+/* A printed section with a featured card (guest-menu.tsx). In one column
+   the card leads and the list's two halves join into one card. */
+.spreadLead {
+  margin-bottom: 1.25rem;
+}
+
+.spreadUnder {
+  border-bottom-width: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-bottom: 0;
+}
+
+.spreadSide[data-joined] {
+  border-top-width: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  padding-top: 0;
+}
+
+.spreadSide[data-joined] > li:first-child {
+  border-top-width: 1px;
+}
+
+/* Side by side (a tablet, and a desktop wide enough beside the order rail):
+   the card and the first lines in one column, the rest in the other. The
+   grid stretches both, so the columns end on the same line. */
+@media (min-width: 768px) and (max-width: 1023.98px), (min-width: 1280px) {
+  .spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    column-gap: 1.25rem;
+  }
+
+  .spreadLead {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .spread:not(:has(.spreadUnder)) .spreadLead {
+    margin-bottom: 0;
+  }
+
+  .spreadUnder {
+    grid-row: 2;
+    grid-column: 1;
+    border-bottom-width: 1px;
+    border-radius: var(--guest-r-feature);
+    padding-bottom: 0.25rem;
+  }
+
+  .spreadSide,
+  .spreadSide[data-joined] {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    border-top-width: 1px;
+    border-radius: var(--guest-r-feature);
+    padding-top: 0.25rem;
+  }
+
+  .spreadSide[data-joined] > li:first-child {
+    border-top-width: 0;
+  }
+}
+
+/* «Բաժիններ» at the left edge of the section tabs: it stays while the tabs
+   scroll under it, on a patch of the page colour. */
+.allSections {
+  box-shadow:
+    -1rem 0 0 0.375rem var(--guest-page),
+    0.25rem 0 0.5rem 0.25rem var(--guest-page);
+}

@@ -204,7 +204,7 @@ export function DishCard({
                   max={MAX_QUANTITY}
                   onChange={setQuantity}
                   labels={stepLabels}
-                  button="bg-page size-11"
+                  button="size-11"
                 />
               </span>
             )}

@@ -7,7 +7,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
-import { wordmarkOf } from "@/features/menu/guest-menu/view-model";
+import { sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { OrderStatusView } from "@/features/ordering/order-status-view";
@@ -52,14 +52,13 @@ export default async function OrderStatusPage({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const token = first((await searchParams).t);
-  const [resolved, look, hints, busy] = await Promise.all([
+  const [resolved, look, hints, published] = await Promise.all([
     token ? resolveTable(token) : null,
     lookOf(restaurant, location),
     getMenuHints(restaurant, location),
-    getPublicMenu(restaurant, location)
-      .then((m) => Boolean(m?.kitchen_busy))
-      .catch(() => false),
+    getPublicMenu(restaurant, location).catch(() => null),
   ]);
+  const busy = Boolean(published?.kitchen_busy);
   const table =
     resolved && resolved.restaurant_slug === restaurant && resolved.location_slug === location
       ? resolved
@@ -88,6 +87,8 @@ export default async function OrderStatusPage({
             wordmarkUrl={wordmark ? dishPhotoUrl(wordmark) : null}
             tableLabel={table.table_label}
             languages={languages}
+            // A short bar: the order starts near the top of the screen.
+            compact
           />
           <OrderStatusView
             tableId={table.table_id}
@@ -95,6 +96,8 @@ export default async function OrderStatusPage({
             vapidPublicKey={vapidPublicKey}
             // The kitchen's own "busy" wait wins over the usual one.
             wait={busy ? null : hints.wait}
+            // Two dishes with one name (blini with jam, blini with caviar) are told apart.
+            details={published ? sameNameDetails(published, locale) : undefined}
           />
         </GuestI18nProvider>
       ) : (

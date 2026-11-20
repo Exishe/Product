@@ -45,6 +45,13 @@ export function normalizeForSearch(text: string): string {
     .filter(Boolean)
     .map((word) =>
       transliterate(word)
+        // Latin names with accents (a wine list: «Carmenère», «Château») keep
+        // their letters; after transliterating, so й and ё stay whole.
+        .normalize("NFD")
+        .replace(/\p{M}+/gu, "")
+        // A Latin c sounds like s or k: «Сансер» finds Sancerre, «Մալբեկ» Malbec.
+        .replace(/c(?=[eiy])/g, "s")
+        .replace(/ck|c(?!h)/g, "k")
         .replace(/kh/g, "h")
         .replace(/gh/g, "g")
         .replace(/tz/g, "ts")

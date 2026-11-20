@@ -8,7 +8,7 @@ import motionStyles from "@/features/guest-theme/motion/motion.module.css";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
-import { CheckIcon, MinusIcon, Notice, PlusIcon, Txt } from "@/features/menu/guest-menu/ui";
+import { CheckIcon, MinusIcon, Notice, PlusIcon, STEP, Txt } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { formatAmd } from "@/lib/format/money";
@@ -206,10 +206,12 @@ function OrderCard({
   latest,
   below,
   wait = null,
+  details,
   onRepeat,
 }: {
   order: Order;
   latest: boolean;
+  details?: Record<string, string>;
   below?: ReactNode;
   wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
@@ -290,6 +292,11 @@ function OrderCard({
               <span className="num text-right font-semibold whitespace-nowrap">
                 {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
               </span>
+              {l.item_id && details?.[l.item_id] && (
+                <span className="text-soft col-start-1 text-sm break-words" data-testid="line-detail">
+                  {details[l.item_id]}
+                </span>
+              )}
               {mods.length > 0 && (
                 <span className="text-muted col-start-1 text-sm">
                   {mods.map((m, i) => (
@@ -335,12 +342,15 @@ export function OrderStatusView({
   menuHref,
   vapidPublicKey = null,
   wait = null,
+  details,
 }: {
   tableId: string;
   menuHref: string;
   vapidPublicKey?: string | null;
   /** The café's usual wait (ADR-060); null when it can't say, or the kitchen set its own. */
   wait?: WaitRange | null;
+  /** Descriptions of same-named dishes by dish id (view-model sameNameDetails). */
+  details?: Record<string, string>;
 }) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
@@ -469,8 +479,7 @@ export function OrderStatusView({
     }
     router.push(menuHref);
   };
-  const stepButton =
-    "bg-surface shadow-card disabled:text-line-strong grid size-12 place-items-center rounded-full [&_svg]:size-[18px]";
+  const stepButton = `${STEP} size-12`;
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
   const smooth = (): ScrollBehavior =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -532,6 +541,7 @@ export function OrderStatusView({
           order={latest}
           latest
           wait={wait}
+          details={details}
           onRepeat={closed ? undefined : repeat}
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
@@ -671,7 +681,13 @@ export function OrderStatusView({
             {t("order.earlier")}
           </h2>
           {earlier.map((o) => (
-            <OrderCard key={o.id} order={o} latest={false} onRepeat={closed ? undefined : repeat} />
+            <OrderCard
+              key={o.id}
+              order={o}
+              latest={false}
+              details={details}
+              onRepeat={closed ? undefined : repeat}
+            />
           ))}
           <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">
             <span>{t("order.allRounds")}</span>

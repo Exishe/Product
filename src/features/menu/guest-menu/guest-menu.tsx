@@ -1,7 +1,16 @@
 "use client";
 
 import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "lucide-react";
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
@@ -20,12 +29,12 @@ import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
 import { DishRow } from "./dish-row";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
-import { GuestHeader, type LanguageLink } from "./guest-header";
+import { BrandMark, GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
-import { CartBar, OrderPanel } from "./order-panel";
+import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
-import { Notice, dishPhotoUrl } from "./ui";
-import type { GuestItem, GuestMenuData } from "./view-model";
+import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
+import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
   { kind: "ok"; id: string; label: string; token: string } | { kind: "none" } | { kind: "invalid" };
@@ -42,6 +51,8 @@ const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
 // "Last time here": fetched only on a phone that has ordered at this café.
 const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.OrderAgain })));
+// The desktop's order rail: fetched only at 1024 px and up.
+const OrderRail = lazy(() => import("./order-rail").then((m) => ({ default: m.OrderRail })));
 // The allergy filter: fetched on the first tap of its button only.
 const AllergenFilter = lazy(() => import("./allergen-filter").then((m) => ({ default: m.AllergenFilter })));
 const warmSheet = () => {
@@ -61,12 +72,44 @@ const smooth = (): ScrollBehavior =>
 
 // The featured card of a section (three dishes or more): its first popular
 // dish with a photo that can be had today, else its first dish with a photo.
-// It spans the row and breaks the grid's rhythm.
-function featuredOf(items: GuestItem[]): string | undefined {
-  if (items.length < 3) return undefined;
-  const pictured = items.filter((i) => i.image && !i.soldOut);
+// It spans the row and breaks the grid's rhythm. A section with a cover
+// photo has none: the cover is its lead picture, and cafés cut covers from
+// their dish photos, so a card under it would show the same plate twice.
+function featuredOf(c: { items: GuestItem[]; cover: string | null }): string | undefined {
+  if (c.cover || c.items.length < 3) return undefined;
+  const pictured = c.items.filter((i) => i.image && !i.soldOut);
   return (pictured.find((i) => i.tags.includes("popular")) ?? pictured[0])?.id;
 }
+
+// A printed section beside its featured card (two columns): how many of its
+// lines go under the card so both columns end together. Heights are
+// estimated in "plain lines": a description or tags make a line taller, and
+// the card stands about four and a half lines tall. The grid then stretches
+// the shorter column, so the estimate only has to be close.
+const FEATURED_LINES = 4.5;
+const lineWeight = (i: GuestItem) =>
+  1 + (i.description ? 0.4 : 0) + (i.tags.length || i.portion ? 0.25 : 0) + (i.image ? 0.15 : 0);
+function underFeatured(rest: GuestItem[]): number {
+  const weights = rest.map(lineWeight);
+  const all = weights.reduce((s, w) => s + w, 0);
+  let best = 0;
+  let bestGap = Infinity;
+  let left = FEATURED_LINES;
+  for (let n = 0; n < rest.length; n++) {
+    const gap = Math.abs(left - (all + FEATURED_LINES - left));
+    if (gap < bestGap) [best, bestGap] = [n, gap];
+    left += weights[n] as number;
+  }
+  return best;
+}
+
+// A desktop: the order rail is on screen (and sends the order itself).
+const WIDE = "(min-width: 1024px)";
+const subscribeWide = (onChange: () => void) => {
+  const media = window.matchMedia(WIDE);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+};
 
 export function GuestMenu({
   menu,
@@ -129,12 +172,27 @@ export function GuestMenu({
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
 
+  const ambiguous = useMemo(() => sameNamed(menu.categories), [menu]);
+  const wide = useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia(WIDE).matches,
+    () => false,
+  );
+
+  // Dishes by name in any script; a section's own name («սպիտակ գինի»,
+  // "white wine") brings the whole section. Results stay under their section
+  // titles, so a found wine says which list it is on. While searching,
+  // sections show without their cover photos.
   const q = normalizeForSearch(query);
   const shown = useMemo(
     () =>
       q
         ? menu.categories
-            .map((c) => ({ ...c, items: c.items.filter((i) => i.search.includes(q)) }))
+            .map((c) =>
+              c.search.includes(q)
+                ? { ...c, cover: null }
+                : { ...c, cover: null, items: c.items.filter((i) => i.search.includes(q)) },
+            )
             .filter((c) => c.items.length)
         : menu.categories,
     [menu.categories, q],
@@ -261,7 +319,8 @@ export function GuestMenu({
 
   const count = summary.count;
   // The first featured photo on the page is fetched at once (likely the LCP).
-  const firstFeatured = shown.map((c) => featuredOf(c.items)).find(Boolean);
+  const firstFeatured = shown.map(featuredOf).find(Boolean);
+  const firstCover = shown.find((c) => c.cover)?.id;
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
   const iconButton =
     "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
@@ -288,6 +347,8 @@ export function GuestMenu({
       )}
     </span>
   );
+  const railAction =
+    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold";
   const header = (
     <GuestHeader
       cafeName={menu.restaurantName}
@@ -296,8 +357,22 @@ export function GuestMenu({
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
+      // The order view keeps the screen for the order: a short bar.
+      compact={view === "cart" && lines.length > 0}
     />
   );
+  const sender =
+    canOrder && table.kind === "ok" && orderHref ? (
+      <OrderSender
+        summary={summary}
+        locationId={menu.locationId}
+        table={table}
+        orderHref={orderHref}
+        onLocked={setLocked}
+        onSoldOut={onSoldOut}
+        onPlaced={clearCart}
+      />
+    ) : null;
 
   const dockItems: DockItem[] =
     table.kind === "ok"
@@ -347,23 +422,12 @@ export function GuestMenu({
         <CartView
           summary={summary}
           items={items}
+          ambiguous={ambiguous}
           locked={locked}
           notice={
             orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
           }
-          footer={
-            canOrder && table.kind === "ok" && orderHref ? (
-              <OrderSender
-                summary={summary}
-                locationId={menu.locationId}
-                table={table}
-                orderHref={orderHref}
-                onLocked={setLocked}
-                onSoldOut={onSoldOut}
-                onPlaced={clearCart}
-              />
-            ) : null
-          }
+          footer={sender}
           wait={menu.kitchenBusy ? null : hints.wait}
           onQuantity={(id, quantity) => {
             // removing the last line returns to the menu (screens.md)
@@ -381,29 +445,24 @@ export function GuestMenu({
       {/* Right under the header: once it has scrolled away, the slim bar shows. */}
       <div ref={sentinel} aria-hidden="true" />
       {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
+      {/* guest-head: it wears the brand's header band, so the wordmark drawn
+          for that band reads here too. */}
       <div
-        className={`bg-page/95 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.slim}`}
+        className={`guest-head text-ink bg-page/95 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.bar} ${styles.slim}`}
         data-shown={scrolled}
         data-testid="slim-bar"
         inert={!scrolled}
       >
-        <div className={`${COLUMN} flex h-16 items-center gap-3`}>
-          {menu.wordmarkBar ? (
-            <span className="min-w-0 flex-1">
-              {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-              <img
-                src={dishPhotoUrl(menu.wordmarkBar)}
-                alt={menu.restaurantName}
-                height={40}
-                className="guest-wordmark-bar"
-                data-testid="slim-wordmark"
-              />
-            </span>
-          ) : (
-            <span className="display-face min-w-0 flex-1 truncate text-2xl">{menu.restaurantName}</span>
-          )}
+        {/* 63 px and the hairline: 64 in all. */}
+        <div className={`${COLUMN} flex h-[63px] items-center gap-3`}>
+          <BrandMark
+            cafeName={menu.restaurantName}
+            logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
+            wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : null}
+            wordmarkTestId="slim-wordmark"
+          />
           {table.kind === "ok" && (
-            <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold">
+            <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap max-[359px]:hidden">
               {t("table", { label: table.label })}
             </span>
           )}
@@ -470,7 +529,7 @@ export function GuestMenu({
           </p>
         )}
         <CategoryNav categories={shown} belowBar={scrolled} />
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_14.5rem] xl:gap-14">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12">
           <main className="min-w-0">
             {shown.length === 0 ? (
               <p className="text-muted py-12 text-center" role="status">
@@ -483,7 +542,23 @@ export function GuestMenu({
                 // other reads as a printed menu (DishRow), led by its featured
                 // photo when it has one. No rows of identical empty plates.
                 const plates = c.items.filter((i) => i.image).length * 2 >= c.items.length;
-                const featured = featuredOf(c.items);
+                const featured = featuredOf(c);
+                const rest = c.items.filter((item) => item.id !== featured);
+                // Lines that go under the featured card when the two sit side by side.
+                const under = featured && !plates ? underFeatured(rest) : 0;
+                const rowList =
+                  "bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7";
+                const rows = (list: GuestItem[]) =>
+                  list.map((item) => (
+                    <DishRow
+                      key={item.id}
+                      item={item}
+                      canOrder={canOrder}
+                      warning={warningFor(item)}
+                      onOpen={setSheet}
+                      onQuickAdd={quickAdd}
+                    />
+                  ));
                 // The dish's place on the page, counted over the sections before.
                 const before = shown.slice(0, at).reduce((n, x) => n + x.items.length, 0);
                 return (
@@ -493,38 +568,37 @@ export function GuestMenu({
                     aria-labelledby={`h-${c.id}`}
                     className="scroll-mt-36 pt-8"
                   >
-                    {/* The section's cover photo (brand profile, ADR-058): decoration, the title names it. */}
-                    {c.cover && (
-                      // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
-                      <img
-                        src={dishPhotoUrl(c.cover)}
-                        alt=""
-                        width={1200}
-                        height={514}
-                        loading="lazy"
-                        className="guest-cover"
-                      />
-                    )}
-                    {/* guest-flourish: the brand's script font, when it has one (globals.css). */}
-                    {c.name && (
-                      <SplitText
-                        as="h2"
-                        id={`h-${c.id}`}
-                        text={c.name.text}
-                        lang={c.name.lang === locale ? undefined : c.name.lang}
-                        className={`display-face guest-flourish text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
-                      />
-                    )}
+                    {/* The section's cover photo (brand profile, ADR-058): decoration, the
+                        title names it. Above the title on a phone; beside it from
+                        768 px, where a full-width band would crop the plate away. */}
+                    <div className={c.cover ? styles.sectionHead : undefined}>
+                      {c.cover && (
+                        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                        <img
+                          src={dishPhotoUrl(c.cover)}
+                          alt=""
+                          width={1200}
+                          height={514}
+                          loading="lazy"
+                          fetchPriority={c.id === firstCover ? "high" : undefined}
+                          className={styles.cover}
+                        />
+                      )}
+                      {/* guest-flourish: the brand's script font, when it has one (globals.css). */}
+                      {c.name && (
+                        <SplitText
+                          as="h2"
+                          id={`h-${c.id}`}
+                          text={c.name.text}
+                          lang={c.name.lang === locale ? undefined : c.name.lang}
+                          className={`display-face guest-flourish text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
+                        />
+                      )}
+                    </div>
                     {!plates ? (
-                      <div
-                        className={
-                          featured
-                            ? "grid gap-5 md:grid-cols-2 md:items-start lg:grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
-                            : undefined
-                        }
-                      >
+                      <div className={featured ? styles.spread : undefined}>
                         {featured && (
-                          <ul className="grid grid-cols-2">
+                          <ul className={`grid grid-cols-2 ${styles.spreadLead}`}>
                             {c.items
                               .filter((item) => item.id === featured)
                               .map((item) => (
@@ -542,24 +616,32 @@ export function GuestMenu({
                               ))}
                           </ul>
                         )}
-                        {/* Two columns filled row by row (a grid, not CSS columns), so the
-                            hairlines sit between rows and no column ends on a stray rule. */}
-                        <ul
-                          className={`bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7 ${featured ? "" : "md:grid md:grid-cols-2 md:gap-x-12 md:[&>li:nth-child(2)]:border-t-0"}`}
-                        >
-                          {c.items
-                            .filter((item) => item.id !== featured)
-                            .map((item) => (
-                              <DishRow
-                                key={item.id}
-                                item={item}
-                                canOrder={canOrder}
-                                warning={warningFor(item)}
-                                onOpen={setSheet}
-                                onQuickAdd={quickAdd}
-                              />
-                            ))}
-                        </ul>
+                        {featured ? (
+                          // Beside the card the list is cut in two: the first lines sit
+                          // under the card, the rest fill the other column. In one
+                          // column (a phone) the two halves join into one list again.
+                          <>
+                            {under > 0 && (
+                              <ul className={`${rowList} ${styles.spreadUnder}`}>
+                                {rows(rest.slice(0, under))}
+                              </ul>
+                            )}
+                            <ul
+                              className={`${rowList} ${styles.spreadSide}`}
+                              data-joined={under > 0 || undefined}
+                            >
+                              {rows(rest.slice(under))}
+                            </ul>
+                          </>
+                        ) : (
+                          // Two columns filled row by row (a grid, not CSS columns), so the
+                          // hairlines sit between rows and no column ends on a stray rule.
+                          <ul
+                            className={`${rowList} md:grid md:grid-cols-2 md:gap-x-12 md:[&>li:nth-child(2)]:border-t-0`}
+                          >
+                            {rows(rest)}
+                          </ul>
+                        )}
                       </div>
                     ) : (
                       <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -588,12 +670,44 @@ export function GuestMenu({
           </main>
           <div className="hidden pt-8 lg:block">
             <div className="sticky top-36">
-              <OrderPanel
-                summary={summary}
-                items={items}
-                onOpen={openCart}
-                onRemove={(id) => changeQuantity(id, 0)}
-              />
+              {/* Only where the rail is on screen: a phone sends from the order view. */}
+              {wide && (
+                <Suspense fallback={null}>
+                  <OrderRail
+                    summary={summary}
+                    items={items}
+                    ambiguous={ambiguous}
+                    locked={locked}
+                    onQuantity={changeQuantity}
+                    onOpen={openCart}
+                    send={summary.blocked ? null : sender}
+                    below={
+                      table.kind === "ok" && (canOrder || orderHref) ? (
+                        <>
+                          {canOrder && (
+                            <button
+                              type="button"
+                              aria-pressed={waiter.state !== "idle"}
+                              onClick={waiter.ask}
+                              data-testid="call-waiter-rail"
+                              className={railAction}
+                            >
+                              <ConciergeBell size={18} aria-hidden />
+                              {t("order.callWaiter")}
+                            </button>
+                          )}
+                          {orderHref && (
+                            <a href={orderHref} className={railAction}>
+                              <CheckIcon />
+                              {t("panel.sent")}
+                            </a>
+                          )}
+                        </>
+                      ) : null
+                    }
+                  />
+                </Suspense>
+              )}
             </div>
           </div>
         </div>
@@ -633,11 +747,12 @@ export function GuestMenu({
           <AllergenFilter avoid={avoid} onChange={setAvoid} onClose={() => setChoosingAvoid(false)} />
         </Suspense>
       )}
+      {/* On a phone and a tablet; a desktop sees the dish land in the order rail. */}
       {toast && (
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:bottom-[calc(104px+env(safe-area-inset-bottom,0px))] ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
         >
           {toast.text}
         </p>
