@@ -8,6 +8,7 @@ export type EditorDish = {
   sort: number;
   prepAreaId: string | null;
   tags: string[];
+  allergens: string[];
   imagePath: string | null;
   names: Names;
   descriptions: Names;

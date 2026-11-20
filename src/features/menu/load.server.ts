@@ -34,7 +34,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     supabase
       .from("items")
       .select(
-        "id, category_id, price, sort, prep_area_id, tags, image_path, is_active, updated_at, item_translations(locale, name, description, source, reviewed_at, updated_at), item_modifier_groups(group_id, sort)",
+        "id, category_id, price, sort, prep_area_id, tags, allergens, image_path, is_active, updated_at, item_translations(locale, name, description, source, reviewed_at, updated_at), item_modifier_groups(group_id, sort)",
       )
       .eq("restaurant_id", restaurantId)
       .order("sort"),
@@ -103,6 +103,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
       sort: d.sort,
       prepAreaId: d.prep_area_id,
       tags: d.tags,
+      allergens: d.allergens,
       imagePath: d.image_path,
       names: names(d.item_translations),
       descriptions: names(d.item_translations, "description"),

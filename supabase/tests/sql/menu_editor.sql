@@ -38,6 +38,25 @@ select test.fails(format('select api.save_item(%L, %L::jsonb)', :'re',
 select test.fails(format('select api.save_item(%L, %L::jsonb)', :'re',
   jsonb_build_object('category_id', :'ecat', 'price', 100, 'names', '{"en": "No Armenian"}'::jsonb)), 'name_required', 'a dish needs an Armenian name');
 
+-- Allergens and diet tags: saved, kept when the key is missing, checked against the lists
+select api.save_item(:'re', jsonb_build_object('id', :'tolma', 'category_id', :'ecat', 'price', 3200,
+  'tags', '["vegetarian", "gluten_free"]'::jsonb, 'allergens', '["gluten", "nuts"]'::jsonb,
+  'names', '{"hy": "Տոլմա"}'::jsonb));
+select test.ok((select allergens from public.items where id = :'tolma') = '{gluten,nuts}', 'a dish keeps the allergens it was given');
+select test.ok((select tags from public.items where id = :'tolma') = '{vegetarian,gluten_free}', 'and its diet tags');
+select api.save_item(:'re', jsonb_build_object('id', :'tolma', 'category_id', :'ecat', 'price', 3200,
+  'names', '{"hy": "Տոլմա"}'::jsonb));
+select test.ok((select allergens from public.items where id = :'tolma') = '{gluten,nuts}', 'a save without the allergens key leaves them alone');
+select api.save_item(:'re', jsonb_build_object('id', :'tolma', 'category_id', :'ecat', 'price', 3200,
+  'allergens', '[]'::jsonb, 'names', '{"hy": "Տոլմա"}'::jsonb));
+select test.ok((select allergens from public.items where id = :'tolma') = '{}', 'an empty list clears them');
+select test.fails(format('select api.save_item(%L, %L::jsonb)', :'re',
+  jsonb_build_object('category_id', :'ecat', 'price', 100, 'allergens', '["kryptonite"]'::jsonb, 'names', '{"hy": "Սխալ"}'::jsonb)),
+  'invalid_allergen', 'an unknown allergen is refused');
+select test.fails(format('select api.save_item(%L, %L::jsonb)', :'re',
+  jsonb_build_object('category_id', :'ecat', 'price', 100, 'tags', '["halal"]'::jsonb, 'names', '{"hy": "Սխալ"}'::jsonb)),
+  'invalid_tag', 'an unknown tag is refused');
+
 -- Editing: clearing English removes it; an edited AI translation becomes the owner's
 reset role;
 update public.item_translations set source = 'ai', reviewed_at = null where item_id = :'tolma' and locale = 'ru';

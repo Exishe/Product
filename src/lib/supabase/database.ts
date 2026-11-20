@@ -366,6 +366,15 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    set_orders_test: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+        p_is_test: boolean;
+      };
+      Returns: number;
+    };
     set_section_cover: {
       Args: {
         p_category_id: string;
