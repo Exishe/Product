@@ -458,7 +458,8 @@ export function GuestMenu({
           <BrandMark
             cafeName={menu.restaurantName}
             logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-            wordmarkUrl={menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
+            wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : null}
+            wordmarkTestId="slim-wordmark"
           />
           {table.kind === "ok" && (
             <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap max-[359px]:hidden">

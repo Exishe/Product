@@ -1,6 +1,17 @@
 import { z } from "zod";
+import { ALLERGENS } from "./guest-menu/allergens";
 
-export const DISH_TAGS = ["popular", "new", "vegan", "spicy"] as const;
+// Diet tags first (they answer "can I eat this?"), then the café's own notes.
+// The same list the guest menu reads and api.save_item accepts.
+export const DISH_TAGS = [
+  "vegan",
+  "vegetarian",
+  "gluten_free",
+  "lactose_free",
+  "spicy",
+  "new",
+  "popular",
+] as const;
 
 // Owners type prices as "2500", "2 500" or "2 500 ֏". Whole drams only.
 export function parsePriceInput(raw: string): number | null {
@@ -20,6 +31,7 @@ export const dishInput = z.object({
   descriptions: perLocale(600),
   prepAreaId: z.uuid().nullable(),
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length),
+  allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length),
   modifierGroupIds: z.array(z.uuid()).max(20),
   markReviewed: z.boolean(),
   // Owner only; null clears it, undefined leaves it as it is.

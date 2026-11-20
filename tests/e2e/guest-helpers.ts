@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../src/lib/supabase/database";
 import { ownerEmail, ownerPassword, unique } from "./helpers";
+import { runOwner } from "./run-owner";
 
 // Guest tests talk to the dev project the same way the app does: with the
 // publishable key and a signed-in owner's own session (RLS applies).
@@ -55,9 +56,8 @@ export type TestDish = {
 };
 
 export type TestCafe = {
+  // The run's one owner (run-owner.ts): the same session for every café of this worker.
   owner: Db;
-  email: string;
-  password: string;
   slug: string;
   name: string;
   restaurantId: string;
@@ -66,8 +66,9 @@ export type TestCafe = {
   tables: Record<string, { id: string; token: string }>;
 };
 
-// A brand-new café with its own owner, menu, tables and a published menu, so
-// guest tests never change the demo café's menu.
+// A brand-new café with its own menu, tables and a published menu, so guest
+// tests never change the demo café's menu. It belongs to the run's one owner,
+// who owns every test café: queries through `owner` must name their café.
 export async function createCafeWithMenu(opts: {
   categories: { key: string; names: Names }[];
   dishes: TestDish[];
@@ -76,11 +77,7 @@ export async function createCafeWithMenu(opts: {
   ownerName?: string;
 }): Promise<TestCafe> {
   const id = unique();
-  const owner = newClient();
-  const email = `e2e-guest-${id}@pativ.test`;
-  const password = "e2e-password-123";
-  const signedUp = await owner.auth.signUp({ email, password });
-  if (signedUp.error) throw new Error(`sign-up: ${signedUp.error.message}`);
+  const owner = (await runOwner()).client;
   const name = opts.name ?? `Թեստ ${id}`;
   const slug = `e2e-${id}`;
   const restaurantId = must(
@@ -100,15 +97,19 @@ export async function createCafeWithMenu(opts: {
   must(await owner.from("menu_locations").insert({ ...r, menu_id: menuId, location_id: locationId }).select(), "menu location");
   must(await owner.from("menu_translations").insert(tr({ hy: "Ճաշացանկ", ru: "Меню", en: "Menu" }).map((x) => ({ ...x, menu_id: menuId }))).select(), "menu names");
 
+  // Independent inserts run side by side: each round trip to the dev database is
+  // slow from CI, and a café of ~50 sequential calls overran the 30 s hook limit.
   const categories: Record<string, string> = {};
-  for (const [sort, c] of opts.categories.entries()) {
-    const cid = must(await owner.from("categories").insert({ ...r, menu_id: menuId, sort }).select("id").single(), "category").id;
-    must(await owner.from("category_translations").insert(tr(c.names).map((x) => ({ ...x, category_id: cid }))).select(), "category names");
-    categories[c.key] = cid;
-  }
+  await Promise.all(
+    opts.categories.map(async (c, sort) => {
+      const cid = must(await owner.from("categories").insert({ ...r, menu_id: menuId, sort }).select("id").single(), "category").id;
+      must(await owner.from("category_translations").insert(tr(c.names).map((x) => ({ ...x, category_id: cid }))).select(), "category names");
+      categories[c.key] = cid;
+    }),
+  );
 
   const items: Record<string, string> = {};
-  for (const [sort, d] of opts.dishes.entries()) {
+  await Promise.all(opts.dishes.map(async (d, sort) => {
     const iid = must(
       await owner
         .from("items")
@@ -154,16 +155,18 @@ export async function createCafeWithMenu(opts: {
     }
     if (d.soldOut) must(await owner.from("stop_list").insert({ ...r, location_id: locationId, item_id: iid }).select(), "stop list");
     items[d.key] = iid;
-  }
+  }));
 
   const tables: TestCafe["tables"] = {};
-  for (const [sort, label] of (opts.tables ?? ["1", "2"]).entries()) {
-    const tid = must(await owner.from("tables").insert({ ...r, location_id: locationId, label, sort }).select("id").single(), "table").id;
-    tables[label] = { id: tid, token: must(await owner.schema("api").rpc("table_qr_token", { p_table_id: tid }), "token") };
-  }
+  await Promise.all(
+    (opts.tables ?? ["1", "2"]).map(async (label, sort) => {
+      const tid = must(await owner.from("tables").insert({ ...r, location_id: locationId, label, sort }).select("id").single(), "table").id;
+      tables[label] = { id: tid, token: must(await owner.schema("api").rpc("table_qr_token", { p_table_id: tid }), "token") };
+    }),
+  );
 
   must(await owner.schema("api").rpc("publish_menu", { p_location_id: locationId }), "publish");
-  return { owner, email, password, slug, name, restaurantId, locationId, items, tables };
+  return { owner, slug, name, restaurantId, locationId, items, tables };
 }
 
 // Base64url helpers for building tampered and forged tokens in tests.

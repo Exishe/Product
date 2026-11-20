@@ -17,11 +17,13 @@ export function BrandMark({
   cafeName,
   logoUrl,
   wordmarkUrl,
+  wordmarkTestId,
   as: Tag = "span",
 }: {
   cafeName: string;
   logoUrl: string | null;
   wordmarkUrl: string | null;
+  wordmarkTestId?: string;
   as?: "h1" | "span";
 }) {
   const { locale } = useGuestI18n();
@@ -30,7 +32,7 @@ export function BrandMark({
     return (
       <Tag className="m-0 flex min-w-0 flex-1 items-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-        <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} />
+        <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} data-testid={wordmarkTestId} />
       </Tag>
     );
   return (

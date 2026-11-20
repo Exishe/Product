@@ -31,7 +31,10 @@ export type PublicMenu = {
     brand_color?: string | null;
     /** Missing until migration 20261117120000_guest_theme is applied. */
     guest_theme?: string | null;
-    /** The brand profile (ADR-058); missing until migration 20261119100000_brand_profile. */
+    /**
+     * The brand profile (ADR-058); missing until migration 20261119100000_brand_profile,
+     * and without `wordmark_dark` until 20261119203419_brand_wordmark_dark (ADR-065).
+     */
     brand?: unknown;
   };
   location: { id: string; name: string; locales: string[]; ordering: boolean };
@@ -91,8 +94,10 @@ export type GuestMenuData = {
   brandColor: string | null;
   /** Storage path of the café's logo in the menu-images bucket. */
   logo: string | null;
-  /** Storage path of the café's wordmark, from the brand. */
+  /** Storage path of the café's wordmark for the header band, from the brand. */
   wordmark: string | null;
+  /** The wordmark for the slim bar, which sits on the page colour (ADR-065). */
+  wordmarkBar: string | null;
   locationId: string;
   locales: string[];
   ordering: boolean;
@@ -182,14 +187,25 @@ export function sameNameDetails(data: PublicMenu, locale: Locale): Record<string
   return out;
 }
 
-// Only the wordmark path is needed here; the rest of the brand is parsed by
+/** Is the background behind the wordmark dark? Worked out on the server (wordmarkTones in brand.ts). */
+export type WordmarkTones = { header: boolean; page: boolean };
+
+// Only the wordmark paths are needed here; the rest of the brand is parsed by
 // GuestThemeScope on the server (brand.ts stays out of the client bundle).
-export function wordmarkOf(brand: unknown): string | null {
-  const w = brand && typeof brand === "object" ? (brand as { wordmark?: unknown }).wordmark : null;
-  return typeof w === "string" && w ? w : null;
+// `wordmark` is drawn for light backgrounds, `wordmark_dark` for dark ones
+// (ADR-065); a café with only one of them gets that one everywhere.
+export function wordmarkOf(brand: unknown, onDark = false): string | null {
+  const b = brand && typeof brand === "object" ? (brand as Record<string, unknown>) : {};
+  const path = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const [light, dark] = [path(b.wordmark), path(b.wordmark_dark)];
+  return onDark ? (dark ?? light) : (light ?? dark);
 }
 
-export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData {
+export function buildGuestMenu(
+  data: PublicMenu,
+  locale: Locale,
+  dark: WordmarkTones = { header: false, page: false },
+): GuestMenuData {
   const soldOut = new Set(data.sold_out ?? []);
   const item = (id: string): GuestItem | null => {
     const raw = data.menu.items[id];
@@ -248,7 +264,8 @@ export function buildGuestMenu(data: PublicMenu, locale: Locale): GuestMenuData 
     theme: guestTheme(data.restaurant.guest_theme),
     brandColor: data.restaurant.brand_color ?? null,
     logo: data.restaurant.logo || null,
-    wordmark: wordmarkOf(data.restaurant.brand),
+    wordmark: wordmarkOf(data.restaurant.brand, dark.header),
+    wordmarkBar: wordmarkOf(data.restaurant.brand, dark.page),
     locationId: data.location.id,
     locales: data.location.locales,
     ordering: data.location.ordering,

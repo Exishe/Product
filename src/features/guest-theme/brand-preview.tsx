@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { BrandFonts } from "./brand-fonts";
-import { brandTokens, googleFontsHref, type Brand } from "./brand";
+import { brandTokens, googleFontsHref, pickWordmark, wordmarkBackgrounds, type Brand } from "./brand";
 import type { GuestTheme } from "./themes";
 
 const storageUrl = (path: string) =>
@@ -30,6 +30,8 @@ export function BrandPreview({
   const g = useTranslations("guest");
   const { style } = brandTokens(theme, brand, legacyColor);
   const fonts = googleFontsHref(brand);
+  // The picture that reads on the header band, as on the guest page (ADR-065).
+  const wordmark = pickWordmark(brand, wordmarkBackgrounds(theme, brand).header);
   const dishes = [t("previewDish1"), t("previewDish2")];
   return (
     <div
@@ -61,10 +63,10 @@ export function BrandPreview({
             ))}
           </span>
         </div>
-        {brand.wordmark ? (
+        {wordmark ? (
           // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
           <img
-            src={storageUrl(brand.wordmark)}
+            src={storageUrl(wordmark)}
             alt=""
             className="mt-3 block h-14 w-auto max-w-full object-contain"
           />

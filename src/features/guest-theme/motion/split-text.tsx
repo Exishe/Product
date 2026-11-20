@@ -4,11 +4,12 @@ import { useEffect, useRef, type CSSProperties, type ElementType } from "react";
 import { loadMotion, reducedMotion } from "./motion";
 import styles from "./motion.module.css";
 
-// Split Text, after React Bits (https://reactbits.dev/text-animations/split-text,
-// MIT + Commons Clause: used in our product, not resold): a heading rises in
-// letter by letter. Our version splits by grapheme (Intl.Segmenter), so
-// Armenian «և», accents and emoji stay whole, and keeps whole words
-// together so lines still break between words.
+// A heading that rises in letter by letter. The idea is a common one; the
+// owner picked it from the React Bits gallery ("Split Text"). This is our
+// own implementation (CSS keyframes, Intl.Segmenter, IntersectionObserver
+// and Motion's mini animate()); no React Bits code is used or copied here
+// (ADR-065). It splits by grapheme, so Armenian «և», accents and emoji stay
+// whole, and keeps whole words together so lines still break between words.
 // - reveal="load": plays at first paint in CSS, no JavaScript needed (the
 //   café name at the top must show at once, even before Motion arrives);
 // - reveal="view": plays once with Motion when the heading first scrolls
@@ -19,7 +20,10 @@ const LONG_WORD = 14; // longer words rise as one piece and may wrap anywhere
 let segmenter: Intl.Segmenter | null | undefined;
 function graphemes(text: string): string[] {
   if (segmenter === undefined)
-    segmenter = typeof Intl !== "undefined" && "Segmenter" in Intl ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+    segmenter =
+      typeof Intl !== "undefined" && "Segmenter" in Intl
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null;
   return segmenter ? Array.from(segmenter.segment(text), (s) => s.segment) : Array.from(text);
 }
 
@@ -60,7 +64,11 @@ export function SplitText({
           }
           // Rise out of a blur, letter by letter (no scale: a letter never grows
           // past its word box).
-          m.animate(chars, { filter: ["blur(6px)", "blur(0px)"] }, { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 });
+          m.animate(
+            chars,
+            { filter: ["blur(6px)", "blur(0px)"] },
+            { duration: 0.5, ease: "easeOut", delay: (i: number) => i * 0.032 },
+          );
           const run = m.animate(
             chars,
             { opacity: [0, 1], transform: ["translateY(0.7em)", "translateY(0)"] },
@@ -90,7 +98,12 @@ export function SplitText({
   let index = 0;
   const words = text.split(/(\s+)/);
   return (
-    <Tag ref={ref} id={id} lang={lang} className={`${styles.split} ${reveal === "load" ? styles.load : ""} ${className ?? ""}`}>
+    <Tag
+      ref={ref}
+      id={id}
+      lang={lang}
+      className={`${styles.split} ${reveal === "load" ? styles.load : ""} ${className ?? ""}`}
+    >
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {words.map((word, w) => {
@@ -98,14 +111,24 @@ export function SplitText({
           const parts = graphemes(word);
           if (parts.length > LONG_WORD)
             return (
-              <span key={w} data-char="" className={`${styles.char} ${styles.long}`} style={{ "--i": index++ } as CSSProperties}>
+              <span
+                key={w}
+                data-char=""
+                className={`${styles.char} ${styles.long}`}
+                style={{ "--i": index++ } as CSSProperties}
+              >
                 {word}
               </span>
             );
           return (
             <span key={w} className={styles.word}>
               {parts.map((g, i) => (
-                <span key={i} data-char="" className={styles.char} style={{ "--i": index++ } as CSSProperties}>
+                <span
+                  key={i}
+                  data-char=""
+                  className={styles.char}
+                  style={{ "--i": index++ } as CSSProperties}
+                >
                   {g}
                 </span>
               ))}

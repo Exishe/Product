@@ -3,9 +3,12 @@
 import { useEffect, type RefObject } from "react";
 import { loadMotion, motionNow } from "./motion";
 
-// Tilted Card, after React Bits (https://reactbits.dev/components/tilted-card,
-// MIT + Commons Clause): the card leans towards the pointer on a spring and
-// settles back when it leaves, with a soft glare that follows the pointer.
+// A tilting card. The idea (a card that leans towards the pointer) is a
+// common one; the owner picked it from the React Bits gallery ("Tilted
+// Card"). This is our own implementation, written for Motion's mini
+// animate(); no React Bits code is used or copied here (ADR-065).
+// The card leans towards the pointer on a spring and settles back when it
+// leaves, with a soft glare that follows the pointer.
 // On a touch screen it leans towards the finger while pressed (a little less
 // far) and never blocks scrolling (no preventDefault; a scroll cancels the
 // pointer and the card settles). Motion's mini animate() interrupts the
@@ -28,7 +31,9 @@ export function useTilt(ref: RefObject<HTMLElement | null>, { max = 12, touchMax
       if (!m) return false;
       m.animate(
         el,
-        { transform: `perspective(${PERSPECTIVE}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${s})` },
+        {
+          transform: `perspective(${PERSPECTIVE}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${s})`,
+        },
         { type: m.spring, stiffness: 240, damping: 20, mass: 0.7 },
       );
       return true;

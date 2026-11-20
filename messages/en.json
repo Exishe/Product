@@ -490,8 +490,13 @@
       "popular": "Popular",
       "new": "New",
       "vegan": "Vegan",
-      "spicy": "Spicy"
+      "spicy": "Spicy",
+      "vegetarian": "Vegetarian",
+      "gluten_free": "Gluten-free",
+      "lactose_free": "Lactose-free"
     },
+    "allergens": "Allergens",
+    "allergensHint": "Tick what the dish contains. Leave empty if you haven't checked: guests will be told to ask the waiter.",
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved",
@@ -1077,7 +1082,19 @@
     "emptyRange": "There were no orders on these days.",
     "error": "Couldn't load the sales. Refresh the page.",
     "export": "Export to CSV",
-    "menuAnalysis": "Menu analysis"
+    "menuAnalysis": "Menu analysis",
+    "testData": {
+      "title": "Test orders",
+      "hint": "Orders from a demo or a trial run can be left out of the numbers for the days shown. Nothing is deleted, and you can put them back.",
+      "exclude": "Leave out as test orders",
+      "include": "Count them again",
+      "confirmExclude": "Leave out all orders from {period}?",
+      "confirmInclude": "Count all orders from {period} again?",
+      "cancel": "Cancel",
+      "doneExcluded": "Left out {count, plural, one {# order} other {# orders}}.",
+      "doneIncluded": "Counted again: {count, plural, one {# order} other {# orders}}.",
+      "failed": "Couldn't change the orders. Try again."
+    }
   },
   "platform": {
     "title": "Cafés",
@@ -1180,15 +1197,18 @@
         "line": "Text on tags would be hard to read on this colour. Guests see it in the thin lines; tags get a shade closer to your page."
       },
       "wordmark": "Wordmark",
-      "wordmarkHint": "Your name as a picture. It replaces the typed name at the top of the menu. A PNG with a transparent background works best.",
+      "wordmarkHint": "Your name as a picture. It replaces the typed name at the top of the menu. A PNG with a transparent background works best. You can upload two versions: dark lettering for light backgrounds and light lettering for dark ones. With only one picture, it's used everywhere.",
       "wordmarkChoose": "Choose a picture",
       "wordmarkRemove": "Remove the wordmark",
+      "wordmarkRemoveDark": "Remove the wordmark for dark backgrounds",
+      "wordmarkLight": "For light backgrounds",
+      "wordmarkDark": "For dark backgrounds",
       "fonts": "Fonts",
       "fontsHint": "Free Google fonts with Latin and Cyrillic letters. Armenian text always uses Noto Serif Armenian or Noto Sans Armenian.",
       "heading": "Titles",
       "body": "Text",
       "script": "Script accent",
-      "scriptHint": "For section titles.",
+      "scriptHint": "For section titles. Mrs Saint Delafield has Latin letters only.",
       "themeFont": "The theme's font",
       "plate": "Plates",
       "plateHint": "How dish photos sit on the menu.",

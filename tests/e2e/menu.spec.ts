@@ -126,3 +126,39 @@ test("an owner adds a dish photo, marks a dish sold out for today and publishes"
   await page.getByRole("button", { name: "Հրապարակել" }).click();
   await expect(page.getByText("Հրապարակված է։ Հյուրերն արդեն տեսնում են նոր ճաշացանկը։")).toBeVisible();
 });
+
+test("an owner sets allergens and diet tags on a dish, and they are still there after a reload", async ({
+  page,
+}) => {
+  await createFreshCafe(page);
+  await page.goto("/admin/menu");
+  await page.getByRole("button", { name: "Լրացնել ձեռքով" }).click();
+  await page.getByLabel("Անունը հայերեն").fill("Աղցաններ");
+  await page.getByRole("button", { name: "Պահել" }).click();
+  await page.getByRole("button", { name: "+ Ավելացնել ուտեստ" }).click();
+  await page.getByLabel("Անունը հայերեն").fill("Գաթա");
+  await page.getByLabel("Գինը, ֏").fill("900");
+
+  const allergens = page.getByTestId("allergens");
+  await allergens.getByRole("button", { name: "գլյուտեն" }).click();
+  await allergens.getByRole("button", { name: "ընկույզ" }).click();
+  await page.getByRole("button", { name: "Բուսակերական" }).click();
+  await page.getByRole("button", { name: "Պահել" }).click();
+  await expect(page.getByText("Պահված է")).toBeVisible();
+
+  await page.reload();
+  await page.getByTestId("dish-row").filter({ hasText: "Գաթա" }).click();
+  await expect(page.getByTestId("allergens").getByRole("button", { name: "գլյուտեն" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByTestId("allergens").getByRole("button", { name: "ընկույզ" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByTestId("allergens").getByRole("button", { name: "ձու" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expect(page.getByRole("button", { name: "Բուսակերական" })).toHaveAttribute("aria-pressed", "true");
+});

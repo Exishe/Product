@@ -47,24 +47,6 @@
   }
 }
 
-/* Rotating Text: every word in one grid cell, so the box is as wide as the
-   widest word and the line never reflows. */
-.rotator {
-  display: inline-grid;
-  vertical-align: baseline;
-  overflow: clip;
-  overflow-clip-margin: 0.25em;
-  padding-block: 0.1em;
-}
-
-.rotator > * {
-  grid-area: 1 / 1;
-}
-
-.rotator > [data-current="false"] {
-  visibility: hidden;
-}
-
 /* Tilted Card, entrance: the first cards rise at first paint in CSS (no
    JavaScript needed); the rest wait below the fold (data-reveal, set by
    reveal.ts only) and rise as they scroll into view. */

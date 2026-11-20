@@ -26,9 +26,16 @@ async function addAndOpenCart(page: Page, dishName: string) {
 const guestSessionOf = (page: Page, tableId: string) =>
   page.evaluate((id) => (JSON.parse(localStorage.getItem(`pativ:guest:v1:${id}`) ?? "null") as { id: string } | null)?.id ?? null, tableId);
 
+// Sending an order is a remote write; the app itself waits up to 15 s for it. On CI the
+// dev database sometimes answers in seconds (its role cap is 3 s per statement).
+const ORDER_SENT_MS = 15_000;
+// Seeding a café is dozens of remote writes (guest-helpers.ts runs them side by side).
+const SETUP_MS = 60_000;
+
 test.describe("ordering at a fresh café", () => {
   test.use({ locale: "hy-AM" });
   test.beforeAll(async () => {
+    test.setTimeout(SETUP_MS);
     cafe = await createTestCafe(["1", "2", "3", "4"]);
   });
 
@@ -51,7 +58,7 @@ test.describe("ordering at a fresh café", () => {
       }
     });
     await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-    await expect(page.getByText("Կապ չկա։ Պատվերը պահված է, կուղարկենք, երբ կապը վերականգնվի։")).toBeVisible();
+    await expect(page.getByText("Կապ չկա։ Պատվերը պահված է, կուղարկենք, երբ կապը վերականգնվի։")).toBeVisible({ timeout: ORDER_SENT_MS });
     expect(answers).toHaveLength(1);
     // The cart is held as sent: it can't be changed into a different order.
     await expect(page.getByRole("button", { name: "Ավելացնել քանակը՝ Տոլմա" })).toBeDisabled();
@@ -84,7 +91,7 @@ test.describe("ordering at a fresh café", () => {
     await openMenuFromQr(page, table.token);
     await addAndOpenCart(page, "Բորանի");
     await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-    await expect(page).toHaveURL(/\/order\?t=/);
+    await expect(page).toHaveURL(/\/order\?t=/, { timeout: ORDER_SENT_MS });
 
     const order = page.getByTestId("order").first();
     await expect(order.getByRole("heading", { level: 2 })).toHaveText(/^Պատվեր \d+$/);
@@ -126,7 +133,7 @@ test.describe("ordering at a fresh café", () => {
     await expect(page.getByTestId("order-again")).toHaveCount(0);
     await addAndOpenCart(page, "Տոլմա");
     await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-    await expect(page).toHaveURL(/\/order\?t=/);
+    await expect(page).toHaveURL(/\/order\?t=/, { timeout: ORDER_SENT_MS });
 
     // "Order the same again" puts the round back in this table's cart.
     await page.getByRole("button", { name: "Կրկնել պատվերը" }).click();
@@ -158,7 +165,7 @@ test.describe("ordering at a fresh café", () => {
     await openMenuFromQr(page, table.token);
     await addAndOpenCart(page, "Տոլմա");
     await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-    await expect(page).toHaveURL(/\/order\?t=/);
+    await expect(page).toHaveURL(/\/order\?t=/, { timeout: ORDER_SENT_MS });
     const call = page.getByRole("button", { name: "Կանչել մատուցողին" });
     await call.click();
     await expect(page.getByText("Մատուցողը տեղեկացված է։")).toBeVisible();
@@ -196,7 +203,7 @@ test("two phones at one table ordering the same dishes: the second waits for the
     await add.click();
     await page.getByRole("button", { name: /View order/ }).click();
     await page.getByRole("button", { name: "Send to the kitchen" }).click();
-    await expect(page).toHaveURL(/\/order\?t=/);
+    await expect(page).toHaveURL(/\/order\?t=/, { timeout: ORDER_SENT_MS });
     const order = page.getByTestId("order").first();
     await expect(order).toHaveAttribute("data-status", /accepted|received/);
     statuses.push((await order.getAttribute("data-status")) ?? "");

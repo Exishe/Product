@@ -38,6 +38,7 @@ import {
   setDishPhoto,
   setSoldOut,
 } from "./actions";
+import { ALLERGENS, type Allergen } from "./guest-menu/allergens";
 import { resizeToWebp } from "./photo";
 import { DISH_TAGS, parsePriceInput } from "./schema";
 import { emptyNames, type EditorCategory, type EditorData, type EditorDish, type Names } from "./types";
@@ -84,6 +85,7 @@ function nameFor(names: Names, locale: Locale): string {
 // used to cover the whole list on phones and tablets.
 export function MenuEditor({ data }: { data: EditorData }) {
   const t = useTranslations("menu");
+  const tAllergen = useTranslations("guest.allergens");
   const locale = useLocale() as Locale;
   const router = useRouter();
   const wide = useMediaQuery("(min-width: 64rem)");
@@ -125,6 +127,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             costText: "",
             prepAreaId: null,
             tags: [],
+            allergens: [],
             names: emptyNames(),
             descriptions: emptyNames(),
             modifierGroupIds: [],
@@ -184,6 +187,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
           descriptions: d.descriptions,
           prepAreaId: d.prepAreaId,
           tags: d.tags as (typeof DISH_TAGS)[number][],
+          allergens: d.allergens as Allergen[],
           modifierGroupIds: d.modifierGroupIds,
           markReviewed: d.markReviewed,
           // Only when it changed: the cost lives in its own owner-only table.
@@ -550,6 +554,42 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 >
                   {on && <Check aria-hidden="true" className="size-4" />}
                   {t(`tag.${tag}`)}
+                </button>
+              );
+            })}
+          </fieldset>
+
+          <fieldset
+            className="m-0 flex min-w-0 flex-wrap gap-2 rounded-2xl border-0 bg-white p-4"
+            data-testid="allergens"
+          >
+            <legend className="float-left mb-1 w-full text-[0.9375rem] font-bold">{t("allergens")}</legend>
+            <p className="text-staff-label2 m-0 mb-1 w-full text-[0.9375rem]">{t("allergensHint")}</p>
+            {ALLERGENS.map((a) => {
+              const on = panel.draft.allergens.includes(a);
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    setPanel({
+                      kind: "dish",
+                      draft: {
+                        ...panel.draft,
+                        allergens: on
+                          ? panel.draft.allergens.filter((x) => x !== a)
+                          : [...panel.draft.allergens, a],
+                      },
+                    })
+                  }
+                  className={clsx(
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[0.9375rem] font-semibold",
+                    on ? "bg-ink text-white" : "bg-staff-fill text-ink",
+                  )}
+                >
+                  {on && <Check aria-hidden="true" className="size-4" />}
+                  {tAllergen(a)}
                 </button>
               );
             })}
