@@ -41,7 +41,7 @@ export function DateField({
       defaultValue={toDisplayDate(value)}
       placeholder="dd.mm.yyyy"
       maxLength={10}
-      pattern="\d{1,2}[./-]\d{1,2}[./-]\d{4}"
+      pattern="\d{1,2}[.\/\-]\d{1,2}[.\/\-]\d{4}"
       className={clsx(input, "num h-11 w-36")}
     />
   );

@@ -156,7 +156,7 @@ test("an owner sets allergens and diet tags on a dish, and they are still there 
     "aria-pressed",
     "true",
   );
-  await expect(page.getByTestId("allergens").getByRole("button", { name: "ձու" })).toHaveAttribute(
+  await expect(page.getByTestId("allergens").getByRole("button", { name: "ձու", exact: true })).toHaveAttribute(
     "aria-pressed",
     "false",
   );
