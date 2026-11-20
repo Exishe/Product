@@ -33,7 +33,10 @@ async function createLogin(page: Page, role: "waiter" | "kitchen", ending: strin
   await form.getByLabel("Ում համար").selectOption(role);
   await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill(ending);
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
-  const username = await form.getByTestId("created-username").textContent({ timeout: 20_000 });
+  // The result of an earlier creation stays on screen until this one answers, so wait for this ending.
+  const created = form.getByTestId("created-username");
+  await expect(created).toHaveText(new RegExp(`-${ending}$`), { timeout: 20_000 });
+  const username = await created.textContent();
   const password = (await form.getByTestId("staff-password").textContent())?.trim() ?? "";
   expect(password).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
   return { username: (username ?? "").trim(), password };
