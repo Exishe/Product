@@ -64,6 +64,7 @@ async function orderAsGuest(context: BrowserContext, token: string): Promise<Pag
 
 test.describe("guest push at a fresh café", () => {
   test.beforeAll(async () => {
+    test.setTimeout(60_000); // seeding a café is dozens of remote writes
     cafe = await createTestCafe(TABLES);
   });
 
