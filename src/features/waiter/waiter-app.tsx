@@ -393,7 +393,7 @@ function App(p: WaiterAppProps) {
   return (
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
-        <p className="m-0 min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">{p.cafeName}</p>
+        <p className="m-0 min-w-0 flex-1 text-[0.9375rem] leading-tight font-semibold [overflow-wrap:anywhere]">{p.cafeName}</p>
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         {/* The outbox stays visible until it is empty, online or not: a waiter
             who can't see a queued order enters it again. */}

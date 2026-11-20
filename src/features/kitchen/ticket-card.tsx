@@ -231,6 +231,27 @@ function Lines({
             >
               {l.name}
             </span>
+            {l.detail && (l.detail.section || l.detail.portion) && (
+              <span
+                data-testid="line-detail"
+                className={clsx("text-slip-dim col-start-2 font-semibold", compact ? "text-base" : "text-xl")}
+              >
+                {[
+                  l.detail.section,
+                  l.detail.portion && t(`units.${l.detail.portion.unit}`, { amount: l.detail.portion.amount }),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
+            {gone && !struck && (
+              <span
+                data-testid="line-cancelled"
+                className="text-pom-on-dark col-start-2 text-base font-bold"
+              >
+                {t("lineCancelled")}
+              </span>
+            )}
             {l.modifiers.length > 0 && (
               <span
                 data-testid="line-modifiers"

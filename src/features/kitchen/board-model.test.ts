@@ -35,6 +35,7 @@ function row(over: Partial<TicketRow> = {}): TicketRow {
       {
         quantity: 2,
         order_items: {
+          item_id: null,
           id: "i1",
           name_i18n: { hy: "Հավի խորոված", ru: "Хоровац из курицы", en: "Chicken khorovats" },
           note: "Լավ եփած",
@@ -47,6 +48,7 @@ function row(over: Partial<TicketRow> = {}): TicketRow {
       {
         quantity: 1,
         order_items: {
+          item_id: null,
           id: "i0",
           name_i18n: { hy: "Ամառային աղցան" },
           note: null,

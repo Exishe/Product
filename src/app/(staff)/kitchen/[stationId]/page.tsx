@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { fetchSoldOut, fetchTicketRows } from "@/features/kitchen/board-data";
 import { toBoardTickets } from "@/features/kitchen/board-model";
 import { KitchenBoard } from "@/features/kitchen/kitchen-board";
-import { stationDishes } from "@/features/kitchen/station-dishes";
+import { sameNameDetails, stationDishes } from "@/features/kitchen/station-dishes";
 import { requireMember } from "@/lib/auth/require-member";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,6 +67,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
   const locale = location.kitchen_locale;
   const t = await getTranslations({ locale, namespace: "kitchen" });
   const messages = await getMessages({ locale });
+  const lineDetails = sameNameDetails(board.snapshot, locale);
   const title = (s: { name: string; is_default: boolean }) => (s.is_default && s.name === SYSTEM_STATION_NAME ? t("title") : s.name);
 
   return (
@@ -80,9 +81,10 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
           timeZone: location.timezone,
           businessDayStarts: location.business_day_starts,
         }}
-        initialTickets={toBoardTickets(board.rows, locale)}
+        initialTickets={toBoardTickets(board.rows, locale, lineDetails)}
         initialBusy={{ until: location.kitchen_busy_until, minutes: location.expected_wait_minutes }}
         initialSoldOut={board.soldOut}
+        lineDetails={lineDetails}
         dishes={stationDishes(board.snapshot, board.links, { id: station.id, isDefault: station.is_default }, locale)}
         renderedAt={board.renderedAt}
         userId={board.userId}

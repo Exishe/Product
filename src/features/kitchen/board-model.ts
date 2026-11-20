@@ -28,6 +28,7 @@ export type TicketRow = {
     quantity: number;
     order_items: {
       id: string;
+      item_id: string | null;
       name_i18n: Json;
       note: string | null;
       sort: number;
@@ -49,7 +50,11 @@ export type BoardLine = {
   note: string | null;
   modifiers: LocalizedText[];
   allergy: boolean; // the line's note mentions an allergy
+  detail?: LineDetail | null; // tells a dish apart from a same-named one
 };
+
+// Section and portion of a dish that shares its name with another one.
+export type LineDetail = { section: string | null; portion: { amount: number; unit: "g" | "ml" | "pcs" } | null };
 
 export type BoardTicket = {
   id: string;
@@ -141,7 +146,11 @@ export function mentionsAllergy(note: string | null | undefined): boolean {
 
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
 
-export function toBoardTickets(rows: readonly TicketRow[], locale: Locale): BoardTicket[] {
+export function toBoardTickets(
+  rows: readonly TicketRow[],
+  locale: Locale,
+  details: Readonly<Record<string, LineDetail>> = {},
+): BoardTicket[] {
   const out: BoardTicket[] = [];
   for (const r of rows) {
     if (!LIVE.includes(r.status)) continue;
@@ -169,6 +178,7 @@ export function toBoardTickets(rows: readonly TicketRow[], locale: Locale): Boar
         note: oi.note?.trim() || null,
         modifiers: oi.order_item_modifiers.map((m) => pickName(m.name_i18n, locale)),
         allergy: mentionsAllergy(oi.note),
+        detail: (oi.item_id && details[oi.item_id]) || null,
       });
     }
     if (r.kind === "order" && lines.every((l) => l.quantity === 0)) continue;

@@ -158,6 +158,8 @@
       "acknowledge": "Понятно",
       "pending": "Ждёт связи",
       "was": "Было {quantity}",
+      "lineCancelled": "Отменено",
+      "units": { "g": "{amount} г", "ml": "{amount} мл", "pcs": "{amount} шт." },
       "hours": "{hours} ч",
       "allergy": "Аллергия: прочтите примечание"
     },

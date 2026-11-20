@@ -31,6 +31,7 @@ import {
   lineKey,
   pruneStruck,
   toBoardTickets,
+  type LineDetail,
   type BoardTicket,
   type KitchenAction,
   type ShownTicket,
@@ -53,6 +54,7 @@ export type KitchenBoardProps = {
   initialBusy: BusyState;
   initialSoldOut: string[];
   dishes: DishSection[];
+  lineDetails: Record<string, LineDetail>; // same-named dishes, by dish id
   renderedAt: number;
   userId: string;
   memberId: string;
@@ -189,7 +191,7 @@ function Board(p: KitchenBoardProps) {
           setFetchFailed(true);
           return;
         }
-        const next = toBoardTickets(res.data, locale);
+        const next = toBoardTickets(res.data, locale, p.lineDetails);
         const arrived = next.filter((x) => !known.current.has(x.id));
         for (const x of next) known.current.add(x.id);
         setTickets(next);
@@ -210,7 +212,7 @@ function Board(p: KitchenBoardProps) {
     } finally {
       inFlight.current = false;
     }
-  }, [p.station.id, locale]);
+  }, [p.station.id, p.lineDetails, locale]);
 
   const refreshExtras = useCallback(async () => {
     const sb = getBrowserClient();
