@@ -32,7 +32,34 @@ create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text,
   is_anonymous boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- The columns the staff-login functions (ADR-067) and the seed write.
+  instance_id uuid,
+  aud text,
+  role text,
+  encrypted_password text,
+  email_confirmed_at timestamptz,
+  raw_app_meta_data jsonb,
+  raw_user_meta_data jsonb,
+  updated_at timestamptz,
+  confirmation_token text,
+  email_change text,
+  email_change_token_new text,
+  recovery_token text,
+  banned_until timestamptz,
+  last_sign_in_at timestamptz
+);
+
+create table if not exists auth.identities (
+  id uuid primary key default gen_random_uuid(),
+  provider_id text not null,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  identity_data jsonb not null default '{}',
+  provider text not null,
+  last_sign_in_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz,
+  unique (provider_id, provider)
 );
 
 create or replace function auth.jwt() returns jsonb
