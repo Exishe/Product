@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConciergeBell, Gamepad2 } from "lucide-react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
-import { bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
+import { applyBrand, bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
 import { GAMES, type GameId } from "./registry";
 
 // "Play while you wait" on the order status page: five small games in a
@@ -111,6 +111,7 @@ function GameLayer({
     paused.current = showReady;
   }, [showReady]);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(null);
   const pushed = useRef(false);
   // Sound is off until the guest turns it on (a café), and the choice is kept.
@@ -163,6 +164,9 @@ function GameLayer({
 
   const start = async () => {
     setFailed(false);
+    // The café's colours and font for the canvas, read before the game's code
+    // is first evaluated (some games build colour tables from them).
+    if (layer.current) applyBrand(layer.current);
     if (!gameRef.current) {
       setPhase("loading");
       try {
@@ -213,13 +217,14 @@ function GameLayer({
 
   return (
     <div
+      ref={layer}
       role="dialog"
       aria-modal="true"
       aria-label={t(`games.${id}.name`)}
       className="bg-basalt text-slip fixed inset-0 z-50 flex flex-col"
       data-testid="game-layer"
     >
-      <div className="mx-auto flex h-14 w-full max-w-[900px] flex-none items-center gap-3 px-3">
+      <div className="mx-auto flex h-14 w-full max-w-[900px] flex-none items-center gap-1.5 px-2 min-[400px]:gap-3 min-[400px]:px-3">
         <button
           type="button"
           onClick={close}
@@ -256,8 +261,8 @@ function GameLayer({
         >
           <SpeakerIcon on={sound} />
         </button>
-        <span className="text-right text-sm leading-tight">
-          <span className="text-slip-dim block">{t("games.best", { score: best })}</span>
+        <span className="max-w-[7rem] flex-none text-right text-sm leading-tight">
+          <span className="text-slip-dim block truncate">{t("games.best", { score: best })}</span>
           <span className="num text-apricot-on-dark block text-lg font-semibold" aria-live="off">
             {score}
           </span>

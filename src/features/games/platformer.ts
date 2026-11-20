@@ -31,7 +31,7 @@
 //   world; flat fills, one warm key light from the lamps, cool shade below.
 // - Signature: Ararat in every window, and pans that swing and clang when the
 //   cat lands on the pot rack.
-import { C, clamp, createPad, fitCanvas, label, loop, pick, rand, roundRect, type Game, type PadButton, type Size } from "./engine";
+import { C, clamp, createPad, fitCanvas, hudPill, label, loop, pick, rand, type Game, type PadButton, type Size } from "./engine";
 
 // Tile maps, 9 rows each; the floor row is repeated as a tenth (falling
 // below it costs a life).
@@ -1096,9 +1096,7 @@ export const game: Game = {
         ctx.globalAlpha = Math.min(1, levelT * 5, (1.5 - levelT) * 3);
         const bx = s.w / 2;
         const by = viewH * 0.3;
-        ctx.fillStyle = "rgba(255,248,236,0.88)";
-        roundRect(ctx, bx - T * 1.5, by - T * 0.8, T * 3, T * 1.6, T * 0.8);
-        ctx.fill();
+        hudPill(ctx, bx - T * 1.5, by - T * 0.8, T * 3, T * 1.6);
         label(ctx, `${level + 1}/${LEVELS.length}`, bx, by - T * 0.12, T * 0.75, C.ink);
         for (let i = 0; i < LEVELS.length; i++) oval(i <= level ? C.apricot : C.line, bx + (i - 1) * T * 0.4, by + T * 0.48, T * 0.09);
         ctx.globalAlpha = 1;
@@ -1109,9 +1107,7 @@ export const game: Game = {
       // HUD on a soft pill: lives, fish, level, score
       const hs = clamp(T * 0.36, 10, 16);
       const hy = 12 + hs * 1.2;
-      ctx.fillStyle = "rgba(255,246,236,0.7)";
-      roundRect(ctx, 6, hy - hs * 1.25, s.w - 12, hs * 2.5, hs * 1.25);
-      ctx.fill();
+      hudPill(ctx, 6, hy - hs * 1.25, s.w - 12, hs * 2.5);
       for (let i = 0; i < LIVES; i++) {
         ctx.globalAlpha = i < lives ? 1 : 0.25;
         catHead(12 + hs + i * hs * 1.85, hy + hs * 0.1, hs * 0.8, 0);
