@@ -174,5 +174,47 @@ select test.ok((select count(*) from public.stations where restaurant_id = :'r_d
 select test.ok((select count(*) from public.orders where restaurant_id in (:'r_real', :'r_new')) = 2,
   'other cafés'' orders are not touched by the demo purge');
 
--- The daily job is scheduled
-select test.ok(exists (select 1 from cron.job where jobname = 'pativ-purge-test-data'), 'the daily purge is scheduled');
+-- A recent QR order on a session older than the cutoff (the 19 and 20 Nov failure:
+-- orders.guest_session_id is ON DELETE SET NULL and a QR order must keep it).
+select pg_temp.add_activity(:'r_demo', now() - interval '3 days');
+select o.id as o_keep, o.guest_session_id as gs_keep, o.table_session_id as ts_keep
+from public.orders o where o.restaurant_id = :'r_demo' and o.placed_at < now() - interval '1 day' \gset
+update public.orders set placed_at = now() - interval '2 hours' where id = :'o_keep';
+select test.fails(format('delete from public.guest_sessions where id = %L', :'gs_keep'), '%orders_check%',
+  'the old definition''s delete of the guest session breaks the QR order check');
+select private.purge_demo_activity() as purge3 \gset
+select test.ok((:'purge3'::jsonb ->> 'orders')::int = 0, 'the recent order of the old session is not deleted');
+select test.ok(exists (select 1 from public.orders where id = :'o_keep' and guest_session_id = :'gs_keep' and table_session_id = :'ts_keep'),
+  'it keeps its guest session and table session');
+select test.ok(exists (select 1 from public.guest_sessions where id = :'gs_keep')
+  and exists (select 1 from public.table_sessions where id = :'ts_keep'), 'the old sessions it points at are kept');
+select test.ok(not exists (select 1 from public.orders where restaurant_id = :'r_demo' and source = 'qr' and guest_session_id is null)
+  and not exists (select 1 from public.orders o where o.restaurant_id = :'r_demo' and o.table_session_id is not null
+                  and not exists (select 1 from public.table_sessions t where t.id = o.table_session_id)),
+  'no demo order lost a session');
+-- Once the order is old too, everything goes
+update public.orders set placed_at = now() - interval '3 days' where id = :'o_keep';
+select private.purge_demo_activity() as purge4 \gset
+select test.ok(not exists (select 1 from public.orders where id = :'o_keep')
+  and not exists (select 1 from public.guest_sessions where id = :'gs_keep')
+  and not exists (select 1 from public.table_sessions where id = :'ts_keep'), 'later the order and its old sessions are purged together');
+select test.ok((select count(*) from public.orders where restaurant_id = :'r_demo') = 1, 'the fresh demo order still stays');
+select test.ok((select count(*) from public.tables where restaurant_id = :'r_demo') = :demo_tables_before + 3, 'demo tables still stay');
+
+-- Test café with a QR order on a session and a dine-in table: purged whole, no orphans
+select test.act_as('c1000000-0000-0000-0000-000000000002');
+select api.create_restaurant('Test qr', 'purge-test-qr', 'Main', 'Tester') as r_qr \gset
+reset role;
+select pg_temp.add_activity(:'r_qr', now() - interval '3 days');
+update public.restaurants set created_at = now() - interval '3 days' where id = :'r_qr';
+select private.purge_test_cafes() as purge5 \gset
+select test.ok(not exists (select 1 from public.restaurants where id = :'r_qr')
+  and not exists (select 1 from public.orders where restaurant_id = :'r_qr')
+  and not exists (select 1 from public.guest_sessions where restaurant_id = :'r_qr')
+  and not exists (select 1 from public.table_sessions where restaurant_id = :'r_qr'), 'a test café with QR orders is purged with no orphans');
+select test.ok((select count(*) from public.restaurants where id in (:'r_real', :'r_mixed', :'r_look')) = 3, 'real and mixed cafés are untouched');
+
+-- The jobs are scheduled separately, so one failing cannot roll back the other
+select test.ok(exists (select 1 from cron.job where jobname = 'pativ-purge-test-cafes' and command not like '%demo%'), 'the café purge is its own job');
+select test.ok(exists (select 1 from cron.job where jobname = 'pativ-purge-demo-activity' and command not like '%cafes%'), 'the demo purge is its own job');
+select test.ok(not exists (select 1 from cron.job where jobname = 'pativ-purge-test-data'), 'the combined job is gone');
