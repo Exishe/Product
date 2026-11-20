@@ -24,6 +24,7 @@ const valid = {
   descriptions: { hy: "", ru: "", en: "" },
   prepAreaId: null,
   tags: ["popular"],
+  allergens: ["gluten", "nuts"],
   modifierGroupIds: [],
   markReviewed: false,
 };
@@ -44,5 +45,16 @@ describe("dishInput", () => {
 
   it("refuses a tag outside the list", () => {
     expect(dishInput.safeParse({ ...valid, tags: ["cheap"] }).success).toBe(false);
+  });
+
+  it("takes the diet tags the guest menu shows", () => {
+    expect(
+      dishInput.safeParse({ ...valid, tags: ["vegetarian", "gluten_free", "lactose_free"] }).success,
+    ).toBe(true);
+  });
+
+  it("refuses an allergen outside the 14", () => {
+    expect(dishInput.safeParse({ ...valid, allergens: ["kryptonite"] }).success).toBe(false);
+    expect(dishInput.safeParse({ ...valid, allergens: [] }).success).toBe(true);
   });
 });

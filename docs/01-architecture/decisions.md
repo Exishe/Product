@@ -665,3 +665,19 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - A café that uploads only a dark-background picture gets it on light backgrounds too, where it may be hard to read; the editor's two chips show this before saving.
   - The comparison in 8 was made against today's upstream. If React Bits published a different version on 17 Nov 2026 (when ours was written), that version was not read; our files' structure (Motion mini, CSS keyframes, spans) follows from ADR-052's own engine choice, which upstream has never used.
   - The slim bar loads one more small picture when the two bars need different wordmarks.
+
+### ADR-066: Owner sets allergens in the dish editor, dates read dd.mm.yyyy, and old test orders can be left out of the dashboard
+
+- Status: Accepted, 2026-11-20 (owner admin, round 2; sensible calls under the Gate 5 delegation; free only, no new dependency).
+- Context:
+  1. Guests see allergens and use an "I avoid…" filter, but `api.save_item` did not take `allergens`, so only seed data had any. It also took any tag text, and the guest menu shows seven tags while the editor offered four.
+  2. A demo café's dashboard counted its old test orders. Every dashboard, metrics, insights and export query already leaves out `orders.is_test`, but nothing could set it.
+  3. A native date input shows the browser's order, not the dd.mm.yyyy that Armenian and Russian readers expect. The other admin dates already go through `formatDate`.
+- Decisions:
+  1. **`save_item` takes `allergens`** (migration `20261120090000_dish_allergens`, same signature, grants unchanged). A missing key keeps the stored list, so an older client or an import doesn't wipe it; an empty list clears it. Allergens must be among the 14 EU values and tags among the seven the guest menu knows (`invalid_allergen`, `invalid_tag`). The editor gets a second row of toggle buttons for allergens (labels reused from `guest.allergens`) and the three missing diet tags (vegetarian, gluten-free, lactose-free). An empty list still means "not filled in", never "free of allergens" (the guest menu already says so).
+  2. **Test data is a flag on a range of days, not a start date.** `api.set_orders_test(location, from, to, is_test)` (owner or manager, audit-logged, up to 366 days, migration `20261120090100_orders_test_flag`) flips `is_test` for the orders of those business days. A start date would have needed a new setting read by five functions; the flag reuses the `not is_test` rule they already have, also fixes the export and metrics, and can be undone. The dashboard has a collapsed "Test orders" panel under the numbers, with a confirm step, acting on the range being shown.
+  3. **Dates:** on the dashboard range form, hy and ru get a text field that shows and reads dd.mm.yyyy (`parseDateInput` also accepts `/`, `-`, short days and ISO, so the plain GET form still works without JS); en keeps the native date picker. The server turns the text into ISO before `resolveRange`.
+- Consequences:
+  - Existing dishes have no allergens until the owner fills them in; the guest filter keeps marking them "ask the waiter".
+  - Flagging is by business day, so a café that wants to keep today's real orders must leave today out of the range.
+  - The one-off flagging of Blanca's and the demo café's old orders is left to their owners, through the panel; no data was changed by hand.

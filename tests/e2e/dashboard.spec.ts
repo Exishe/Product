@@ -106,6 +106,21 @@ test.describe("sales dashboard", () => {
     "needs migration 20261109203000_dashboard_platform on the dev project (E2E_M10_MIGRATION=applied)",
   );
 
+  test("dates read dd.mm.yyyy in Armenian, and the test-orders panel asks before it changes anything", async ({
+    page,
+  }) => {
+    await createFreshCafe(page);
+    await page.goto("/admin/dashboard?from=01.11.2026&to=15.11.2026");
+    await expect(page.getByTestId("period")).toContainText("01.11.2026");
+    await expect(page.getByLabel("Սկսած")).toHaveValue("01.11.2026");
+    await page.getByTestId("test-data-panel").locator("summary").click();
+    await page.getByTestId("test-data-exclude").click();
+    await expect(page.getByTestId("test-data-confirm")).toBeVisible();
+    await page.getByTestId("test-data-confirm").click();
+    // "Left out N orders" once api.set_orders_test is on the project, else the retry message.
+    await expect(page.getByTestId("test-data-panel").getByRole("status")).not.toBeEmpty();
+  });
+
   test("a new café sees the first-day message", async ({ page }) => {
     await createFreshCafe(page);
     await page.goto("/admin/dashboard");

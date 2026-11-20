@@ -490,8 +490,13 @@
       "popular": "Popular",
       "new": "New",
       "vegan": "Vegan",
-      "spicy": "Spicy"
+      "spicy": "Spicy",
+      "vegetarian": "Vegetarian",
+      "gluten_free": "Gluten-free",
+      "lactose_free": "Lactose-free"
     },
+    "allergens": "Allergens",
+    "allergensHint": "Tick what the dish contains. Leave empty if you haven't checked: guests will be told to ask the waiter.",
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved",
@@ -1073,7 +1078,19 @@
     "emptyRange": "There were no orders on these days.",
     "error": "Couldn't load the sales. Refresh the page.",
     "export": "Export to CSV",
-    "menuAnalysis": "Menu analysis"
+    "menuAnalysis": "Menu analysis",
+    "testData": {
+      "title": "Test orders",
+      "hint": "Orders from a demo or a trial run can be left out of the numbers for the days shown. Nothing is deleted, and you can put them back.",
+      "exclude": "Leave out as test orders",
+      "include": "Count them again",
+      "confirmExclude": "Leave out all orders from {period}?",
+      "confirmInclude": "Count all orders from {period} again?",
+      "cancel": "Cancel",
+      "doneExcluded": "Left out {count, plural, one {# order} other {# orders}}.",
+      "doneIncluded": "Counted again: {count, plural, one {# order} other {# orders}}.",
+      "failed": "Couldn't change the orders. Try again."
+    }
   },
   "platform": {
     "title": "Cafés",
