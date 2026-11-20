@@ -68,7 +68,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   const form = createForm(page);
   await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill("sal");
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
-  await expect(form.getByRole("alert")).toContainText("արդեն զբաղված է");
+  await expect(form.getByRole("alert").filter({ hasText: "արդեն զբաղված է" })).toBeVisible();
 
   // The waiter login signs in by username and lands on the waiter app, with no way into the admin.
   const w = await signInWithUsername(browser, waiter.username, waiter.password);
@@ -90,7 +90,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   expect(fresh).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
   expect(fresh).not.toBe(kitchen.password);
   const old = await signInWithUsername(browser, kitchen.username, kitchen.password);
-  await expect(old.page.getByRole("alert")).toContainText("սխալ է");
+  await expect(old.page.getByRole("alert").filter({ hasText: "սխալ է" })).toBeVisible();
   await old.context.close();
   const again = await signInWithUsername(browser, kitchen.username, fresh);
   await expect(again.page).toHaveURL(/\/kitchen\/[0-9a-f-]{36}$/, { timeout: 30_000 });
@@ -100,7 +100,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await row(waiter.username).getByRole("button", { name: "Անջատել" }).click();
   await expect(row(waiter.username)).toContainText("Անջատված է");
   const refused = await signInWithUsername(browser, waiter.username, waiter.password);
-  await expect(refused.page.getByRole("alert")).toContainText("սխալ է");
+  await expect(refused.page.getByRole("alert").filter({ hasText: "սխալ է" })).toBeVisible();
   await expect(refused.page).toHaveURL(/\/login$/);
   await refused.context.close();
   await row(waiter.username).getByRole("button", { name: "Միացնել" }).click();

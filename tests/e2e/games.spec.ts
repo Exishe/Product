@@ -20,7 +20,8 @@ async function placeOrder(page: Page, table: string) {
     .click();
   await page.getByRole("button", { name: /Դիտել պատվերը/ }).click();
   await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-  await expect(page).toHaveURL(/\/order\?t=/);
+  // Sending is a remote write; the app itself waits up to 15 s for it (same as guest-order.spec).
+  await expect(page).toHaveURL(/\/order\?t=/, { timeout: 15_000 });
   await expect(page.getByTestId("games")).toBeVisible();
 }
 
