@@ -71,7 +71,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
   const title = (s: { name: string; is_default: boolean }) => (s.is_default && s.name === SYSTEM_STATION_NAME ? t("title") : s.name);
 
   return (
-    <NextIntlClientProvider locale={locale} timeZone={location.timezone} messages={{ kitchen: messages.kitchen }}>
+    <NextIntlClientProvider locale={locale} timeZone={location.timezone} messages={{ kitchen: messages.kitchen, staffAccount: messages.staffAccount }}>
       <KitchenBoard
         station={{ id: station.id, title: title(station) }}
         otherStations={board.stations.filter((s) => s.id !== station.id).map((s) => ({ id: s.id, title: title(s) }))}
@@ -90,6 +90,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
         userId={board.userId}
         memberId={me.id}
         isDevice={me.kind === "device"}
+        canChangePassword={me.kind === "person" && me.role === "kitchen"}
       />
     </NextIntlClientProvider>
   );

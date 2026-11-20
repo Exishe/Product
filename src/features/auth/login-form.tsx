@@ -16,7 +16,17 @@ export function LoginForm({ next }: { next?: string }) {
       {next && <input type="hidden" name="next" value={next} />}
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>{t("email")}</span>
-        <input name="email" type="email" autoComplete="email" required className={input} />
+        <input
+          name="email"
+          type="text"
+          inputMode="email"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          required
+          className={input}
+        />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>{t("password")}</span>

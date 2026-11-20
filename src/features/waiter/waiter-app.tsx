@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { heartbeat } from "@/features/kitchen/actions";
 import { connectionState, troubleSince } from "@/features/kitchen/connection";
 import { useServerClock } from "@/features/kitchen/use-server-clock";
+import { ChangePassword } from "@/features/staff/change-password";
 import type { GuestCategory } from "@/features/menu/guest-menu/view-model";
 import type { Locale } from "@/i18n/routing";
 import type { MemberRole } from "@/lib/auth/membership";
@@ -61,6 +62,7 @@ export type WaiterAppProps = {
   vapidPublicKey: string | null;
   role: MemberRole;
   isDevice: boolean;
+  canChangePassword?: boolean; // a staff login (ADR-067)
   canManageTables: boolean;
 };
 
@@ -409,6 +411,12 @@ function App(p: WaiterAppProps) {
           </button>
         )}
         <ConnectionPill state={connection} />
+        {p.canChangePassword && (
+          <ChangePassword
+            tone="staff"
+            triggerClassName="text-ink hover:bg-staff-fill grid size-12 shrink-0 place-items-center rounded-full"
+          />
+        )}
         <button
           type="button"
           data-testid="shift-open"

@@ -73,6 +73,16 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    create_staff_login: {
+      Args: {
+        p_location_id: string;
+        p_role: Enums["member_role"];
+        p_password: string;
+        p_suffix?: string;
+        p_station_id?: string;
+      };
+      Returns: Json;
+    };
     create_telegram_link: {
       Args: {
         p_restaurant_id: string;
@@ -150,6 +160,12 @@ export type ApiSchema = {
       Returns: string;
     };
     heartbeat: { Args: Record<string, never>; Returns: undefined };
+    list_staff_logins: {
+      Args: {
+        p_location_id: string;
+      };
+      Returns: Json;
+    };
     mark_tickets_seen: {
       Args: {
         p_ticket_ids: string[];
@@ -164,6 +180,7 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    my_staff_login: { Args: Record<string, never>; Returns: Json };
     place_waiter_order: {
       Args: {
         p_table_id: string;
@@ -379,6 +396,20 @@ export type ApiSchema = {
       Args: {
         p_category_id: string;
         p_path: string;
+      };
+      Returns: undefined;
+    };
+    set_staff_login_active: {
+      Args: {
+        p_member_id: string;
+        p_active: boolean;
+      };
+      Returns: undefined;
+    };
+    set_staff_password: {
+      Args: {
+        p_member_id: string;
+        p_password: string;
       };
       Returns: undefined;
     };

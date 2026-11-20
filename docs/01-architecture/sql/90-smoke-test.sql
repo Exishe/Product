@@ -56,7 +56,8 @@ insert into auth.users (id, email, is_anonymous) values
 select test.act_as('aaaaaaaa-0000-0000-0000-000000000001');
 select api.create_restaurant('Սրճարան Ա', 'cafe-a', 'Main', 'Anna') as ra \gset
 select id as la from public.locations where restaurant_id = :'ra' \gset
-select test.ok((select count(*) from public.members where restaurant_id = :'ra') = 1, 'owner A is a member');
+select test.ok((select count(*) from public.members where restaurant_id = :'ra') = 3, 'owner A is a member, with the waiter and kitchen logins every café gets (ADR-067)');
+select test.ok((select count(*) from public.members where restaurant_id = :'ra' and role = 'owner') = 1, 'and the only owner');
 
 insert into public.menus (restaurant_id, internal_name) values (:'ra', 'Main') returning id as menu \gset
 insert into public.menu_locations (restaurant_id, menu_id, location_id) values (:'ra', :'menu', :'la');

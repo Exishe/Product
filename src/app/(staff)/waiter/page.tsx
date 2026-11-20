@@ -72,7 +72,7 @@ export default async function WaiterPage() {
     <NextIntlClientProvider
       locale={locale}
       timeZone={location.timezone}
-      messages={{ waiter: messages.waiter }}
+      messages={{ waiter: messages.waiter, staffAccount: messages.staffAccount }}
     >
       <WaiterApp
         cafeName={restaurant?.name ?? ""}
@@ -89,6 +89,7 @@ export default async function WaiterPage() {
         vapidPublicKey={vapidPublicKeyOrNull(process.env)}
         role={me.role}
         isDevice={me.kind === "device"}
+        canChangePassword={me.kind === "person" && me.role === "waiter"}
         canManageTables={me.role === "owner" || me.role === "manager"}
       />
     </NextIntlClientProvider>
