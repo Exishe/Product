@@ -6,12 +6,17 @@ import { headers } from "next/headers";
 import { AdminPage, Section } from "@/features/admin-ui/page";
 import { button, chip, table } from "@/features/admin-ui/styles";
 import { InviteForm } from "@/features/staff/invite-form";
+import { parseStaffLogins } from "@/features/staff/logins-model";
 import { PairDeviceForm } from "@/features/staff/pair-device-form";
+import { CreateLoginForm, StaffLoginList, type StaffLoginRow } from "@/features/staff/staff-logins";
 import { revokeMember } from "@/features/staff/actions";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { createClient } from "@/lib/supabase/server";
 import type { Locale } from "@/i18n/routing";
+
+// The station the system creates with every café is called "Kitchen".
+const SYSTEM_STATION_NAME = "Kitchen";
 
 export default async function StaffPage() {
   const me = await requireMember(["owner", "manager"]);
@@ -21,12 +26,38 @@ export default async function StaffPage() {
     .select("id, role, kind, display_name, is_active, last_seen_at")
     .eq("restaurant_id", me.restaurantId)
     .order("created_at");
+  // Staff logins (ADR-067). Before the migration reaches a database the list
+  // call fails; the section is then left out and the page works as before.
+  const [{ data: location }, { data: restaurant }] = await Promise.all([
+    supabase
+      .from("locations")
+      .select("id")
+      .eq("restaurant_id", me.restaurantId)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("restaurants").select("slug").eq("id", me.restaurantId).maybeSingle(),
+  ]);
+  const loginsResult = location
+    ? await supabase.schema("api").rpc("list_staff_logins", { p_location_id: location.id })
+    : null;
+  const loginsAvailable = !!loginsResult && !loginsResult.error;
+  const logins = loginsAvailable ? parseStaffLogins(loginsResult.data) : [];
+  const loginIds = new Set(logins.map((l) => l.memberId));
+  const { data: stations } = location
+    ? await supabase
+        .from("stations")
+        .select("id, name, is_default, sort")
+        .eq("location_id", location.id)
+        .order("sort")
+        .order("name")
+    : { data: [] };
   const t = await getTranslations("staff");
   const h = await headers();
   const baseUrl = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const locale = me.locale as Locale;
   type Member = NonNullable<typeof members>[number];
-  const people = (members ?? []).filter((m) => m.kind === "person");
+  const people = (members ?? []).filter((m) => m.kind === "person" && !loginIds.has(m.id));
   const devices = (members ?? []).filter((m) => m.kind === "device");
 
   // Status as a chip with an icon and a word, never colour alone.
@@ -111,8 +142,44 @@ export default async function StaffPage() {
     </div>
   );
 
+  const roleLabels = { waiter: t("roles.waiter"), kitchen: t("roles.kitchen") };
+  const loginRows: StaffLoginRow[] = logins.map((l) => ({
+    memberId: l.memberId,
+    username: l.username,
+    role: l.role,
+    stationName: l.stationName === SYSTEM_STATION_NAME ? t("roles.kitchen") : l.stationName,
+    isActive: l.isActive,
+    passwordSet: l.passwordSet,
+    lastSignIn: l.lastSignInAt
+      ? `${formatDate(new Date(l.lastSignInAt), locale)} ${formatTime(new Date(l.lastSignInAt))}`
+      : null,
+  }));
+
   return (
     <AdminPage title={t("title")}>
+      {loginsAvailable && (
+        <Section
+          title={t("logins.title")}
+          hint={t("logins.intro")}
+          id="staff-logins"
+          testId="staff-logins"
+          bare
+        >
+          <NextIntlClientProvider>
+            <div className="flex min-w-0 flex-col gap-4">
+              <StaffLoginList rows={loginRows} roleLabels={roleLabels} />
+              <CreateLoginForm
+                stations={(stations ?? []).map((s) => ({
+                  id: s.id,
+                  name: s.is_default && s.name === SYSTEM_STATION_NAME ? t("roles.kitchen") : s.name,
+                }))}
+                prefix={restaurant?.slug ?? ""}
+                roleLabels={roleLabels}
+              />
+            </div>
+          </NextIntlClientProvider>
+        </Section>
+      )}
       <Section title={t("people")} id="staff-people" bare>
         {list(people, "people")}
       </Section>

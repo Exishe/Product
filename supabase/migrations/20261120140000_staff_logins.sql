@@ -189,9 +189,9 @@ end $$;
 create function api.create_staff_login(
   p_location_id uuid,
   p_role public.member_role,
-  p_suffix text,
-  p_station_id uuid,
-  p_password text
+  p_password text,
+  p_suffix text default null,
+  p_station_id uuid default null
 ) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -282,24 +282,23 @@ begin
           jsonb_build_object('username', v_login.username));
 end $$;
 
--- The "Staff logins" list, with the last sign-in (it lives in auth.users).
-create function api.list_staff_logins(p_location_id uuid)
-returns table (
-  member_id uuid, username text, role public.member_role, station_id uuid, station_name text,
-  is_active boolean, password_set boolean, last_sign_in_at timestamptz, created_at timestamptz
-)
+-- The "Staff logins" list as a JSON array, with the last sign-in (it lives in auth.users).
+create function api.list_staff_logins(p_location_id uuid) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 begin
   perform private.assert_location_role(p_location_id, '{owner,manager}');
-  return query
-  select s.member_id, s.username, m.role, s.station_id, st.name, m.is_active, s.password_set,
-         u.last_sign_in_at, s.created_at
-  from public.staff_logins s
-  join public.members m on m.id = s.member_id
-  join public.member_locations ml on ml.member_id = m.id and ml.location_id = p_location_id
-  left join public.stations st on st.id = s.station_id
-  left join auth.users u on u.id = s.user_id
-  order by s.created_at, s.username;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'member_id', s.member_id, 'username', s.username, 'role', m.role,
+             'station_id', s.station_id, 'station_name', st.name, 'is_active', m.is_active,
+             'password_set', s.password_set, 'last_sign_in_at', u.last_sign_in_at, 'created_at', s.created_at)
+           order by s.created_at, s.username)
+    from public.staff_logins s
+    join public.members m on m.id = s.member_id
+    join public.member_locations ml on ml.member_id = m.id and ml.location_id = p_location_id
+    left join public.stations st on st.id = s.station_id
+    left join auth.users u on u.id = s.user_id
+  ), '[]'::jsonb);
 end $$;
 
 -- -----------------------------------------------------------------------------
@@ -326,10 +325,10 @@ revoke execute on function
   private.staff_email_domain(), private.revoke_user_sessions(uuid),
   private.make_staff_login(uuid, uuid, public.member_role, uuid, text, text, uuid),
   private.create_default_staff_logins(uuid, uuid, uuid, uuid), private.assert_staff_login_manager(uuid),
-  api.create_staff_login(uuid, public.member_role, text, uuid, text), api.set_staff_password(uuid, text),
+  api.create_staff_login(uuid, public.member_role, text, text, uuid), api.set_staff_password(uuid, text),
   api.set_staff_login_active(uuid, boolean), api.list_staff_logins(uuid), api.my_staff_login()
 from public, anon, authenticated;
 grant execute on function
-  api.create_staff_login(uuid, public.member_role, text, uuid, text), api.set_staff_password(uuid, text),
+  api.create_staff_login(uuid, public.member_role, text, text, uuid), api.set_staff_password(uuid, text),
   api.set_staff_login_active(uuid, boolean), api.list_staff_logins(uuid), api.my_staff_login()
 to authenticated;

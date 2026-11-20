@@ -11,11 +11,11 @@
   "auth": {
     "login": {
       "title": "Sign in",
-      "email": "Email",
+      "email": "Email or username",
       "password": "Password",
       "submit": "Sign in",
       "pending": "Checking…",
-      "error": "Wrong email or password.",
+      "error": "Wrong email, username or password.",
       "noAccount": "No account?",
       "signupLink": "Sign up"
     },
@@ -97,7 +97,59 @@
     "noDevices": "No devices are connected. Get a code below and enter it on the kitchen screen or the waiter tablet.",
     "inviteRole": "Role",
     "copy": "Copy the link",
-    "copied": "The link is copied"
+    "copied": "The link is copied",
+    "logins": {
+      "title": "Staff logins",
+      "intro": "Each screen signs in with a username and a password. Your café already has one waiter login and one kitchen login. You never have to change anything.",
+      "empty": "No logins yet.",
+      "colLogin": "Login",
+      "colStation": "Kitchen station",
+      "active": "Active",
+      "off": "Switched off",
+      "needsPassword": "Password not set yet",
+      "lastSignIn": "Last sign-in {time}",
+      "neverSignedIn": "Never signed in",
+      "switchOff": "Switch off",
+      "switchOn": "Switch on",
+      "setPassword": "Set a new password",
+      "passwordOwn": "Your own password (at least 8 characters)",
+      "passwordOwnHint": "Leave empty and we will make one for you.",
+      "save": "Set the password",
+      "passwordShown": "New password for {username}. Write it down now: it is shown only once.",
+      "passwordSaved": "The password is saved.",
+      "username": "Username",
+      "password": "Password",
+      "createTitle": "Add a login",
+      "createRole": "For",
+      "createWaiter": "Waiter",
+      "createKitchen": "Kitchen",
+      "createStation": "Kitchen station",
+      "createEnding": "End of the username (optional)",
+      "createEndingHint": "The username will be {prefix}-…",
+      "createSubmit": "Create the login",
+      "created": "The login is created.",
+      "errors": {
+        "username_taken": "That username is taken. Choose another ending.",
+        "invalid_username": "Use 1 to 15 lowercase letters, digits or hyphens.",
+        "weak_password": "The password needs at least 8 characters.",
+        "failed": "That didn't work. Try again."
+      },
+      "copyPassword": "Copy the password",
+      "copied": "The password is copied"
+    }
+  },
+  "staffAccount": {
+    "changePassword": "Change password",
+    "newPassword": "New password (at least 8 characters)",
+    "repeat": "Repeat the new password",
+    "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "mismatch": "The two passwords are different.",
+    "tooShort": "At least 8 characters.",
+    "tooLong": "That is too long.",
+    "saved": "The password is changed.",
+    "error": "That didn't work. Try again, or sign in again first."
   },
   "pair": {
     "title": "Connect this device",
@@ -159,7 +211,11 @@
       "pending": "Waiting for connection",
       "was": "Was {quantity}",
       "lineCancelled": "Cancelled",
-      "units": { "g": "{amount} g", "ml": "{amount} ml", "pcs": "{amount} pcs" },
+      "units": {
+        "g": "{amount} g",
+        "ml": "{amount} ml",
+        "pcs": "{amount} pcs"
+      },
       "hours": "{hours} h",
       "allergy": "Allergy: read the note"
     },

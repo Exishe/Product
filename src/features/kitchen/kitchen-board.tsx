@@ -37,6 +37,7 @@ import {
   type ShownTicket,
   type TicketStatus,
 } from "./board-model";
+import { ChangePassword } from "@/features/staff/change-password";
 import { BusySwitch } from "./busy-switch";
 import { nextBusinessDayStart } from "./business-day";
 import { connectionState, troubleSince } from "./connection";
@@ -59,6 +60,7 @@ export type KitchenBoardProps = {
   userId: string;
   memberId: string;
   isDevice: boolean;
+  canChangePassword?: boolean; // a staff login (ADR-067)
 };
 
 const POLL_MS = 10_000; // safety poll under the live channel (realtime.md)
@@ -471,6 +473,12 @@ function Board(p: KitchenBoardProps) {
           <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
             {clock}
           </span>
+          {p.canChangePassword && (
+            <ChangePassword
+              tone="kitchen"
+              triggerClassName="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center rounded-full px-4"
+            />
+          )}
           {shift.on && (
             <button
               type="button"

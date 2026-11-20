@@ -49,11 +49,11 @@ select test.ok(not exists (select 1 from auth.users where lower(email) like '%@p
 -- Owner and manager: create, list, set a password, switch off and on
 -- ---------------------------------------------------------------------------
 select test.act_as('5a000000-0000-0000-0000-00000000000a');
-select api.create_staff_login(:'la', 'kitchen', 'bar', null, 'Tulip-4821') ->> 'username' as u1 \gset
+select api.create_staff_login(:'la', 'kitchen', 'Tulip-4821', 'bar', null) ->> 'username' as u1 \gset
 select test.ok(:'u1' = 'sl-cafe-a-bar', 'the owner creates a login with an own ending');
-select api.create_staff_login(:'la', 'kitchen', null, :'st_a', 'Tulip-4822') ->> 'username' as u2 \gset
+select api.create_staff_login(:'la', 'kitchen', 'Tulip-4822', null, :'st_a') ->> 'username' as u2 \gset
 select test.ok(:'u2' = 'sl-cafe-a-kitchen-2', 'without an ending the next free one is taken (kitchen-2)');
-select api.create_staff_login(:'la', 'waiter', null, null, 'Tulip-4823') ->> 'username' as u3 \gset
+select api.create_staff_login(:'la', 'waiter', 'Tulip-4823', null, null) ->> 'username' as u3 \gset
 select test.ok(:'u3' = 'sl-cafe-a-waiter-2', 'and for a waiter (waiter-2)');
 reset role;
 select test.ok((select extensions.crypt('Tulip-4821', encrypted_password) = encrypted_password from auth.users where email = 'sl-cafe-a-bar@staff.pativ.invalid'),
@@ -71,27 +71,27 @@ select member_id as m_b_wait from public.staff_logins where username = 'sl-cafe-
 
 -- Username format and uniqueness
 select test.act_as('5a000000-0000-0000-0000-00000000000a');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''bar'', null, ''Tulip-4824'')', :'la'), '%username_taken%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''bar'', null)', :'la'), '%username_taken%',
   'a taken username is refused');
-select test.fails(format('select api.create_staff_login(%L, ''kitchen'', ''bar'', null, ''Tulip-4824'')', :'la'), '%username_taken%',
+select test.fails(format('select api.create_staff_login(%L, ''kitchen'', ''Tulip-4824'', ''bar'', null)', :'la'), '%username_taken%',
   'also for the other role');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''bad_name'', null, ''Tulip-4824'')', :'la'), '%invalid_username%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''bad_name'', null)', :'la'), '%invalid_username%',
   'an underscore is refused');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''-x'', null, ''Tulip-4824'')', :'la'), '%invalid_username%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''-x'', null)', :'la'), '%invalid_username%',
   'a leading hyphen is refused');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', %L, null, ''Tulip-4824'')', :'la', repeat('a', 16)), '%invalid_username%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', %L, null)', :'la', repeat('a', 16)), '%invalid_username%',
   'an ending over 15 characters is refused');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Ünï'', null, ''Tulip-4824'')', :'la'), '%invalid_username%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''Ünï'', null)', :'la'), '%invalid_username%',
   'non-ASCII letters are refused');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''short'', null, ''abc'')', :'la'), '%weak_password%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''abc'', ''short'', null)', :'la'), '%weak_password%',
   'a password under 8 characters is refused');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''short'', null, null)', :'la'), '%weak_password%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', null, ''short'', null)', :'la'), '%weak_password%',
   'no password is refused');
-select test.fails(format('select api.create_staff_login(%L, ''manager'', ''boss'', null, ''Tulip-4824'')', :'la'), '%invalid_staff_role%',
+select test.fails(format('select api.create_staff_login(%L, ''manager'', ''Tulip-4824'', ''boss'', null)', :'la'), '%invalid_staff_role%',
   'a staff login is a waiter or kitchen, never a manager');
-select test.fails(format('select api.create_staff_login(%L, ''owner'', ''boss'', null, ''Tulip-4824'')', :'la'), '%invalid_staff_role%',
+select test.fails(format('select api.create_staff_login(%L, ''owner'', ''Tulip-4824'', ''boss'', null)', :'la'), '%invalid_staff_role%',
   'never an owner');
-select test.fails(format('select api.create_staff_login(%L, ''kitchen'', ''x1'', %L, ''Tulip-4824'')', :'la', :'st_b'), '%forbidden%',
+select test.fails(format('select api.create_staff_login(%L, ''kitchen'', ''Tulip-4824'', ''x1'', %L)', :'la', :'st_b'), '%forbidden%',
   'a station of another café is refused');
 reset role;
 -- A user registered the address on their own: never adopted, the name counts as taken.
@@ -99,16 +99,16 @@ reset role;
 create unique index sl_test_staff_email_key on auth.users (lower(email)) where email like '%@staff.pativ.invalid';
 insert into auth.users (id, email) values ('5a000000-0000-0000-0000-0000000000f1', 'sl-cafe-a-squat@staff.pativ.invalid');
 select test.act_as('5a000000-0000-0000-0000-00000000000a');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''squat'', null, ''Tulip-4824'')', :'la'), '%username_taken%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''squat'', null)', :'la'), '%username_taken%',
   'an address a stranger registered is not adopted');
 reset role;
 drop index auth.sl_test_staff_email_key;
 select test.act_as('5a000000-0000-0000-0000-00000000000a');
 
 -- The list shows them, with the status and the station
-select test.ok((select count(*) from api.list_staff_logins(:'la')) = 5, 'the list shows the five logins of the café');
-select test.ok((select station_name from api.list_staff_logins(:'la') where username = 'sl-cafe-a-bar') = 'Kitchen', 'with the station name');
-select test.ok((select count(*) from api.list_staff_logins(:'la') where is_active) = 5, 'all of them active');
+select test.ok(jsonb_array_length(api.list_staff_logins(:'la')) = 5, 'the list shows the five logins of the café');
+select test.ok((select e ->> 'station_name' from jsonb_array_elements(api.list_staff_logins(:'la')) e where e ->> 'username' = 'sl-cafe-a-bar') = 'Kitchen', 'with the station name');
+select test.ok((select count(*) from jsonb_array_elements(api.list_staff_logins(:'la')) e where (e ->> 'is_active')::boolean) = 5, 'all of them active');
 
 -- Set a new password: hash changes, sessions end
 reset role;
@@ -166,7 +166,7 @@ reset role;
 -- ---------------------------------------------------------------------------
 -- A staff login cannot call any admin function, for its own café or another
 select test.act_as(:'u_wait');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''sneaky'', null, ''Tulip-4824'')', :'la'), '%forbidden%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''sneaky'', null)', :'la'), '%forbidden%',
   'a waiter login cannot create logins');
 select test.fails(format('select api.set_staff_password(%L, ''Tulip-4825'')', :'m_bar'), '%forbidden%',
   'a waiter login cannot set a password');
@@ -187,7 +187,7 @@ reset role;
 
 -- Café B's owner cannot touch café A, and A's people cannot touch B
 select test.act_as('5a000000-0000-0000-0000-00000000000b');
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''intruder'', null, ''Tulip-4824'')', :'la'), '%forbidden%',
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''intruder'', null)', :'la'), '%forbidden%',
   'another café''s owner cannot create a login here');
 select test.fails(format('select api.set_staff_password(%L, ''Tulip-4825'')', :'m_bar'), '%forbidden%',
   'cannot set a password');
@@ -211,12 +211,12 @@ select test.act_as('5a000000-0000-0000-0000-00000000000c');
 select api.set_staff_password(:'m_bar', 'Cedar-9911') is null as mgr1 \gset
 select api.set_staff_login_active(:'m_bar', false) is null as mgr2 \gset
 select api.set_staff_login_active(:'m_bar', true) is null as mgr3 \gset
-select api.create_staff_login(:'la', 'waiter', 'patio', null, 'Cedar-9912') ->> 'username' as mgr4 \gset
+select api.create_staff_login(:'la', 'waiter', 'Cedar-9912', 'patio', null) ->> 'username' as mgr4 \gset
 select test.ok(:'mgr4' = 'sl-cafe-a-patio', 'a manager of the café may create, reset and switch off and on');
 reset role;
 -- Anonymous (guest, device) sessions and anon cannot call them
 select test.act_as('5a000000-0000-0000-0000-0000000000f1', true);
-select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''anon1'', null, ''Tulip-4824'')', :'la'), '%forbidden%', 'an anonymous session cannot create');
+select test.fails(format('select api.create_staff_login(%L, ''waiter'', ''Tulip-4824'', ''anon1'', null)', :'la'), '%forbidden%', 'an anonymous session cannot create');
 reset role;
 set role anon;
 select test.fails(format('select api.set_staff_password(%L, ''Tulip-4825'')', :'m_bar'), '%permission denied%', 'anon cannot execute it');
