@@ -74,6 +74,18 @@ Small (up to 10 tables) 12,000 ֏, Standard 18,000 ֏.
 - Several locations: each location pays its own price. Groups of five or more talk to us.
 - No lock-in: month to month, cancel any time. A café can also pause the Service plan for up to 3 months a year, for a slow season or repairs; the free menu keeps working and switching back needs no new setup. Owners in the research expect cafés to close or change hands often (`docs/00-research/video-notes.md`, A4), so a contract would scare them more than it protects us.
 
+## Proposed add-on: "We do it for you"
+
+Status: a proposal. The owner has not decided it, and the amount is not fixed.
+
+Many café owners are too busy to maintain their own menu, tables or staff screens. For an extra monthly amount on top of the subscription, Pativ makes the café's changes for them: menu edits and price changes, dish photos, tables and QR cards, and staff logins (new waiter or kitchen logins, new passwords, switching a login off). The café sends a message and we do it, within one working day.
+
+- Working figures from the owner: 5,000 ֏ or 10,000 ֏ a month. Amount to be decided by the owner.
+- A natural split, if two levels are wanted: 5,000 ֏ for small changes (a few a month), 10,000 ֏ for regular changes and photos. Not decided either.
+- It is optional. Every change in it can also be made by the owner in the admin panel, and the product never depends on it (staff logins already come ready-made with every café, ADR-067).
+- Not for sale yet: no price is shown to cafés until the owner decides.
+
+
 ## Billing
 
 Stripe doesn't accept businesses from Armenia ([stripe.com/global](https://stripe.com/global) lists 51 countries, Armenia isn't one), so Stage 1 bills by monthly invoice in AMD, paid by bank transfer or at the bank. Card auto-billing comes with the Stage 3 Armenian payment provider. Which bank account receives the money is the owner's decision, needed before the first invoice.

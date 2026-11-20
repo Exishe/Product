@@ -27,7 +27,7 @@ test.describe("the demo owner", () => {
     await page.getByLabel("Գաղտնաբառ").fill("wrong-password-123");
     await page.getByRole("button", { name: "Մուտք գործել" }).click();
     // Next adds its own (empty) role="alert" route announcer, so match ours by text.
-    await expect(page.getByRole("alert").filter({ hasText: "Էլ․ փոստը կամ գաղտնաբառը սխալ է։" })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Էլ․ փոստը, մուտքանունը կամ գաղտնաբառը սխալ է։" })).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   });
 });

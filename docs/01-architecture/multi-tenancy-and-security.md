@@ -38,6 +38,7 @@ A member can be limited to some locations (`members.all_locations = false` plus 
 - Waiter tablets and kitchen screens are devices. The owner creates a pairing in the admin panel (role, location, label) and gets a 6-digit code valid for 10 minutes, stored hashed and usable once. On the device, `/pair` signs in anonymously and calls `api.redeem_device_pairing(code)`, which turns that anonymous user into a `members` row with `kind = 'device'` (ADR-038). The session is long-lived; nobody ever sees credentials. Stage 2 adds personal staff accounts with PIN switching on shared tablets, for per-waiter stats.
 - Guests are Supabase anonymous users (`is_anonymous = true` in the JWT). They never see a sign-in screen. Devices are anonymous users too, but they are members; guests are not.
 - Revoking access works immediately. RLS helpers check `members.is_active` on every query, so deactivating a member or device cuts data access at once, even while its JWT is still valid. The same function deletes the user's refresh tokens, so the device can't renew its session.
+- Staff logins (ADR-067): a waiter or kitchen screen may also sign in with a username and password that Pativ or the owner created. It is a normal person member (role `waiter` or `kitchen`) with the reserved address `<username>@staff.pativ.invalid`, so every waiter and kitchen function already works for it and no admin function does. Owner or manager create logins, set a new password (shown once; sessions end) and switch a login off (member inactive, sign-in banned, sessions ended) through `SECURITY DEFINER` functions; a staff login cannot start a café or read the login list.
 
 ## How RLS is built
 
@@ -135,6 +136,7 @@ The Postgres limits use a fixed-window counter in an unlogged table (`private.ra
 | Malicious image upload | Size limit and MIME allowlist (JPEG, PNG, WebP) set on the bucket. Photos are resized in the browser before upload and served through Supabase image transformation, never as raw user HTML or SVG. |
 | Prompt injection through a menu photo | Claude gets no tools during import. Output must match a strict JSON schema validated by Zod, and the owner reviews every item before anything is published. The worst case is a wrong draft, not an action. |
 | Stolen staff device | The owner deactivates the device in the admin panel. RLS denies immediately and sessions are revoked. |
+| Leaked staff-login password | It opens the waiter or kitchen screen of that one café and nothing else: no admin, no other café, no export. The owner sets a new password or switches the login off; both end its sessions at once. Passwords are 10 characters from a CSPRNG, stored only as bcrypt, never logged. Sign-in limits are Supabase Auth's own. |
 | Leaked Supabase secret key | The app doesn't use it (ADR-038), so it isn't in Vercel at all. It exists only in the Supabase dashboard and inside Supabase's own Edge Function runtime. |
 | Payment credentials (Stage 3) | Stored in Supabase Vault and referenced by id. Only server-side routes decrypt them. |
 | Cross-tenant link through a bug | Composite foreign keys make it impossible at the database level. |

@@ -147,7 +147,8 @@ export default async function StaffPage() {
     memberId: l.memberId,
     username: l.username,
     role: l.role,
-    stationName: l.stationName === SYSTEM_STATION_NAME ? t("roles.kitchen") : l.stationName,
+    // The default station is just "the kitchen": only a named station is shown next to the role.
+    stationName: l.stationName === SYSTEM_STATION_NAME ? null : l.stationName,
     isActive: l.isActive,
     passwordSet: l.passwordSet,
     lastSignIn: l.lastSignInAt
