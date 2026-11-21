@@ -18,6 +18,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
+  // CI runs phone, tablet and desktop one after another against the free dev database, whose
+  // answers slow down late in a run. A test that makes dozens of remote writes (the menu editor)
+  // then needs more than the default 30 s as a whole; each assertion keeps its own wait.
+  timeout: process.env.CI ? 60_000 : 30_000,
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${port}`,
