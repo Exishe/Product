@@ -45,4 +45,8 @@ describe("classifyOrderError", () => {
   it("calls anything else a definite failure", () => {
     expect(classifyOrderError(pg("something_new"))).toEqual({ kind: "failed" });
   });
+  it("tells a replaced ingredient the guest has not accepted from a changed menu (ADR-072)", () => {
+    const details = '[{"item_id":"a","price_delta":300}]';
+    expect(classifyOrderError(pg("substitution_changed", details))).toEqual({ kind: "substitution_changed", details });
+  });
 });

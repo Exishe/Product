@@ -37,6 +37,7 @@ export type OrderRow = {
     sort: number;
     station_id: string | null;
     order_item_modifiers: { name_i18n: Json }[];
+    substitution?: Json | null; // ADR-072: {from, to, price_delta} when an ingredient was replaced
   }[];
   kitchen_tickets: {
     id: string;

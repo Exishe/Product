@@ -130,6 +130,7 @@ export function OrderSender({
         ? ({
             sold_out: t("cart.soldOut"),
             menu_changed: t("cart.menuChanged"),
+            substitution_changed: t("cart.menuChanged"), // the menu reloads with the note; the asking screen comes with the pop-up
             rate_limited: t("cart.rateLimited"),
             ordering_off: t("menu.orderingOff"),
             paused: t("menu.paused"),
@@ -147,7 +148,7 @@ export function OrderSender({
       >
         {message}
       </p>
-      {phase.name === "error" && phase.why.kind === "menu_changed" ? (
+      {phase.name === "error" && (phase.why.kind === "menu_changed" || phase.why.kind === "substitution_changed") ? (
         <button type="button" className={primary} onClick={() => window.location.reload()}>
           {t("cart.reload")}
         </button>

@@ -249,6 +249,15 @@ function Lines({
                 {t("lineCancelled")}
               </span>
             )}
+            {l.substitute && (
+              <span
+                data-testid="line-substitute"
+                lang={l.substitute.locale === boardLocale ? undefined : l.substitute.locale}
+                className={clsx("text-slip-dim col-start-2 font-bold", compact ? "text-base" : "text-xl")}
+              >
+                {t("useInstead", { name: l.substitute.text })}
+              </span>
+            )}
             {l.modifiers.length > 0 && (
               <span
                 data-testid="line-modifiers"

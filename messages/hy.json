@@ -275,6 +275,7 @@
       "acknowledge": "Հասկացա",
       "pending": "Սպասում է կապի",
       "was": "Եղել է {quantity}",
+      "useInstead": "Օգտագործել՝ {name}",
       "lineCancelled": "Չեղարկված է",
       "units": {
         "g": "{amount} գ",

@@ -20,6 +20,8 @@ export type MenuStatus = {
   busy: number | null;
   /** Promos that are on and inside their window right now (ADR-070); empty before that migration. */
   promos: StatusPromo[];
+  /** Version of the active ingredient outages (ADR-072); "" when none or before that migration. */
+  outages: string;
 };
 
 type Raw = {
@@ -31,6 +33,7 @@ type Raw = {
   hidden_categories?: unknown;
   kitchen_busy?: { expected_wait_minutes?: unknown } | null;
   promos?: unknown;
+  outages?: unknown;
 };
 
 const ids = (v: unknown): string[] =>
@@ -83,6 +86,7 @@ export function parseStatus(raw: unknown, fallbackVersion: number | null = null)
           ? 0
           : null,
     promos: promos(r.promos),
+    outages: typeof r.outages === "string" ? r.outages : "",
   };
 }
 

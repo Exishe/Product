@@ -9,6 +9,7 @@ export type OrderErrorKind =
   | { kind: "rejoin" }
   | { kind: "sold_out"; itemId: string }
   | { kind: "menu_changed" }
+  | { kind: "substitution_changed"; details: string }
   | { kind: "rate_limited" }
   | { kind: "ordering_off" }
   | { kind: "paused" }
@@ -28,6 +29,9 @@ export function classifyOrderError({ status, error }: Failure): OrderErrorKind {
   if (status === 401 || error.code === "PGRST301" || error.code === "PGRST303") return { kind: "auth" };
   if (message === "guest_session_invalid") return { kind: "rejoin" };
   if (message === "item_sold_out") return { kind: "sold_out", itemId: error.details ?? "" };
+  // ADR-072: a dish now comes with a replaced ingredient the guest has not accepted yet; `details` is a JSON list
+  // of {item_id, from, to, price_delta}, for the screen that asks again.
+  if (message === "substitution_changed") return { kind: "substitution_changed", details: error.details ?? "[]" };
   if (message === "rate_limited") return { kind: "rate_limited" };
   if (message === "idempotency_key_reused") return { kind: "already_sent" };
   if (MENU_CHANGED.includes(message)) return { kind: "menu_changed" };

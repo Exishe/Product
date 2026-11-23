@@ -7,8 +7,10 @@ import type { FloorRows, SessionRow } from "./floor-model";
 
 type Client = SupabaseClient<Database>;
 
+// The order line is read with "*" so `substitution` (ADR-072) arrives once its
+// migration has run, and the app still works before that.
 const ORDER_SELECT =
-  "id, number, source, status, kitchen_status, placed_at, accepted_at, accepted_by, guest_note, total, reject_reason, possible_duplicate_of, order_items(id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, station_id, order_item_modifiers(name_i18n)), kitchen_tickets!kitchen_tickets_restaurant_id_order_id_fkey(id, station_id, kind, status, ready_at, served_at)";
+  "id, number, source, status, kitchen_status, placed_at, accepted_at, accepted_by, guest_note, total, reject_reason, possible_duplicate_of, order_items(*, order_item_modifiers(name_i18n)), kitchen_tickets!kitchen_tickets_restaurant_id_order_id_fkey(id, station_id, kind, status, ready_at, served_at)";
 
 const SESSION_SELECT = `id, table_id, status, opened_at, orders!orders_restaurant_id_table_session_id_fkey(${ORDER_SELECT})`;
 

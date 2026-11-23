@@ -129,6 +129,19 @@ describe("toBoardTickets", () => {
     expect(t.lines[1]).toMatchObject({ quantity: 1, orderedQuantity: 2 });
   });
 
+  it("shows the replacement ingredient on a line, in the kitchen's language (ADR-072)", () => {
+    const r = row();
+    const oi = first(r.kitchen_ticket_items).order_items!;
+    oi.substitution = {
+      from: { id: "m", name: { hy: "Կաթ", en: "Milk" } },
+      to: { id: "o", name: { hy: "Վարսակի կաթ", ru: "Овсяное молоко", en: "Oat milk" } },
+      price_delta: 300,
+    };
+    const lines = first(toBoardTickets([r], "ru")).lines;
+    expect(lines.find((l) => l.id === oi.id)?.substitute).toEqual({ text: "Овсяное молоко", locale: "ru" });
+    expect(toBoardTickets([row()], "hy")[0]?.lines.every((l) => !l.substitute)).toBe(true);
+  });
+
   it("drops an order slip once nothing on it is left to cook", () => {
     const r = row();
     for (const k of r.kitchen_ticket_items) k.order_items!.cancelled_quantity = k.order_items!.quantity;
