@@ -94,7 +94,7 @@ select test.ok((select consumed_at is not null from public.telegram_link_codes w
 select test.ok((select locale from public.notification_channels where telegram_chat_id = 4242) = 'hy',
   'the chat gets the language of the member who made the link');
 select test.ok((select events from public.notification_channels where telegram_chat_id = 4242)
-               = '{order.overdue,station.offline,order.comped,day.summary}', 'exceptions only, every-order alerts off (ADR-040)');
+               = '{order.overdue,station.offline,order.comped,day.summary,table.alert}', 'exceptions only, every-order alerts off (ADR-040)');
 select test.ok((:'reply1'::jsonb -> 'reply' ->> 'method') = 'sendMessage' and (:'reply1'::jsonb -> 'reply' ->> 'chat_id') = '4242',
   'the webhook answers with a message to the chat');
 select test.ok((:'reply1'::jsonb -> 'reply' ->> 'text') like 'Պատրաստ է։%«Սրճարան Ն»%', 'the confirmation is in Armenian and names the café');
