@@ -10,7 +10,7 @@ Telegram -> `/api/telegram` (secret header) -> `api.telegram_update` -> `private
 
 ## Add an action (copy `sold_out` or `pause`)
 
-1. **Registry row** in a new migration: `update private.bot_actions set ready = true where id = '<id>'` (the ten ids exist; unbuilt ones have `ready = false`). Set `steps` (`item`, `number`, `choice`, in order) and, for a `choice` step, `choices`. For a new id: insert the row, and add it to `registry` in `registry.ts` (a test compares both lists).
+1. **Registry row** in a new migration: `update private.bot_actions set ready = true where id = '<id>'` (the ten ids exist; unbuilt ones have `ready = false`). Set `steps` (`category`, `item`, `number`, `choice`, in order) and, for a `choice` step, `choices`. For a new id: insert the row, and add it to `registry` in `registry.ts` (a test compares both lists).
 2. **Three functions** in the same migration, all `security definer set search_path = ''`, signature `(p_ch public.notification_channels, p_loc uuid, p_data jsonb)`:
    - `private.bot_prepare_<id>` returns the **facts** for the preview, or `{"error": "<code>"}` (shown as a friendly failure). It changes nothing.
    - `private.bot_apply_<id>` does the change and returns `{entity, entity_id, label, old, new}`. It must re-check that every id in `p_data` belongs to `p_ch.restaurant_id` (the engine validated them, check again anyway). Call the shared rule function; if the admin function checks `auth.uid()`, move its body to a `private.` core that takes an actor (see `private.apply_ordering_pause`) and call that from both.
@@ -22,6 +22,12 @@ Telegram -> `/api/telegram` (secret header) -> `api.telegram_update` -> `private
 6. **SQL test** in `supabase/tests/sql/telegram_bot.sql`: nothing changes before `k:<token>`, a foreign café's id is refused, undo restores and refuses after a change.
 
 Rules: never put a user-visible word in SQL; never trust `p_data` ids; the bot changes live data through the same rule the admin uses; a change that guests only see after Publish (price, hide, add) must say so in its `done` text. The bot publishes through `private.publish_menu_core(location, actor_kind, actor)`, the same rule as the admin's Publish (`api.publish_menu` only adds the role check); kitchen-closed is `private.apply_kitchen_closed`. Both are called with the linked owner as actor.
+
+## Step kinds, pickers and read-only actions
+
+- **`category` step** asks for a section (8 per page like items, `p:<uuid>`, re-checked against the café) and stores `category_id`. Put it before `item` to always ask for the section first; alone it is the whole picker (`category` on/off uses it). An `item` step with no section chosen asks for one by itself when the menu has more than 24 dishes.
+- **`pick_inactive`** (column on `private.bot_actions`): the pickers also list inactive sections and hidden items, marked `off`; picking one is checked against the café, not `is_active`. Used by `hide` (so "show" works) and `category`. Other actions list active things only.
+- **`kind = 'read'`** is a read-only action: no steps, no pending row, no confirm, nothing in the history. The engine calls `private.bot_read_<id>(p_ch, p_loc, p_data)` (same signature as `bot_prepare_`, SECURITY DEFINER, revoked from clients) and returns `{type: 'read', action, facts}`, or the usual `failed` screen if the facts hold `{"error": ...}`. In `registry.ts` give the action `read(facts, locale)` (text) instead of confirm / done / describe; the screen gets a "Back to menu" button. A read action must still check the caller: it is reached only through `bot_handle`, so unlinked chats get silence. `report` is the example (it reuses `private.day_summary_payload`).
 
 ## Operations
 

@@ -14,12 +14,35 @@ type Vars = Record<string, unknown>;
 
 export type BotAction = {
   label: TextKey;
+  // Read-only action: the screen text from the facts bot_read_<id> returned. No confirm, no history.
+  read?: (facts: Vars, l: BotLocale) => string;
   confirm?: (facts: Vars, l: BotLocale) => string;
   done?: (change: Change, l: BotLocale) => string;
   describe?: (change: Change, l: BotLocale) => string;
 };
 
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
+
+// 1234567 -> "1 234 567" with non-breaking spaces, so Telegram never wraps inside a number.
+export function money(v: unknown): string {
+  const n = typeof v === "number" ? v : typeof v === "string" && v !== "" ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return "—";
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+}
+
+export function reportText(f: Vars, l: BotLocale): string {
+  const orders = Number(f.orders) || 0;
+  const head = t(l, "report_title", { date: s(f.date) });
+  if (orders === 0) return [head, t(l, "report_none")].join("\n");
+  const top = Array.isArray(f.top) ? (f.top as { name?: unknown; qty?: unknown }[]) : [];
+  return [
+    head,
+    t(l, "report_orders", { orders }),
+    t(l, "report_revenue", { amount: money(f.revenue) }),
+    t(l, "report_avg", { amount: money(f.avg_bill) }),
+    ...(top.length ? ["", t(l, "report_top"), ...top.map((d, i) => `${i + 1}. ${s(d.name)} × ${s(d.qty)}`)] : []),
+  ].join("\n");
+}
 
 function pauseText(kind: "done" | "desc", change: Change, l: BotLocale): string {
   const n = change.new ?? {};
@@ -49,7 +72,13 @@ export const registry = {
     describe: (c, l) => t(l, c.new?.visible ? "desc_hide_on" : "desc_hide_off", { label: c.label ?? "" }),
   },
   add_item: { label: "a_add_item" },
-  category: { label: "a_category" },
+  category: {
+    label: "a_category",
+    confirm: (f, l) =>
+      t(l, f.to_active ? "confirm_category_on" : "confirm_category_off", { category: s(f.category), count: s(f.items) || "0" }),
+    done: (c, l) => t(l, c.new?.active ? "done_category_on" : "done_category_off", { label: c.label ?? "" }),
+    describe: (c, l) => t(l, c.new?.active ? "desc_category_on" : "desc_category_off", { label: c.label ?? "" }),
+  },
   promo: { label: "a_promo" },
   pause: {
     label: "a_pause",
@@ -68,7 +97,7 @@ export const registry = {
     done: (_c, l) => t(l, "done_close_kitchen"),
     describe: (_c, l) => t(l, "desc_close_kitchen"),
   },
-  report: { label: "a_report" },
+  report: { label: "a_report", read: reportText },
   help: { label: "a_help" },
 } as const satisfies Record<string, BotAction>;
 

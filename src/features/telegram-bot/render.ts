@@ -6,7 +6,7 @@ import { BOT_LOCALES, t, type BotLocale, type TextKey } from "./texts";
 // the webhook returns as its HTTP answer: editMessageText for a button press
 // (the message turns into the next screen), sendMessage for typed text.
 
-type Row = { id: string; label: string };
+type Row = { id: string; label: string; off?: boolean };
 type Ctx = Record<string, unknown>;
 export type Screen =
   | { type: "menu" }
@@ -23,6 +23,7 @@ export type Screen =
   | { type: "undo_result"; ok: boolean; change: Change & { action: string } }
   | { type: "nothing_to_undo" }
   | { type: "history"; rows: (Change & { action: string; at: string; undone: boolean; is_undo: boolean })[] }
+  | { type: "read"; action: string; facts: Ctx }
   | { type: "help"; contact: string | null };
 
 export type BotEnvelope = { chat_id: number; message_id?: number; locale: BotLocale | null; screen: Screen };
@@ -88,7 +89,7 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
             : t(l, "pick_item");
       return {
         text,
-        keyboard: [...screen.rows.map((r) => [btn(r.label, cb.pick(r.id))]), ...(paging.length ? [paging] : []), navRow],
+        keyboard: [...screen.rows.map((r) => [btn(r.off ? t(l, "row_off", { label: r.label }) : r.label, cb.pick(r.id))]), ...(paging.length ? [paging] : []), navRow],
       };
     }
     case "choice": {
@@ -138,6 +139,11 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
       });
       return { text: lines.length ? [t(l, "history_title"), ...lines].join("\n") : t(l, "history_empty"), keyboard: [menuRow] };
     }
+    case "read":
+      return {
+        text: actionOf(screen.action)?.read?.(screen.facts, l) ?? t(l, "failed_invalid"),
+        keyboard: [[btn(t(l, "back_to_menu"), cb.menu())]],
+      };
     case "help":
       return {
         text: [screen.contact ? t(l, "help_contact", { contact: screen.contact }) : t(l, "help_nocontact"), t(l, "help_howto")].join("\n"),
