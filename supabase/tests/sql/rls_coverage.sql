@@ -117,6 +117,9 @@ begin
   perform api.create_invitation(v_r, 'waiter');
   perform api.create_telegram_link(v_r);
   perform api.set_promo_on(api.save_promo(v_l, null, '{"hy": "Ակցիա"}'::jsonb), true);
+  -- An ingredient used by the dish, and one that is out today (ADR-072).
+  perform api.set_item_ingredient(v_item, api.save_ingredient(v_r, null, '{"hy": "Բրինձ"}'::jsonb, 'g'), 100, true);
+  perform api.set_ingredient_out(v_l, api.save_ingredient(v_r, null, '{"hy": "Նուշ"}'::jsonb, 'g'), true);
   perform api.save_push_subscription(v_r, 'https://fcm.googleapis.com/fcm/send/rls-' || p_slug, current_setting('rc.p256dh'),
                                      current_setting('rc.authkey'), 'Phone');
   v_code := api.create_device_pairing(v_l, 'kitchen', 'Խոհանոց');
@@ -165,6 +168,8 @@ begin
     v_where := case
       when t.has_r then 'restaurant_id = $1'
       when t.relname = 'restaurants' then 'id = $1'
+      -- The reference list of ingredients has no café: nobody reads it directly (ADR-072).
+      when t.relname = 'ingredient_catalog' then 'true'
       when t.relname = 'location_counters' then
         'location_id in (select l.id from public.locations l where l.restaurant_id = $1)'
     end;
@@ -224,10 +229,10 @@ select test.ok((select count(*) from test.rc_rows(:'rb') where n > 0) >= 30,
   'café B has rows in at least 30 public tables for the sweep (' ||
   (select count(*) from test.rc_rows(:'rb') where n > 0) || ')');
 select test.ok((select string_agg(tbl, ',' order by tbl) from test.rc_rows(:'rb') where n = 0
-                and tbl in ('audit_log', 'categories', 'device_pairings', 'guest_sessions', 'invitations',
+                and tbl in ('audit_log', 'categories', 'device_pairings', 'guest_sessions', 'ingredient_outages', 'ingredients', 'invitations',
                             'items', 'kitchen_ticket_items', 'kitchen_tickets', 'members', 'menu_versions',
                             'modifiers', 'notification_channels', 'order_items', 'orders', 'promos', 'push_subscriptions',
-                            'service_requests', 'subscriptions', 'table_sessions', 'tables', 'telegram_link_codes')) is null,
+                            'recipe_lines', 'service_requests', 'subscriptions', 'table_sessions', 'tables', 'telegram_link_codes')) is null,
   'and in every table the roles below must not reach');
 
 -- ---------------------------------------------------------------------------
@@ -305,11 +310,11 @@ select test.act_as('e1000000-0000-0000-0000-0000000000ad', true);
 select coalesce(string_agg(tbl, ', '), '') as bad from test.rc_rows(:'rb') where n > 0 \gset
 select test.ok(:'bad' = '', 'the kitchen tablet of A reads no row of café B ' || :'bad');
 select coalesce(string_agg(tbl, ', '), '') as bad from test.rc_rows(:'ra') where n > 0
-  and tbl in ('audit_log', 'bills', 'bill_lines', 'categories', 'category_translations', 'device_pairings', 'invitations',
+  and tbl in ('audit_log', 'bills', 'bill_lines', 'categories', 'category_translations', 'device_pairings', 'ingredients', 'invitations',
               'item_modifier_groups', 'item_translations', 'items', 'menu_import_images', 'menu_imports', 'menu_locations',
               'menu_translations', 'menus', 'metrics_daily', 'modifier_group_translations', 'modifier_groups',
               'modifier_translations', 'modifiers', 'notification_channels', 'notification_outbox', 'payments',
-              'prep_areas', 'promos', 'push_subscriptions', 'subscriptions', 'telegram_link_codes') \gset
+              'prep_areas', 'promos', 'push_subscriptions', 'recipe_lines', 'subscriptions', 'telegram_link_codes') \gset
 select test.ok(:'bad' = '', 'nor any owner-only table of its own café ' || :'bad');
 select test.ok((select n from test.rc_rows(:'ra') where tbl = 'kitchen_tickets') > 0, 'but it does see its own tickets');
 select test.ok((select count(*) from public.members) > 0, 'and its café''s staff list');
