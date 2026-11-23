@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { getBrowserClient } from "@/lib/supabase/browser";
 import { backoffMs, parseStatus, sameStatus, type MenuStatus } from "./status";
 
 // Keeps the open guest menu up to date (ADR-068). One tiny RPC every 10 s
@@ -32,11 +31,19 @@ export function useMenuStatus(locationId: string, shown: MenuStatus) {
       if (stopped || document.hidden || inFlight) return;
       inFlight = true;
       try {
-        const { data, error } = await getBrowserClient()
-          .schema("api")
-          .rpc("public_menu_status", { p_location_id: locationId })
-          .abortSignal(AbortSignal.timeout(8_000));
-        const next = error ? null : parseStatus(data);
+        // A plain fetch of the one RPC: the guest menu ships no Supabase client.
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/public_menu_status`, {
+          method: "POST",
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+            "Content-Type": "application/json",
+            "Content-Profile": "api",
+          },
+          body: JSON.stringify({ p_location_id: locationId }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(8_000),
+        });
+        const next = res.ok ? parseStatus(await res.json()) : null;
         if (!next) {
           failures += 1;
         } else {
