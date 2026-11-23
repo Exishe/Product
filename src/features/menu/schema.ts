@@ -34,6 +34,8 @@ export const dishInput = z.object({
   allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length),
   modifierGroupIds: z.array(z.uuid()).max(20),
   markReviewed: z.boolean(),
+  // Undefined leaves the flag as it is.
+  isActive: z.boolean().optional(),
   // Owner only; null clears it, undefined leaves it as it is.
   cost: z.number().int().min(0).max(10_000_000).nullable().optional(),
 });

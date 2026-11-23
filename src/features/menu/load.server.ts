@@ -107,6 +107,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
       imagePath: d.image_path,
       names: names(d.item_translations),
       descriptions: names(d.item_translations, "description"),
+      isActive: d.is_active,
       needsReview:
         d.item_translations.some((t) => t.source === "ai" && !t.reviewed_at) ||
         d.item_modifier_groups.some((g) => groupsToReview.has(g.group_id)),

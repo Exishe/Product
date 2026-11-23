@@ -13,6 +13,8 @@ export type EditorDish = {
   names: Names;
   descriptions: Names;
   needsReview: boolean;
+  /** Off hides the dish from the guest menu after the next publish. */
+  isActive: boolean;
   modifierGroupIds: string[];
 };
 export type EditorOption = { id: string; names: Names; priceDelta: number; isDefault: boolean };

@@ -132,6 +132,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             descriptions: emptyNames(),
             modifierGroupIds: [],
             needsReview: false,
+            isActive: true,
             markReviewed: false,
           },
     });
@@ -218,6 +219,26 @@ export function MenuEditor({ data }: { data: EditorData }) {
     startTransition(async () => {
       const result = await publishMenu();
       setPublishStatus(result.ok ? "published" : result.error);
+      router.refresh();
+    });
+  }
+
+  // Hiding is saved with the dish; the guest menu changes at the next publish.
+  function toggleDishActive(d: EditorDish) {
+    startTransition(async () => {
+      await saveDish({
+        id: d.id,
+        categoryId: d.categoryId,
+        price: d.price,
+        names: d.names,
+        descriptions: d.descriptions,
+        prepAreaId: d.prepAreaId,
+        tags: d.tags as (typeof DISH_TAGS)[number][],
+        allergens: d.allergens as Allergen[],
+        modifierGroupIds: d.modifierGroupIds,
+        markReviewed: false,
+        isActive: !d.isActive,
+      });
       router.refresh();
     });
   }
@@ -794,6 +815,18 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         </span>
                       )}
                       <span className="ml-auto flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-pressed={d.isActive}
+                          disabled={pending}
+                          onClick={() => toggleDishActive(d)}
+                          className={clsx(
+                            "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-semibold",
+                            d.isActive ? "text-staff-label2" : "bg-pom-tint text-pomegranate",
+                          )}
+                        >
+                          {d.isActive ? t("dishOn") : t("dishOff")}
+                        </button>
                         <button
                           type="button"
                           aria-pressed={soldOut}

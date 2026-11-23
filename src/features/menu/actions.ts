@@ -41,6 +41,7 @@ export async function saveDish(input: DishInput): Promise<SaveDishResult> {
       descriptions: d.descriptions,
       modifier_group_ids: d.modifierGroupIds,
       mark_reviewed: d.markReviewed,
+      is_active: d.isActive,
     } as Json,
   });
   if (error || !data) return { ok: false, error: "failed" };
