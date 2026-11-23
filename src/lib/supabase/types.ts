@@ -1039,6 +1039,7 @@ export type Database = {
       items: {
         Row: {
           allergens: string[]
+          allergens_confirmed: boolean
           category_id: string
           created_at: string
           id: string
@@ -1056,6 +1057,7 @@ export type Database = {
         }
         Insert: {
           allergens?: string[]
+          allergens_confirmed?: boolean
           category_id: string
           created_at?: string
           id?: string
@@ -1073,6 +1075,7 @@ export type Database = {
         }
         Update: {
           allergens?: string[]
+          allergens_confirmed?: boolean
           category_id?: string
           created_at?: string
           id?: string

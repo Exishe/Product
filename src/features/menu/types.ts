@@ -18,6 +18,8 @@ export type EditorDish = {
   prepAreaId: string | null;
   tags: string[];
   allergens: string[];
+  /** The owner has reviewed the allergen information (ADR-083): with an empty list it means "none". */
+  allergensConfirmed: boolean;
   imagePath: string | null;
   names: Names;
   descriptions: Names;
@@ -54,6 +56,8 @@ export type EditorData = {
   ingredientsSupported: boolean;
   /** False until migration 20261123320000_calories_tags is applied: no calorie fields in the ingredients panel. */
   kcalSupported: boolean;
+  /** False until migration 20261123340000_allergen_review is applied: no "none of the allergens" control. */
+  allergenReviewSupported: boolean;
   /** What a dish without a replacement does when a key ingredient is out (ADR-076). */
   outIngredientDisplay: "hide" | "sold_out";
   dishes: EditorDish[];

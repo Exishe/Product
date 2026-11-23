@@ -17,6 +17,12 @@ describe("matchAllergens", () => {
 
   it("never calls a dish without allergen data safe", () => {
     expect(matchAllergens([], ["milk"])).toEqual({ kind: "unknown" });
+    expect(matchAllergens([], ["milk"], false)).toEqual({ kind: "unknown" });
+  });
+
+  it("treats a dish the venue confirmed as having none, but still never names it safe", () => {
+    expect(matchAllergens([], ["milk"], true)).toEqual({ kind: "none" });
+    expect(matchAllergens(["milk"], ["milk"], true)).toEqual({ kind: "contains", allergens: ["milk"] });
   });
 });
 

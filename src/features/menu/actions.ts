@@ -37,6 +37,7 @@ export async function saveDish(input: DishInput): Promise<SaveDishResult> {
       prep_area_id: d.prepAreaId,
       tags: d.tags,
       allergens: d.allergens,
+      ...(d.allergensConfirmed === undefined ? {} : { allergens_confirmed: d.allergensConfirmed }),
       names: d.names,
       descriptions: d.descriptions,
       modifier_group_ids: d.modifierGroupIds,

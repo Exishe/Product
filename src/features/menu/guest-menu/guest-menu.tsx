@@ -313,7 +313,7 @@ export function GuestMenu({
   // The line under a dish when the guest avoids something: what it contains,
   // or that the café didn't say (never "safe").
   const warningFor = (item: GuestItem) => {
-    const m = matchAllergens(item.allergens, avoid);
+    const m = matchAllergens(item.allergens, avoid, item.allergensConfirmed);
     return m.kind === "contains"
       ? { text: t("diet.contains", { list: allergenList(m.allergens) }), strong: true }
       : m.kind === "unknown"
