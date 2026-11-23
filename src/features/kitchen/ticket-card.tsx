@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { lineKey, type BoardLine, type KitchenAction, type ShownTicket } from "./board-model";
 import { ageLabel, classifyLateness, type Lateness } from "./lateness";
 
@@ -48,7 +49,6 @@ function Root({
   label,
   kind,
   lateness,
-  fresh,
   pending,
   allergy,
   highlighted,
@@ -59,7 +59,6 @@ function Root({
   label: string;
   kind: "order" | "void";
   lateness: Lateness;
-  fresh: boolean;
   pending: boolean;
   allergy: boolean;
   highlighted: boolean;
@@ -82,8 +81,6 @@ function Root({
         pending && "border-dashed",
         // A dish picked in «Ընդհանուր» outlines every ticket that has it.
         highlighted && "outline-slip outline-4 outline-offset-2",
-        // A new ticket rises in (200 ms) so the cook sees what changed.
-        fresh && "kds-in",
       )}
     >
       {children}
@@ -314,7 +311,6 @@ export function OrderTicketCard({
   ticket,
   column,
   now,
-  fresh,
   highlighted = false,
   done,
   onToggleLine,
@@ -339,6 +335,8 @@ export function OrderTicketCard({
   const compact = column === "ready";
   const move = (next: "cooking" | "ready") =>
     onAction({ kind: "set_ticket_status", ticketId: ticket.id, expected: ticket.status, next });
+  const locale = useLocale();
+  const tPrint = useTranslations("print");
   const TimerIcon = lateness === "late" ? CircleAlert : lateness === "hurry" ? Hourglass : Clock;
 
   return (
@@ -348,7 +346,6 @@ export function OrderTicketCard({
       label={t("tableLabel", { table: ticket.table ?? ticket.number })}
       kind="order"
       lateness={lateness}
-      fresh={fresh}
       pending={ticket.pending}
       allergy={ticket.allergy}
       highlighted={highlighted}
@@ -468,6 +465,20 @@ export function OrderTicketCard({
               </button>
             </div>
           )}
+          <PrintTicketButton
+            label={tPrint("button")}
+            className="border-(--kds-frame) text-slip inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border-2 px-3 text-lg font-bold"
+          >
+            <TicketSheet
+              table={ticket.table}
+              orderNumber={ticket.number}
+              time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+              lines={ticket.lines
+                .filter((l) => l.quantity > 0)
+                .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), note: l.note }))}
+              note={ticket.orderNote}
+            />
+          </PrintTicketButton>
         </TicketCard.Actions>
       </TicketCard.Body>
     </TicketCard.Root>
@@ -478,7 +489,6 @@ export function OrderTicketCard({
 // cook taps «Հասկացա» (R7).
 export function VoidTicketCard({
   ticket,
-  fresh,
   onAction,
 }: {
   ticket: ShownTicket;
@@ -493,7 +503,6 @@ export function VoidTicketCard({
       label={t("voidLabel", { table: ticket.table ?? ticket.number })}
       kind="void"
       lateness="normal"
-      fresh={fresh}
       pending={ticket.pending}
       allergy={false}
       highlighted={false}

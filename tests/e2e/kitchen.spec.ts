@@ -809,4 +809,40 @@ test.describe("kitchen board", () => {
       await spare.context.close();
     }
   });
+
+  // A printed ticket is the one sheet, on its own: the rest of the board is hidden in print.
+  test("print ticket prints only that ticket, with its table, time and items", async ({
+    browser,
+    api,
+    cafe,
+    device,
+    viewportSize,
+    consoleErrors,
+  }) => {
+    const [first, second] = simpleItems(cafe);
+    const order = await placeOrder(api, cafe, "7", [
+      { item: first!, quantity: 2 },
+      { item: second!, quantity: 1, note: "Առանց սոխի" },
+    ]);
+    const { context, page } = await openBoard(browser, device, cafe, viewportSize, consoleErrors);
+    try {
+      await startShift(page);
+      const ticket = page.locator(`[data-order-number="${order.number}"]`);
+      await ticket.getByRole("button", { name: "Տպել տոմսը" }).click();
+      await page.emulateMedia({ media: "print" });
+      const sheet = page.locator(".print-ticket");
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toContainText("7");
+      await expect(sheet).toContainText(first!.name.hy!);
+      await expect(sheet).toContainText("Առանց սոխի");
+      await expect(page.getByTestId("ticket").first()).toBeHidden();
+      await page.screenshot({ path: test.info().outputPath("print-ticket.png"), fullPage: false });
+      await page.setViewportSize({ width: 820, height: 1180 });
+      await ticket.scrollIntoViewIfNeeded();
+      await page.emulateMedia({ media: "screen" });
+      await ticket.screenshot({ path: test.info().outputPath("kitchen-ticket-tablet.png") });
+    } finally {
+      await context.close();
+    }
+  });
 });

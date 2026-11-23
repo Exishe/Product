@@ -31,6 +31,7 @@ import {
   type WaiterLine,
   type WaiterOrder,
 } from "./floor-model";
+import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { StateIcon } from "./floor-map";
 import { TableTimeline } from "./table-timeline";
 import { button, chip, choice, Sheet } from "./ui";
@@ -193,6 +194,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
               <OrderCard
                 key={o.id}
                 order={o}
+                tableLabel={p.table.label}
                 locale={locale}
                 held
                 onAction={p.onAction}
@@ -210,6 +212,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
           <OrderCard
             key={o.id}
             order={o}
+            tableLabel={p.table.label}
             locale={locale}
             onAction={p.onAction}
             onReject={setRejecting}
@@ -280,6 +283,7 @@ function statusWord(
 
 function OrderCard({
   order,
+  tableLabel,
   locale,
   held,
   onAction,
@@ -287,6 +291,7 @@ function OrderCard({
   onCancel,
 }: {
   order: WaiterOrder;
+  tableLabel: string;
   locale: Locale;
   held?: boolean;
   onAction: (action: WaiterAction) => void;
@@ -294,6 +299,7 @@ function OrderCard({
   onCancel: (line: WaiterLine) => void;
 }) {
   const t = useTranslations("waiter");
+  const tPrint = useTranslations("print");
   const placed = order.status === "placed";
   const live = order.status === "accepted" && order.number !== null;
   const ready = live ? order.tickets.filter((k) => k.status === "ready") : [];
@@ -413,6 +419,22 @@ function OrderCard({
       </ul>
       {order.note && (
         <p className="text-amber-text m-0 text-[0.9375rem]">{t("order.note", { note: order.note })}</p>
+      )}
+      {order.number !== null && order.lines.length > 0 && (
+        <PrintTicketButton
+          label={tPrint("button")}
+          className="border-staff-sep text-ink inline-flex min-h-11 items-center gap-2 self-start rounded-xl border px-4 text-[0.9375rem] font-semibold"
+        >
+          <TicketSheet
+            table={tableLabel}
+            orderNumber={order.number}
+            time={new Date(order.placedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+            lines={order.lines
+              .filter((l) => l.quantity > 0)
+              .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), note: l.note }))}
+            note={order.note}
+          />
+        </PrintTicketButton>
       )}
       {order.status === "rejected" && order.rejectReason && (
         <p className="text-staff-label2 m-0 text-[0.9375rem]">

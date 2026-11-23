@@ -594,6 +594,13 @@
     "costFailed": "The dish is saved, but the cost price isn't. Try again.",
     "margin": "You keep {amount} per portion, {pct}% of the price."
   },
+  "print": {
+    "button": "Print ticket",
+    "table": "Table",
+    "noTable": "No table",
+    "order": "Order {number}",
+    "note": "Note: {note}"
+  },
   "optionGroups": {
     "title": "Options",
     "hint": "Sizes, milk, extras. Create them once, then attach them to dishes.",
