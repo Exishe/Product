@@ -33,6 +33,7 @@ import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-d
 import { BrandMark, GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
 import { CartBar } from "./order-panel";
+import { PromoBanners } from "./promo-banner";
 import { initialSelection, selectedIds } from "./selection";
 import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
 import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
@@ -498,8 +499,9 @@ export function GuestMenu({
         </div>
       </div>
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
-        {(orderingNotice || menu.kitchenBusy) && (
+        {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
           <div className="grid gap-2 pt-4">
+            <PromoBanners promos={menu.promos} />
             {orderingNotice}
             {menu.kitchenBusy && canOrder && (
               <Notice tone="busy">

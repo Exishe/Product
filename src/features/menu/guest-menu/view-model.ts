@@ -60,6 +60,8 @@ export type PublicMenu = {
   /** Section cover photos by category id (ADR-058). */
   covers?: Record<string, string> | null;
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
+  /** Live promos (ADR-070); missing until migration 20261123150000_promos. */
+  promos?: unknown;
 };
 
 /** A piece of menu text and the language it is actually in. */
@@ -99,6 +101,7 @@ export type GuestCategory = {
   /** Every language's section name, normalized like a dish's. */
   search: string;
 };
+export type GuestPromo = { id: string; title: Text; text: Text | null; badge: string | null };
 export type GuestMenuData = {
   restaurantName: string;
   /** The café's guest theme preset (ADR-052). */
@@ -120,6 +123,8 @@ export type GuestMenuData = {
   /** The same facts as api.public_menu_status, to tell when the page is out of date. */
   status: MenuStatus;
   kitchenBusy: { minutes: number | null } | null;
+  /** The banners to show: promos that are on right now, in the page's language (ADR-070). */
+  promos: GuestPromo[];
   /** Some dish lists its allergens: the "I avoid…" filter is worth offering. */
   hasAllergens: boolean;
   categories: GuestCategory[];
@@ -279,6 +284,20 @@ export function buildGuestMenu(
     }),
   );
 
+  const status = parseStatus(
+    {
+      version: data.menu.version,
+      ordering: data.location.ordering,
+      paused: data.location.paused,
+      closed: data.location.closed,
+      sold_out: data.sold_out,
+      hidden_categories: data.hidden_categories,
+      kitchen_busy: data.kitchen_busy,
+      promos: data.promos,
+    },
+    null,
+  ) as MenuStatus;
+
   return {
     restaurantName: data.restaurant.name,
     theme: guestTheme(data.restaurant.guest_theme),
@@ -291,18 +310,11 @@ export function buildGuestMenu(
     ordering: data.location.ordering,
     paused: data.location.paused ?? null,
     closed: data.location.closed ?? null,
-    status: parseStatus(
-      {
-        version: data.menu.version,
-        ordering: data.location.ordering,
-        paused: data.location.paused,
-        closed: data.location.closed,
-        sold_out: data.sold_out,
-        hidden_categories: data.hidden_categories,
-        kitchen_busy: data.kitchen_busy,
-      },
-      null,
-    ) as MenuStatus,
+    status,
+    promos: status.promos.flatMap((p) => {
+      const title = localized(p.title, locale);
+      return title ? [{ id: p.id, title, text: localized(p.text, locale), badge: p.badge }] : [];
+    }),
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
     hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
     categories,

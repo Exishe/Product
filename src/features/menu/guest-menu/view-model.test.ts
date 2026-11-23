@@ -230,6 +230,21 @@ describe("availability (ADR-068)", () => {
       soldOut: ["a"],
       hidden: ["x"],
       busy: null,
+      promos: [],
     });
+  });
+
+  it("shows live promos in the page's language, falling back to Armenian (ADR-070)", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    m.promos = [
+      { id: "p1", title: { hy: "Երջանիկ ժամեր", ru: "Счастливые часы" }, text: { hy: "Սուրճը՝ կես գնով" }, badge: "-50%" },
+    ];
+    const ru = buildGuestMenu(m, "ru").promos[0];
+    expect(ru?.title).toEqual({ text: "Счастливые часы", lang: "ru" });
+    expect(ru?.text).toEqual({ text: "Սուրճը՝ կես գնով", lang: "hy" });
+    expect(buildGuestMenu(m, "en").promos[0]?.title.lang).toBe("hy");
+    expect(buildGuestMenu(m, "en").status.promos).toHaveLength(1);
+    delete m.promos;
+    expect(buildGuestMenu(m, "en").promos).toEqual([]);
   });
 });

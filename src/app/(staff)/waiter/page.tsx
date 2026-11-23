@@ -1,8 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { fetchSoldOut } from "@/features/kitchen/board-data";
 import { buildGuestMenu, type PublicMenu } from "@/features/menu/guest-menu/view-model";
 import { fetchFloor } from "@/features/waiter/floor-data";
+import { fetchLivePromoTitles } from "@/features/waiter/promos";
 import { WaiterApp } from "@/features/waiter/waiter-app";
 import type { Locale } from "@/i18n/routing";
 import { requireMember } from "@/lib/auth/require-member";
@@ -67,6 +69,7 @@ export default async function WaiterPage() {
       ).categories
     : [];
 
+  const promoTitles = await fetchLivePromoTitles(supabase as unknown as SupabaseClient, location.id, locale);
   const messages = await getMessages();
   return (
     <NextIntlClientProvider
@@ -91,6 +94,7 @@ export default async function WaiterPage() {
         isDevice={me.kind === "device"}
         canChangePassword={me.kind === "person" && me.role === "waiter"}
         canManageTables={me.role === "owner" || me.role === "manager"}
+        initialPromos={promoTitles ?? []}
       />
     </NextIntlClientProvider>
   );

@@ -6,6 +6,8 @@ import { VenueControls, type VenueState } from "@/features/availability/venue-co
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { deltaPercent, parseDashboard, type Dashboard } from "@/features/dashboard/model";
 import { businessDate } from "@/features/dashboard/range";
+import { PromoManager } from "@/features/promos/promo-manager";
+import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
@@ -91,6 +93,18 @@ export default async function AdminHome() {
         pausedUntil: v.ordering_paused_until,
         closedUntil: v.kitchen_closed_until,
       };
+  }
+
+  // Promotions (ADR-070): also read on its own, so a database without the table hides the section.
+  let promos: Promo[] | null = null;
+  if (location) {
+    const { data: rows, error } = await supabase
+      .from("promos")
+      .select("id, title, body, badge, is_on, starts_at, ends_at")
+      .eq("location_id", location.id)
+      .order("created_at")
+      .order("id");
+    if (rows && !error) promos = rows.map(promoFromRow);
   }
 
   let data: Dashboard | null = null;
@@ -189,6 +203,12 @@ export default async function AdminHome() {
       {location && venue && (
         <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">
           <VenueControls initial={venue} timeZone={location.timezone} />
+        </Section>
+      )}
+
+      {location && promos && (
+        <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
+          <PromoManager initial={promos} timeZone={location.timezone} />
         </Section>
       )}
 
