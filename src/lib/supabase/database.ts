@@ -95,6 +95,12 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    delete_promo: {
+      Args: {
+        p_promo_id: string;
+      };
+      Returns: undefined;
+    };
     delete_push_subscription: {
       Args: {
         p_endpoint: string;
@@ -338,6 +344,19 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    save_promo: {
+      Args: {
+        p_location_id: string;
+        p_promo_id: string;
+        p_title: Json;
+        p_text?: Json;
+        p_badge?: string;
+        p_starts?: string;
+        p_ends?: string;
+        p_is_on?: boolean;
+      };
+      Returns: string;
+    };
     save_push_subscription: {
       Args: {
         p_restaurant_id: string;
@@ -421,6 +440,13 @@ export type ApiSchema = {
         p_is_test: boolean;
       };
       Returns: number;
+    };
+    set_promo_on: {
+      Args: {
+        p_promo_id: string;
+        p_on: boolean;
+      };
+      Returns: boolean;
     };
     set_section_cover: {
       Args: {

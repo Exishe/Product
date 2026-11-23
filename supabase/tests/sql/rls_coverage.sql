@@ -116,6 +116,7 @@ begin
   v_tok := api.table_qr_token(v_table);
   perform api.create_invitation(v_r, 'waiter');
   perform api.create_telegram_link(v_r);
+  perform api.set_promo_on(api.save_promo(v_l, null, '{"hy": "Ակցիա"}'::jsonb), true);
   perform api.save_push_subscription(v_r, 'https://fcm.googleapis.com/fcm/send/rls-' || p_slug, current_setting('rc.p256dh'),
                                      current_setting('rc.authkey'), 'Phone');
   v_code := api.create_device_pairing(v_l, 'kitchen', 'Խոհանոց');
@@ -225,7 +226,7 @@ select test.ok((select count(*) from test.rc_rows(:'rb') where n > 0) >= 30,
 select test.ok((select string_agg(tbl, ',' order by tbl) from test.rc_rows(:'rb') where n = 0
                 and tbl in ('audit_log', 'categories', 'device_pairings', 'guest_sessions', 'invitations',
                             'items', 'kitchen_ticket_items', 'kitchen_tickets', 'members', 'menu_versions',
-                            'modifiers', 'notification_channels', 'order_items', 'orders', 'push_subscriptions',
+                            'modifiers', 'notification_channels', 'order_items', 'orders', 'promos', 'push_subscriptions',
                             'service_requests', 'subscriptions', 'table_sessions', 'tables', 'telegram_link_codes')) is null,
   'and in every table the roles below must not reach');
 
@@ -308,7 +309,7 @@ select coalesce(string_agg(tbl, ', '), '') as bad from test.rc_rows(:'ra') where
               'item_modifier_groups', 'item_translations', 'items', 'menu_import_images', 'menu_imports', 'menu_locations',
               'menu_translations', 'menus', 'metrics_daily', 'modifier_group_translations', 'modifier_groups',
               'modifier_translations', 'modifiers', 'notification_channels', 'notification_outbox', 'payments',
-              'prep_areas', 'push_subscriptions', 'subscriptions', 'telegram_link_codes') \gset
+              'prep_areas', 'promos', 'push_subscriptions', 'subscriptions', 'telegram_link_codes') \gset
 select test.ok(:'bad' = '', 'nor any owner-only table of its own café ' || :'bad');
 select test.ok((select n from test.rc_rows(:'ra') where tbl = 'kitchen_tickets') > 0, 'but it does see its own tickets');
 select test.ok((select count(*) from public.members) > 0, 'and its café''s staff list');
