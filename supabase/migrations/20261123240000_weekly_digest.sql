@@ -324,7 +324,8 @@ end $$;
 -- -----------------------------------------------------------------------------
 -- 2. The rule engine
 -- -----------------------------------------------------------------------------
--- One week (p_from .. p_to, seven business days) of one café in, a jsonb out:
+-- weekly_digest_candidates returns every rule that fires, with its score;
+-- weekly_digest_payload keeps the best three. One week (p_from .. p_to, seven business days) of one café in, a jsonb out:
 --   {location_id, from, to, orders, revenue, enough, min_orders,
 --    findings: [{key, ...numbers, item?}], actions: [{key, ...}]}
 -- findings[i] belongs to actions[i]. Keys are data; the texts live in the
@@ -345,7 +346,7 @@ end $$;
 --   suggestions 45 + shown/10 (max 15)   30+ suggestions shown, accepted 20 % or more, or 5 % or less
 -- The three best scores win; a tie goes to the rule listed first above; a dish
 -- appears in one finding only (the next rule's candidate takes its place).
-create function private.weekly_digest_payload(p_location_id uuid, p_from date, p_to date) returns jsonb
+create function private.weekly_digest_candidates(p_location_id uuid, p_from date, p_to date) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare
   c_min_orders constant integer := 20;
@@ -365,9 +366,6 @@ declare
   v_revenue bigint;
   v_dishes jsonb;
   v_cands jsonb := '[]'::jsonb;
-  v_findings jsonb := '[]'::jsonb;
-  v_actions jsonb := '[]'::jsonb;
-  v_used text[] := '{}';
   v_e jsonb;
   v_n integer;
   v_m integer;
@@ -376,7 +374,6 @@ declare
   v_pct integer;
   v_metric text;
   v_rate numeric;
-  c jsonb;
 begin
   select l.timezone, l.business_day_starts, l.overdue_minutes, l.repeat_call_threshold
   into v_tz, v_starts, v_overdue, v_calls
@@ -391,9 +388,8 @@ begin
   v_orders := (v_busy ->> 'orders')::integer;
   v_revenue := (v_busy ->> 'revenue')::bigint;
   if v_orders < c_min_orders then
-    return jsonb_build_object('location_id', p_location_id, 'from', p_from, 'to', p_to, 'orders', v_orders,
-                              'revenue', v_revenue, 'enough', false, 'min_orders', c_min_orders,
-                              'findings', '[]'::jsonb, 'actions', '[]'::jsonb);
+    return jsonb_build_object('orders', v_orders, 'revenue', v_revenue, 'enough', false, 'min_orders', c_min_orders,
+                              'candidates', '[]'::jsonb);
   end if;
   v_conv := private.item_conversion_core(p_location_id, p_from, p_to);
   v_eng := private.menu_engineering_core(p_location_id, p_from, p_to, false);
@@ -555,9 +551,25 @@ begin
     end if;
   end if;
 
+  return jsonb_build_object('orders', v_orders, 'revenue', v_revenue, 'enough', true, 'min_orders', c_min_orders,
+                            'candidates', v_cands);
+end $$;
+
+create function private.weekly_digest_payload(p_location_id uuid, p_from date, p_to date) returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_c jsonb := private.weekly_digest_candidates(p_location_id, p_from, p_to);
+  v_findings jsonb := '[]'::jsonb;
+  v_actions jsonb := '[]'::jsonb;
+  v_used text[] := '{}';
+  c jsonb;
+begin
+  if v_c is null then
+    return null;
+  end if;
   -- The three best: score, then the rule's priority, then the dish id. A dish is used once.
   for c in
-    select e.value from jsonb_array_elements(v_cands) e
+    select e.value from jsonb_array_elements(v_c -> 'candidates') e
     order by (e.value ->> 'score')::numeric desc, (e.value ->> 'prio')::integer, e.value ->> 'item'
   loop
     exit when jsonb_array_length(v_findings) >= 3;
@@ -568,9 +580,8 @@ begin
     v_findings := v_findings || jsonb_build_array((c -> 'finding') || jsonb_build_object('score', c -> 'score'));
     v_actions := v_actions || jsonb_build_array(c -> 'action');
   end loop;
-
-  return jsonb_build_object('location_id', p_location_id, 'from', p_from, 'to', p_to, 'orders', v_orders,
-                            'revenue', v_revenue, 'enough', true, 'min_orders', c_min_orders,
+  return jsonb_build_object('location_id', p_location_id, 'from', p_from, 'to', p_to, 'orders', v_c -> 'orders',
+                            'revenue', v_c -> 'revenue', 'enough', v_c -> 'enough', 'min_orders', v_c -> 'min_orders',
                             'findings', v_findings, 'actions', v_actions);
 end $$;
 
@@ -896,7 +907,7 @@ end $$;
 revoke execute on function
   private.item_conversion_core(uuid, date, date), private.busy_hours_core(uuid, date, date),
   private.upsell_report_core(uuid, date, date), private.menu_engineering_core(uuid, date, date, boolean),
-  private.weekly_digest_payload(uuid, date, date),
+  private.weekly_digest_candidates(uuid, date, date), private.weekly_digest_payload(uuid, date, date),
   private.digest_count(integer, public.app_locale, text), private.digest_dow(integer, public.app_locale),
   private.digest_hour(integer), private.digest_decimal(numeric, public.app_locale),
   private.digest_name(jsonb, public.app_locale), private.digest_finding_text(jsonb, public.app_locale),
