@@ -1,8 +1,8 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PlusIcon } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import type { Database } from "@/lib/supabase/database";
@@ -70,7 +70,7 @@ export function CantMakeNote({
                     aria-label={t("order.cantMakeAddOne", { name: dish.name })}
                     className="rounded-pill text-ink hover:bg-surface inline-flex min-h-11 flex-none items-center gap-1 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-sm font-semibold"
                   >
-                    <Plus size={16} aria-hidden />
+                    <PlusIcon />
                     {t("order.cantMakeAdd")}
                   </button>
                 )}
