@@ -24,7 +24,7 @@ import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
 import { hasRequestLeft } from "@/features/ordering/pending-request-key";
 import type { SubInfo } from "@/features/ordering/substitutions-parse";
-import { NO_HINTS, pairsFor, type MenuHints } from "./hints";
+import { NO_HINTS, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
 import { useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
@@ -55,6 +55,8 @@ const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet }))
 const loadSubs = () => import("@/features/ordering/substitutions");
 // "Made with X instead of Y, OK?" (ADR-076): fetched the first time a substituted dish is added.
 const SubsDialog = lazy(() => import("./subs-dialog").then((m) => ({ default: m.SubsDialog })));
+// "Goes well with" (ADR-077): fetched when the first dish is added, never at first paint.
+const Suggestions = lazy(() => import("./suggestions").then((m) => ({ default: m.Suggestions })));
 // "Last time here": fetched only on a phone that has ordered at this café.
 const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.OrderAgain })));
 // The desktop's order rail: fetched only at 1024 px and up.
@@ -179,6 +181,9 @@ export function GuestMenu({
   const [fold, setFold] = useState<((text: string) => string) | null>(null);
   const [sheet, setSheet] = useState<GuestItem | null>(null);
   const [view, setView] = useState<"menu" | "cart">("menu");
+  // The dish just added, which asks the server for "goes well with" ideas.
+  const [suggest, setSuggest] = useState<{ id: string; cart: string[]; n: number } | null>(null);
+  const [suggestShown, setSuggestShown] = useState(false);
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
   const [locked, setLocked] = useState(false);
   // What the guest avoids (kept on this phone for every café) and whether
@@ -332,6 +337,7 @@ export function GuestMenu({
 
   const openCart = () => {
     menuScroll.current = window.scrollY;
+    setSuggest(null);
     window.history.pushState(null, "", CART_HASH);
     setView("cart");
     window.scrollTo(0, 0);
@@ -374,9 +380,17 @@ export function GuestMenu({
     return next;
   };
 
-  const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
+  const add = (
+    item: GuestItem,
+    add: { modifierIds: string[]; quantity: number; note: string },
+    via?: "suggest",
+  ) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
-    track("item_add", item.id, { qty: Math.min(add.quantity, 99) });
+    track("item_add", item.id, via ? { qty: Math.min(add.quantity, 99), via } : { qty: Math.min(add.quantity, 99) });
+    // A dish added from a suggestion does not start another round of ideas.
+    if (!via && canOrder) {
+      setSuggest({ id: item.id, cart: [...new Set([...lines.map((l) => l.itemId), item.id])], n: Date.now() });
+    }
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
   const addAgain = (again: SavedLine[]) => {
@@ -403,15 +417,19 @@ export function GuestMenu({
     },
     [lines, updateCart, closeCart],
   );
-  const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) =>
+  const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1, via?: "suggest") =>
     gate(item, () => {
       sparkFrom(from);
       flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null });
-      add(item, {
-        modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
-        quantity,
-        note: "",
-      });
+      add(
+        item,
+        {
+          modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
+          quantity,
+          note: "",
+        },
+        via,
+      );
     });
   const findDish = () => {
     search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
@@ -849,6 +867,21 @@ export function GuestMenu({
                 <CallWaiterPrompt token={table.token} tableId={table.id} />
               </Suspense>
             )}
+            {canOrder && suggest && lines.length > 0 && (
+              <Suspense fallback={null}>
+                <Suggestions
+                  locationId={menu.locationId}
+                  trigger={suggest}
+                  cartIds={lines.map((l) => l.itemId)}
+                  items={items}
+                  soldOut={soldOutNow}
+                  track={track}
+                  onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
+                  onChoose={setSheet}
+                  onVisible={setSuggestShown}
+                />
+              </Suspense>
+            )}
             {lines.length > 0 && (
               <div className="lg:hidden">
                 <CartBar summary={summary} items={items} onOpen={openCart} />
@@ -863,9 +896,6 @@ export function GuestMenu({
             key={sheet.id}
             item={sheet}
             canOrder={canOrder}
-            pairs={pairsFor(sheet.id, hints, items, soldOutNow)}
-            onAddPair={quickAdd}
-            onOpenPair={setSheet}
             track={track}
             onClose={() => setSheet(null)}
             onAdd={(a) => {
@@ -899,7 +929,7 @@ export function GuestMenu({
         <p
           key={toast.key}
           aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float rounded-card fixed bottom-[calc(172px+env(safe-area-inset-bottom,0px))] left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
+          className={`bg-deep text-deep-ink shadow-float rounded-card fixed ${suggestShown ? "bottom-[calc(380px+env(safe-area-inset-bottom,0px))]" : "bottom-[calc(172px+env(safe-area-inset-bottom,0px))]"} left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
         >
           {toast.text}
         </p>
