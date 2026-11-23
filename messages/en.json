@@ -858,6 +858,8 @@
       "notifyError": "Couldn't turn it on. Please try again.",
       "requestFailed": "That didn't go through. Try again.",
       "orderMore": "Order more",
+      "showcase": "From the menu",
+      "status": "Order status",
       "reconnecting": "Updating…",
       "empty": "No orders yet.",
       "emptyHint": "Choose dishes from the menu and send them to the kitchen.",

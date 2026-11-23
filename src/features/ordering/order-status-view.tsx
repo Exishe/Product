@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
+import { useReveal } from "@/features/guest-theme/motion/reveal";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
-import { CheckIcon, MinusIcon, Notice, PlusIcon, STEP, Txt } from "@/features/menu/guest-menu/ui";
+import { CheckIcon, MinusIcon, Notice, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { formatAmd } from "@/lib/format/money";
@@ -201,18 +202,74 @@ function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
   );
 }
 
+// Pieces of the order page that rise into view as the guest scrolls to them
+// (the games at the bottom): the same entrance the menu's cards use.
+function Rise({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useReveal(ref);
+  return (
+    <div ref={ref} className={motionStyles.reveal}>
+      {children}
+    </div>
+  );
+}
+
+export type Showcase = { id: string; name: string; image: string | null; price: number };
+
+// "Order more": a button to the menu and a few dishes to tempt the guest while
+// the order cooks, on the right of the order page beside the status.
+function ShowcaseCard({ dishes, menuHref }: { dishes: Showcase[]; menuHref: string }) {
+  const { t, locale } = useGuestI18n();
+  return (
+    <section
+      aria-labelledby="showcase-title"
+      className="bg-surface shadow-card rounded-feature overflow-hidden border p-5 [border-color:var(--guest-card-border)] md:p-6"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="showcase-title" className="display-face text-[1.75rem] leading-tight">
+          {t("order.showcase")}
+        </h2>
+        <a
+          href={menuHref}
+          className="bg-add text-on-add rounded-pill inline-flex min-h-11 items-center px-5 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95"
+        >
+          {t("order.orderMore")}
+        </a>
+      </div>
+      {dishes.length > 0 && (
+        <ul className="-mx-5 mt-4 flex snap-x scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] md:-mx-6 md:scroll-px-6 md:px-6 [&::-webkit-scrollbar]:hidden">
+          {dishes.map((d) => (
+            <li key={d.id} className="w-[8.25rem] flex-none snap-start">
+              <a href={menuHref} className="block text-center">
+                <Plate src={d.image ? dishPhotoUrl(d.image) : null} size={132} className="mx-auto size-[6.5rem]" />
+                <span className="display-face mt-2 block text-[1.0625rem] leading-tight [overflow-wrap:anywhere]">
+                  {d.name}
+                </span>
+                <span className="num text-accent-text mt-0.5 block text-sm font-semibold">
+                  {formatAmd(d.price, locale as Locale)}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function OrderCard({
   order,
   latest,
-  below,
+  part = "all",
   wait = null,
   details,
   onRepeat,
 }: {
   order: Order;
   latest: boolean;
+  /** The newest order is shown in two places: its status on the right, its lines on the left. */
+  part?: "all" | "lines" | "status";
   details?: Record<string, string>;
-  below?: ReactNode;
   wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
   onRepeat?: (order: Order) => void;
@@ -221,6 +278,42 @@ function OrderCard({
   const status = displayStatus(order);
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
   const Title = latest ? "h2" : "h3";
+  const statusBlock =
+    status === "rejected" ? (
+      <div className="my-4 grid gap-1">
+        <Notice tone="alert">
+          {t("order.rejected")}
+          {order.reject_reason ? ` ${t("order.reason", { reason: order.reject_reason })}` : null}
+        </Notice>
+      </div>
+    ) : status === "cancelled" ? (
+      <div className="my-4">
+        <Notice tone="alert">{t("order.cancelled")}</Notice>
+      </div>
+    ) : latest ? (
+      <>
+        <Tracker order={order} status={status} />
+        {wait && waiting.has(status) && <WaitLine wait={wait} placedAt={order.placed_at} />}
+      </>
+    ) : null;
+  if (part === "status")
+    return (
+      <section
+        aria-label={t("order.title", { number: order.number })}
+        data-status={status}
+        className="bg-surface shadow-card rounded-feature border px-5 pt-6 pb-2 [border-color:var(--guest-card-border)] md:px-8 md:pt-8"
+      >
+        <p className="text-muted text-sm font-semibold">
+          {t("order.title", { number: order.number })} · {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
+        </p>
+        {status !== "rejected" && status !== "cancelled" && (
+          <h2 className="display-face mt-1 text-[2.5rem] leading-[1.05] md:text-[3rem]" data-testid="order-phase">
+            {t(`order.steps.${status}`)}
+          </h2>
+        )}
+        {statusBlock}
+      </section>
+    );
   return (
     <article
       className={
@@ -247,24 +340,7 @@ function OrderCard({
       <p className="text-muted text-sm">
         {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
       </p>
-      {status === "rejected" ? (
-        <div className="my-4 grid gap-1">
-          <Notice tone="alert">
-            {t("order.rejected")}
-            {order.reject_reason ? ` ${t("order.reason", { reason: order.reject_reason })}` : null}
-          </Notice>
-        </div>
-      ) : status === "cancelled" ? (
-        <div className="my-4">
-          <Notice tone="alert">{t("order.cancelled")}</Notice>
-        </div>
-      ) : latest ? (
-        <>
-          <Tracker order={order} status={status} />
-          {wait && waiting.has(status) && <WaitLine wait={wait} placedAt={order.placed_at} />}
-        </>
-      ) : null}
-      {below}
+      {part === "all" && statusBlock}
       <ul className="mt-2">
         {lines.map((l) => {
           const name = localized(l.name_i18n, locale as Locale);
@@ -343,9 +419,12 @@ export function OrderStatusView({
   vapidPublicKey = null,
   wait = null,
   details,
+  showcase = [],
 }: {
   tableId: string;
   menuHref: string;
+  /** A few dishes to show beside the status: «Order more». */
+  showcase?: Showcase[];
   vapidPublicKey?: string | null;
   /** The café's usual wait (ADR-060); null when it can't say, or the kitchen set its own. */
   wait?: WaitRange | null;
@@ -521,7 +600,10 @@ export function OrderStatusView({
   ];
 
   return (
-    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 pt-5 md:px-8 md:pt-10 ${DOCK_SPACE}`}>
+    // The whole screen, not a small block: the order on the left, its status and
+    // the menu's showcase on the right (above the order on a phone), and the
+    // games across the bottom.
+    <main className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${DOCK_SPACE}`}>
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
         <div
@@ -536,25 +618,17 @@ export function OrderStatusView({
           <span className="display-face text-[1.75rem] leading-none">{t("order.steps.ready")}</span>
         </div>
       )}
-      {latest && (
-        <OrderCard
-          order={latest}
-          latest
-          wait={wait}
-          details={details}
-          onRepeat={closed ? undefined : repeat}
-          // The games sit right under the status while the guest waits: the
-          // moment they have nothing to do but watch the tracker.
-          below={
-            !showGames ? null : (
-              <GamesCorner
-                ready={latestStatus === "ready"}
-                waiting={latestStatus !== null && waiting.has(latestStatus)}
-              />
-            )
-          }
-        />
-      )}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-8">
+        <div className="order-2 min-w-0 lg:order-1">
+          {latest && (
+            <OrderCard
+              order={latest}
+              latest
+              part="lines"
+              details={details}
+              onRepeat={closed ? undefined : repeat}
+            />
+          )}
       {channel === "down" && <p className="text-muted -mt-2 mb-2 text-sm">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {latestStatus
@@ -694,6 +768,24 @@ export function OrderStatusView({
             <span className="num">{formatAmd(grand, locale as Locale)}</span>
           </div>
         </section>
+      )}
+        </div>
+        <aside className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2" aria-label={t("order.status")}>
+          {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
+          <div className="hidden lg:block">
+            <ShowcaseCard dishes={showcase} menuHref={menuHref} />
+          </div>
+        </aside>
+        <div className="order-3 lg:hidden">
+          <ShowcaseCard dishes={showcase} menuHref={menuHref} />
+        </div>
+      </div>
+      {showGames && latestStatus !== null && (
+        <div className="mt-8">
+          <Rise>
+            <GamesCorner ready={latestStatus === "ready"} waiting={waiting.has(latestStatus)} />
+          </Rise>
+        </div>
       )}
       <GuestDock items={dock} />
     </main>

@@ -2,12 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Plus } from "lucide-react";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
-import { sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
+import { buildGuestMenu, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { OrderStatusView } from "@/features/ordering/order-status-view";
@@ -77,6 +78,16 @@ export default async function OrderStatusPage({
   // The wordmark that reads on the header band's colour (ADR-065).
   const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).header);
 
+  // A few dishes to tempt the guest while the order cooks: those with a photo first.
+  const dishes = published
+    ? buildGuestMenu(published, locale, wordmarkTones(theme, parseBrand(look?.brand)))
+        .categories.flatMap((c) => c.items)
+        .filter((i) => !i.soldOut)
+    : [];
+  const showcase = (dishes.filter((i) => i.image).length >= 3 ? dishes.filter((i) => i.image) : dishes)
+    .slice(0, 8)
+    .map((i) => ({ id: i.id, name: i.name.text, image: i.image, price: i.price }));
+
   return (
     <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>
       {table ? (
@@ -90,6 +101,17 @@ export default async function OrderStatusPage({
             // A short bar: the order starts near the top of the screen.
             compact
             home={{ href: menuHref }}
+            // Top right: order something new.
+            tools={
+              <a
+                href={menuHref}
+                aria-label={t("order.orderMore")}
+                className="bg-add text-on-add rounded-pill inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 md:px-5"
+              >
+                <Plus size={20} aria-hidden />
+                <span className="hidden md:inline">{t("order.orderMore")}</span>
+              </a>
+            }
           />
           <OrderStatusView
             tableId={table.table_id}
@@ -99,6 +121,7 @@ export default async function OrderStatusPage({
             wait={busy ? null : hints.wait}
             // Two dishes with one name (blini with jam, blini with caviar) are told apart.
             details={published ? sameNameDetails(published, locale) : undefined}
+            showcase={showcase}
           />
         </GuestI18nProvider>
       ) : (
