@@ -109,6 +109,15 @@ export const registry = {
     describe: (_c, l) => t(l, "desc_close_kitchen"),
   },
   report: { label: "a_report", read: reportText },
+  ingredient_out: {
+    label: "a_ingredient_out",
+    confirm: (f, l) => t(l, f.to_out ? "confirm_ingredient_out_on" : "confirm_ingredient_out_off", { ingredient: s(f.ingredient) }),
+    done: (c, l) =>
+      c.new?.out
+        ? t(l, "done_ingredient_out_on", { label: c.label ?? "", hidden: s(c.new.hidden) || "0", subs: s(c.new.substituted) || "0" })
+        : t(l, "done_ingredient_out_off", { label: c.label ?? "" }),
+    describe: (c, l) => t(l, c.new?.out ? "desc_ingredient_out_on" : "desc_ingredient_out_off", { label: c.label ?? "" }),
+  },
   help: { label: "a_help" },
 } as const satisfies Record<string, BotAction>;
 
