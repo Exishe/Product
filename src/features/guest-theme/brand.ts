@@ -258,6 +258,10 @@ export function brandTokens(
     vars["--brand-on-header-muted"] =
       [0.8, 0.88].map((t) => mix(onHeader, header, t)).find((c) => contrast(c, header) >= 4.5) ?? onHeader;
     vars["--guest-on-accent"] = onHeader;
+    // The round tool buttons in the band (search, order) sit on the theme's surface and
+    // draw their icons in the header colour; where that would not show against the
+    // surface (a dark header on Wine's dark surface) they use the theme's ink.
+    vars["--brand-tool-ink"] = contrast(header, surface) >= 3 ? header : facts.ink;
     // Large titles in the brand's dark colour when it keeps 3:1 (AA large).
     if (contrast(header, page) >= 3 && contrast(header, surface) >= 3) vars["--guest-title"] = header;
   }

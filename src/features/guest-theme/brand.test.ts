@@ -105,6 +105,14 @@ describe("brandTokens", () => {
     expect(v["--brand-font-script"]).toMatch(/^"Great Vibes"/);
   });
 
+  it("keeps the header's tool icons visible on the theme's surface", () => {
+    // Espresso header on Evening's light surface: the icons wear the header colour.
+    expect(vars(brandTokens("evening", BLANCA).style)["--brand-tool-ink"]).toBe("#3e312f");
+    // A dark header on Wine's dark surface would vanish: the icons use the theme's ink.
+    const wine = { ...BLANCA, colors: { ...BLANCA.colors, header: "#4a0a24", page: "#260212" } };
+    expect(vars(brandTokens("wine", wine).style)["--brand-tool-ink"]).toBe("#ffffff");
+  });
+
   it("keeps every text pair it sets at WCAG AA", () => {
     const v = vars(brandTokens("soft", BLANCA).style);
     const page = v["--guest-page"]!;

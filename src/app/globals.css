@@ -678,7 +678,7 @@ body:has(.admin-shell) {
   padding-bottom: 1rem;
 }
 .guest-lux[data-brand-header] .guest-head .bg-surface {
-  color: var(--brand-header);
+  color: var(--brand-tool-ink, var(--brand-header));
 }
 .guest-lux[data-brand-header] .guest-head :focus-visible {
   outline-color: var(--brand-on-header);
