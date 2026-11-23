@@ -133,3 +133,21 @@ export function splitMinutes(total: number): { hours: number; minutes: number } 
   const t = Math.max(0, Math.round(total));
   return { hours: Math.floor(t / 60), minutes: t % 60 };
 }
+
+// The last complete week's summary, as api.last_weekly_digest sends it: the
+// Monday Telegram message itself, already in the viewer's language (ADR-074).
+export type WeeklyDigest = { from: string; to: string; enough: boolean; findings: number; text: string };
+
+export function parseDigest(json: unknown): WeeklyDigest {
+  const o = json as Record<string, unknown> | null;
+  if (!o || typeof o.text !== "string" || typeof o.from !== "string" || typeof o.to !== "string") {
+    throw new Error("bad digest");
+  }
+  return {
+    from: o.from,
+    to: o.to,
+    enough: o.enough === true,
+    findings: Number(o.findings) || 0,
+    text: o.text,
+  };
+}

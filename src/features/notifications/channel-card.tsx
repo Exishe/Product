@@ -36,7 +36,7 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
         </div>
         <fieldset className="m-0 flex flex-col gap-0.5 border-0 p-0">
           <legend className={`${fieldLabel} mb-1`}>{t("eventsLegend")}</legend>
-          {ALERT_EVENTS.map((e) => (
+          {ALERT_EVENTS.filter((e) => e !== "weekly.digest" || channel.kind === "telegram").map((e) => (
             <label key={e} className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
               <input
                 type="checkbox"

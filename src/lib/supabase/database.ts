@@ -182,6 +182,13 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    last_weekly_digest: {
+      Args: {
+        p_location_id: string;
+        p_locale?: string;
+      };
+      Returns: Json;
+    };
     list_staff_logins: {
       Args: {
         p_location_id: string;

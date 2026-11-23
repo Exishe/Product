@@ -1092,7 +1092,8 @@
       "station_offline": "Kitchen screen offline",
       "order_comped": "Cancelled after serving",
       "table_alert": "Problem table (slow order, repeated calls)",
-      "day_summary": "Day summary"
+      "day_summary": "Day summary",
+      "weekly_digest": "Weekly summary (every Monday)"
     },
     "language": "Language",
     "languages": {
@@ -1516,6 +1517,10 @@
         "duration": "{hours} h {minutes} min",
         "durationMin": "{minutes} min"
       }
+    },
+    "digest": {
+      "title": "Last week's summary",
+      "hint": "The same message that arrives in Telegram on Monday mornings. Built by rules from your own data, no AI."
     },
     "upsell": {
       "title": "Suggestions",

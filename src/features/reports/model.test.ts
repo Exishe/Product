@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { busyGrid, parseBusy, parseConversion, splitMinutes, type Busy } from "./model";
+import { busyGrid, parseBusy, parseConversion, parseDigest, splitMinutes, type Busy } from "./model";
 
 const busy: Busy = {
   from: "2026-11-16",
@@ -43,5 +43,28 @@ describe("helpers", () => {
   it("rejects a wrong shape", () => {
     expect(() => parseBusy({})).toThrow();
     expect(() => parseConversion({ items: 1 })).toThrow();
+  });
+});
+
+describe("parseDigest", () => {
+  it("reads the message of the last week", () => {
+    const d = parseDigest({
+      from: "2026-11-16",
+      to: "2026-11-22",
+      enough: true,
+      findings: 3,
+      text: "Weekly summary",
+    });
+    expect(d).toEqual({
+      from: "2026-11-16",
+      to: "2026-11-22",
+      enough: true,
+      findings: 3,
+      text: "Weekly summary",
+    });
+  });
+  it("refuses a body without text", () => {
+    expect(() => parseDigest({ from: "2026-11-16", to: "2026-11-22" })).toThrow();
+    expect(() => parseDigest(null)).toThrow();
   });
 });
