@@ -903,6 +903,8 @@
       "notifyInstall": "On iPhone, notifications only work from a page added to the home screen. You can still follow your order on this page.",
       "notifyError": "Couldn't turn it on. Please try again.",
       "requestFailed": "That didn't go through. Try again.",
+      "notSent": "Not sent yet. We keep trying, and the waiter gets it as soon as there is a connection.",
+      "retryRequest": "Try again",
       "orderMore": "Order more",
       "reconnecting": "Updating…",
       "empty": "No orders yet.",

@@ -19,6 +19,8 @@ import { OPEN_CART_KEY, addToCart, cartKey } from "./cart-store";
 import { MAX_PEOPLE, repeatLines, shareOf } from "./repeat";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
+import { classifyOrderError } from "./order-errors";
+import { beginRequest, clearRequest, loadRequest, RETRY_MS, type PendingRequest } from "./pending-request";
 import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
@@ -358,9 +360,22 @@ export function OrderStatusView({
   const [data, setData] = useState<Data | null>(null);
   const [phase, setPhase] = useState<"loading" | "ready" | "none">("loading");
   const [slow, setSlow] = useState(false);
-  const [told, setTold] = useState<{ kind: Request["kind"] | "error"; key: number } | null>(null);
+  const [told, setTold] = useState<{ kind: Request["kind"] | "error" | "unsent"; key: number } | null>(null);
   const [asking, setAsking] = useState<Request["kind"] | null>(null);
   const [choosing, setChoosing] = useState(false);
+  // Requests with no answer yet: kept in storage, retried, never shown as sent.
+  // Read in the browser only; requests left unsent before a reload come back here.
+  const [unsent, setUnsent] = useState<PendingRequest[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return (["call_waiter", "bring_bill"] as const)
+        .map((k) => loadRequest(window.localStorage, tableId, k))
+        .filter((r): r is PendingRequest => r !== null);
+    } catch {
+      return [];
+    }
+  });
+  const sending = useRef(false);
   const [people, setPeople] = useState(1);
   const router = useRouter();
 
@@ -411,19 +426,83 @@ export function OrderStatusView({
   }, [topStatus]);
   const channel = useGuestChannel({ supabase: db, guestSessionId, refresh, poll: active && !data?.closed });
 
+  // One attempt at a saved request. The database keeps one open request per
+  // table and kind, so a repeat after a lost answer never rings twice.
+  const attemptSend = useCallback(
+    async (req: PendingRequest): Promise<"sent" | "offline" | "failed"> => {
+      if (!db || !guestSessionId) return "offline";
+      const { error, status } = await db
+        .schema("api")
+        .rpc("guest_service_request", {
+          p_guest_session_id: guestSessionId,
+          p_kind: req.kind,
+          ...(req.payment ? { p_payment_preference: req.payment } : {}),
+        })
+        .abortSignal(AbortSignal.timeout(15_000))
+        .then(
+          (r) => r,
+          () => ({ error: { message: "network" }, status: 0 }),
+        );
+      const done = (r: "sent" | "failed") => {
+        clearRequest(window.localStorage, tableId, req.kind);
+        setUnsent((list) => list.filter((x) => x.kind !== req.kind));
+        return r;
+      };
+      if (!error) return done("sent");
+      return classifyOrderError({ status, error }).kind === "offline" ? "offline" : done("failed");
+    },
+    [db, guestSessionId, tableId],
+  );
+
   const ask = async (kind: Request["kind"], payment?: "card" | "cash") => {
     if (!db || !guestSessionId) return;
     setChoosing(false);
     setAsking(kind);
-    const { error } = await db.schema("api").rpc("guest_service_request", {
-      p_guest_session_id: guestSessionId,
-      p_kind: kind,
-      ...(payment ? { p_payment_preference: payment } : {}),
-    });
+    let req: PendingRequest = { kind, payment: payment ?? null, createdAt: new Date().toISOString() };
+    try {
+      req = beginRequest(window.localStorage, tableId, kind, payment ?? null);
+    } catch {
+      // storage blocked: still send, just without the saved copy
+    }
+    const result = await attemptSend(req);
     setAsking(null);
-    setTold({ kind: error ? "error" : kind, key: Date.now() });
-    if (!error) refresh();
+    if (result === "offline") {
+      setUnsent((list) => [...list.filter((x) => x.kind !== kind), req]);
+      setTold({ kind: "unsent", key: Date.now() });
+      return;
+    }
+    setTold({ kind: result === "failed" ? "error" : kind, key: Date.now() });
+    if (result === "sent") refresh();
   };
+
+  const retryUnsent = useCallback(async () => {
+    if (sending.current || !guestSessionId) return;
+    sending.current = true;
+    try {
+      for (const req of unsent) {
+        const result = await attemptSend(req);
+        if (result === "sent") {
+          setTold({ kind: req.kind, key: Date.now() });
+          refresh();
+        } else if (result === "failed") setTold({ kind: "error", key: Date.now() });
+      }
+    } finally {
+      sending.current = false;
+    }
+  }, [unsent, guestSessionId, attemptSend, refresh]);
+
+  const hasUnsent = unsent.length > 0;
+  useEffect(() => {
+    if (!hasUnsent || !guestSessionId) return;
+    const retry = () => void retryUnsent();
+    window.addEventListener("online", retry);
+    const interval = setInterval(retry, RETRY_MS);
+    retry();
+    return () => {
+      window.removeEventListener("online", retry);
+      clearInterval(interval);
+    };
+  }, [hasUnsent, guestSessionId, retryUnsent]);
 
   if (phase === "loading") {
     return slow ? (
@@ -659,14 +738,21 @@ export function OrderStatusView({
             </div>
           )}
           <p className="mt-2 min-h-6 text-sm" role="status" aria-live="polite" key={told?.key}>
-            {told?.kind === "error"
-              ? t("order.requestFailed")
-              : told?.kind === "bring_bill" || (!told && open.has("bring_bill"))
-                ? t("order.billTold")
-                : told?.kind === "call_waiter" || open.has("call_waiter")
-                  ? t("order.waiterTold")
-                  : null}
+            {hasUnsent
+              ? t("order.notSent")
+              : told?.kind === "error"
+                ? t("order.requestFailed")
+                : told?.kind === "bring_bill" || (!told && open.has("bring_bill"))
+                  ? t("order.billTold")
+                  : told?.kind === "call_waiter" || open.has("call_waiter")
+                    ? t("order.waiterTold")
+                    : null}
           </p>
+          {hasUnsent && (
+            <button type="button" className={`${secondary} mt-1 w-full`} onClick={() => void retryUnsent()}>
+              {t("order.retryRequest")}
+            </button>
+          )}
           <p>
             <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
               {t("order.orderMore")}
