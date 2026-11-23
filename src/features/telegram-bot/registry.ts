@@ -71,7 +71,12 @@ export const registry = {
     done: (c, l) => t(l, c.new?.visible ? "done_hide_on" : "done_hide_off", { label: c.label ?? "" }),
     describe: (c, l) => t(l, c.new?.visible ? "desc_hide_on" : "desc_hide_off", { label: c.label ?? "" }),
   },
-  add_item: { label: "a_add_item" },
+  add_item: {
+    label: "a_add_item",
+    confirm: (f, l) => t(l, f.photo ? "confirm_add_item_photo" : "confirm_add_item", { item: s(f.item), price: money(f.price), category: s(f.category) }),
+    done: (c, l) => t(l, "done_add_item", { label: c.label ?? "" }),
+    describe: (c, l) => t(l, c.new?.created ? "desc_add_item" : "desc_add_item_undo", { label: c.label ?? "" }),
+  },
   category: {
     label: "a_category",
     confirm: (f, l) =>
@@ -79,7 +84,13 @@ export const registry = {
     done: (c, l) => t(l, c.new?.active ? "done_category_on" : "done_category_off", { label: c.label ?? "" }),
     describe: (c, l) => t(l, c.new?.active ? "desc_category_on" : "desc_category_off", { label: c.label ?? "" }),
   },
-  promo: { label: "a_promo" },
+  promo: {
+    label: "a_promo",
+    confirm: (f, l) =>
+      t(l, !f.to_on ? "confirm_promo_off" : f.live_after ? "confirm_promo_on" : "confirm_promo_on_waiting", { promo: s(f.promo) }),
+    done: (c, l) => t(l, !c.new?.on ? "done_promo_off" : c.new?.live ? "done_promo_on" : "done_promo_on_waiting", { label: c.label ?? "" }),
+    describe: (c, l) => t(l, c.new?.on ? "desc_promo_on" : "desc_promo_off", { label: c.label ?? "" }),
+  },
   pause: {
     label: "a_pause",
     confirm: (f, l) =>

@@ -34,7 +34,7 @@ describe("dictionary", () => {
 describe("callbacks", () => {
   it("every callback fits Telegram's 64 bytes and the shape the database accepts", () => {
     const all = [cb.menu(), cb.action("close_kitchen"), cb.pick(uuid), cb.choice("resume"), cb.page(12), cb.back(), cb.cancel(),
-      cb.confirm("aB3_-xYz"), cb.undo(), cb.history(), cb.language("hy"), cb.language("choose")];
+      cb.confirm("aB3_-xYz"), cb.undo(), cb.history(), cb.language("hy"), cb.language("choose"), cb.skip()];
     for (const c of all) {
       expect(new TextEncoder().encode(c).length).toBeLessThanOrEqual(64);
       expect(c).toMatch(CALLBACK_PATTERN);
@@ -164,6 +164,83 @@ describe("migration 20261123170000", () => {
   it("every definer function pins the search path", () => {
     const fns = sql.split(/create (?:or replace )?function /).slice(1);
     for (const f of fns) expect(f.slice(0, 400), f.slice(0, 40)).toContain("set search_path = ''");
+  });
+});
+
+describe("add new item and promo on / off", () => {
+  const facts = { item: "Cappuccino", category: "Drinks", price: 1800, photo: false };
+  it("the Armenian name cannot be skipped, the Russian and English ones and the photo can", () => {
+    const hy = renderScreen({ type: "ask_text", action: "add_item", field: "name_hy", optional: false }, "en");
+    expect(hy.text).toBe(texts.en.ask_name_hy);
+    expect(hy.keyboard.flat().map((b) => b.callback_data)).toEqual(["b", "x"]);
+    const ru = renderScreen({ type: "ask_text", action: "add_item", field: "name_ru", optional: true }, "en");
+    expect(ru.keyboard.flat().map((b) => b.callback_data)).toEqual(["s", "b", "x"]);
+    expect(renderScreen({ type: "ask_text", action: "add_item", field: "name_en", optional: true }, "ru").text).toBe(texts.ru.ask_name_en);
+    expect(renderScreen({ type: "ask_photo", action: "add_item", optional: true }, "en").keyboard.flat().map((b) => b.callback_data)).toEqual(["s", "b", "x"]);
+  });
+  it("a bad name or photo says why and asks again", () => {
+    const bad = renderScreen({ type: "bad_text", action: "add_item", field: "name_hy", optional: false }, "en").text;
+    expect(bad).toContain(texts.en.bad_text);
+    expect(bad).toContain(texts.en.ask_name_hy);
+    expect(renderScreen({ type: "bad_photo", action: "add_item" }, "hy").text).toBe(texts.hy.bad_photo);
+  });
+  it("an unknown field still draws (the Armenian question), never throws", () => {
+    expect(renderScreen({ type: "ask_text", action: "x", field: "evil", optional: false }, "en").text).toBe(texts.en.ask_name_hy);
+  });
+  it("the price question is its own sentence for add_item", () => {
+    expect(renderScreen({ type: "ask_number", action: "add_item", context: {} }, "en").text).toBe(texts.en.ask_price);
+    expect(renderScreen({ type: "ask_number", action: "price", context: {} }, "en").text).toBe(texts.en.ask_number);
+  });
+  it("the preview names the dish, price and section; a photo changes the sentence", () => {
+    const r = renderScreen({ type: "confirm", action: "add_item", token: "tok_1234", facts }, "en");
+    expect(r.text).toBe("Add «Cappuccino», 1\u00a0800 AMD, in «Drinks»? Guests see it right after.");
+    expect(r.keyboard[0]!.map((b) => b.callback_data)).toEqual(["k:tok_1234", "x"]);
+    expect(renderScreen({ type: "confirm", action: "add_item", token: "t", facts: { ...facts, photo: true } }, "en").text).toContain("photo");
+  });
+  it("done, history and undo describe an added dish and its removal", () => {
+    expect(renderScreen({ type: "done", action: "add_item", change: { label: "Cappuccino", new: { created: true } } }, "en").text).toContain("added to the menu");
+    expect(actionOf("add_item")!.describe!({ label: "Cappuccino", old: null, new: { created: true, price: 800 } }, "en")).toBe("item «Cappuccino» added");
+    expect(actionOf("add_item")!.describe!({ label: "Cappuccino", old: { created: true }, new: null }, "en")).toBe("item «Cappuccino» removed");
+  });
+  it("a promo picker marks promos that are on and off", () => {
+    const rows = [{ id: uuid, label: "Happy hour", on: true, off: false }, { id: `${uuid.slice(0, 35)}1`, label: "Spring", on: false, off: true }];
+    const { keyboard, text } = renderScreen({ type: "pick_promo", action: "promo", page: 0, has_prev: false, has_next: false, rows }, "en");
+    expect(text).toBe(texts.en.pick_promo);
+    expect(keyboard[0]![0]!.text).toBe("✅ Happy hour");
+    expect(keyboard[1]![0]!.text).toBe("Spring (off)");
+  });
+  it("promo previews and results say which way it goes and whether guests see it", () => {
+    const c = (f: Record<string, unknown>) => renderScreen({ type: "confirm", action: "promo", token: "t", facts: { promo: "Happy hour", ...f } }, "en").text;
+    expect(c({ to_on: true, live_after: true })).toContain("switched on");
+    expect(c({ to_on: true, live_after: false })).toContain("outside its dates");
+    expect(c({ to_on: false })).toContain("switched off");
+    const d = (n: Record<string, unknown>) => renderScreen({ type: "done", action: "promo", change: { label: "Happy hour", new: n } }, "en").text;
+    expect(d({ on: true, live: true })).toContain("is on. Guests see it");
+    expect(d({ on: true, live: false })).toContain("do not see it yet");
+    expect(d({ on: false })).toContain("is off");
+    expect(actionOf("promo")!.describe!({ label: "Happy hour", new: { on: true } }, "ru")).toBe("акция «Happy hour» включена");
+  });
+  it("the new failure codes have their own sentences", () => {
+    expect(renderScreen({ type: "failed", code: "no_section" }, "en").text).toBe(texts.en.failed_no_section);
+    expect(renderScreen({ type: "failed", code: "no_promo" }, "ru").text).toBe(texts.ru.failed_no_promo);
+  });
+});
+
+describe("migration 20261123200000", () => {
+  const sql = readFileSync("supabase/migrations/20261123200000_telegram_bot_add_item.sql", "utf8");
+  it("revokes execute from clients on every private function it creates", () => {
+    const created = [...sql.matchAll(/create (?:or replace )?function (private\.\w+)\(/g)].map((m) => m[1]!);
+    const revoke = sql.slice(sql.lastIndexOf("revoke execute on function"));
+    expect(created.length).toBeGreaterThan(8);
+    for (const fn of created) expect(revoke, fn).toContain(`${fn}(`);
+  });
+  it("every function pins the search path", () => {
+    const fns = sql.split(/create (?:or replace )?function /).slice(1);
+    for (const f of fns) expect(f.slice(0, 500), f.slice(0, 40)).toContain("set search_path = ''");
+  });
+  it("never reads a token or secret key in the app and keeps the photo step off by default", () => {
+    expect(sql).not.toMatch(/service_role|secret_key/i);
+    expect(sql).toContain("private.secret('bot_photo_enabled') = 'on'");
   });
 });
 

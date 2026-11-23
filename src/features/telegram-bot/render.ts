@@ -6,7 +6,7 @@ import { BOT_LOCALES, t, type BotLocale, type TextKey } from "./texts";
 // the webhook returns as its HTTP answer: editMessageText for a button press
 // (the message turns into the next screen), sendMessage for typed text.
 
-type Row = { id: string; label: string; off?: boolean };
+type Row = { id: string; label: string; off?: boolean; on?: boolean };
 type Ctx = Record<string, unknown>;
 export type Screen =
   | { type: "menu" }
@@ -14,9 +14,11 @@ export type Screen =
   | { type: "soon"; action: string }
   | { type: "expired" }
   | { type: "failed"; code: string }
-  | { type: "pick_category" | "pick_item"; action: string; page: number; has_prev: boolean; has_next: boolean; rows: Row[]; category?: string | null }
+  | { type: "pick_category" | "pick_item" | "pick_promo"; action: string; page: number; has_prev: boolean; has_next: boolean; rows: Row[]; category?: string | null }
   | { type: "choice"; action: string; choices: string[]; context: Ctx }
   | { type: "ask_number" | "bad_number"; action: string; context: Ctx }
+  | { type: "ask_text" | "bad_text"; action: string; field: string; optional: boolean }
+  | { type: "ask_photo" | "bad_photo"; action: string; optional?: boolean }
   | { type: "confirm"; action: string; token: string; facts: Ctx }
   | { type: "done"; action: string; change: Change }
   | { type: "undo_confirm"; token: string; change: Change & { action: string } }
@@ -39,6 +41,8 @@ const FAILED_TEXT: Record<string, TextKey> = {
   unchanged: "failed_unchanged",
   already_closed: "failed_already_closed",
   unreviewed_ai: "failed_unreviewed_ai",
+  no_section: "failed_no_section",
+  no_promo: "failed_no_promo",
 };
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
@@ -77,6 +81,7 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
       return { text: t(l, key), keyboard: [menuRow] };
     }
     case "pick_category":
+    case "pick_promo":
     case "pick_item": {
       const paging: Button[] = [];
       if (screen.has_prev) paging.push(btn(t(l, "page_prev"), cb.page(screen.page - 1)));
@@ -84,12 +89,18 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
       const text =
         screen.type === "pick_category"
           ? t(l, "pick_category")
-          : screen.category
+          : screen.type === "pick_promo"
+            ? t(l, "pick_promo")
+            : screen.category
             ? t(l, "pick_item_in", { category: screen.category })
             : t(l, "pick_item");
       return {
         text,
-        keyboard: [...screen.rows.map((r) => [btn(r.off ? t(l, "row_off", { label: r.label }) : r.label, cb.pick(r.id))]), ...(paging.length ? [paging] : []), navRow],
+        keyboard: [
+          ...screen.rows.map((r) => [btn(r.off ? t(l, "row_off", { label: r.label }) : r.on ? t(l, "row_on", { label: r.label }) : r.label, cb.pick(r.id))]),
+          ...(paging.length ? [paging] : []),
+          navRow,
+        ],
       };
     }
     case "choice": {
@@ -105,7 +116,22 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
       return { text: [state, t(l, "choice_pause")].filter(Boolean).join("\n"), keyboard: [...rows, navRow] };
     }
     case "ask_number":
-      return { text: t(l, "ask_number"), keyboard: [navRow] };
+      return { text: t(l, screen.action === "add_item" ? "ask_price" : "ask_number"), keyboard: [navRow] };
+    case "ask_text":
+    case "bad_text": {
+      const field = screen.field === "name_ru" || screen.field === "name_en" ? screen.field : "name_hy";
+      const ask = t(l, `ask_${field}`);
+      return {
+        text: screen.type === "bad_text" ? `${t(l, "bad_text")}\n${ask}` : ask,
+        keyboard: [...(screen.optional ? [[btn(t(l, "skip"), cb.skip())]] : []), navRow],
+      };
+    }
+    case "ask_photo":
+    case "bad_photo":
+      return {
+        text: screen.type === "bad_photo" ? t(l, "bad_photo") : t(l, "ask_photo"),
+        keyboard: [[btn(t(l, "skip"), cb.skip())], navRow],
+      };
     case "bad_number":
       return { text: t(l, "bad_number"), keyboard: [navRow] };
     case "confirm":
