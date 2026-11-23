@@ -689,7 +689,8 @@
       "spicy": "Spicy",
       "vegetarian": "Vegetarian",
       "gluten_free": "Gluten-free",
-      "lactose_free": "Lactose-free"
+      "lactose_free": "Lactose-free",
+      "chefs_pick": "Chef's pick"
     },
     "allergens": "Allergens",
     "allergensHint": "Tick what the dish contains. Leave empty if you haven't checked: guests will be told to ask the waiter.",
@@ -779,7 +780,18 @@
       "displayHide": "Hide the dish",
       "displaySoldOut": "Show it as sold out",
       "displaySaved": "Saved",
-      "displayFailed": "Could not save. Try again."
+      "displayFailed": "Could not save. Try again.",
+      "amountHint": "How much goes into one portion.",
+      "kcalPer100": "Calories, kcal per 100 {unit}",
+      "gramsPerPiece": "Weight of one piece, g",
+      "kcalHint": "Applies to every dish that uses this ingredient. Guests see the change after you publish.",
+      "kcalSave": "Save calories",
+      "invalidKcal": "Enter calories from 0 to 1000.",
+      "invalidPiece": "Enter a weight above zero.",
+      "kcalShown": "Guests will see ≈ {value} kcal per portion after you publish.",
+      "kcalMissing": "Add calories for {names} to show a number.",
+      "weightMissing": "Add the weight of one piece for {names} to show a number.",
+      "kcalNone": "Calories per portion"
     },
     "managePairings": "Goes well with"
   },
@@ -971,7 +983,8 @@
         "popular": "popular",
         "vegetarian": "vegetarian",
         "gluten_free": "gluten-free",
-        "lactose_free": "lactose-free"
+        "lactose_free": "lactose-free",
+        "chefs_pick": "Chef's pick"
       },
       "callConfirm": "Call the waiter?",
       "callYes": "Yes, call",
@@ -986,7 +999,8 @@
       "pausedNoEnd": "Ordering is paused for now. Please ask your waiter.",
       "closedToday": "The kitchen is closed for today.",
       "promoLabel": "Offer",
-      "promoClose": "Close this offer"
+      "promoClose": "Close this offer",
+      "kcal": "≈ {value} kcal"
     },
     "sheet": {
       "required": "Required",
@@ -1177,8 +1191,8 @@
       "molluscs": "molluscs"
     },
     "diet": {
-      "open": "Allergies",
-      "openCount": "Allergies: {count}",
+      "open": "Filters",
+      "openCount": "Filters: {count}",
       "title": "What do you avoid?",
       "hint": "We'll mark dishes that list these allergens, and dishes whose allergens aren't listed.",
       "done": "Done",
@@ -1187,7 +1201,20 @@
       "unknown": "Allergens not listed. Ask your waiter.",
       "active": "Marking dishes with {list}.",
       "tellWaiter": "Tell your waiter about any allergy so the kitchen can check.",
-      "sheetNone": "Allergens aren't listed for this dish. If you have an allergy, tell your waiter."
+      "sheetNone": "Allergens aren't listed for this dish. If you have an allergy, tell your waiter.",
+      "filtersTitle": "Filters",
+      "showOnly": "Show only",
+      "chip": {
+        "vegetarian": "Vegetarian",
+        "spicy": "Spicy",
+        "new": "New",
+        "chefs_pick": "Chef's pick",
+        "nuts": "Contains nuts"
+      },
+      "nutsHint": "“Contains nuts” finds dishes where the venue lists tree nuts or peanuts.",
+      "activeTags": "Showing only: {list}.",
+      "showAll": "Show all",
+      "venueNote": "Allergen information is provided by the venue."
     },
     "again": {
       "title": "Last time here",

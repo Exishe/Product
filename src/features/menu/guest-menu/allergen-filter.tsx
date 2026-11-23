@@ -3,25 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { ALLERGENS, type Allergen } from "./allergens";
+import { DIET_FILTERS, type DietFilter } from "./diet-filter";
 import styles from "./guest.module.css";
 import { CheckIcon, CloseIcon } from "./ui";
 
-// "What do you avoid?": the 14 EU allergens as toggles. Loaded on the first
-// tap of the Allergies button (not part of the menu's first load). A native
+// Filters: "show only" chips (vegetarian, spicy, new, chef's pick, contains
+// nuts), then "what do you avoid?": the 14 EU allergens as toggles. Loaded on the first
+// tap of the Filters button (not part of the menu's first load). A native
 // <dialog>: focus stays inside, Escape closes it. The choice applies as the
 // guest taps; "Done" just closes.
 export function AllergenFilter({
   avoid,
   onChange,
+  diet,
+  onDiet,
   onClose,
 }: {
   avoid: readonly Allergen[];
   onChange: (avoid: Allergen[]) => void;
+  diet: readonly DietFilter[];
+  onDiet: (diet: DietFilter[]) => void;
   onClose: () => void;
 }) {
   const { t } = useGuestI18n();
   const dialog = useRef<HTMLDialogElement>(null);
   const [chosen, setChosen] = useState<Allergen[]>([...avoid]);
+  const [shownOnly, setShownOnly] = useState<DietFilter[]>([...diet]);
 
   useEffect(() => {
     const d = dialog.current;
@@ -38,6 +45,14 @@ export function AllergenFilter({
     onChange(next);
   };
 
+  const toggleDiet = (f: DietFilter) => {
+    const next = DIET_FILTERS.filter((x) => (x === f ? !shownOnly.includes(x) : shownOnly.includes(x)));
+    setShownOnly(next);
+    onDiet(next);
+  };
+  const chipClass =
+    "rounded-pill bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-11 items-center gap-1.5 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[0.9375rem] font-semibold aria-pressed:border-transparent";
+
   return (
     <dialog
       ref={dialog}
@@ -51,7 +66,7 @@ export function AllergenFilter({
       <div className="px-5 pt-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))] md:px-8 md:pt-7 md:pb-8">
         <div className="flex items-start justify-between gap-4">
           <h2 id="avoid-title" className="display-face text-[2rem] leading-[1.05]">
-            {t("diet.title")}
+            {t("diet.filtersTitle")}
           </h2>
           <button
             type="button"
@@ -62,18 +77,31 @@ export function AllergenFilter({
             <CloseIcon />
           </button>
         </div>
-        <p className="text-muted mt-2 text-[0.9375rem] leading-snug">{t("diet.hint")}</p>
-        <ul className="mt-5 flex flex-wrap gap-2">
+        <h3 className="mt-5 text-[1.0625rem] font-semibold">{t("diet.showOnly")}</h3>
+        <ul className="mt-2 flex flex-wrap gap-2" data-testid="diet-chips">
+          {DIET_FILTERS.map((f) => {
+            const on = shownOnly.includes(f);
+            return (
+              <li key={f}>
+                <button type="button" aria-pressed={on} onClick={() => toggleDiet(f)} className={chipClass}>
+                  {on && <CheckIcon />}
+                  {t(`diet.chip.${f}`)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-muted mt-2 text-[0.875rem] leading-snug">{t("diet.nutsHint")}</p>
+        <h3 id="avoid-heading" className="mt-6 text-[1.0625rem] font-semibold">
+          {t("diet.title")}
+        </h3>
+        <p className="text-muted mt-1 text-[0.9375rem] leading-snug">{t("diet.hint")}</p>
+        <ul className="mt-3 flex flex-wrap gap-2">
           {ALLERGENS.map((a) => {
             const on = chosen.includes(a);
             return (
               <li key={a}>
-                <button
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggle(a)}
-                  className="rounded-pill bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-11 items-center gap-1.5 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[0.9375rem] font-semibold aria-pressed:border-transparent"
-                >
+                <button type="button" aria-pressed={on} onClick={() => toggle(a)} className={chipClass}>
                   {on && <CheckIcon />}
                   {t(`allergens.${a}`)}
                 </button>
@@ -82,7 +110,7 @@ export function AllergenFilter({
           })}
         </ul>
         <p className="bg-chip rounded-card mt-5 px-4 py-3 text-[0.875rem] leading-snug">
-          {t("diet.tellWaiter")}
+          {t("diet.tellWaiter")} {t("diet.venueNote")}
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <button
@@ -92,16 +120,18 @@ export function AllergenFilter({
           >
             {t("diet.done")}
           </button>
-          {chosen.length > 0 && (
+          {(chosen.length > 0 || shownOnly.length > 0) && (
             <button
               type="button"
               onClick={() => {
                 setChosen([]);
                 onChange([]);
+                setShownOnly([]);
+                onDiet([]);
               }}
               className="rounded-pill min-h-12 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-5 font-semibold"
             >
-              {t("diet.clear")}
+              {t("diet.showAll")}
             </button>
           )}
         </div>

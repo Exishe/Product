@@ -7,6 +7,7 @@ import type { Track } from "@/features/analytics/track";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
+import { formatKcal } from "./kcal";
 import {
   initialSelection,
   isSelectionValid,
@@ -134,6 +135,11 @@ export function DishSheet({
         <p className="num text-accent-text mt-3 text-[1.625rem] font-semibold">
           {formatAmd(item.price, locale)}
         </p>
+        {item.kcal !== null && (
+          <p className="num text-muted mt-1 text-[0.9375rem]" data-testid="kcal">
+            {formatKcal(item.kcal, (value) => t("menu.kcal", { value }), locale)}
+          </p>
+        )}
         {/* Allergens as the café listed them; when it listed none, say so
             (an empty list is not "free of"), and always send serious
             allergies to the waiter. */}
@@ -149,7 +155,8 @@ export function DishSheet({
             </>
           ) : (
             t("diet.sheetNone")
-          )}
+          )}{" "}
+          {t("diet.venueNote")}
         </p>
 
         {item.groups.map((group) => {

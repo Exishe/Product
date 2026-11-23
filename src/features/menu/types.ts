@@ -52,6 +52,8 @@ export type EditorData = {
   timeZone: string;
   /** False until migration 20261123250000_ingredients_substitutes is applied: the ingredients panel stays hidden. */
   ingredientsSupported: boolean;
+  /** False until migration 20261123320000_calories_tags is applied: no calorie fields in the ingredients panel. */
+  kcalSupported: boolean;
   /** What a dish without a replacement does when a key ingredient is out (ADR-076). */
   outIngredientDisplay: "hide" | "sold_out";
   dishes: EditorDish[];

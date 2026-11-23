@@ -835,6 +835,7 @@ export type Database = {
       ingredients: {
         Row: {
           cost_per_unit: number
+          grams_per_piece: number | null
           id: string
           is_active: boolean
           kcal_per_100g: number | null
@@ -845,6 +846,7 @@ export type Database = {
         }
         Insert: {
           cost_per_unit?: number
+          grams_per_piece?: number | null
           id?: string
           is_active?: boolean
           kcal_per_100g?: number | null
@@ -855,6 +857,7 @@ export type Database = {
         }
         Update: {
           cost_per_unit?: number
+          grams_per_piece?: number | null
           id?: string
           is_active?: boolean
           kcal_per_100g?: number | null

@@ -240,6 +240,12 @@ export type ApiSchema = {
       };
       Returns: { key: string; names: Json; unit: string; kcal_per_100g: number }[];
     };
+    item_kcal: {
+      Args: {
+        p_item_id: string;
+      };
+      Returns: Json;
+    };
     item_conversion: {
       Args: {
         p_location_id: string;
@@ -556,6 +562,14 @@ export type ApiSchema = {
         p_theme: string;
         p_brand_color: string;
         p_logo_path: string;
+      };
+      Returns: undefined;
+    };
+    set_ingredient_kcal: {
+      Args: {
+        p_ingredient_id: string;
+        p_kcal_per_100g: number;
+        p_grams_per_piece?: number;
       };
       Returns: undefined;
     };

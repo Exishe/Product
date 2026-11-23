@@ -743,6 +743,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
               itemId={panel.draft.id}
               restaurantId={data.restaurantId}
               locationId={data.locationId}
+              kcalSupported={data.kcalSupported}
             />
           )}
 

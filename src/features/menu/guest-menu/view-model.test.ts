@@ -195,6 +195,25 @@ describe("buildGuestMenu", () => {
   });
 });
 
+describe("calories and diet chips (ADR-082)", () => {
+  it("carries the published kcal, and none when the snapshot has no number", () => {
+    const m = menu({ a: item({ kcal: 620 }), b: item(), c: item({ kcal: null }), d: item({ kcal: 0 }) }, [
+      { id: "1", item_ids: ["a", "b", "c", "d"] },
+    ]);
+    const items = buildGuestMenu(m, "en").categories[0]!.items;
+    expect(items.map((i) => i.kcal)).toEqual([620, null, null, null]);
+  });
+
+  it("knows the chef's pick tag and offers the chips only when a dish can be found by one", () => {
+    const m = menu({ a: item({ tags: ["chefs_pick", "popular"] }), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    const built = buildGuestMenu(m, "en");
+    expect(built.categories[0]!.items[0]!.tags).toEqual(["chefs_pick", "popular"]);
+    expect(built.hasDietTags).toBe(true);
+    const none = menu({ a: item({ tags: ["popular"] }), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    expect(buildGuestMenu(none, "en").hasDietTags).toBe(false);
+  });
+});
+
 describe("availability (ADR-068)", () => {
   it("hides a section outside its window instead of greying it", () => {
     const m = menu({ a: item(), b: item() }, [
