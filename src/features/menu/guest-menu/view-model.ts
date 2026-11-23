@@ -4,6 +4,7 @@ import { parseStatus, type MenuStatus } from "@/features/availability/status";
 import { normalizeForSearch } from "@/lib/format/search";
 import { parseSubstitutions, type SubInfo } from "@/features/ordering/substitutions-parse";
 import { ALLERGENS, type Allergen } from "./allergens";
+import { hasDietTags } from "./diet-filter";
 
 // The shape of api.public_menu (published snapshot from api.publish_menu,
 // plus today's stop list and the kitchen-busy notice).
@@ -23,6 +24,8 @@ type SnapshotItem = {
   portion: { amount: number; unit: string } | null;
   tags: string[] | null;
   allergens?: string[] | null;
+  /** Approximate kcal per portion, computed when the menu was published; missing when not every ingredient has calories. */
+  kcal?: number | null;
   groups: SnapshotGroup[] | null;
   image?: string | null;
 };
@@ -91,6 +94,8 @@ export type GuestItem = {
   tags: GuestTag[];
   /** EU allergen codes the café listed; empty means "not listed", not "none". */
   allergens: Allergen[];
+  /** Approximate kcal per portion (shown as "≈ N kcal"); null: no number. */
+  kcal: number | null;
   soldOut: boolean;
   /** Made with a replacement ingredient today (ADR-076); the price already includes the difference. */
   substitution: SubInfo | null;
@@ -137,11 +142,13 @@ export type GuestMenuData = {
   promos: GuestPromo[];
   /** Some dish lists its allergens: the "I avoid…" filter is worth offering. */
   hasAllergens: boolean;
+  /** Some dish can be found by a "show only" chip: the filter is worth offering. */
+  hasDietTags: boolean;
   categories: GuestCategory[];
 };
 
 // Diet tags first (they answer "can I eat this?"), then the café's own notes.
-const TAGS = ["vegan", "vegetarian", "gluten_free", "lactose_free", "spicy", "new", "popular"] as const;
+const TAGS = ["vegan", "vegetarian", "gluten_free", "lactose_free", "spicy", "new", "chefs_pick", "popular"] as const;
 export type GuestTag = (typeof TAGS)[number];
 const UNITS = ["g", "ml", "pcs"] as const;
 
@@ -270,6 +277,7 @@ export function buildGuestMenu(
       portion: raw.portion && unit ? { amount: raw.portion.amount, unit } : null,
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
       allergens: ALLERGENS.filter((a) => raw.allergens?.includes(a)),
+      kcal: typeof raw.kcal === "number" && raw.kcal > 0 ? raw.kcal : null,
       soldOut: soldOut.has(id),
       substitution: subs[id] ?? null,
       image: typeof raw.image === "string" && raw.image ? raw.image : null,
@@ -344,6 +352,7 @@ export function buildGuestMenu(
     }),
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
     hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
+    hasDietTags: hasDietTags(categories.flatMap((c) => c.items)),
     categories,
   };
 }

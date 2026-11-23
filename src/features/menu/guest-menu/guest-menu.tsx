@@ -26,6 +26,7 @@ import { hasRequestLeft } from "@/features/ordering/pending-request-key";
 import type { SubInfo } from "@/features/ordering/substitutions-parse";
 import { NO_HINTS, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
+import { matchesDiet, type DietFilter } from "./diet-filter";
 import { useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
@@ -189,6 +190,8 @@ export function GuestMenu({
   // What the guest avoids (kept on this phone for every café) and whether
   // the chooser is open.
   const [avoid, setAvoidState] = useState<Allergen[]>([]);
+  // The "show only" chips (vegetarian, spicy, …): for this visit only, not kept.
+  const [diet, setDiet] = useState<DietFilter[]>([]);
   const [choosingAvoid, setChoosingAvoid] = useState(false);
   const [hasLast, setHasLast] = useState(false);
   // Dishes the database said sold out while sending (the menu was loaded earlier).
@@ -256,19 +259,22 @@ export function GuestMenu({
   // The folding table (Armenian and Russian letters to Latin) is fetched on the
   // first keystroke; until it is here the whole menu stays on screen.
   const q = fold ? fold(query) : "";
-  const shown = useMemo(
-    () =>
-      q
-        ? menu.categories
-            .map((c) =>
-              c.search.includes(q)
-                ? { ...c, cover: null }
-                : { ...c, cover: null, items: c.items.filter((i) => i.search.includes(q)) },
-            )
-            .filter((c) => c.items.length)
-        : menu.categories,
-    [menu.categories, q],
-  );
+  const shown = useMemo(() => {
+    const base = diet.length
+      ? menu.categories
+          .map((c) => ({ ...c, items: c.items.filter((i) => matchesDiet(i, diet)) }))
+          .filter((c) => c.items.length)
+      : menu.categories;
+    return q
+      ? base
+          .map((c) =>
+            c.search.includes(q)
+              ? { ...c, cover: null }
+              : { ...c, cover: null, items: c.items.filter((i) => i.search.includes(q)) },
+          )
+          .filter((c) => c.items.length)
+      : base;
+  }, [menu.categories, q, diet]);
 
   useEffect(() => warmMotion(), []);
   const hasLines = lines.length > 0;
@@ -314,7 +320,8 @@ export function GuestMenu({
         ? { text: t("diet.unknown"), strong: false }
         : null;
   };
-  const offerFilter = menu.hasAllergens || avoid.length > 0;
+  const offerFilter = menu.hasAllergens || menu.hasDietTags || avoid.length > 0 || diet.length > 0;
+  const filterCount = avoid.length + diet.length;
 
   // The cart is a view of this page with its own history entry, so the
   // phone's back button returns to the menu.
@@ -659,19 +666,27 @@ export function GuestMenu({
             <button
               type="button"
               aria-haspopup="dialog"
-              aria-pressed={avoid.length > 0}
+              aria-pressed={filterCount > 0}
               onClick={() => setChoosingAvoid(true)}
               data-testid="allergy-filter"
               className="bg-surface shadow-card rounded-pill aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-12 flex-none items-center gap-2 border [border-color:var(--guest-field-edge)] px-4 text-sm font-semibold"
             >
               <ShieldAlert size={18} aria-hidden />
-              {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
+              {filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
             </button>
           )}
         </div>
         {avoid.length > 0 && (
           <p className="text-muted pb-1 text-sm" role="status">
             {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
+          </p>
+        )}
+        {diet.length > 0 && (
+          <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-sm" role="status">
+            <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
+            <button type="button" onClick={() => setDiet([])} className="min-h-11 font-semibold underline">
+              {t("diet.showAll")}
+            </button>
           </p>
         )}
         <CategoryNav categories={shown} belowBar={scrolled} />
@@ -921,7 +936,13 @@ export function GuestMenu({
       )}
       {choosingAvoid && (
         <Suspense fallback={null}>
-          <AllergenFilter avoid={avoid} onChange={setAvoid} onClose={() => setChoosingAvoid(false)} />
+          <AllergenFilter
+            avoid={avoid}
+            onChange={setAvoid}
+            diet={diet}
+            onDiet={setDiet}
+            onClose={() => setChoosingAvoid(false)}
+          />
         </Suspense>
       )}
       {/* On a phone and a tablet; a desktop sees the dish land in the order rail. */}

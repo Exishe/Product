@@ -78,6 +78,31 @@ export async function saveDishIngredient(input: IngredientLineInput): Promise<In
   return error ? { ok: false, error: "failed" } : { ok: true };
 }
 
+// Calories per 100 g (or ml) and the weight of one piece for one ingredient;
+// null clears a value. The range checks are Postgres's (api.set_ingredient_kcal, ADR-082).
+export async function setIngredientKcal(input: {
+  ingredientId: string;
+  kcalPer100: number | null;
+  gramsPerPiece: number | null;
+}): Promise<IngredientResult> {
+  await requireMember(["owner", "manager"]);
+  const parsed = z
+    .object({
+      ingredientId: uuid,
+      kcalPer100: z.number().min(0).max(1000).nullable(),
+      gramsPerPiece: z.number().min(0.1).max(10000).nullable(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const supabase = await createClient();
+  const { error } = await supabase.schema("api").rpc("set_ingredient_kcal", {
+    p_ingredient_id: parsed.data.ingredientId,
+    p_kcal_per_100g: parsed.data.kcalPer100 as number,
+    p_grams_per_piece: parsed.data.gramsPerPiece as number,
+  });
+  return error ? { ok: false, error: "failed" } : { ok: true };
+}
+
 export async function removeDishIngredient(itemId: string, ingredientId: string): Promise<IngredientResult> {
   await requireMember(["owner", "manager"]);
   const parsed = z.object({ itemId: uuid, ingredientId: uuid }).safeParse({ itemId, ingredientId });

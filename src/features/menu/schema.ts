@@ -10,6 +10,7 @@ export const DISH_TAGS = [
   "lactose_free",
   "spicy",
   "new",
+  "chefs_pick",
   "popular",
 ] as const;
 

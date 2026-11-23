@@ -47,6 +47,9 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     .eq("id", locationId)
     .single();
 
+  // The calorie columns (ADR-082) the same way.
+  const kcalColumns = await supabase.from("ingredients").select("grams_per_piece").limit(1);
+
   const [cats, dishes, groups, areas, stops, version, costs] = await Promise.all([
     supabase
       .from("categories")
@@ -115,6 +118,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     windowsSupported: !windows.error,
     timeZone: location?.timezone ?? "Asia/Yerevan",
     ingredientsSupported: !outDisplay.error,
+    kcalSupported: !outDisplay.error && !kcalColumns.error,
     outIngredientDisplay: outDisplay.data?.out_ingredient_display === "sold_out" ? "sold_out" : "hide",
     categories: (cats.data ?? []).map((c) => ({
       window: windowOf.get(c.id) ?? null,

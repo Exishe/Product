@@ -107,6 +107,7 @@ const TAG_STYLES: Record<GuestTag, string> = {
   gluten_free: DIET,
   lactose_free: DIET,
   new: "bg-badge text-on-badge",
+  chefs_pick: "bg-badge text-on-badge",
 };
 
 export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {

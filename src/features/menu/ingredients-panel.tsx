@@ -13,18 +13,38 @@ import {
   addDishIngredient,
   removeDishIngredient,
   saveDishIngredient,
+  setIngredientKcal,
   type IngredientResult,
 } from "./ingredient-actions";
 
 // The ingredients of one dish (ADR-076). Reads use the owner's session (RLS);
 // every change goes through one server action that Postgres checks.
-type Ingredient = { id: string; names: unknown; unit: string; active: boolean };
+type Ingredient = {
+  id: string;
+  names: unknown;
+  unit: string;
+  active: boolean;
+  kcal: number | null;
+  gramsPerPiece: number | null;
+};
+// What the published menu will say for this dish (api.item_kcal): the number, or
+// the ingredients that stop one ("kcal": no calories yet, "weight": no piece weight).
+type KcalPreview = { kcal: number | null; missing: { id: string; reason: "kcal" | "weight" }[] };
 type Line = {
   ingredientId: string;
   quantity: number;
   isKey: boolean;
   substituteId: string | null;
   priceDelta: number | null;
+};
+type IngredientRow = {
+  id: string;
+  name: string;
+  name_i18n: unknown;
+  unit: string;
+  is_active: boolean;
+  kcal_per_100g?: number | string | null;
+  grams_per_piece?: number | string | null;
 };
 type FoundRow = { id: string; names: unknown; unit: string };
 type CatalogRow = { key: string; names: unknown; unit: string };
@@ -37,10 +57,13 @@ export function IngredientsPanel({
   itemId,
   restaurantId,
   locationId,
+  kcalSupported,
 }: {
   itemId: string;
   restaurantId: string;
   locationId: string;
+  /** False until the calories migration (ADR-082) is applied. */
+  kcalSupported: boolean;
 }) {
   const t = useTranslations("menu.ingredients");
   const locale = useLocale() as Locale;
@@ -49,6 +72,7 @@ export function IngredientsPanel({
   const hintId = useId();
   const [lines, setLines] = useState<Line[] | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [preview, setPreview] = useState<KcalPreview | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<FoundRow[]>([]);
@@ -59,26 +83,30 @@ export function IngredientsPanel({
 
   const load = useCallback(async () => {
     const supabase = getBrowserClient();
-    const [l, i] = await Promise.all([
+    const columns = "id, name, name_i18n, unit, is_active" + (kcalSupported ? ", kcal_per_100g, grams_per_piece" : "");
+    const [l, i, k] = await Promise.all([
       supabase
         .from("recipe_lines")
         .select("ingredient_id, quantity, is_key, substitute_ingredient_id, substitute_price_delta")
         .eq("item_id", itemId),
-      supabase
-        .from("ingredients")
-        .select("id, name, name_i18n, unit, is_active")
-        .eq("restaurant_id", restaurantId),
+      supabase.from("ingredients").select(columns).eq("restaurant_id", restaurantId),
+      kcalSupported
+        ? supabase.schema("api").rpc("item_kcal", { p_item_id: itemId })
+        : Promise.resolve({ data: null, error: null }),
     ]);
     if (l.error || i.error) return setLoadFailed(true);
     setLoadFailed(false);
     setIngredients(
-      (i.data ?? []).map((r) => ({
+      ((i.data ?? []) as unknown as IngredientRow[]).map((r) => ({
         id: r.id,
         names: { hy: r.name, ...asObject(r.name_i18n) },
         unit: r.unit,
         active: r.is_active,
+        kcal: r.kcal_per_100g == null ? null : Number(r.kcal_per_100g),
+        gramsPerPiece: r.grams_per_piece == null ? null : Number(r.grams_per_piece),
       })),
     );
+    setPreview(k.error || !k.data ? null : (k.data as unknown as KcalPreview));
     setLines(
       (l.data ?? []).map((r) => ({
         ingredientId: r.ingredient_id,
@@ -88,7 +116,7 @@ export function IngredientsPanel({
         priceDelta: r.substitute_price_delta === null ? null : Number(r.substitute_price_delta),
       })),
     );
-  }, [itemId, restaurantId]);
+  }, [itemId, restaurantId, kcalSupported]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch once after mount (browser data, RLS applies)
@@ -150,6 +178,9 @@ export function IngredientsPanel({
         <p className="text-staff-label2 m-0 mt-1 text-[0.9375rem]">{t("hint")}</p>
       </div>
 
+      {kcalSupported && preview && lines !== null && lines.length > 0 && (
+        <KcalSummary preview={preview} ingredients={ingredients} locale={locale} />
+      )}
       {loadFailed && (
         <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
           {t("saveFailed")}
@@ -167,6 +198,7 @@ export function IngredientsPanel({
             line={line}
             name={nameOf(ingredients, line.ingredientId, locale)}
             unit={ingredients.find((i) => i.id === line.ingredientId)?.unit ?? "pcs"}
+            ingredient={kcalSupported ? ingredients.find((i) => i.id === line.ingredientId) : undefined}
             options={ingredients.filter(
               (i) => i.id !== line.ingredientId && (i.active || i.id === line.substituteId),
             )}
@@ -247,6 +279,7 @@ function LineEditor({
   line,
   name,
   unit,
+  ingredient,
   options,
   optionName,
   onChanged,
@@ -255,6 +288,8 @@ function LineEditor({
   line: Line;
   name: string;
   unit: string;
+  /** Set when the calorie fields are available. */
+  ingredient?: Ingredient;
   options: Ingredient[];
   optionName: (i: Ingredient) => string;
   onChanged: () => void;
@@ -329,6 +364,7 @@ function LineEditor({
             onChange={(e) => setAmount(e.target.value)}
             className={clsx(input, "bg-white")}
           />
+          <span className="text-staff-label2 text-[0.875rem]">{t("amountHint")}</span>
         </label>
         <div className="flex items-end">
           <label className="flex min-h-11 items-center gap-3 text-[1.0625rem] font-semibold">
@@ -352,6 +388,8 @@ function LineEditor({
       <p id={ids.keyHint} className="text-staff-label2 m-0 text-[0.9375rem]">
         {t("keyHint")}
       </p>
+
+      {ingredient && <KcalFields ingredient={ingredient} unit={unit} onChanged={onChanged} />}
 
       {isKey && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -411,6 +449,128 @@ function LineEditor({
         </p>
       </div>
     </li>
+  );
+}
+
+// "Guests will see ≈ 620 kcal" or why there is no number yet.
+function KcalSummary({
+  preview,
+  ingredients,
+  locale,
+}: {
+  preview: KcalPreview;
+  ingredients: Ingredient[];
+  locale: Locale;
+}) {
+  const t = useTranslations("menu.ingredients");
+  const names = (reason: "kcal" | "weight") =>
+    preview.missing
+      .filter((m) => m.reason === reason)
+      .map((m) => nameOf(ingredients, m.id, locale))
+      .join(", ");
+  const noCalories = names("kcal");
+  const noWeight = names("weight");
+  return (
+    <div data-testid="kcal-summary" className="bg-staff-fill rounded-2xl p-3 text-[0.9375rem]" role="status">
+      <p className="m-0 font-semibold">{t("kcalNone")}</p>
+      {preview.kcal !== null && (
+        <p className="m-0 mt-1" data-testid="kcal-value">
+          {t("kcalShown", { value: new Intl.NumberFormat(locale).format(preview.kcal) })}
+        </p>
+      )}
+      {noCalories && <p className="text-staff-label2 m-0 mt-1">{t("kcalMissing", { names: noCalories })}</p>}
+      {noWeight && <p className="text-staff-label2 m-0 mt-1">{t("weightMissing", { names: noWeight })}</p>}
+    </div>
+  );
+}
+
+// Calories per 100 g and the weight of one piece: both belong to the ingredient,
+// so they apply to every dish that uses it.
+function KcalFields({
+  ingredient,
+  unit,
+  onChanged,
+}: {
+  ingredient: Ingredient;
+  unit: string;
+  onChanged: () => void;
+}) {
+  const t = useTranslations("menu.ingredients");
+  const hintId = useId();
+  const [kcal, setKcal] = useState(ingredient.kcal === null ? "" : String(ingredient.kcal));
+  const [piece, setPiece] = useState(ingredient.gramsPerPiece === null ? "" : String(ingredient.gramsPerPiece));
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed" | "kcal" | "piece">("idle");
+
+  async function save() {
+    const k = kcal.trim() === "" ? null : Number(kcal.replace(",", "."));
+    const p = piece.trim() === "" ? null : Number(piece.replace(",", "."));
+    if (k !== null && (!Number.isFinite(k) || k < 0 || k > 1000)) return setStatus("kcal");
+    if (p !== null && (!Number.isFinite(p) || p < 0.1 || p > 10000)) return setStatus("piece");
+    setStatus("saving");
+    const res = await setIngredientKcal({ ingredientId: ingredient.id, kcalPer100: k, gramsPerPiece: p });
+    setStatus(res.ok ? "saved" : "failed");
+    if (res.ok) onChanged();
+  }
+
+  const message = {
+    idle: "",
+    saving: "",
+    saved: t("saved"),
+    failed: t("saveFailed"),
+    kcal: t("invalidKcal"),
+    piece: t("invalidPiece"),
+  }[status];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>{t("kcalPer100", { unit: unit === "ml" ? t("unit.ml") : t("unit.g") })}</span>
+          <input
+            inputMode="decimal"
+            value={kcal}
+            aria-describedby={hintId}
+            onChange={(e) => setKcal(e.target.value)}
+            className={clsx(input, "bg-white")}
+          />
+        </label>
+        {unit === "pcs" && (
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>{t("gramsPerPiece")}</span>
+            <input
+              inputMode="decimal"
+              value={piece}
+              aria-describedby={hintId}
+              onChange={(e) => setPiece(e.target.value)}
+              className={clsx(input, "bg-white")}
+            />
+          </label>
+        )}
+      </div>
+      <p id={hintId} className="text-staff-label2 m-0 text-[0.875rem]">
+        {t("kcalHint")}
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={status === "saving"}
+          onClick={() => void save()}
+          className={button("plain", "min-h-11 px-5")}
+        >
+          {t("kcalSave")}
+        </button>
+        <p
+          role="status"
+          aria-live="polite"
+          className={clsx(
+            "m-0 text-[0.9375rem] font-semibold",
+            status === "saved" ? "text-tarragon" : "text-pomegranate",
+          )}
+        >
+          {message}
+        </p>
+      </div>
+    </div>
   );
 }
 

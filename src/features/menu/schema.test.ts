@@ -53,6 +53,11 @@ describe("dishInput", () => {
     ).toBe(true);
   });
 
+  it("takes the Chef's pick tag", () => {
+    expect(dishInput.safeParse({ ...valid, tags: ["chefs_pick", "spicy"] }).success).toBe(true);
+    expect(dishInput.safeParse({ ...valid, tags: ["chef_pick"] }).success).toBe(false);
+  });
+
   it("refuses an allergen outside the 14", () => {
     expect(dishInput.safeParse({ ...valid, allergens: ["kryptonite"] }).success).toBe(false);
     expect(dishInput.safeParse({ ...valid, allergens: [] }).success).toBe(true);
