@@ -42,6 +42,8 @@ export function CategoryNav({
   // After a tap, its section stays current while the page scrolls there.
   const holdUntil = useRef(0);
   const closeTimer = useRef(0);
+  // A mouse opens a group on hover; the click that follows should not close it again.
+  const hoverAt = useRef(0);
   const current = categories.some((c) => c.id === active) ? active : (categories[0]?.id ?? null);
 
   const buckets: Bucket[] = useMemo(() => {
@@ -133,11 +135,16 @@ export function CategoryNav({
               data-testid={`group-${b.key}`}
               aria-expanded={isOpen}
               aria-controls={`sections-${b.key}`}
-              onClick={() => setOpen(isOpen ? null : b.key)}
-              onPointerEnter={(e) => {
-                if (e.pointerType === "mouse") setOpen(b.key);
+              onClick={() => {
+                if (isOpen && performance.now() - hoverAt.current < 600) return;
+                setOpen(isOpen ? null : b.key);
               }}
-              className={`rounded-pill flex min-h-11 flex-auto items-center justify-center gap-1.5 border px-3 text-[0.9375rem] font-semibold sm:text-base whitespace-nowrap transition-colors duration-150 sm:px-3 md:flex-none md:px-5 ${
+              onPointerEnter={(e) => {
+                if (e.pointerType !== "mouse") return;
+                hoverAt.current = performance.now();
+                setOpen(b.key);
+              }}
+              className={`rounded-pill flex min-h-11 flex-auto items-center justify-center gap-1.5 border px-3 text-[0.9375rem] font-semibold max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base whitespace-nowrap transition-colors duration-150 sm:px-3 md:flex-none md:px-5 ${
                 isOpen
                   ? "bg-tab text-on-tab border-transparent"
                   : here

@@ -82,28 +82,22 @@ test.describe("guest menu: browsing and ordering at the demo café", () => {
     }
   });
 
-  test("any section is two taps away through the section list", async ({ page }) => {
+  test("any section is two taps away through the section groups", async ({ page }) => {
     const { token } = await demoTable("9");
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
     await scrollDown(page, 900);
-    // Tap one: the button stays with the sticky tabs.
-    const all = page.getByTestId("all-sections");
-    await expect(all).toBeInViewport();
-    await all.click();
-    const list = page.getByRole("dialog", { name: "Ճաշացանկի բաժիններ" });
-    await expect(list.getByRole("link")).toHaveCount(8);
+    // Tap one: the group's button stays with the sticky bar.
+    const drinks = page.getByTestId("group-drinks");
+    await expect(drinks).toBeInViewport();
+    await drinks.click();
+    const panel = page.getByTestId("section-panel");
+    await expect(panel.getByRole("link")).toHaveCount(2);
     // Tap two.
-    await list.getByRole("link", { name: /Ըմպելիքներ/ }).click();
-    await expect(list).toBeHidden();
+    await panel.getByRole("link", { name: /Ըմպելիքներ/ }).click();
+    await expect(panel).toBeHidden();
     await expect(page.getByRole("heading", { level: 2, name: "Ըմպելիքներ" })).toBeInViewport();
-    const tabs = page.getByRole("navigation", { name: "Ճաշացանկի բաժիններ" });
-    await expect(tabs.getByRole("link", { name: "Ըմպելիքներ" })).toHaveAttribute("aria-current", "true");
-    // The current tab is not hidden under the button.
-    const [tab, lead] = [
-      (await tabs.getByRole("link", { name: "Ըմպելիքներ" }).boundingBox())!,
-      (await all.boundingBox())!,
-    ];
-    expect(tab.x).toBeGreaterThanOrEqual(lead.x + lead.width);
+    // The group the page is in is marked.
+    await expect(drinks).toHaveCSS("font-weight", "600");
   });
 
   test("a section's name finds the whole section, under its title", async ({ page }) => {
@@ -226,13 +220,11 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     page,
   }) => {
     await open(page, "hy");
-    await page.getByTestId("all-sections").click();
-    const list = page.getByRole("dialog", { name: "Ճաշացանկի բաժիններ" });
-    await list.getByRole("searchbox", { name: "Գտնել բաժին" }).fill("вино");
-    await expect(list.getByRole("link", { name: /Սպիտակ գինի/ })).toBeVisible();
-    await expect(list.getByRole("link", { name: /Պիցցա/ })).toHaveCount(0);
-    await list.getByRole("searchbox").fill("");
-    await list.getByRole("link", { name: /Գինի բաժակով/ }).click();
+    await page.getByTestId("group-wine").click();
+    const panel = page.getByTestId("section-panel");
+    await expect(panel.getByRole("link", { name: /Սպիտակ գինի/ })).toBeVisible();
+    await expect(panel.getByRole("link", { name: /Պիցցա/ })).toHaveCount(0);
+    await panel.getByRole("link", { name: /Գինի բաժակով/ }).click();
     await expect(page.getByRole("heading", { level: 2, name: "Գինի բաժակով" })).toBeInViewport();
 
     const search = page.getByRole("searchbox", { name: "Որոնել ճաշացանկում" });

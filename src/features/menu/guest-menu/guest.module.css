@@ -387,10 +387,6 @@
   color: var(--guest-muted);
 }
 
-.cta:active:not(:disabled) {
-  scale: 0.98;
-}
-
 /* "Ready": one sweep of light round the edge when the action first becomes
    possible (the cart bar appears, the order screen opens), then a plain
    pill. A conic wedge turns behind an inner fill that leaves a 2 px edge;
@@ -604,5 +600,39 @@
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.985);
+  }
+}
+
+/* The main actions (add to the order, the cart bar, send to the kitchen) wear the
+   same highlight colour as the dish "+", so the one thing to press is always
+   the same colour. Pure keeps its own black pill. They lift on a mouse and sink
+   when pressed. */
+:global(.guest-lux:not([data-guest-theme="soft"])) .cta:not(:disabled) {
+  background: var(--guest-badge);
+  color: var(--guest-on-badge);
+}
+
+.cta {
+  transition:
+    transform 160ms cubic-bezier(0.3, 1.4, 0.5, 1),
+    box-shadow 160ms ease-out,
+    filter 160ms ease-out;
+}
+
+@media (hover: hover) {
+  .cta:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: saturate(1.08) brightness(1.04);
+  }
+}
+
+.cta:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta {
+    transition: none;
   }
 }
