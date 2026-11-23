@@ -14,7 +14,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { lineKey, type BoardLine, type KitchenAction, type ShownTicket } from "./board-model";
 import { ageLabel, classifyLateness, type Lateness } from "./lateness";
@@ -177,6 +177,7 @@ function Lines({
   struck,
   done,
   onToggle,
+  onCantMake,
 }: {
   ticketId: string;
   lines: readonly BoardLine[];
@@ -184,9 +185,14 @@ function Lines({
   struck: boolean; // a cancellation slip: every line is crossed out
   done?: ReadonlySet<string>; // lines a cook has bumped (Cooking only)
   onToggle?: (lineId: string) => void;
+  /** "Can't make" (ADR-080): present only where the button may show. Resolves when the database answered. */
+  onCantMake?: (lineId: string) => Promise<void>;
 }) {
   const t = useTranslations("kitchen.ticket");
   const boardLocale = useLocale();
+  // One line at a time asks "are you sure?"; a sent one waits for the board to refresh.
+  const [asking, setAsking] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   return (
     <ul className="m-0 grid list-none gap-3 p-0">
       {lines.map((l) => {
@@ -296,6 +302,57 @@ function Lines({
             ) : (
               <div className={grid}>{body}</div>
             )}
+            {onCantMake && !gone && (
+              asking === l.id ? (
+                <div
+                  role="group"
+                  aria-label={t("cantMakeAsk", { name: l.name })}
+                  data-testid="cant-make-confirm"
+                  className="border-late-on-dark mt-2 grid gap-2 rounded-xl border-2 p-3"
+                >
+                  <p className="m-0 text-xl leading-tight font-bold [overflow-wrap:anywhere]">
+                    {t("cantMakeAsk", { name: l.name })}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={sending}
+                      data-testid="cant-make-yes"
+                      className="bg-late-on-dark inline-flex min-h-[72px] items-center justify-center rounded-xl px-3 text-xl font-bold text-white disabled:opacity-60"
+                      onClick={async () => {
+                        setSending(true);
+                        try {
+                          await onCantMake(l.id);
+                        } finally {
+                          setSending(false);
+                          setAsking(null);
+                        }
+                      }}
+                    >
+                      {t("cantMakeYes")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sending}
+                      className="border-(--kds-frame) text-slip inline-flex min-h-[72px] items-center justify-center rounded-xl border-2 px-3 text-xl font-bold"
+                      onClick={() => setAsking(null)}
+                    >
+                      {t("cantMakeNo")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="cant-make"
+                  className="border-(--kds-frame) text-slip mt-2 inline-flex min-h-14 items-center gap-2 rounded-xl border-2 px-4 text-lg font-bold"
+                  onClick={() => setAsking(l.id)}
+                >
+                  <Ban aria-hidden="true" className="size-5 shrink-0" />
+                  {t("cantMake")}
+                </button>
+              )
+            )}
           </li>
         );
       })}
@@ -323,6 +380,7 @@ export function OrderTicketCard({
   highlighted = false,
   done,
   onToggleLine,
+  onCantMake,
   onAction,
 }: {
   ticket: ShownTicket;
@@ -332,6 +390,8 @@ export function OrderTicketCard({
   highlighted?: boolean;
   done?: ReadonlySet<string>;
   onToggleLine?: (ticket: ShownTicket, lineId: string) => void;
+  /** Undefined while the database has no "can't make" yet (ADR-080): the button stays hidden. */
+  onCantMake?: (lineId: string) => Promise<void>;
   onAction: (action: KitchenAction) => void;
 }) {
   const t = useTranslations("kitchen.ticket");
@@ -431,6 +491,7 @@ export function OrderTicketCard({
               ? (lineId) => onToggleLine(ticket, lineId)
               : undefined
           }
+          onCantMake={(column === "new" || column === "cooking") && !ticket.pending ? onCantMake : undefined}
         />
         {ticket.orderNote && (
           <TicketCard.Note

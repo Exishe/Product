@@ -34,6 +34,7 @@ import {
 import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { StateIcon } from "./floor-map";
 import { TableTimeline } from "./table-timeline";
+import { CantMakeCards } from "./cant-make-card";
 import { RewardCards } from "./reward-card";
 import type { WaiterReward } from "./rewards";
 import { button, chip, choice, Sheet } from "./ui";
@@ -49,6 +50,8 @@ export type PanelProps = {
   /** Open game rewards of this table (ADR-075) and the waiter's answer. */
   rewards: WaiterReward[];
   onReward: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
+  /** "Told the guest" on a dish the kitchen could not make (ADR-080). */
+  onAckCantMake: (lineId: string) => Promise<DirectResult>;
   /** Back to the map on phones (the panel is a pushed screen there). */
   onBack: () => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -119,6 +122,13 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
             <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
           </p>
         )}
+
+        <CantMakeCards
+          items={table.orders.flatMap((o) =>
+            o.lines.filter((l) => l.cantMakePending).map((l) => ({ id: l.id, name: l.name.text })),
+          )}
+          onAck={p.onAckCantMake}
+        />
 
         <RewardCards rewards={p.rewards} onResolve={p.onReward} />
 

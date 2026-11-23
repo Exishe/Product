@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "@/lib/format/search";
-import { buildGuestMenu, localized, type PublicMenu } from "./view-model";
+import { buildGuestMenu, dishNames, localized, type PublicMenu } from "./view-model";
 
 const item = (
   over: Partial<PublicMenu["menu"]["items"][string]> = {},
@@ -272,5 +272,16 @@ describe("buildGuestMenu: substitutes (ADR-076)", () => {
     const built = buildGuestMenu(menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]), "en");
     expect(built.categories[0]?.items[0]?.substitution).toBeNull();
     expect(built.status.outages).toBe("");
+  });
+});
+
+describe("dishNames (replacement dishes on the order page, ADR-080)", () => {
+  it("gives the name in the page's language and the price, by dish id", () => {
+    const m = menu({ a: item(), b: item({ name: { ru: "Хинкали" }, price: 2500 }) }, [{ id: "c1", item_ids: ["a", "b"] }]);
+    expect(dishNames(m, "en")).toEqual({ a: { name: "Tolma", price: 3200 }, b: { name: "Хинкали", price: 2500 } });
+  });
+  it("leaves out a dish with no name in any language", () => {
+    const m = menu({ a: item({ name: {} }) }, [{ id: "c1", item_ids: ["a"] }]);
+    expect(dishNames(m, "hy")).toEqual({});
   });
 });

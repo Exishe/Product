@@ -70,3 +70,16 @@ export async function heartbeat(supabase: Client): Promise<"ok" | "forbidden" | 
   if (!error) return "ok";
   return error.code === "42501" ? "forbidden" : "error";
 }
+
+export type CantMakeResult = "ok" | "paid" | "forbidden" | "stale" | "error";
+
+// "Can't make" on one order line (ADR-080): the database cancels the line, tells
+// the guest and the waiters. Not queued: it needs a connection and says so.
+export async function cantMakeItem(supabase: Client, orderItemId: string): Promise<CantMakeResult> {
+  const { error } = await supabase.schema("api").rpc("cant_make_item", { p_order_item_id: orderItemId });
+  if (!error) return "ok";
+  if (error.code === "42501") return "forbidden";
+  if (error.code === "RS409") return error.message === "order_paid" ? "paid" : "stale";
+  if (error.code === "P0002" || error.code === "RS422") return "stale";
+  return "error";
+}

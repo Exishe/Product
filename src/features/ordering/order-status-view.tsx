@@ -1,6 +1,7 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
@@ -23,6 +24,7 @@ import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { classifyOrderError } from "./order-errors";
 import { beginRequest, clearRequest, loadRequest, RETRY_MS, type PendingRequest } from "./pending-request";
 import { NotifyReady } from "./notify-ready";
+import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
 import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
@@ -34,6 +36,9 @@ import {
   type DisplayStatus,
   type OrderState,
 } from "./order-status";
+
+// Only fetched when the kitchen could not make a dish (ADR-080).
+const CantMakeNote = dynamic(() => import("./cant-make").then((m) => m.CantMakeNote), { ssr: false });
 
 type Db = SupabaseClient<Database>;
 type Names = Record<string, string | null> | null;
@@ -49,6 +54,8 @@ type Line = {
   order_item_modifiers: { name_i18n: Names; modifier_id: string | null }[];
   /** ADR-076: {from, to, price_delta} when an ingredient was replaced; absent before that migration. */
   substitution?: unknown;
+  /** ADR-080: when the kitchen could not make it; absent before that migration. */
+  cant_make_at?: string | null;
 };
 type Order = OrderState & {
   id: string;
@@ -213,10 +220,13 @@ function OrderCard({
   wait = null,
   details,
   onRepeat,
+  cantMake,
 }: {
   order: Order;
   latest: boolean;
   details?: Record<string, string>;
+  /** Alternatives for a dish the kitchen could not make (ADR-080). */
+  cantMake?: { db: Db | null; dishes: Dishes | undefined; onAdd?: (order: Order, itemId: string) => void };
   below?: ReactNode;
   wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
@@ -318,6 +328,14 @@ function OrderCard({
                 </span>
               )}
               {l.note && <span className="text-muted col-start-1 text-sm break-words">{l.note}</span>}
+              {l.cant_make_at && cantMake?.db && (
+                <CantMakeNote
+                  db={cantMake.db}
+                  lineId={l.id}
+                  dishes={cantMake.dishes}
+                  onAdd={cantMake.onAdd ? (itemId) => cantMake.onAdd?.(order, itemId) : undefined}
+                />
+              )}
             </li>
           );
         })}
@@ -353,6 +371,7 @@ export function OrderStatusView({
   vapidPublicKey = null,
   wait = null,
   details,
+  dishes,
 }: {
   tableId: string;
   menuHref: string;
@@ -361,6 +380,8 @@ export function OrderStatusView({
   wait?: WaitRange | null;
   /** Descriptions of same-named dishes by dish id (view-model sameNameDetails). */
   details?: Record<string, string>;
+  /** Name and price of every dish, by id: for the replacement dishes of ADR-080. */
+  dishes?: Dishes;
 }) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
@@ -576,6 +597,21 @@ export function OrderStatusView({
     }
     router.push(menuHref);
   };
+  // One dish from a "can't make" note: into this table's cart, then the menu to confirm.
+  const addDish = (order: Order, itemId: string) => {
+    const newId = () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    addToCart(cartKey(order.location_id, tableId), [{ itemId, modifierIds: [], quantity: 1, note: "" }], newId);
+    try {
+      window.sessionStorage.setItem(OPEN_CART_KEY, "1");
+    } catch {
+      // storage blocked: the menu shows its cart bar instead
+    }
+    router.push(menuHref);
+  };
+  const cantMake = { db, dishes, onAdd: closed ? undefined : addDish };
   const stepButton = `${STEP} size-12`;
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
   const smooth = (): ScrollBehavior =>
@@ -640,6 +676,7 @@ export function OrderStatusView({
           wait={wait}
           details={details}
           onRepeat={closed ? undefined : repeat}
+          cantMake={cantMake}
           // The games sit right under the status while the guest waits: the
           // moment they have nothing to do but watch the tracker.
           below={
@@ -792,6 +829,7 @@ export function OrderStatusView({
               latest={false}
               details={details}
               onRepeat={closed ? undefined : repeat}
+              cantMake={cantMake}
             />
           ))}
           <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">

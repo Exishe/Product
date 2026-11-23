@@ -12,6 +12,7 @@ import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel, type LocationMessage } from "@/lib/realtime/use-location-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import {
+  cantMakeItem,
   heartbeat,
   kitchenActionKey,
   kitchenSender,
@@ -57,6 +58,8 @@ export type KitchenBoardProps = {
   initialSoldOut: string[];
   /** False until the ingredients migration is applied (ADR-076): the button stays hidden. */
   ingredientsSupported: boolean;
+  /** False until the can't-make migration is applied (ADR-080): the button stays hidden. */
+  cantMakeSupported?: boolean;
   dishes: DishSection[];
   lineDetails: Record<string, LineDetail>; // same-named dishes, by dish id
   renderedAt: number;
@@ -417,6 +420,22 @@ function Board(p: KitchenBoardProps) {
     [p.location.id],
   );
 
+  // "Can't make" on one line (ADR-080): needs a connection, says so when it fails.
+  const onCantMake = useCallback(
+    async (lineId: string) => {
+      const res = await cantMakeItem(getBrowserClient(), lineId);
+      if (res !== "ok") {
+        pushToast({
+          tone: res === "stale" ? "conflict" : "error",
+          title: t(res === "stale" ? "conflict" : "ticket.cantMakeFailed"),
+          detail: res === "paid" ? t("ticket.cantMakePaid") : res === "forbidden" ? t("ticket.cantMakeForbidden") : undefined,
+        });
+      }
+      await refreshTickets();
+    },
+    [pushToast, refreshTickets, t],
+  );
+
   const onToggleSoldOut = useCallback(
     async (itemId: string, out: boolean) => {
       const until = nextBusinessDayStart(
@@ -517,6 +536,7 @@ function Board(p: KitchenBoardProps) {
             highlighted={highlighted}
             bumped={live}
             onToggleLine={toggleLine}
+            onCantMake={p.cantMakeSupported ? onCantMake : undefined}
             onAction={act}
           />
         ))}
@@ -546,6 +566,7 @@ function BoardColumn({
   highlighted,
   bumped,
   onToggleLine,
+  onCantMake,
   onAction,
 }: {
   column: Column;
@@ -557,6 +578,7 @@ function BoardColumn({
   highlighted: ReadonlySet<string>;
   bumped: ReadonlySet<string>;
   onToggleLine: (ticket: ShownTicket, lineId: string) => void;
+  onCantMake?: (lineId: string) => Promise<void>;
   onAction: (action: KitchenAction) => void;
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
@@ -619,6 +641,7 @@ function BoardColumn({
                 highlighted={highlighted.has(ticket.id)}
                 done={bumped}
                 onToggleLine={onToggleLine}
+                onCantMake={onCantMake}
                 onAction={onAction}
               />
             ),

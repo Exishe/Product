@@ -1,14 +1,15 @@
-import { BellRing, Hourglass } from "lucide-react";
-import { useTranslations } from "next-intl";
-import type { TableAlert } from "./model";
+import { Ban, BellRing, Hourglass } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { dishName, type TableAlert } from "./model";
 
 // One line per problem table: which table, what is wrong, for how long.
 export function AlertList({ alerts, dark = false }: { alerts: TableAlert[]; dark?: boolean }) {
   const t = useTranslations("alerts");
+  const locale = useLocale();
   return (
     <ul className="m-0 flex list-none flex-col gap-2 p-0" data-testid="alert-list">
       {alerts.map((a) => {
-        const Icon = a.reason === "calls" ? BellRing : Hourglass;
+        const Icon = a.reason === "calls" ? BellRing : a.reason === "cant_make" ? Ban : Hourglass;
         return (
           <li
             key={`${a.reason}:${a.id}`}
@@ -27,7 +28,9 @@ export function AlertList({ alerts, dark = false }: { alerts: TableAlert[]; dark
               {" · "}
               {a.reason === "calls"
                 ? t("calls", { count: a.presses ?? 0, minutes: a.minutes })
-                : t("slow", { minutes: a.minutes })}
+                : a.reason === "cant_make"
+                  ? t("cantMake", { dish: dishName(a.dish, locale) })
+                  : t("slow", { minutes: a.minutes })}
             </span>
           </li>
         );
