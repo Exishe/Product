@@ -275,7 +275,7 @@ describe("buildGuestMenu: substitutes (ADR-076)", () => {
   });
 });
 
-describe("dishNames (replacement dishes on the order page, ADR-080)", () => {
+describe("dishNames (replacement dishes on the order page, ADR-081)", () => {
   it("gives the name in the page's language and the price, by dish id", () => {
     const m = menu({ a: item(), b: item({ name: { ru: "Хинкали" }, price: 2500 }) }, [{ id: "c1", item_ids: ["a", "b"] }]);
     expect(dishNames(m, "en")).toEqual({ a: { name: "Tolma", price: 3200 }, b: { name: "Хинкали", price: 2500 } });
