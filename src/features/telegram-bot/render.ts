@@ -1,6 +1,6 @@
 import { cb } from "./callbacks";
 import { ACTION_IDS, actionOf, type Change } from "./registry";
-import { BOT_LOCALES, t, type BotLocale } from "./texts";
+import { BOT_LOCALES, t, type BotLocale, type TextKey } from "./texts";
 
 // Draws what private.bot_handle decided (a "screen") as one Bot API call, which
 // the webhook returns as its HTTP answer: editMessageText for a button press
@@ -30,6 +30,15 @@ type Button = { text: string; callback_data: string };
 type Rendered = { text: string; keyboard: Button[][] };
 
 const MAX_CALLBACK_BYTES = 64;
+// Failure codes from the database that have their own sentence; others say "try again".
+const FAILED_TEXT: Record<string, TextKey> = {
+  not_found: "failed_not_found",
+  not_paused: "failed_not_paused",
+  has_options: "failed_has_options",
+  unchanged: "failed_unchanged",
+  already_closed: "failed_already_closed",
+  unreviewed_ai: "failed_unreviewed_ai",
+};
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
 function describe(action: string, change: Change, l: BotLocale): string {
@@ -63,7 +72,7 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
     case "expired":
       return { text: t(l, "expired"), keyboard: [menuRow] };
     case "failed": {
-      const key = screen.code === "not_found" ? "failed_not_found" : screen.code === "not_paused" ? "failed_not_paused" : "failed_invalid";
+      const key = Object.hasOwn(FAILED_TEXT, screen.code) ? FAILED_TEXT[screen.code]! : "failed_invalid";
       return { text: t(l, key), keyboard: [menuRow] };
     }
     case "pick_category":
@@ -131,7 +140,7 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
     }
     case "help":
       return {
-        text: screen.contact ? t(l, "help_contact", { contact: screen.contact }) : t(l, "help_nocontact"),
+        text: [screen.contact ? t(l, "help_contact", { contact: screen.contact }) : t(l, "help_nocontact"), t(l, "help_howto")].join("\n"),
         keyboard: [menuRow],
       };
     default:
