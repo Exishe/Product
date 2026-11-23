@@ -8,7 +8,8 @@ import { businessDate, parseDateInput, resolveRange } from "@/features/dashboard
 import { RangePicker } from "@/features/dashboard/range-picker";
 import { BusyHours } from "@/features/reports/busy-hours";
 import { ConversionTable } from "@/features/reports/conversion-table";
-import { parseBusy, parseConversion, parseUpsell, type Metric } from "@/features/reports/model";
+import { DigestCard } from "@/features/reports/digest-card";
+import { parseBusy, parseConversion, parseDigest, parseUpsell, type Metric } from "@/features/reports/model";
 import { Suggestions } from "@/features/reports/suggestions";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate } from "@/lib/format/date";
@@ -50,18 +51,21 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const metric: Metric = params.metric === "revenue" ? "revenue" : "orders";
   const args = { p_location_id: location.id, p_from: range.from, p_to: range.to };
   const api = supabase.schema("api");
-  const [convRes, matrixRes, busyRes, upsellRes, t, locale] = await Promise.all([
+  const locale = (await getLocale()) as Locale;
+  const [convRes, matrixRes, busyRes, upsellRes, digestRes, t] = await Promise.all([
     api.rpc("item_conversion", args),
     api.rpc("menu_engineering", args),
     api.rpc("busy_hours", args),
     api.rpc("upsell_report", args),
+    api.rpc("last_weekly_digest", { p_location_id: location.id, p_locale: locale }),
     getTranslations("reports"),
-    getLocale() as Promise<Locale>,
   ]);
   const conversion = safe(parseConversion, convRes.data, convRes.error);
   const matrix = safe(parseMatrix, matrixRes.data, matrixRes.error);
   const busy = safe(parseBusy, busyRes.data, busyRes.error);
   const upsell = safe(parseUpsell, upsellRes.data, upsellRes.error);
+  // Not shown (rather than an error) on a database without the migration.
+  const digest = safe(parseDigest, digestRes.data, digestRes.error);
   const day = (iso: string) => formatDate(new Date(`${iso}T12:00:00Z`), locale);
 
   // Links keep the chosen period; the 30-day default needs no query.
@@ -97,6 +101,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       }
       width="lg"
     >
+      {digest ? <DigestCard digest={digest} /> : null}
       <RangePicker
         range={range}
         today={today}
