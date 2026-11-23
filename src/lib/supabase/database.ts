@@ -39,6 +39,14 @@ export type ApiSchema = {
       };
       Returns: number;
     };
+    busy_hours: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: Json;
+    };
     cancel_order_item: {
       Args: {
         p_order_item_id: string;
@@ -166,6 +174,14 @@ export type ApiSchema = {
       Returns: string;
     };
     heartbeat: { Args: Record<string, never>; Returns: undefined };
+    item_conversion: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: Json;
+    };
     list_staff_logins: {
       Args: {
         p_location_id: string;
@@ -518,6 +534,14 @@ export type ApiSchema = {
         p_is_active: boolean;
       };
       Returns: undefined;
+    };
+    upsell_report: {
+      Args: {
+        p_location_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: Json;
     };
     waiter_push_subscribe: {
       Args: {

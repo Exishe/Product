@@ -3,11 +3,26 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { button, fieldLabel } from "@/features/admin-ui/styles";
 import { DateField } from "./date-field";
-import { addDays, MAX_DAYS, PRESETS, type Range } from "./range";
+import { addDays, MAX_DAYS, PRESETS, type Preset, type Range } from "./range";
 
 // Presets as a segmented control of links and a custom range as a plain GET
 // form: works without JS.
-export async function RangePicker({ range, today }: { range: Range; today: string }) {
+export async function RangePicker({
+  range,
+  today,
+  basePath = "/admin/dashboard",
+  defaultPreset = "today",
+  hidden,
+}: {
+  range: Range;
+  today: string;
+  /** The page the links and the form go to. */
+  basePath?: string;
+  /** The preset shown when the address has no range (its link carries no query). */
+  defaultPreset?: Preset;
+  /** Other query values to keep when a custom range is applied. */
+  hidden?: Record<string, string>;
+}) {
   const [t, locale] = await Promise.all([getTranslations("dashboard"), getLocale()]);
   return (
     <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
@@ -16,7 +31,7 @@ export async function RangePicker({ range, today }: { range: Range; today: strin
           {PRESETS.map((p) => (
             <li key={p}>
               <Link
-                href={p === "today" ? "/admin/dashboard" : `/admin/dashboard?range=${p}`}
+                href={p === defaultPreset ? basePath : `${basePath}?range=${p}`}
                 aria-current={range.preset === p ? "page" : undefined}
                 className={clsx(
                   "flex min-h-11 items-center justify-center rounded-[0.625rem] px-3 text-center text-[0.9375rem] font-semibold",
@@ -29,7 +44,10 @@ export async function RangePicker({ range, today }: { range: Range; today: strin
           ))}
         </ul>
       </nav>
-      <form method="get" action="/admin/dashboard" className="flex flex-wrap items-end gap-2">
+      <form method="get" action={basePath} className="flex flex-wrap items-end gap-2">
+        {Object.entries(hidden ?? {}).map(([k, v]) => (
+          <input key={k} type="hidden" name={k} value={v} />
+        ))}
         <label className="flex flex-col gap-1">
           <span className={fieldLabel}>{t("from")}</span>
           <DateField

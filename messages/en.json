@@ -1181,7 +1181,8 @@
     "telegram": "Telegram",
     "export": "Export",
     "platform": "Platform",
-    "look": "Guest page look"
+    "look": "Guest page look",
+    "reports": "Reports"
   },
   "billing": {
     "planName": {
@@ -1464,19 +1465,23 @@
       "more": "And {count} more",
       "star": {
         "title": "Ordered often, earn well",
-        "action": "Keep them as they are and show them first in the section."
+        "action": "Keep them as they are and show them first in the section.",
+        "name": "Stars"
       },
       "plowhorse": {
         "title": "Ordered often, earn little",
-        "action": "Try a small price rise or a cheaper side. Guests already like them."
+        "action": "Try a small price rise or a cheaper side. Guests already like them.",
+        "name": "Workhorses"
       },
       "puzzle": {
         "title": "Earn well, ordered rarely",
-        "action": "Add a photo, rename them or make one the section's featured dish."
+        "action": "Add a photo, rename them or make one the section's featured dish.",
+        "name": "Puzzles"
       },
       "dog": {
         "title": "Ordered rarely, earn little",
-        "action": "Think about taking them off the menu or reworking them."
+        "action": "Think about taking them off the menu or reworking them.",
+        "name": "Dogs"
       }
     },
     "heatmap": {
@@ -1506,6 +1511,76 @@
       "save": "Save",
       "saved": "Saved.",
       "failed": "Couldn't save. Check the numbers and try again."
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "intro": "What guests look at, what they order and when you're busy. Test orders are left out.",
+    "unavailable": "This report isn't available yet. Try again later.",
+    "defaultPeriod": "Last 30 days by default",
+    "conversion": {
+      "title": "Viewed but not ordered",
+      "hint": "For each dish: how often guests opened it, added it to the cart and ordered it. The share ordered is the share of views that became orders. Only guest orders made by QR count.",
+      "empty": "No views in this period yet. They appear once guests open dishes in the menu.",
+      "flaggedTitle": "Worth a look",
+      "flaggedHint": "At least {min} views, and almost nobody orders it.",
+      "othersTitle": "Other dishes",
+      "median": "Typical share ordered in your café: {share}.",
+      "caption": "Views, carts and orders for each dish",
+      "colDish": "Dish",
+      "colViews": "Views",
+      "colAdded": "Added",
+      "colOrdered": "Ordered",
+      "colShare": "Share ordered",
+      "reason": {
+        "never_ordered": "{views, plural, one {# view} other {# views}}, no orders: check its photo, price or description.",
+        "low_share": "{views, plural, one {# view} other {# views}}, {orders, plural, one {# order} other {# orders}}: check its photo or price.",
+        "ok": "Ordered about as often as you'd expect.",
+        "few_views": "Too few views to judge yet."
+      }
+    },
+    "busy": {
+      "title": "Busy hours",
+      "metricLabel": "Show",
+      "orders": "Orders",
+      "revenue": "Revenue",
+      "hintOrders": "Average accepted orders per hour, for each weekday of the period.",
+      "hintRevenue": "Average money from paid bills per hour, for each weekday of the period. The hour is when the bill was closed.",
+      "emptyOrders": "No orders in this period.",
+      "emptyRevenue": "No paid bills in this period.",
+      "busiest": "Busiest: {day} {from}–{to}, about {value}.",
+      "quietest": "Quietest while open: {day} {from}–{to}, about {value}.",
+      "colDay": "Day",
+      "cellOrders": "{day} {from}–{to}: {value} orders on average",
+      "cellRevenue": "{day} {from}–{to}: {value} on average",
+      "less": "Less",
+      "more": "More",
+      "table": {
+        "title": "How long tables stay",
+        "avg": "On average a table stays {duration}.",
+        "note": "Based on {count} closed tables with an order. Tables left open for 8 hours or more aren't counted.",
+        "byDay": "By weekday",
+        "colDay": "Day",
+        "colTime": "Average time",
+        "colTables": "Tables",
+        "none": "No closed tables with orders in this period yet.",
+        "duration": "{hours} h {minutes} min",
+        "durationMin": "{minutes} min"
+      }
+    },
+    "upsell": {
+      "title": "Suggestions",
+      "hint": "The dishes shown as \"often added together\" in a dish card.",
+      "empty": "No suggestions were shown in this period yet.",
+      "shown": "Shown",
+      "accepted": "Accepted",
+      "rate": "Share accepted",
+      "rateHint": "of the suggestions shown",
+      "orders": "Orders with an accepted suggestion",
+      "revenue": "Sales from accepted suggestions",
+      "note": "An order counts when the same phone placed it within 2 hours of accepting. Guests who haven't joined a table yet can't be matched to an order, so the real numbers may be higher.",
+      "pairs": "Most shown suggestions",
+      "pairRow": "{from} → {item}: shown {shown}, accepted {accepted}"
     }
   }
 }
