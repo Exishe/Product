@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAmd, formatInteger } from "./money";
+import { formatAmd, formatAmdChange, formatInteger } from "./money";
 
 const NBSP = " ";
 
@@ -38,5 +38,12 @@ describe("formatInteger", () => {
     expect(formatInteger(12450000, "hy")).toBe(`12${NBSP}450${NBSP}000`);
     expect(formatInteger(12450000, "ru")).toBe(`12${NBSP}450${NBSP}000`);
     expect(formatInteger(12450000, "en")).toBe("12,450,000");
+  });
+});
+
+describe("formatAmdChange", () => {
+  it("shows a rise with + and a cut with a minus sign", () => {
+    expect(formatAmdChange(500, "en")).toBe("+AMD 500");
+    expect(formatAmdChange(-1400, "hy")).toBe("−1 400 ֏");
   });
 });

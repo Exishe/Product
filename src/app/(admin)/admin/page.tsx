@@ -1,3 +1,4 @@
+import { NextIntlClientProvider } from "next-intl";
 import { CircleCheck, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
@@ -237,40 +238,42 @@ export default async function AdminHome() {
         )}
       </Section>
 
-      {location && alerts && (
-        <Section title={t("attention")} id="home-attention" testId="home-attention">
-          <AttentionPanel locationId={location.id} initial={alerts} />
-        </Section>
-      )}
+      <NextIntlClientProvider>
+        {location && alerts && (
+          <Section title={t("attention")} id="home-attention" testId="home-attention">
+            <AttentionPanel locationId={location.id} initial={alerts} />
+          </Section>
+        )}
 
-      {location && venue && (
-        <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">
-          <VenueControls initial={venue} timeZone={location.timezone} />
-        </Section>
-      )}
+        {location && venue && (
+          <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">
+            <VenueControls initial={venue} timeZone={location.timezone} />
+          </Section>
+        )}
 
-      {location && alertSettings && (
-        <Section
-          title={t("alertSettings")}
-          hint={t("alertSettingsHint")}
-          id="home-alerts"
-          testId="home-alerts"
-        >
-          <AlertSettingsForm initial={alertSettings} />
-        </Section>
-      )}
+        {location && alertSettings && (
+          <Section
+            title={t("alertSettings")}
+            hint={t("alertSettingsHint")}
+            id="home-alerts"
+            testId="home-alerts"
+          >
+            <AlertSettingsForm initial={alertSettings} />
+          </Section>
+        )}
 
-      {location && promos && (
-        <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
-          <PromoManager initial={promos} timeZone={location.timezone} />
-        </Section>
-      )}
+        {location && promos && (
+          <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
+            <PromoManager initial={promos} timeZone={location.timezone} />
+          </Section>
+        )}
 
-      {location && rewards && (
-        <Section title={t("rewards")} hint={t("rewardsHint")} id="home-rewards" testId="home-rewards">
-          <RewardsForm initial={rewards} />
-        </Section>
-      )}
+        {location && rewards && (
+          <Section title={t("rewards")} hint={t("rewardsHint")} id="home-rewards" testId="home-rewards">
+            <RewardsForm initial={rewards} />
+          </Section>
+        )}
+      </NextIntlClientProvider>
 
       <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
         {todos.length === 0 ? (
