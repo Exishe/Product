@@ -2,6 +2,7 @@
 
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
+import styles from "./guest.module.css";
 import { Plate, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import { sizesOf, type GuestItem } from "./view-model";
 
@@ -37,7 +38,7 @@ export function DishRow({
   const sizes = sizesOf(item);
   return (
     <li
-      className="relative flex items-start gap-3 border-t [border-color:color-mix(in_srgb,var(--guest-line-strong)_35%,transparent)] py-4 first:border-t-0"
+      className="bg-surface shadow-card rounded-card relative flex items-start gap-3 border p-4 [border-color:var(--guest-card-border)]"
       data-testid="dish"
       data-dish-id={item.id}
       data-layout="row"
@@ -126,7 +127,7 @@ export function DishRow({
           aria-label={t("menu.add", { name: item.name.text })}
           aria-haspopup={needsChoice ? "dialog" : undefined}
           onClick={(e) => (needsChoice ? onOpen(item) : onQuickAdd(item, e.currentTarget))}
-          className="text-ink hover:bg-chip grid size-11 flex-none place-items-center rounded-full border [border-color:color-mix(in_srgb,var(--guest-line-strong)_75%,var(--guest-ink))] [&_svg]:size-[18px]"
+          className={styles.plus}
         >
           <PlusIcon />
         </button>

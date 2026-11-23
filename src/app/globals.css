@@ -456,9 +456,11 @@ body:has(.admin-shell) {
   --guest-tab-border: var(--guest-line);
   --guest-field-edge: var(--guest-line-strong); /* the search field: a visible edge, 3:1 and up */
   --guest-flourish: var(--guest-glow); /* a coloured accent line; kept for themes and brand.ts */
-  --guest-add: var(--guest-accent);
-  --guest-on-add: var(--guest-on-accent);
-  --guest-add-shadow: none;
+  /* The "+" of a dish: the highlight colour, so it stands out from the card and the
+     café's dark accent; the brand's highlight reaches it through --guest-badge. */
+  --guest-add: var(--guest-badge);
+  --guest-on-add: var(--guest-on-badge);
+  --guest-add-shadow: 0 8px 14px -8px color-mix(in srgb, var(--guest-badge) 70%, #000);
   /* The plate a dish sits on (ui.tsx Plate): its body, the rim line and the
      well of an empty plate, the initial on it, and how far a photo sits in
      from the plate's edge (0: the photo is the plate). */

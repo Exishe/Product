@@ -234,3 +234,58 @@
     transition: none;
   }
 }
+
+/* Stroke title (stroke-title.tsx): the outline of each letter is drawn, then
+   the fill comes in and the outline fades. Without the SVG (before the fonts
+   are measured, reduced motion) the heading is plain text. */
+.stroke {
+  display: block;
+}
+
+.strokeSvg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.strokeText {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.strokeChar {
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: var(--sw, 1);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: var(--dash, 200);
+  stroke-dashoffset: var(--dash, 200);
+}
+
+.strokeSvg[data-played] .strokeChar {
+  animation:
+    strokeDraw var(--draw, 0.42s) cubic-bezier(0.3, 0.6, 0.3, 1) var(--d, 0s) forwards,
+    strokeFill 0.26s ease-out calc(var(--d, 0s) + var(--draw, 0.42s) * 0.7) forwards;
+}
+
+@keyframes strokeDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes strokeFill {
+  to {
+    fill: currentColor;
+    stroke-opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strokeSvg .strokeChar {
+    animation: none;
+    fill: currentColor;
+    stroke-opacity: 0;
+  }
+}

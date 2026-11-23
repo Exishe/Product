@@ -195,27 +195,109 @@
   height: 18px;
 }
 
-/* A plain card's add button: a round "+" hanging off the corner. */
+/* The "+" of a dish: a round button in the highlight colour. A plain card's
+   hangs off its corner (.add); a line of the printed menu has its own (.plus).
+   On a mouse it lifts, grows and turns a quarter on hover; pressed, it sinks and
+   a light ripples out from it. Touch has no hover, only the press. */
+.add,
+.plus {
+  position: relative;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--guest-add);
+  color: var(--guest-on-add);
+  box-shadow: var(--guest-add-shadow);
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.3, 1.5, 0.5, 1),
+    box-shadow 180ms ease-out,
+    filter 180ms ease-out;
+}
+
 .add {
   position: absolute;
   right: -0.5rem;
   bottom: -0.75rem;
   z-index: 10;
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--guest-add);
-  color: var(--guest-on-add);
+  overflow: visible;
   box-shadow:
     0 0 0 4px var(--guest-page),
     var(--guest-add-shadow);
 }
 
+.add svg,
+.plus svg {
+  transition: transform 220ms cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.add::after,
+.plus::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.55), transparent 62%);
+  opacity: 0;
+  transform: scale(0.2);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .add:hover,
+  .plus:hover {
+    transform: translateY(-2px) scale(1.1);
+    filter: saturate(1.1) brightness(1.04);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--guest-add) 30%, transparent),
+      0 12px 18px -8px color-mix(in srgb, var(--guest-add) 75%, #000);
+  }
+
+  .add:hover svg,
+  .plus:hover svg {
+    transform: rotate(90deg);
+  }
+}
+
 .add:active,
+.plus:active,
 .featureAdd:active {
-  scale: 0.92;
+  transform: scale(0.88);
+  filter: brightness(0.96);
+}
+
+.add:active svg,
+.plus:active svg {
+  transform: rotate(180deg) scale(0.9);
+}
+
+.add:active::after,
+.plus:active::after {
+  opacity: 1;
+  transform: scale(1.7);
+  transition:
+    transform 260ms ease-out,
+    opacity 260ms ease-out;
+}
+
+.add:focus-visible,
+.plus:focus-visible {
+  outline: 3px solid var(--guest-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .add,
+  .plus,
+  .add svg,
+  .plus svg {
+    transition: none;
+  }
 }
 
 .addWord {
@@ -398,42 +480,50 @@
   }
 }
 
-/* A section's cover photo: a band above the title on a phone; from 768 px a
-   2:1 picture beside the title, so the whole plate stays in view instead of
-   a 1000 px strip of its top half. */
+/* A section's cover photo is a banner and the title sits on it, bottom left,
+   over a soft shade: no photo beside a title with a gap between them. 21:9 on
+   a phone, 2.4:1 from 768 px, so the plate stays in view. */
+.sectionHead {
+  position: relative;
+  margin-bottom: 1.25rem;
+  border-radius: var(--guest-r-card);
+  overflow: hidden;
+  background: var(--guest-plate);
+  box-shadow: var(--guest-shadow-card);
+}
+
+.sectionHead::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.12) 52%, transparent 75%);
+}
+
+.sectionHead > h2 {
+  position: absolute;
+  z-index: 1;
+  inset: auto 1.25rem 1rem 1.25rem;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.35);
+}
+
 .cover {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 21 / 9;
   object-fit: cover;
-  margin-bottom: 1.25rem;
-  border-radius: var(--guest-r-card);
-  background: var(--guest-plate);
-  box-shadow: var(--guest-shadow-card);
 }
 
 @media (min-width: 768px) {
-  .sectionHead {
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 2rem;
-    margin-bottom: 1.5rem;
+  .cover {
+    aspect-ratio: 2.4 / 1;
   }
 
   .sectionHead > h2 {
-    flex: 1;
-    min-width: 0;
-    margin-bottom: 0.25rem;
-  }
-
-  .cover {
-    flex: none;
-    width: min(42%, 22rem);
-    aspect-ratio: 2 / 1;
-    margin-bottom: 0;
+    inset: auto 2rem 1.5rem 2rem;
   }
 }
 
@@ -457,9 +547,6 @@
   padding-top: 0;
 }
 
-.spreadSide[data-joined] > li:first-child {
-  border-top-width: 1px;
-}
 
 /* Side by side (a tablet, and a desktop wide enough beside the order rail):
    the card and the first lines in one column, the rest in the other. The
@@ -497,9 +584,6 @@
     padding-top: 0.25rem;
   }
 
-  .spreadSide[data-joined] > li:first-child {
-    border-top-width: 0;
-  }
 }
 
 /* «Բաժիններ» at the left edge of the section tabs: it stays while the tabs

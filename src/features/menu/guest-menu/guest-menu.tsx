@@ -14,7 +14,7 @@ import {
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
-import { SplitText } from "@/features/guest-theme/motion/split-text";
+import { StrokeTitle } from "@/features/guest-theme/motion/stroke-title";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -560,8 +560,7 @@ export function GuestMenu({
                 const rest = c.items.filter((item) => item.id !== featured);
                 // Lines that go under the featured card when the two sit side by side.
                 const under = featured && !plates ? underFeatured(rest) : 0;
-                const rowList =
-                  "bg-surface shadow-card rounded-feature border [border-color:var(--guest-card-border)] px-5 py-1 sm:px-7";
+                const rowList = "grid content-start gap-3";
                 const rows = (list: GuestItem[]) =>
                   list.map((item) => (
                     <DishRow
@@ -600,12 +599,12 @@ export function GuestMenu({
                       )}
                       {/* guest-flourish: the brand's script font, when it has one (globals.css). */}
                       {c.name && (
-                        <SplitText
+                        <StrokeTitle
                           as="h2"
                           id={`h-${c.id}`}
                           text={c.name.text}
                           lang={c.name.lang === locale ? undefined : c.name.lang}
-                          className={`display-face guest-flourish text-title mb-5 block text-[2.125rem] leading-[1.02] break-words hyphens-auto md:text-[2.75rem] ${styles.sectionTitle}`}
+                          className={`display-face guest-flourish text-title ${c.cover ? "" : "mb-5"} text-[2.125rem] leading-[1.02] md:text-[2.75rem] ${styles.sectionTitle}`}
                         />
                       )}
                     </div>
@@ -651,7 +650,7 @@ export function GuestMenu({
                           // Two columns filled row by row (a grid, not CSS columns), so the
                           // hairlines sit between rows and no column ends on a stray rule.
                           <ul
-                            className={`${rowList} md:grid md:grid-cols-2 md:gap-x-12 md:[&>li:nth-child(2)]:border-t-0`}
+                            className={`${rowList} md:grid-cols-2`}
                           >
                             {rows(rest)}
                           </ul>

@@ -121,7 +121,7 @@ export function CategoryNav({
       }}
       onPointerEnter={() => window.clearTimeout(closeTimer.current)}
     >
-      <div className="flex gap-2">
+      <div className="flex gap-1.5 overflow-x-auto sm:gap-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {buckets.map((b) => {
           const isOpen = open === b.key;
           const here = currentBucket?.key === b.key;
@@ -137,7 +137,7 @@ export function CategoryNav({
               onPointerEnter={(e) => {
                 if (e.pointerType === "mouse") setOpen(b.key);
               }}
-              className={`rounded-pill flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 border px-2 font-semibold whitespace-nowrap transition-colors duration-150 sm:px-3 md:flex-none md:px-5 ${
+              className={`rounded-pill flex min-h-11 flex-auto items-center justify-center gap-1.5 border px-3 text-[0.9375rem] font-semibold sm:text-base whitespace-nowrap transition-colors duration-150 sm:px-3 md:flex-none md:px-5 ${
                 isOpen
                   ? "bg-tab text-on-tab border-transparent"
                   : here
@@ -145,7 +145,7 @@ export function CategoryNav({
                     : "text-soft hover:text-ink bg-surface/60 [border-color:var(--guest-tab-border)]"
               }`}
             >
-              <span className="truncate">{label(b)}</span>
+              <span>{label(b)}</span>
               <ChevronDown
                 size={16}
                 aria-hidden
