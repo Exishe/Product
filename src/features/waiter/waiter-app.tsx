@@ -29,6 +29,7 @@ import {
 } from "./actions";
 import { fetchFloor } from "./floor-data";
 import { fetchLivePromoTitles } from "./promos";
+import { fetchRewards, resolveReward, type WaiterReward } from "./rewards";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
 import {
@@ -127,6 +128,7 @@ function App(p: WaiterAppProps) {
 
   const [rows, setRows] = useState(p.initialRows);
   const [promos, setPromos] = useState(p.initialPromos ?? []);
+  const [rewards, setRewards] = useState<WaiterReward[]>([]);
   const [fetchFailed, setFetchFailed] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState(p.renderedAt);
   const [sent, setSent] = useState<{ action: WaiterAction; at: number }[]>([]);
@@ -182,6 +184,8 @@ function App(p: WaiterAppProps) {
           return;
         }
         setRows(res.data);
+        // Open game rewards (ADR-072): a failed read keeps what is shown.
+        void fetchRewards(getBrowserClient(), p.location.id).then((r) => r && setRewards(r));
         setFetchFailed(false);
         setLastSyncAt(nowRef.current);
         // Taps already sent are confirmed by any refresh that started after them.
@@ -362,6 +366,17 @@ function App(p: WaiterAppProps) {
       setSheet(null);
     }
     return direct(res);
+  };
+
+  // "Applied" or "Dismiss" on a game reward: gone from the list at once, back
+  // if the database refuses.
+  const onReward = async (id: string, action: "applied" | "dismissed") => {
+    const before = rewards;
+    setRewards((list) => list.filter((r) => r.id !== id));
+    const res = await resolveReward(getBrowserClient(), id, action);
+    if (!res.ok && res.reason !== "stale") setRewards(before);
+    if (res.ok || res.reason === "stale") void refresh();
+    return res;
   };
 
   const onSeatWaiting = async (waitingSessionId: string) => {
@@ -574,6 +589,8 @@ function App(p: WaiterAppProps) {
               onSettle={(sessionId) => openSettle(table.id, sessionId)}
               onSeatWaiting={(id) => void onSeatWaiting(id)}
               onCancelLine={onCancelLine}
+              rewards={rewards.filter((r) => r.tableId === table.id)}
+              onReward={onReward}
               now={now}
               timeZone={p.location.timeZone}
             />
@@ -601,6 +618,8 @@ function App(p: WaiterAppProps) {
           oldBill={sheetTable.waiting !== null}
           preferred={sheetTable.bill?.payment ?? null}
           online={online}
+          rewards={rewards.filter((r) => r.tableId === sheetTable.id)}
+          onReward={onReward}
           onClose={() => setSheet(null)}
           onConfirm={(payments) => onSettle(sheetTable, sheet.sessionId, sheet.key, payments)}
         />

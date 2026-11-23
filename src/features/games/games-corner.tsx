@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConciergeBell, Gamepad2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { applyBrand, bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
+import type { RewardCtx } from "./reward-client";
 import { GAMES, type GameId } from "./registry";
+
+// Game rewards (ADR-072) are separate chunks fetched after the page is up (the
+// note) or when a game opens (the overlay); with rewards off they cost one call.
+const RewardNote = dynamic(() => import("./reward-note"), { ssr: false });
+const RewardOverlay = dynamic(() => import("./reward-overlay"), { ssr: false });
 
 // "Play while you wait" on the order status page: five small games in a
 // full-screen layer. A game's code is fetched only when it is opened. When
@@ -23,7 +30,16 @@ function readSound(): boolean {
 
 // The bottom bar's Games item brings the guest back here (#games) while the
 // order cooks (ADR-052; it replaced the floating "back to the games" button).
-export function GamesCorner({ ready, waiting = false }: { ready: boolean; waiting?: boolean }) {
+export function GamesCorner({
+  ready,
+  waiting = false,
+  reward = null,
+}: {
+  ready: boolean;
+  waiting?: boolean;
+  /** The guest and order a reward would belong to; null: no rewards here. */
+  reward?: RewardCtx | null;
+}) {
   const { t } = useGuestI18n();
   const [open, setOpen] = useState<GameId | null>(null);
   return (
@@ -74,9 +90,17 @@ export function GamesCorner({ ready, waiting = false }: { ready: boolean; waitin
             </li>
           ))}
         </ul>
+        {reward && <RewardNote ctx={reward} />}
       </section>
       {open && (
-        <GameLayer key={open} id={open} ready={ready} waiting={waiting} onClose={() => setOpen(null)} />
+        <GameLayer
+          key={open}
+          id={open}
+          ready={ready}
+          waiting={waiting}
+          reward={reward}
+          onClose={() => setOpen(null)}
+        />
       )}
     </>
   );
@@ -86,11 +110,13 @@ function GameLayer({
   id,
   ready,
   waiting,
+  reward,
   onClose,
 }: {
   id: GameId;
   ready: boolean;
   waiting: boolean;
+  reward: RewardCtx | null;
   onClose: () => void;
 }) {
   const { t, locale } = useGuestI18n();
@@ -276,6 +302,16 @@ function GameLayer({
             ref={canvas}
             aria-label={t(`games.${id}.name`)}
             className="block size-full touch-none select-none"
+          />
+        )}
+
+        {reward && (
+          <RewardOverlay
+            ctx={reward}
+            game={id}
+            score={score}
+            active={phase === "playing" || phase === "over"}
+            hidden={showReady}
           />
         )}
 

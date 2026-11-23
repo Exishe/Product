@@ -504,6 +504,16 @@ export function OrderStatusView({
     };
   }, [hasUnsent, guestSessionId, retryUnsent]);
 
+  // Game rewards (ADR-072) belong to the newest order and this guest session.
+  const latestOrderId = data?.orders?.[0]?.id ?? null;
+  const rewardCtx = useMemo(
+    () =>
+      db && guestSessionId && latestOrderId
+        ? { db: db as unknown as SupabaseClient, guestSessionId, orderId: latestOrderId }
+        : null,
+    [db, guestSessionId, latestOrderId],
+  );
+
   if (phase === "loading") {
     return slow ? (
       <main
@@ -629,6 +639,7 @@ export function OrderStatusView({
               <GamesCorner
                 ready={latestStatus === "ready"}
                 waiting={latestStatus !== null && waiting.has(latestStatus)}
+                reward={rewardCtx}
               />
             )
           }

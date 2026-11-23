@@ -9,6 +9,8 @@ import { VenueControls, type VenueState } from "@/features/availability/venue-co
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { deltaPercent, parseDashboard, type Dashboard } from "@/features/dashboard/model";
 import { businessDate } from "@/features/dashboard/range";
+import { RewardsForm } from "@/features/game-rewards/rewards-form";
+import { settingsFromRow, type RewardSettings } from "@/features/game-rewards/model";
 import { PromoManager } from "@/features/promos/promo-manager";
 import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
@@ -131,6 +133,17 @@ export default async function AdminHome() {
     if (rows && !error) promos = rows.map(promoFromRow);
   }
 
+  // Game rewards (ADR-072): no row means off; an error (no table yet) hides the section.
+  let rewards: RewardSettings | null = null;
+  if (location) {
+    const { data: row, error } = await (supabase as unknown as SupabaseClient)
+      .from("game_reward_settings")
+      .select("game_rewards_on, reward_kind, reward_level, reward_percent, reward_text, reward_game")
+      .eq("location_id", location.id)
+      .maybeSingle();
+    if (!error) rewards = settingsFromRow(row);
+  }
+
   let data: Dashboard | null = null;
   try {
     data = sales.error ? null : parseDashboard(sales.data);
@@ -250,6 +263,12 @@ export default async function AdminHome() {
       {location && promos && (
         <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
           <PromoManager initial={promos} timeZone={location.timezone} />
+        </Section>
+      )}
+
+      {location && rewards && (
+        <Section title={t("rewards")} hint={t("rewardsHint")} id="home-rewards" testId="home-rewards">
+          <RewardsForm initial={rewards} />
         </Section>
       )}
 

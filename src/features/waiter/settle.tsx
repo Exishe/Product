@@ -7,6 +7,8 @@ import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import type { DirectResult } from "./actions";
 import { settlement, type PayInput, type PayMode, type Payment } from "./floor-model";
+import { RewardCards } from "./reward-card";
+import type { WaiterReward } from "./rewards";
 import { button, Sheet } from "./ui";
 
 const MODE_ICON = { cash: Banknote, card: CreditCard, split: Split } as const;
@@ -21,6 +23,8 @@ export function SettleSheet({
   oldBill,
   preferred,
   online,
+  rewards = [],
+  onReward,
   onClose,
   onConfirm,
 }: {
@@ -30,6 +34,9 @@ export function SettleSheet({
   // What the guest said they would use when asking for the bill; the waiter can change it.
   preferred?: "card" | "cash" | null;
   online: boolean;
+  /** Open game rewards of this table stay on the bill until handled (ADR-072). */
+  rewards?: WaiterReward[];
+  onReward?: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
   onClose: () => void;
   onConfirm: (payments: Payment[]) => Promise<DirectResult>;
 }) {
@@ -65,6 +72,7 @@ export function SettleSheet({
           {t("panel.table", { label })}
         </h2>
         {oldBill && <p className="text-staff-label2 m-0 font-semibold">{t("settle.oldBill")}</p>}
+        {onReward && <RewardCards rewards={rewards} onResolve={onReward} />}
         <h3 className="m-0 text-[1.25rem] font-bold">{t("settle.title")}</h3>
         <div role="group" aria-label={t("settle.modes")} className="grid grid-cols-3 gap-2">
           {MODES.map((m) => {
