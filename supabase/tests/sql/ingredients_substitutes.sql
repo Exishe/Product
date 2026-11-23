@@ -407,6 +407,41 @@ reset role;
 delete from public.ingredient_outages;
 
 -- ---------------------------------------------------------------------------
+-- The list of what is out now (api.list_ingredient_outages)
+-- ---------------------------------------------------------------------------
+reset role;
+-- An outage that already ended stays in the table until it is overwritten; it must not be listed.
+insert into public.ingredient_outages (restaurant_id, location_id, ingredient_id, out_at, until, source)
+values (:'ra', :'la', :'choc', now() - interval '2 days', now() - interval '1 day', 'admin');
+select test.act_as(:'u_kitchen');
+select api.set_ingredient_out(:'la', :'oat', true) is not null as oat_out \gset
+select count(*) as n_outs from api.list_ingredient_outages(:'la') \gset
+select id as first_out from api.list_ingredient_outages(:'la') limit 1 \gset
+select names ->> 'ru' as first_ru from api.list_ingredient_outages(:'la') limit 1 \gset
+select count(*) as n_choc from api.list_ingredient_outages(:'la') where id = :'choc' \gset
+reset role;
+select count(*) as n_active from public.ingredient_outages where location_id = :'la' and until > now() \gset
+select test.ok(:'n_outs' = :'n_active' and :'n_outs' >= 1 and :'n_choc' = 0, 'the kitchen lists the active outages of its café, and an ended one is absent');
+select test.ok(:'first_out' = :'oat' and :'first_ru' = 'Овсяное молоко', 'newest first, with the three names');
+select test.act_as(:'u_waiter');
+select test.ok((select count(*) from api.list_ingredient_outages(:'la')) = :'n_active', 'a waiter may list too');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
+select test.ok((select count(*) from api.list_ingredient_outages(:'la')) = :'n_active', 'and the owner');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
+select test.fails(format('select * from api.list_ingredient_outages(%L)', :'la'), 'forbidden', 'the owner of another café cannot list them');
+select test.ok((select count(*) from api.list_ingredient_outages(:'lb')) = 0, 'and sees none of A''s in their own café');
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
+select test.fails(format('select * from api.list_ingredient_outages(%L)', :'la'), 'forbidden', 'a guest cannot');
+reset role;
+set role anon;
+select test.fails(format('select * from api.list_ingredient_outages(%L)', :'la'), 'permission denied%', 'anon cannot call it');
+reset role;
+select test.ok(not has_function_privilege('anon', 'api.list_ingredient_outages(uuid)', 'execute')
+               and has_function_privilege('authenticated', 'api.list_ingredient_outages(uuid)', 'execute')
+               and (select prosecdef and proconfig @> array['search_path=""'] from pg_proc where oid = 'api.list_ingredient_outages(uuid)'::regprocedure),
+               'authenticated only, security definer with an empty search_path');
+
+-- ---------------------------------------------------------------------------
 -- Privileges
 -- ---------------------------------------------------------------------------
 select test.ok(has_function_privilege('anon', 'api.public_menu(text, text)', 'execute') and has_function_privilege('anon', 'api.public_menu_status(uuid)', 'execute'),

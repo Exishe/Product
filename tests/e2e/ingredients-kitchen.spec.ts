@@ -54,6 +54,45 @@ test("the kitchen marks an ingredient out with one tap; Back brings it in", asyn
     await expect(page.getByRole("dialog").getByRole("button", { name: "Հետ" })).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Հետ" }).click();
     await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0);
+
+    // Outs beyond the search's top 30 are still named, each with Back
+    // (needs api.list_ingredient_outages, migration 20261123290000).
+    const listProbe = await api.schema("api").rpc("list_ingredient_outages", { p_location_id: kitchen.locationId });
+    if (listProbe.error) {
+      info.annotations.push({ type: "skipped part", description: "needs migration 20261123290000_ingredient_outage_list" });
+    } else {
+      for (let n = 0; n < 31; n++) {
+        const r = await api.schema("api").rpc("save_ingredient", {
+          p_restaurant_id: cafe.restaurantId,
+          p_ingredient_id: null as unknown as string,
+          p_names: { hy: `Ածխ ${String(n).padStart(2, "0")}`, ru: `Уголь ${n}`, en: `Coal ${n}` },
+          p_unit: "pcs",
+        });
+        if (r.error) throw r.error;
+      }
+      // Sorts after all of them, so the search's 30 never shows it.
+      const last = await api.schema("api").rpc("save_ingredient", {
+        p_restaurant_id: cafe.restaurantId,
+        p_ingredient_id: null as unknown as string,
+        p_names: { hy: "Ֆիլե վերջին", ru: "Филе последнее", en: "Last fillet" },
+        p_unit: "pcs",
+      });
+      if (last.error) throw last.error;
+      const out = await api
+        .schema("api")
+        .rpc("set_ingredient_out", { p_location_id: kitchen.locationId, p_ingredient_id: last.data as string, p_out: true });
+      expect(out.error).toBeNull();
+
+      await page.reload();
+      if (await page.getByRole("button", { name: "Սկսել հերթափոխը" }).count()) await startShift(page);
+      await page.getByTestId("ingredient-out-button").click();
+      const list = page.getByRole("dialog");
+      await expect(list.getByText("Ֆիլե վերջին")).toBeVisible();
+      await expect(list.getByText(/սպառված է։ Որպեսզի/)).toHaveCount(0);
+      await list.getByRole("button", { name: "Հետ" }).click();
+      await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0);
+      await expect(list.getByText("Ֆիլե վերջին")).toHaveCount(0);
+    }
   } finally {
     await device.context.close();
     await revokeDevice(api, device.memberId);
