@@ -296,18 +296,6 @@ body:has(.admin-shell) {
   display: none;
 }
 
-/* Waiter floor map: a table with a new order pulses once (design/waiter.html). */
-@keyframes nudge {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
 
 /* Staff and admin screens in the owner's reference style (ADR-056): white
    cards float on the cool grey on a large soft shadow, with a generous
@@ -383,15 +371,33 @@ body:has(.admin-shell) {
     filter: brightness(1.6);
   }
 }
-@keyframes kds-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+
+/* Printing one kitchen ticket or waiter order (features/print-ticket): the
+   sheet is moved to <body> while printing, and only it is printed. */
+@media screen {
+  .print-ticket {
+    display: none;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .kitchen-light .kds-in {
-    animation: kds-in 200ms ease-out;
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-ticket,
+  .print-ticket * {
+    visibility: visible;
+  }
+  .print-ticket {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 8mm;
+    background: #fff;
+    color: #000;
+    font-size: 1.25rem;
+  }
+  .print-ticket article {
+    break-inside: avoid;
   }
 }
 

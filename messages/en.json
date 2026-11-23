@@ -536,6 +536,8 @@
       "en": "Description in English"
     },
     "languageMissing": "Not filled in",
+    "dishOn": "On menu",
+    "dishOff": "Hidden",
     "price": "Price, ֏",
     "priceInvalid": "Enter the price in whole drams, for example 2,500.",
     "nameRequired": "The Armenian name is required.",
@@ -591,6 +593,13 @@
     "costInvalid": "Enter the cost price in whole drams, for example 900, or leave it empty.",
     "costFailed": "The dish is saved, but the cost price isn't. Try again.",
     "margin": "You keep {amount} per portion, {pct}% of the price."
+  },
+  "print": {
+    "button": "Print ticket",
+    "table": "Table",
+    "noTable": "No table",
+    "order": "Order {number}",
+    "note": "Note: {note}"
   },
   "optionGroups": {
     "title": "Options",
