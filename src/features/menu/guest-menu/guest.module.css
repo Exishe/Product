@@ -476,16 +476,26 @@
   }
 }
 
-/* A section's cover photo is a banner and the title sits on it, bottom left,
-   over a soft shade: no photo beside a title with a gap between them. 21:9 on
-   a phone, 2.4:1 from 768 px, so the plate stays in view. */
+/* A section's cover photo opens the section as a full screen: edge to edge, as
+   tall as the screen under the menu bar, with the title on it, bottom left,
+   over a soft shade. --bleed is the distance from the screen's edge to the
+   menu's column, so the title lines up with the dishes and the photo reaches
+   the edge. */
 .sectionHead {
+  --bleed: calc(max(0px, (100vw - 1120px) / 2) + 1rem);
   position: relative;
-  margin-bottom: 1.25rem;
-  border-radius: var(--guest-r-card);
+  width: 100vw;
+  height: clamp(22rem, calc(100dvh - 9rem), 46rem);
+  margin-bottom: 1.5rem;
+  margin-left: calc(-1 * var(--bleed));
   overflow: hidden;
   background: var(--guest-plate);
-  box-shadow: var(--guest-shadow-card);
+}
+
+@media (min-width: 768px) {
+  .sectionHead {
+    --bleed: calc(max(0px, (100vw - 1120px) / 2) + 2rem);
+  }
 }
 
 .sectionHead::after {
@@ -493,34 +503,24 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(to top, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.12) 52%, transparent 75%);
+  background: linear-gradient(to top, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.1) 55%, transparent 78%);
 }
 
 .sectionHead > h2 {
   position: absolute;
   z-index: 1;
-  inset: auto 1.25rem 1rem 1.25rem;
+  inset: auto var(--bleed) 2.25rem var(--bleed);
   margin: 0;
   color: #ffffff;
-  text-shadow: 0 1px 12px rgb(0 0 0 / 0.35);
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
 }
 
 .cover {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 21 / 9;
+  height: 100%;
   object-fit: cover;
-}
-
-@media (min-width: 768px) {
-  .cover {
-    aspect-ratio: 2.4 / 1;
-  }
-
-  .sectionHead > h2 {
-    inset: auto 2rem 1.5rem 2rem;
-  }
 }
 
 /* A printed section with a featured card (guest-menu.tsx). In one column
@@ -593,7 +593,7 @@
 /* The section dropdown (category-nav.tsx) drops in under the bar of groups. */
 .navPanel {
   transform-origin: top center;
-  animation: navPanelIn 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: navPanelIn 360ms cubic-bezier(0.25, 0.7, 0.25, 1);
 }
 
 @keyframes navPanelIn {
@@ -674,5 +674,38 @@
 @media (min-width: 768px) {
   .sheetBody {
     padding: 1.75rem 2rem;
+  }
+}
+
+/* A bar item (a section group, a language): a line draws under it from the left
+   when the pointer or focus comes to it, and stays for the current one. */
+.navlink {
+  position: relative;
+}
+
+.navlink::after {
+  content: "";
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.375rem;
+  left: 0.75rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--guest-accent-text, currentColor);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 300ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.navlink:hover::after,
+.navlink:focus-visible::after,
+.navlink[aria-current="true"]::after,
+.navlink[aria-expanded="true"]::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navlink::after {
+    transition: none;
   }
 }

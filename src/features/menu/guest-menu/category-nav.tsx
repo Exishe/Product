@@ -28,13 +28,7 @@ type Bucket = { key: SectionGroup | "all"; sections: GuestCategory[] };
 // and keyboard use click, Enter or Space; Escape and a tap outside close it.
 // A menu whose sections fall into one group gets a single «Sections»
 // dropdown.
-export function CategoryNav({
-  categories,
-  belowBar = false,
-}: {
-  categories: GuestCategory[];
-  /** The slim bar is showing above. */ belowBar?: boolean;
-}) {
+export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
   const { t, locale } = useGuestI18n();
   const wrap = useRef<HTMLElement>(null);
   const [active, setActive] = useState(categories[0]?.id ?? null);
@@ -66,8 +60,8 @@ export function CategoryNav({
     let frame = 0;
     const update = () => {
       frame = 0;
-      // Sections scroll to just under the slim bar and the bar of groups.
-      const bar = wrap.current;
+      // Sections scroll to just under the menu bar, which holds the groups.
+      const bar = wrap.current?.closest<HTMLElement>("[data-menubar]") ?? wrap.current;
       const offset = (bar ? Math.max(bar.getBoundingClientRect().bottom, 80) : 80) + 24;
       let id = categories[0]?.id ?? null;
       for (const c of categories) {
@@ -110,7 +104,7 @@ export function CategoryNav({
       ref={wrap}
       aria-label={t("menu.categories")}
       data-current={current ?? undefined}
-      className={`bg-page sticky z-10 -mx-4 px-4 py-1.5 transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"}`}
+      className="min-w-0"
       onKeyDown={(e) => {
         if (e.key !== "Escape" || !open) return;
         setOpen(null);
@@ -144,9 +138,10 @@ export function CategoryNav({
                 hoverAt.current = performance.now();
                 setOpen(b.key);
               }}
-              className={`relative flex min-h-11 flex-auto items-center justify-center gap-1.5 rounded-lg px-3 text-[0.9375rem] font-semibold whitespace-nowrap transition-colors duration-150 max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base md:flex-none md:px-5 ${
+              aria-current={here ? "true" : undefined}
+              className={`${styles.navlink} flex min-h-11 flex-auto items-center justify-center gap-1.5 rounded-lg px-3 text-[0.9375rem] font-semibold whitespace-nowrap transition-colors duration-150 max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base md:flex-none md:px-4 ${
                 isOpen ? "bg-chip text-ink" : here ? "text-ink" : "text-soft hover:text-ink hover:bg-chip/60"
-              } ${here ? "after:bg-accent-text after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:content-['']" : ""}`}
+              }`}
             >
               <span>{label(b)}</span>
               <ChevronDown
@@ -163,7 +158,7 @@ export function CategoryNav({
           key={openBucket.key}
           id={`sections-${openBucket.key}`}
           data-testid="section-panel"
-          className={`bg-surface text-ink shadow-float rounded-feature absolute inset-x-4 top-full mt-1 max-h-[min(62dvh,28rem)] overflow-y-auto overscroll-contain border [border-color:var(--guest-card-border)] p-2 md:inset-x-8 ${styles.navPanel}`}
+          className={`bg-surface/85 text-ink shadow-float rounded-feature absolute inset-x-4 top-full mt-1 max-h-[min(62dvh,28rem)] overflow-y-auto overscroll-contain border [border-color:var(--guest-card-border)] p-2 backdrop-blur-md md:inset-x-8 ${styles.navPanel}`}
         >
           <ul className="grid gap-x-2 sm:grid-cols-2 md:grid-cols-3">
             {openBucket.sections.map((c) => (

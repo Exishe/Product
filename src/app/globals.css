@@ -667,22 +667,9 @@ body:has(.admin-shell) {
 /* The header band: the café's name, wordmark, table and languages on the
    brand's header colour. Text inside reads the band's own ink; the round
    white tool buttons keep the header colour for their icons. */
-.guest-lux[data-brand-header] .guest-head {
-  --guest-title: var(--brand-on-header);
-  --guest-flourish: var(--brand-on-header);
-  --color-ink: var(--brand-on-header);
-  --color-muted: var(--brand-on-header-muted);
-  --color-line-strong: var(--brand-on-header-muted);
-  background: var(--brand-header);
-  color: var(--brand-on-header);
-  padding-bottom: 1rem;
-}
-.guest-lux[data-brand-header] .guest-head .bg-surface {
-  color: var(--brand-tool-ink, var(--brand-header));
-}
-.guest-lux[data-brand-header] .guest-head :focus-visible {
-  outline-color: var(--brand-on-header);
-}
+/* The brand's header colour no longer paints a band behind the bar: the bar is the
+   page's own colour, and the café's wordmark drawn for that colour sits on it
+   (view-model wordmarkBar). The header colour still drives buttons and titles. */
 
 /* The wordmark in place of the set name, and a section's cover photo
    (plain classes: the guest menu's own JS stays inside its budget). */
@@ -800,4 +787,9 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
 /* The bottom bar keeps the page colour, which is white on the order page. */
 [data-order-page] [data-testid="guest-dock"] {
   background: #ffffff;
+}
+
+/* Full-screen section photos reach past the column; the page never scrolls sideways. */
+.guest-lux {
+  overflow-x: clip;
 }

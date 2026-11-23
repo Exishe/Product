@@ -29,7 +29,8 @@ import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
 import { DishRow } from "./dish-row";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
-import { BrandMark, GuestHeader, type LanguageLink } from "./guest-header";
+import { GuestHeader, type LanguageLink } from "./guest-header";
+import { MenuBar } from "./menu-bar";
 import styles from "./guest.module.css";
 import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
@@ -143,9 +144,6 @@ export function GuestMenu({
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
   const menuScroll = useRef(0);
   const search = useRef<HTMLInputElement>(null);
-  // The big header has scrolled away: show the slim bar above the tabs.
-  const sentinel = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
   const canOrder = menu.ordering && table.kind === "ok";
   const waiter = useCallWaiter();
 
@@ -258,16 +256,6 @@ export function GuestMenu({
   }, [view]);
 
   useEffect(() => {
-    const el = sentinel.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => entry && setScrolled(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [view]);
-
-  useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2400);
     return () => clearTimeout(timer);
@@ -303,18 +291,11 @@ export function GuestMenu({
       note: "",
     });
   };
-  const findDish = () => {
-    search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
-    search.current?.focus({ preventScroll: true });
-  };
-
   const orderingNotice =
     table.kind === "invalid" ? (
       <Notice tone="alert">{t("menu.badTable")}</Notice>
     ) : !menu.ordering ? (
       <Notice tone="calm">{t("menu.orderingOff")}</Notice>
-    ) : table.kind === "none" ? (
-      <Notice tone="info">{t("menu.noTable")}</Notice>
     ) : null;
 
   const count = summary.count;
@@ -326,9 +307,6 @@ export function GuestMenu({
     "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
   const tools = (
     <span className="flex flex-none items-center gap-2">
-      <button type="button" className={iconButton} aria-label={t("menu.searchOpen")} onClick={findDish}>
-        <Search size={20} aria-hidden />
-      </button>
       {(canOrder || lines.length > 0) && (
         <button
           type="button"
@@ -366,7 +344,7 @@ export function GuestMenu({
       home={home}
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-      wordmarkUrl={menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
+      wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
@@ -452,37 +430,59 @@ export function GuestMenu({
     );
   }
 
+  const searchRow = (
+    <div className="flex items-center gap-2">
+      <div className="relative min-w-0 flex-1">
+        <label className="sr-only" htmlFor="menu-search">
+          {t("menu.search")}
+        </label>
+        <Search
+          size={16}
+          aria-hidden
+          className="text-muted pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2"
+        />
+        <input
+          ref={search}
+          id="menu-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("menu.search")}
+          autoComplete="off"
+          enterKeyHint="search"
+          className="placeholder:text-muted focus:border-accent-text rounded-pill min-h-10 w-full border bg-transparent pr-4 pl-10 text-[0.9375rem] [border-color:var(--guest-line-strong)]"
+        />
+      </div>
+      {offerFilter && (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-pressed={avoid.length > 0}
+          onClick={() => setChoosingAvoid(true)}
+          data-testid="allergy-filter"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill inline-flex min-h-10 flex-none items-center gap-2 border px-3.5 text-sm font-semibold [border-color:var(--guest-line-strong)]"
+        >
+          <ShieldAlert size={16} aria-hidden />
+          {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
+        </button>
+      )}
+    </div>
+  );
   return (
     <>
-      {header}
-      {/* Right under the header: once it has scrolled away, the slim bar shows. */}
-      <div ref={sentinel} aria-hidden="true" />
-      {/* Fixed, not in the flow: showing it never shifts the menu under the finger. */}
-      {/* guest-head: it wears the brand's header band, so the wordmark drawn
-          for that band reads here too. */}
-      <div
-        className={`guest-head text-ink bg-page/95 border-line fixed inset-x-0 top-0 z-20 border-b backdrop-blur-md ${styles.bar} ${styles.slim}`}
-        data-shown={scrolled}
-        data-testid="slim-bar"
-        inert={!scrolled}
-      >
-        {/* 63 px and the hairline: 64 in all. */}
-        <div className={`${COLUMN} flex h-[63px] items-center gap-3`}>
-          <BrandMark
-            cafeName={menu.restaurantName}
-            logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-            wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : null}
-            home={home}
-            wordmarkTestId="slim-wordmark"
-          />
-          {table.kind === "ok" && (
-            <span className="border-line-strong/60 rounded-pill flex-none border px-2.5 py-0.5 text-sm font-semibold whitespace-nowrap max-[359px]:hidden">
-              {t("table", { label: table.label })}
-            </span>
-          )}
-          {tools}
-        </div>
-      </div>
+      <MenuBar
+        cafeName={menu.restaurantName}
+        logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
+        wordmarkUrl={
+          menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
+        }
+        home={home}
+        tableLabel={table.kind === "ok" ? table.label : null}
+        languages={languages}
+        nav={<CategoryNav categories={shown} />}
+        tools={tools}
+        search={searchRow}
+      />
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
         {(orderingNotice || menu.kitchenBusy) && (
           <div className="grid gap-2 pt-4">
@@ -501,48 +501,11 @@ export function GuestMenu({
             <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
           </Suspense>
         )}
-        <div className="flex items-center gap-2 pt-5 pb-2">
-          <div className="relative min-w-0 flex-1 md:max-w-[440px]">
-            <label className="sr-only" htmlFor="menu-search">
-              {t("menu.search")}
-            </label>
-            <Search
-              size={18}
-              aria-hidden
-              className="text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2"
-            />
-            <input
-              ref={search}
-              id="menu-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("menu.search")}
-              autoComplete="off"
-              enterKeyHint="search"
-              className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-5 pl-11"
-            />
-          </div>
-          {offerFilter && (
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              aria-pressed={avoid.length > 0}
-              onClick={() => setChoosingAvoid(true)}
-              data-testid="allergy-filter"
-              className="bg-surface shadow-card rounded-pill aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-12 flex-none items-center gap-2 border [border-color:var(--guest-field-edge)] px-4 text-sm font-semibold"
-            >
-              <ShieldAlert size={18} aria-hidden />
-              {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
-            </button>
-          )}
-        </div>
         {avoid.length > 0 && (
           <p className="text-muted pb-1 text-sm" role="status">
             {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
           </p>
         )}
-        <CategoryNav categories={shown} belowBar={scrolled} />
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12">
           <main className="min-w-0">
             {shown.length === 0 ? (
@@ -579,7 +542,7 @@ export function GuestMenu({
                     key={c.id}
                     id={sectionId(c.id)}
                     aria-labelledby={`h-${c.id}`}
-                    className="scroll-mt-36 pt-8"
+                    className="scroll-mt-44 pt-8"
                   >
                     {/* The section's cover photo (brand profile, ADR-058): decoration, the
                         title names it. Above the title on a phone; beside it from

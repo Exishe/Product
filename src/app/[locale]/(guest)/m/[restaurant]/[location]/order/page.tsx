@@ -75,8 +75,8 @@ export default async function OrderStatusPage({
   // The public key goes to the phone for «Notify me when it's ready» (ADR-049).
   const vapidPublicKey = vapidPublicKeyOrNull(process.env);
   const theme = guestTheme(look?.guest_theme);
-  // The wordmark that reads on the header band's colour (ADR-065).
-  const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).header);
+  // The wordmark that reads on the page colour: the bar has no band behind it (ADR-065).
+  const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).page);
 
   // Dishes to recommend while the order cooks: the café's own pairs first (the
   // browser picks those that go with this table's order), then dishes with a photo.
@@ -92,7 +92,13 @@ export default async function OrderStatusPage({
     ...dishes.filter((i) => !i.image && !paired.has(i.id)),
   ]
     .slice(0, 24)
-    .map((i) => ({ id: i.id, name: i.name.text, image: i.image, price: i.price }));
+    .map((i) => ({
+      id: i.id,
+      name: i.name.text,
+      image: i.image,
+      price: i.price,
+      description: i.description?.text.slice(0, 120),
+    }));
 
   return (
     <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>

@@ -91,6 +91,29 @@ export function BrandMark({
   );
 }
 
+/** Հայ · Рус · Eng, keeping the table token; a line draws under a language on hover. */
+export function LanguageNav({ languages }: { languages: readonly LanguageLink[] }) {
+  const { t, locale } = useGuestI18n();
+  const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
+  if (offered.length <= 1) return null;
+  return (
+    <nav aria-label={t("language.label")} className="flex flex-none items-center">
+      {offered.map(({ locale: l, href }) => (
+        <a
+          key={l}
+          href={href}
+          lang={l}
+          hrefLang={l}
+          aria-current={l === locale ? "true" : undefined}
+          className={`text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold ${styles.navlink}`}
+        >
+          {t(`language.${l}`)}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 // The top of every guest page: the café's logo, table chip and language
 // switch (Հայ, Рус, Eng, keeping the table token, so the guest stays at
 // their table) above the café name, set very large in the theme's display
@@ -125,7 +148,6 @@ export function GuestHeader({
   home?: HomeLink;
 }) {
   const { t, locale } = useGuestI18n();
-  const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
   const nameLang = scriptLang(cafeName);
   const tableChip = tableLabel && (
     <span
@@ -135,22 +157,7 @@ export function GuestHeader({
       {t("table", { label: tableLabel })}
     </span>
   );
-  const languageNav = offered.length > 1 && (
-    <nav aria-label={t("language.label")} className="flex flex-none items-center">
-      {offered.map(({ locale: l, href }) => (
-        <a
-          key={l}
-          href={href}
-          lang={l}
-          hrefLang={l}
-          aria-current={l === locale ? "true" : undefined}
-          className="text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold aria-[current=true]:underline aria-[current=true]:decoration-[var(--guest-glow)] aria-[current=true]:decoration-2 aria-[current=true]:underline-offset-[6px]"
-        >
-          {t(`language.${l}`)}
-        </a>
-      ))}
-    </nav>
-  );
+  const languageNav = <LanguageNav languages={languages} />;
 
   if (compact)
     return (
