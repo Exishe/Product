@@ -796,3 +796,8 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   background: #ffffff !important;
   --guest-card-border: #14110f;
 }
+
+/* The bottom bar keeps the page colour, which is white on the order page. */
+[data-order-page] [data-testid="guest-dock"] {
+  background: #ffffff;
+}
