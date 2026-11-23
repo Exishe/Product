@@ -26,6 +26,14 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    add_catalog_ingredient: {
+      Args: {
+        p_restaurant_id: string;
+        p_key: string;
+        p_cost_per_unit?: number;
+      };
+      Returns: string;
+    };
     add_menu_import_images: {
       Args: {
         p_import_id: string;
@@ -54,6 +62,15 @@ export type ApiSchema = {
         p_reason: string;
       };
       Returns: undefined;
+    };
+    claim_game_reward: {
+      Args: {
+        p_guest_session_id: string;
+        p_order_id: string;
+        p_game: string;
+        p_level: number;
+      };
+      Returns: Json;
     };
     create_device_pairing: {
       Args: {
@@ -127,12 +144,36 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    event_timeline: {
+      Args: {
+        p_location_id: string;
+        p_from?: string;
+        p_to?: string;
+        p_limit?: number;
+      };
+      Returns: {
+        at: string;
+        kind: string;
+        session_key: string;
+        item_id: string;
+        order_id: string;
+        table_id: string;
+        meta: Json;
+      }[];
+    };
     fail_menu_import: {
       Args: {
         p_import_id: string;
         p_error: string;
       };
       Returns: undefined;
+    };
+    guest_game_reward: {
+      Args: {
+        p_guest_session_id: string;
+        p_order_id?: string;
+      };
+      Returns: Json;
     };
     guest_join_table: {
       Args: {
@@ -175,6 +216,12 @@ export type ApiSchema = {
       Returns: string;
     };
     heartbeat: { Args: Record<string, never>; Returns: undefined };
+    ingredient_catalog: {
+      Args: {
+        p_query?: string;
+      };
+      Returns: { key: string; names: Json; unit: string; kcal_per_100g: number }[];
+    };
     item_conversion: {
       Args: {
         p_location_id: string;
@@ -273,6 +320,14 @@ export type ApiSchema = {
       };
       Returns: boolean;
     };
+    record_guest_events: {
+      Args: {
+        p_location_id: string;
+        p_session: string;
+        p_events: Json;
+      };
+      Returns: Json;
+    };
     redeem_device_pairing: {
       Args: {
         p_code: string;
@@ -286,11 +341,25 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    remove_item_ingredient: {
+      Args: {
+        p_item_id: string;
+        p_ingredient_id: string;
+      };
+      Returns: undefined;
+    };
     reorder: {
       Args: {
         p_restaurant_id: string;
         p_kind: string;
         p_ids: string[];
+      };
+      Returns: undefined;
+    };
+    resolve_game_reward: {
+      Args: {
+        p_claim_id: string;
+        p_action: string;
       };
       Returns: undefined;
     };
@@ -333,6 +402,18 @@ export type ApiSchema = {
         p_category_id: string;
         p_names: Json;
         p_prep_area_id: string;
+        p_is_active?: boolean;
+      };
+      Returns: string;
+    };
+    save_ingredient: {
+      Args: {
+        p_restaurant_id: string;
+        p_ingredient_id: string;
+        p_names: Json;
+        p_unit: string;
+        p_cost_per_unit?: number;
+        p_kcal_per_100g?: number;
         p_is_active?: boolean;
       };
       Returns: string;
@@ -384,6 +465,13 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    search_ingredients: {
+      Args: {
+        p_location_id: string;
+        p_query?: string;
+      };
+      Returns: { id: string; name: string; names: Json; unit: string; is_out: boolean; uses: number }[];
+    };
     seat_waiting_guests: {
       Args: {
         p_table_session_id: string;
@@ -393,6 +481,14 @@ export type ApiSchema = {
     send_test_notification: {
       Args: {
         p_channel_id: string;
+      };
+      Returns: undefined;
+    };
+    set_alert_settings: {
+      Args: {
+        p_location_id: string;
+        p_overdue_minutes: number;
+        p_repeat_calls: number;
       };
       Returns: undefined;
     };
@@ -411,6 +507,18 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    set_game_rewards: {
+      Args: {
+        p_location_id: string;
+        p_on: boolean;
+        p_kind: string;
+        p_level: number;
+        p_percent?: number;
+        p_text?: Json;
+        p_game?: string;
+      };
+      Returns: undefined;
+    };
     set_guest_appearance: {
       Args: {
         p_restaurant_id: string;
@@ -420,12 +528,31 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    set_ingredient_out: {
+      Args: {
+        p_location_id: string;
+        p_ingredient_id: string;
+        p_out: boolean;
+      };
+      Returns: string;
+    };
     set_item_cost: {
       Args: {
         p_item_id: string;
         p_cost: number;
       };
       Returns: undefined;
+    };
+    set_item_ingredient: {
+      Args: {
+        p_item_id: string;
+        p_ingredient_id: string;
+        p_quantity: number;
+        p_is_key?: boolean;
+        p_substitute_ingredient_id?: string;
+        p_price_delta?: number;
+      };
+      Returns: string;
     };
     set_kitchen_busy: {
       Args: {
@@ -457,6 +584,13 @@ export type ApiSchema = {
         p_is_test: boolean;
       };
       Returns: number;
+    };
+    set_out_ingredient_display: {
+      Args: {
+        p_location_id: string;
+        p_mode: string;
+      };
+      Returns: undefined;
     };
     set_promo_on: {
       Args: {
@@ -507,6 +641,12 @@ export type ApiSchema = {
         p_restaurant_id: string;
       };
       Returns: string;
+    };
+    table_alerts: {
+      Args: {
+        p_location_id: string;
+      };
+      Returns: Json;
     };
     table_qr_token: {
       Args: {

@@ -20,12 +20,22 @@ select json_agg(json_build_object(
     from unnest(p.proargnames[1:p.pronargs], string_to_array(oidvectortypes(p.proargtypes), ', ')) with ordinality as a(name, type, ord)
   ), '[]'::json),
   'returns', format_type(p.prorettype, null),
-  'set', p.proretset
+  'set', p.proretset,
+  'table', (select json_agg(json_build_object('name', n, 'type', format_type(t, null)) order by o)
+            from unnest(p.proallargtypes, p.proargmodes::text[], p.proargnames) with ordinality as a(t, m, n, o)
+            where m = 't')
 ) order by p.proname)
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'api'`;
 
-type Fn = { name: string; args: { name: string; type: string; optional: boolean }[]; returns: string; set: boolean };
+type Fn = {
+  name: string;
+  args: { name: string; type: string; optional: boolean }[];
+  returns: string;
+  set: boolean;
+  // `returns table (...)`: the columns of each row.
+  table: { name: string; type: string }[] | null;
+};
 const fns: Fn[] = JSON.parse(execFileSync("psql", ["-qtA", "-c", sql], { env, encoding: "utf8" }).trim());
 
 function ts(type: string): string {
@@ -44,7 +54,10 @@ function ts(type: string): string {
 const body = fns
   .map((f) => {
     const args = f.args.map((a) => `        ${a.name}${a.optional ? "?" : ""}: ${ts(a.type)}`).join("\n");
-    const ret = f.set ? `${ts(f.returns)}[]` : ts(f.returns);
+    const row = f.table
+      ? `{ ${f.table.map((c) => `${c.name}: ${ts(c.type)}`).join("; ")} }`
+      : ts(f.returns);
+    const ret = f.set || f.table ? `${row}[]` : row;
     return `${f.name}: { Args: ${args ? `{\n${args}\n}` : "Record<string, never>"}; Returns: ${ret} };`;
   })
   .join("\n");
