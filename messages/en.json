@@ -308,6 +308,7 @@
       "acknowledge": "Got it",
       "pending": "Waiting for connection",
       "was": "Was {quantity}",
+      "useInstead": "Use {name}",
       "lineCancelled": "Cancelled",
       "units": {
         "g": "{amount} g",

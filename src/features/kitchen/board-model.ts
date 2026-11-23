@@ -35,6 +35,7 @@ export type TicketRow = {
       quantity: number;
       cancelled_quantity: number;
       order_item_modifiers: { name_i18n: Json }[];
+      substitution?: Json | null; // ADR-076; the column exists once that migration has run
     } | null;
   }[];
 };
@@ -50,6 +51,7 @@ export type BoardLine = {
   note: string | null;
   modifiers: LocalizedText[];
   allergy: boolean; // the line's note mentions an allergy
+  substitute?: LocalizedText | null; // "use <this>" when an ingredient was replaced (ADR-076)
   detail?: LineDetail | null; // tells a dish apart from a same-named one
 };
 
@@ -93,6 +95,13 @@ export function pickName(names: Json, locale: Locale): LocalizedText {
     if (typeof v === "string" && v.trim()) return { text: v.trim(), locale: l };
   }
   return { text: "—", locale };
+}
+
+// The ingredient to use instead, from the substitution stored on the order line.
+function substituteName(sub: Json | null | undefined, locale: Locale): LocalizedText | null {
+  const obj = (v: Json | null | undefined) => (v && typeof v === "object" && !Array.isArray(v) ? v : null);
+  const name = obj(obj(obj(sub)?.to)?.name);
+  return name ? pickName(name, locale) : null;
 }
 
 // Guest notes are free text in three languages. A note that names an allergy
@@ -178,6 +187,7 @@ export function toBoardTickets(
         note: oi.note?.trim() || null,
         modifiers: oi.order_item_modifiers.map((m) => pickName(m.name_i18n, locale)),
         allergy: mentionsAllergy(oi.note),
+        substitute: substituteName(oi.substitution, locale),
         detail: (oi.item_id && details[oi.item_id]) || null,
       });
     }

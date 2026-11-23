@@ -2190,6 +2190,7 @@ export type Database = {
           restaurant_id: string
           sort: number
           station_id: string | null
+          substitution: Json | null
           unit_price: number
         }
         Insert: {
@@ -2207,6 +2208,7 @@ export type Database = {
           restaurant_id: string
           sort?: number
           station_id?: string | null
+          substitution?: Json | null
           unit_price: number
         }
         Update: {
@@ -2224,6 +2226,7 @@ export type Database = {
           restaurant_id?: string
           sort?: number
           station_id?: string | null
+          substitution?: Json | null
           unit_price?: number
         }
         Relationships: [

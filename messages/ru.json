@@ -308,6 +308,7 @@
       "acknowledge": "Понятно",
       "pending": "Ждёт связи",
       "was": "Было {quantity}",
+      "useInstead": "Использовать: {name}",
       "lineCancelled": "Отменено",
       "units": {
         "g": "{amount} г",

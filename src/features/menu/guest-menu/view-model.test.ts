@@ -231,6 +231,7 @@ describe("availability (ADR-068)", () => {
       hidden: ["x"],
       busy: null,
       promos: [],
+      outages: "",
     });
   });
 

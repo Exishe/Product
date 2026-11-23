@@ -22,6 +22,7 @@ describe("parseStatus", () => {
       hidden: ["y", "z"],
       busy: 20,
       promos: [],
+      outages: "",
     });
   });
   it("reads live promos and drops broken ones", () => {
@@ -104,5 +105,12 @@ describe("window helpers", () => {
   it("localMinutes reads the café's wall clock", () => {
     expect(localMinutes(new Date("2026-11-23T10:30:00Z"), "Asia/Yerevan")).toBe(14 * 60 + 30);
     expect(localMinutes(new Date("2026-11-23T10:30:00Z"), "Pacific/Kiritimati")).toBe(0 * 60 + 30);
+  });
+  it("reads the outage version, and a changed one makes the status differ", () => {
+    const before = parseStatus({ ordering: true }) as NonNullable<ReturnType<typeof parseStatus>>;
+    const after = parseStatus({ ordering: true, outages: "a1b2c3d4" }) as NonNullable<ReturnType<typeof parseStatus>>;
+    expect(before.outages).toBe("");
+    expect(after.outages).toBe("a1b2c3d4");
+    expect(sameStatus(before, after)).toBe(false);
   });
 });

@@ -147,6 +147,7 @@ export type ApiSchema = {
         p_idempotency_key: string;
         p_lines: Json;
         p_note?: string;
+        p_subs_ack?: Json;
       };
       Returns: string;
     };
