@@ -778,6 +778,12 @@
       "waiterCalled": "Մատուցողը կանչված է",
       "sections": "Բաժիններ",
       "sectionSearch": "Գտնել բաժին",
+      "groups": {
+        "food": "Ուտեստներ",
+        "desserts": "Աղանդեր",
+        "drinks": "Ըմպելիքներ",
+        "wine": "Բար"
+      },
       "noSection": "Այդպիսի բաժին չկա։",
       "searchOpen": "Որոնել"
     },

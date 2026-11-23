@@ -778,6 +778,12 @@
       "waiterCalled": "Официант вызван",
       "sections": "Разделы",
       "sectionSearch": "Найти раздел",
+      "groups": {
+        "food": "Блюда",
+        "desserts": "Десерты",
+        "drinks": "Напитки",
+        "wine": "Бар"
+      },
       "noSection": "Такого раздела нет.",
       "searchOpen": "Поиск"
     },

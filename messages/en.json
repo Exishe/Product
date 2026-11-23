@@ -778,6 +778,12 @@
       "waiterCalled": "Waiter called",
       "sections": "Sections",
       "sectionSearch": "Find a section",
+      "groups": {
+        "food": "Food",
+        "desserts": "Desserts",
+        "drinks": "Drinks",
+        "wine": "Bar"
+      },
       "noSection": "No section matches that.",
       "searchOpen": "Search"
     },
