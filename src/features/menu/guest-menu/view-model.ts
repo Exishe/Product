@@ -60,7 +60,7 @@ export type PublicMenu = {
   /** Section cover photos by category id (ADR-058). */
   covers?: Record<string, string> | null;
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
-  /** Live promos (ADR-070); missing until migration 20261123150000_promos. */
+  /** Live promos (ADR-070); missing until migration 20261123165000_promos. */
   promos?: unknown;
 };
 

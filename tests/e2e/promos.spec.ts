@@ -4,7 +4,7 @@ import { signInAsRunOwner } from "./run-owner";
 
 // Promotions (ADR-070): the owner creates a promo in the admin and switches it
 // on; an open guest menu shows the banner within the poll interval, without a
-// reload, and switching off removes it. Needs migration 20261123150000_promos
+// reload, and switching off removes it. Needs migration 20261123165000_promos
 // on the dev project; until CI has applied it this test skips.
 const ZERO = "00000000-0000-0000-0000-000000000000";
 
@@ -12,7 +12,7 @@ test("the owner switches a promo on and off and the open guest menu follows", as
   test.setTimeout(180_000);
   const cafe = await createTestCafe();
   const { error } = await cafe.owner.schema("api").rpc("set_promo_on", { p_promo_id: ZERO, p_on: false });
-  test.skip(error?.code === "PGRST202", "needs migration 20261123150000_promos on the dev project");
+  test.skip(error?.code === "PGRST202", "needs migration 20261123165000_promos on the dev project");
 
   // A guest has the menu open.
   const guest = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
