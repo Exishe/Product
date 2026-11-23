@@ -691,6 +691,47 @@ export type Database = {
           },
         ]
       }
+      guest_events: {
+        Row: {
+          at: string
+          id: number
+          item_id: string | null
+          kind: string
+          location_id: string
+          meta: Json
+          restaurant_id: string
+          session_key: string
+        }
+        Insert: {
+          at?: string
+          id?: never
+          item_id?: string | null
+          kind: string
+          location_id: string
+          meta?: Json
+          restaurant_id: string
+          session_key: string
+        }
+        Update: {
+          at?: string
+          id?: never
+          item_id?: string | null
+          kind?: string
+          location_id?: string
+          meta?: Json
+          restaurant_id?: string
+          session_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_events_restaurant_id_location_id_fkey"
+            columns: ["restaurant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["restaurant_id", "id"]
+          },
+        ]
+      }
       guest_sessions: {
         Row: {
           created_at: string
