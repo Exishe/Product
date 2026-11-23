@@ -11,12 +11,15 @@ export type OrderErrorKind =
   | { kind: "menu_changed" }
   | { kind: "rate_limited" }
   | { kind: "ordering_off" }
+  | { kind: "paused" }
+  | { kind: "closed" }
   | { kind: "already_sent" }
   | { kind: "failed" };
 
 type Failure = { status: number; error: { message: string; details?: string | null; code?: string | null } | null };
 
-const MENU_CHANGED = ["item_unavailable", "invalid_modifiers", "unknown_modifier", "invalid_lines", "invalid_quantity", "menu_not_published"];
+// "category_unavailable": a dish's section has just gone outside its hours; the menu reloads without it.
+const MENU_CHANGED = ["category_unavailable", "item_unavailable", "invalid_modifiers", "unknown_modifier", "invalid_lines", "invalid_quantity", "menu_not_published"];
 const ORDERING_OFF = ["ordering_disabled", "table_unavailable", "invalid_table_token", "plan_required"];
 
 export function classifyOrderError({ status, error }: Failure): OrderErrorKind {
@@ -28,6 +31,8 @@ export function classifyOrderError({ status, error }: Failure): OrderErrorKind {
   if (message === "rate_limited") return { kind: "rate_limited" };
   if (message === "idempotency_key_reused") return { kind: "already_sent" };
   if (MENU_CHANGED.includes(message)) return { kind: "menu_changed" };
+  if (message === "ordering_paused") return { kind: "paused" };
+  if (message === "kitchen_closed") return { kind: "closed" };
   if (ORDERING_OFF.includes(message)) return { kind: "ordering_off" };
   return { kind: "failed" };
 }

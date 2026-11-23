@@ -45,6 +45,8 @@ export const categoryInput = z.object({
   id: z.uuid().optional(),
   names: perLocale(80).refine((n) => n.hy.length > 0, { path: ["hy"], message: "name_required" }),
   prepAreaId: z.uuid().nullable(),
+  /** Left out: keep the stored value. */
+  isActive: z.boolean().optional(),
 });
 export type CategoryInput = z.infer<typeof categoryInput>;
 

@@ -415,6 +415,8 @@ export type Database = {
       }
       categories: {
         Row: {
+          available_from: string | null
+          available_to: string | null
           created_at: string
           id: string
           image_path: string | null
@@ -426,6 +428,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
@@ -437,6 +441,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
@@ -1214,9 +1220,12 @@ export type Database = {
           guest_locales: Database["public"]["Enums"]["app_locale"][]
           id: string
           kitchen_busy_until: string | null
+          kitchen_closed_until: string | null
           kitchen_locale: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total: number
           name: string
+          ordering_paused: boolean
+          ordering_paused_until: string | null
           phone: string | null
           published_menu_version_id: string | null
           qr_ordering_enabled: boolean
@@ -1235,9 +1244,12 @@ export type Database = {
           guest_locales?: Database["public"]["Enums"]["app_locale"][]
           id?: string
           kitchen_busy_until?: string | null
+          kitchen_closed_until?: string | null
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name: string
+          ordering_paused?: boolean
+          ordering_paused_until?: string | null
           phone?: string | null
           published_menu_version_id?: string | null
           qr_ordering_enabled?: boolean
@@ -1256,9 +1268,12 @@ export type Database = {
           guest_locales?: Database["public"]["Enums"]["app_locale"][]
           id?: string
           kitchen_busy_until?: string | null
+          kitchen_closed_until?: string | null
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name?: string
+          ordering_paused?: boolean
+          ordering_paused_until?: string | null
           phone?: string | null
           published_menu_version_id?: string | null
           qr_ordering_enabled?: boolean

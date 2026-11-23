@@ -215,6 +215,12 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    public_menu_status: {
+      Args: {
+        p_location_id: string;
+      };
+      Returns: Json;
+    };
     publish_menu: {
       Args: {
         p_location_id: string;
@@ -304,6 +310,7 @@ export type ApiSchema = {
         p_category_id: string;
         p_names: Json;
         p_prep_area_id: string;
+        p_is_active?: boolean;
       };
       Returns: string;
     };
@@ -360,6 +367,14 @@ export type ApiSchema = {
       };
       Returns: undefined;
     };
+    set_category_window: {
+      Args: {
+        p_category_id: string;
+        p_from: string;
+        p_to: string;
+      };
+      Returns: undefined;
+    };
     set_guest_appearance: {
       Args: {
         p_restaurant_id: string;
@@ -380,6 +395,21 @@ export type ApiSchema = {
       Args: {
         p_location_id: string;
         p_minutes: number;
+      };
+      Returns: string;
+    };
+    set_kitchen_closed_today: {
+      Args: {
+        p_location_id: string;
+        p_closed: boolean;
+      };
+      Returns: string;
+    };
+    set_ordering_pause: {
+      Args: {
+        p_location_id: string;
+        p_paused: boolean;
+        p_minutes?: number;
       };
       Returns: string;
     };

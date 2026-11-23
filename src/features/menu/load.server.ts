@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { hhmm } from "@/features/availability/window";
 import { menuHasChanges } from "./publish-state";
 import type { EditorData, Names } from "./types";
 
@@ -18,17 +19,30 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
 
   const { data: location } = await supabase
     .from("locations")
-    .select("id, published_menu_version_id")
+    .select("id, published_menu_version_id, timezone")
     .eq("restaurant_id", restaurantId)
     .order("created_at")
     .limit(1)
     .single();
   const locationId = location?.id as string;
 
+  // Section hours (ADR-068) are read on their own: before the migration the
+  // columns do not exist and the editor must still load.
+  const windows = await supabase
+    .from("categories")
+    .select("id, available_from, available_to")
+    .eq("restaurant_id", restaurantId);
+  const windowOf = new Map(
+    (windows.error ? [] : (windows.data ?? [])).map((w) => [
+      w.id,
+      w.available_from && w.available_to ? { from: hhmm(w.available_from), to: hhmm(w.available_to) } : null,
+    ]),
+  );
+
   const [cats, dishes, groups, areas, stops, version, costs] = await Promise.all([
     supabase
       .from("categories")
-      .select("id, sort, prep_area_id, updated_at, category_translations(locale, name)")
+      .select("id, sort, prep_area_id, is_active, updated_at, category_translations(locale, name)")
       .eq("restaurant_id", restaurantId)
       .order("sort"),
     supabase
@@ -90,7 +104,11 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     costs: Object.fromEntries((costs.data ?? []).map((c) => [c.item_id, c.cost])),
     soldOut: (stops.data ?? []).filter((s) => !s.until || Date.parse(s.until) > now).map((s) => s.item_id),
     publish,
+    windowsSupported: !windows.error,
+    timeZone: location?.timezone ?? "Asia/Yerevan",
     categories: (cats.data ?? []).map((c) => ({
+      window: windowOf.get(c.id) ?? null,
+      isActive: c.is_active,
       id: c.id,
       sort: c.sort,
       prepAreaId: c.prep_area_id,

@@ -132,6 +132,8 @@ export function OrderSender({
             menu_changed: t("cart.menuChanged"),
             rate_limited: t("cart.rateLimited"),
             ordering_off: t("menu.orderingOff"),
+            paused: t("menu.paused"),
+            closed: t("menu.closedToday"),
           }[phase.why.kind as string] ?? t("cart.failed"))
         : null;
 

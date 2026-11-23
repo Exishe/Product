@@ -66,8 +66,8 @@ select test.ok(not exists (
 select test.ok((select string_agg(p.proname, ',' order by p.proname)
                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                 where n.nspname = 'api' and has_function_privilege('anon', p.oid, 'execute'))
-               = 'public_menu,public_menu_hints,push_claim,push_report,resolve_table_token,telegram_update',
-  'anon can call only the public menu and its hints, the table token and the two signed webhooks');
+               = 'public_menu,public_menu_hints,public_menu_status,push_claim,push_report,resolve_table_token,telegram_update',
+  'anon can call only the public menu, its hints and status, the table token and the two signed webhooks');
 
 select test.ok((select string_agg(p.proname, ',' order by p.proname)
                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace

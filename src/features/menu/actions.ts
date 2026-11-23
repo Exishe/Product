@@ -66,6 +66,7 @@ export async function saveCategory(input: CategoryInput): Promise<SaveResult> {
     p_category_id: parsed.data.id ?? (null as unknown as string),
     p_names: parsed.data.names,
     p_prep_area_id: parsed.data.prepAreaId ?? (null as unknown as string),
+    ...(parsed.data.isActive === undefined ? {} : { p_is_active: parsed.data.isActive }),
   });
   if (error || !data) return { ok: false, error: "failed" };
   revalidatePath("/admin/menu");

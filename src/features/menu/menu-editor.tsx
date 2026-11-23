@@ -38,6 +38,8 @@ import {
   setDishPhoto,
   setSoldOut,
 } from "./actions";
+import { saveCategoryWindow } from "@/features/availability/actions";
+import { inDailyWindow, localMinutes, validWindow } from "@/features/availability/window";
 import { ALLERGENS, type Allergen } from "./guest-menu/allergens";
 import { resizeToWebp } from "./photo";
 import { DISH_TAGS, parsePriceInput } from "./schema";
@@ -53,10 +55,28 @@ type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
   needsReview: boolean;
   markReviewed: boolean;
 };
-type CategoryDraft = { id?: string; names: Names; prepAreaId: string | null };
+type CategoryDraft = {
+  id?: string;
+  names: Names;
+  prepAreaId: string | null;
+  isActive: boolean;
+  /** Only at certain hours (ADR-068); `from`/`to` are "HH:MM". */
+  limited: boolean;
+  from: string;
+  to: string;
+};
 type Panel = { kind: "dish"; draft: DishDraft } | { kind: "category"; draft: CategoryDraft } | null;
 type Status =
-  "idle" | "saving" | "saved" | "failed" | "costFailed" | "priceInvalid" | "costInvalid" | "nameRequired";
+  | "idle"
+  | "saving"
+  | "saved"
+  | "failed"
+  | "costFailed"
+  | "priceInvalid"
+  | "costInvalid"
+  | "nameRequired"
+  | "windowInvalid"
+  | "windowFailed";
 
 // Resizes the photo in the browser, stores it and points the dish at it.
 async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
@@ -142,8 +162,23 @@ export function MenuEditor({ data }: { data: EditorData }) {
     open({
       kind: "category",
       draft: c
-        ? { id: c.id, names: c.names, prepAreaId: c.prepAreaId }
-        : { names: emptyNames(), prepAreaId: null },
+        ? {
+            id: c.id,
+            names: c.names,
+            prepAreaId: c.prepAreaId,
+            isActive: c.isActive,
+            limited: c.window !== null,
+            from: c.window?.from ?? "08:00",
+            to: c.window?.to ?? "12:00",
+          }
+        : {
+            names: emptyNames(),
+            prepAreaId: null,
+            isActive: true,
+            limited: false,
+            from: "08:00",
+            to: "12:00",
+          },
     });
   }
 
@@ -170,8 +205,26 @@ export function MenuEditor({ data }: { data: EditorData }) {
     setStatus("saving");
     startTransition(async () => {
       if (panel.kind === "category") {
-        const result = await saveCategory({ ...panel.draft });
+        const d = panel.draft;
+        const before = d.id ? (data.categories.find((c) => c.id === d.id)?.window ?? null) : null;
+        const next = d.limited ? { from: d.from, to: d.to } : null;
+        const windowChanged = before?.from !== next?.from || before?.to !== next?.to;
+        if (data.windowsSupported && d.limited && !validWindow(d.from, d.to))
+          return setStatus("windowInvalid");
+        const result = await saveCategory({
+          id: d.id,
+          names: d.names,
+          prepAreaId: d.prepAreaId,
+          isActive: d.isActive,
+        });
         if (!result.ok) return setStatus("failed");
+        if (data.windowsSupported && windowChanged) {
+          const saved = await saveCategoryWindow(result.id, next?.from ?? null, next?.to ?? null);
+          if (!saved) {
+            setSelected(result.id);
+            return setStatus("windowFailed");
+          }
+        }
         setSelected(result.id);
         setPanel(null);
       } else {
@@ -376,6 +429,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "costInvalid" && t("costInvalid")}
       {status === "costFailed" && t("costFailed")}
       {status === "nameRequired" && t("nameRequired")}
+      {status === "windowInvalid" && t("windowInvalid")}
+      {status === "windowFailed" && t("windowFailed")}
     </p>
   );
 
@@ -525,6 +580,72 @@ export function MenuEditor({ data }: { data: EditorData }) {
         </label>
       </Group>
 
+      {panel.kind === "category" && (
+        <Group title={t("sectionShown")}>
+          <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <input
+              type="checkbox"
+              className={check}
+              checked={panel.draft.isActive}
+              onChange={(e) =>
+                setPanel({ kind: "category", draft: { ...panel.draft, isActive: e.target.checked } })
+              }
+            />
+            {t("sectionShownToggle")}
+          </label>
+          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("sectionShownHint")}</p>
+        </Group>
+      )}
+
+      {panel.kind === "category" && data.windowsSupported && (
+        <Group title={t("windowTitle")}>
+          <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <input
+              type="checkbox"
+              className={check}
+              checked={panel.draft.limited}
+              onChange={(e) =>
+                setPanel({ kind: "category", draft: { ...panel.draft, limited: e.target.checked } })
+              }
+            />
+            {t("windowToggle")}
+          </label>
+          {panel.draft.limited ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5">
+                  <span className={fieldLabel}>{t("windowFrom")}</span>
+                  <input
+                    type="time"
+                    required
+                    value={panel.draft.from}
+                    onChange={(e) =>
+                      setPanel({ kind: "category", draft: { ...panel.draft, from: e.target.value } })
+                    }
+                    className={clsx(input, "num")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={fieldLabel}>{t("windowTo")}</span>
+                  <input
+                    type="time"
+                    required
+                    value={panel.draft.to}
+                    onChange={(e) =>
+                      setPanel({ kind: "category", draft: { ...panel.draft, to: e.target.value } })
+                    }
+                    className={clsx(input, "num")}
+                  />
+                </label>
+              </div>
+              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("windowHint")}</p>
+            </>
+          ) : (
+            <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("windowAllDay")}</p>
+          )}
+        </Group>
+      )}
+
       {panel.kind === "dish" && (
         <>
           <fieldset className="m-0 flex min-w-0 flex-col gap-1 rounded-2xl border-0 bg-white p-4">
@@ -668,6 +789,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     )}
                   >
                     {nameFor(c.names, locale)}
+                    {!c.isActive && <span className="font-normal"> · {t("sectionOff")}</span>}
                   </button>
                   <span className="hidden lg:flex">
                     <button
@@ -714,6 +836,19 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 className="m-0 min-w-0 flex-1 basis-48 text-[1.5rem] leading-tight font-bold break-words"
               >
                 {nameFor(category.names, locale)}
+                {category.window && (
+                  <span
+                    data-testid="category-window"
+                    className="text-staff-label2 num ml-3 inline-block align-middle text-[0.9375rem] font-semibold whitespace-nowrap"
+                  >
+                    {t("windowBadge", { from: category.window.from, to: category.window.to })}
+                    {!inDailyWindow(
+                      localMinutes(new Date(), data.timeZone),
+                      category.window.from,
+                      category.window.to,
+                    ) && ` · ${t("windowHiddenNow")}`}
+                  </span>
+                )}
               </h2>
               <button
                 type="button"
