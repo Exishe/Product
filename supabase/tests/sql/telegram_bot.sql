@@ -78,6 +78,7 @@ select test.ok(test.tg_cb(5002, 'l:xx') = '{}'::jsonb, 'an unknown language code
 select test.ok(test.scr(test.tg_cb(5002, 'l:en')) = 'menu', 'choosing a language shows the menu');
 select test.ok((select bot_locale = 'en' and locale = 'en' from public.notification_channels where telegram_chat_id = 5002), 'stored on the linked account');
 select test.ok(test.scr(test.tg_cb(5003, 'l:en')) = 'menu', 'café B picks its language');
+select test.ok(test.scr(test.tg_cb(5002, 'l:choose')) = 'language' and test.scr(test.tg_cb(5002, 'l:en')) = 'menu', 'the menu''s Language button asks again');
 select test.ok(test.scr(test.tg_msg(5002, 'blah')) = 'menu', 'free text answers with the menu');
 select test.ok(test.scr(test.tg_cb(5002, 'a:price')) = 'soon', 'an action not built yet says coming soon');
 select test.ok(test.tg_cb(5002, 'a:../x') = '{}'::jsonb and test.tg_cb(5002, repeat('a', 70)) = '{}'::jsonb, 'malformed callback data is ignored');

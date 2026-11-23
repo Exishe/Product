@@ -1,9 +1,13 @@
 import "server-only";
 
+import { renderBotReply, type BotEnvelope } from "@/features/telegram-bot/render";
+
 // /api/telegram: Telegram's webhook. The secret header and the update go to
 // api.telegram_update, which checks the secret against Vault (ADR-038). When
 // the database wants the bot to answer, the answer is returned as the webhook's
 // response body (a Bot API method call), so the app never needs the bot token.
+// Manager-bot screens (buttons) come back as {bot: …} and are drawn by
+// src/features/telegram-bot.
 
 const SECRET = /^[A-Za-z0-9_-]{1,256}$/;
 export const MAX_UPDATE_BYTES = 64 * 1024;
@@ -41,6 +45,14 @@ export async function handleTelegram(
       ? { status: 401, body: { error: "unauthorized" } }
       : { status: 500, body: { error: "failed" } };
   }
-  const reply = (data as { reply?: Record<string, unknown> } | null)?.reply;
-  return { status: 200, body: reply ?? {} };
+  const out = data as { reply?: Record<string, unknown>; bot?: BotEnvelope } | null;
+  if (out?.bot) {
+    // The manager bot (ADR-069): the database decided what to show, we draw it.
+    try {
+      return { status: 200, body: renderBotReply(out.bot) };
+    } catch {
+      return { status: 200, body: {} }; // never make Telegram retry a screen we cannot draw
+    }
+  }
+  return { status: 200, body: out?.reply ?? {} };
 }

@@ -442,6 +442,10 @@ begin
   delete from private.bot_pending where channel_id = ch.id and expires_at <= now();
   select * into p from private.bot_pending where channel_id = ch.id for update;
 
+  if p_verb = 'l' and p_arg = 'choose' then   -- the menu's Language button
+    delete from private.bot_pending where channel_id = ch.id;
+    return private.bot_out(ch, jsonb_build_object('type', 'language'));
+  end if;
   if p_verb = 'l' then
     if p_arg not in ('hy', 'ru', 'en') then
       return null;
