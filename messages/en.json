@@ -49,7 +49,10 @@
       "ordering": "Guest orders",
       "orderingHint": "Pause new orders from the QR menu, or close the kitchen for today. Guests see a clear message.",
       "promos": "Promotions",
-      "promosHint": "A short announcement at the top of your guest menu, like “Happy hour”. It doesn't change any price: your waiters apply the discount."
+      "promosHint": "A short announcement at the top of your guest menu, like “Happy hour”. It doesn't change any price: your waiters apply the discount.",
+      "attention": "Attention needed",
+      "alertSettings": "Alerts for slow tables",
+      "alertSettingsHint": "You and your team get a message in Telegram, and it shows here, when a table waits too long."
     },
     "controls": {
       "orderingOn": "Guests can order.",
@@ -1088,6 +1091,7 @@
       "order_overdue": "Late order (over 20 minutes)",
       "station_offline": "Kitchen screen offline",
       "order_comped": "Cancelled after serving",
+      "table_alert": "Problem table (slow order, repeated calls)",
       "day_summary": "Day summary"
     },
     "language": "Language",
@@ -1434,6 +1438,23 @@
       "cell": "{day} {from}–{to}: {avg} orders on average",
       "less": "Fewer",
       "more": "More"
+    }
+  },
+  "alerts": {
+    "none": "All tables are fine right now.",
+    "table": "Table {table}",
+    "noTable": "Order {number}",
+    "slow": "order not served for {minutes} min",
+    "calls": "called the waiter {count, plural, one {# time} other {# times}}, no answer for {minutes} min",
+    "waiterTitle": "Tables that need attention",
+    "settings": {
+      "minutesLabel": "Warn me when an order is not served after (minutes)",
+      "minutesHint": "From {min} to {max}. Most cafés use 25.",
+      "callsLabel": "Warn me when a table calls the waiter this many times",
+      "callsHint": "From {min} to {max}, with no answer yet. Most cafés use 3.",
+      "save": "Save",
+      "saved": "Saved.",
+      "failed": "Couldn't save. Check the numbers and try again."
     }
   }
 }
