@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import { createTestCafe } from "./guest-menu-fixture";
 
 // Guest event tracking (ADR-072): opening a dish and adding it sends an
-// anonymous batch in the background. Needs migration 20261123180000_guest_events
+// anonymous batch in the background. Needs migration 20261123195000_guest_events
 // on the dev project; until CI has applied it this test skips.
 const ZERO = "00000000-0000-0000-0000-000000000000";
 
@@ -15,7 +15,7 @@ test("opening a dish and adding it records anonymous events", async ({ page }) =
   );
   test.skip(
     probe.error?.code === "PGRST202",
-    "needs migration 20261123180000_guest_events on the dev project",
+    "needs migration 20261123195000_guest_events on the dev project",
   );
 
   const bodies: string[] = [];
