@@ -41,6 +41,7 @@ import {
 import { saveCategoryWindow } from "@/features/availability/actions";
 import { inDailyWindow, localMinutes, validWindow } from "@/features/availability/window";
 import { ALLERGENS, type Allergen } from "./guest-menu/allergens";
+import { IngredientsPanel } from "./ingredients-panel";
 import { resizeToWebp } from "./photo";
 import { DISH_TAGS, parsePriceInput } from "./schema";
 import { emptyNames, type EditorCategory, type EditorData, type EditorDish, type Names } from "./types";
@@ -736,6 +737,14 @@ export function MenuEditor({ data }: { data: EditorData }) {
               );
             })}
           </fieldset>
+
+          {panel.draft.id && data.ingredientsSupported && (
+            <IngredientsPanel
+              itemId={panel.draft.id}
+              restaurantId={data.restaurantId}
+              locationId={data.locationId}
+            />
+          )}
 
           {panel.draft.needsReview && (
             <label className="bg-amber-tint flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2 text-[1.0625rem]">

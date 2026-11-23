@@ -799,12 +799,47 @@ export type Database = {
           },
         ]
       }
+      ingredient_outages: {
+        Row: {
+          ingredient_id: string
+          location_id: string
+          out_at: string
+          restaurant_id: string
+          set_by_member: string | null
+          set_by_user: string | null
+          source: string
+          until: string
+        }
+        Insert: {
+          ingredient_id: string
+          location_id: string
+          out_at?: string
+          restaurant_id: string
+          set_by_member?: string | null
+          set_by_user?: string | null
+          source: string
+          until: string
+        }
+        Update: {
+          ingredient_id?: string
+          location_id?: string
+          out_at?: string
+          restaurant_id?: string
+          set_by_member?: string | null
+          set_by_user?: string | null
+          source?: string
+          until?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           cost_per_unit: number
           id: string
           is_active: boolean
+          kcal_per_100g: number | null
           name: string
+          name_i18n: Json
           restaurant_id: string
           unit: string
         }
@@ -812,7 +847,9 @@ export type Database = {
           cost_per_unit?: number
           id?: string
           is_active?: boolean
+          kcal_per_100g?: number | null
           name: string
+          name_i18n?: Json
           restaurant_id: string
           unit: string
         }
@@ -820,7 +857,9 @@ export type Database = {
           cost_per_unit?: number
           id?: string
           is_active?: boolean
+          kcal_per_100g?: number | null
           name?: string
+          name_i18n?: Json
           restaurant_id?: string
           unit?: string
         }
@@ -1265,6 +1304,7 @@ export type Database = {
           kitchen_locale: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total: number
           name: string
+          out_ingredient_display: string
           ordering_paused: boolean
           ordering_paused_until: string | null
           phone: string | null
@@ -1289,6 +1329,7 @@ export type Database = {
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name: string
+          out_ingredient_display?: string
           ordering_paused?: boolean
           ordering_paused_until?: string | null
           phone?: string | null
@@ -1313,6 +1354,7 @@ export type Database = {
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name?: string
+          out_ingredient_display?: string
           ordering_paused?: boolean
           ordering_paused_until?: string | null
           phone?: string | null
@@ -2845,24 +2887,33 @@ export type Database = {
           ingredient_id: string
           item_id: string | null
           modifier_id: string | null
+          is_key: boolean
           quantity: number
           restaurant_id: string
+          substitute_ingredient_id: string | null
+          substitute_price_delta: number | null
         }
         Insert: {
           id?: string
           ingredient_id: string
           item_id?: string | null
           modifier_id?: string | null
+          is_key?: boolean
           quantity: number
           restaurant_id: string
+          substitute_ingredient_id?: string | null
+          substitute_price_delta?: number | null
         }
         Update: {
           id?: string
           ingredient_id?: string
           item_id?: string | null
           modifier_id?: string | null
+          is_key?: boolean
           quantity?: number
           restaurant_id?: string
+          substitute_ingredient_id?: string | null
+          substitute_price_delta?: number | null
         }
         Relationships: [
           {

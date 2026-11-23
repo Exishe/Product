@@ -29,7 +29,7 @@ async function loadBoard(stationId: string) {
   if (!station || !location) return null;
 
   const renderedAt = Date.now();
-  const [claims, stations, rows, soldOut, links, menu] = await Promise.all([
+  const [claims, stations, rows, soldOut, links, menu, outages] = await Promise.all([
     supabase.auth.getClaims(),
     supabase.from("stations").select("id, name, is_default, sort").eq("location_id", location.id).order("sort").order("name"),
     fetchTicketRows(supabase, station.id),
@@ -38,6 +38,8 @@ async function loadBoard(stationId: string) {
     location.published_menu_version_id
       ? supabase.from("menu_versions").select("snapshot").eq("id", location.published_menu_version_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Before the ingredients migration the table is missing: the button stays hidden.
+    supabase.from("ingredient_outages").select("ingredient_id").eq("location_id", location.id).limit(1),
   ]);
   const userId = claims.data?.claims.sub;
   if (!userId) return null;
@@ -51,6 +53,7 @@ async function loadBoard(stationId: string) {
     snapshot: menu.data?.snapshot ?? null,
     renderedAt,
     userId,
+    ingredientsSupported: !outages.error,
   };
 }
 
@@ -84,6 +87,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
         initialTickets={toBoardTickets(board.rows, locale, lineDetails)}
         initialBusy={{ until: location.kitchen_busy_until, minutes: location.expected_wait_minutes }}
         initialSoldOut={board.soldOut}
+        ingredientsSupported={board.ingredientsSupported}
         lineDetails={lineDetails}
         dishes={stationDishes(board.snapshot, board.links, { id: station.id, isDefault: station.is_default }, locale)}
         renderedAt={board.renderedAt}

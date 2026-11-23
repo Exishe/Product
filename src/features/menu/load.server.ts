@@ -39,6 +39,14 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     ]),
   );
 
+  // Ingredient settings (ADR-076) are read on their own: before the migration the
+  // column does not exist and the editor must still load.
+  const outDisplay = await supabase
+    .from("locations")
+    .select("out_ingredient_display")
+    .eq("id", locationId)
+    .single();
+
   const [cats, dishes, groups, areas, stops, version, costs] = await Promise.all([
     supabase
       .from("categories")
@@ -106,6 +114,8 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     publish,
     windowsSupported: !windows.error,
     timeZone: location?.timezone ?? "Asia/Yerevan",
+    ingredientsSupported: !outDisplay.error,
+    outIngredientDisplay: outDisplay.data?.out_ingredient_display === "sold_out" ? "sold_out" : "hide",
     categories: (cats.data ?? []).map((c) => ({
       window: windowOf.get(c.id) ?? null,
       isActive: c.is_active,

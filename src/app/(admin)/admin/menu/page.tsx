@@ -6,6 +6,7 @@ import { AdminPage } from "@/features/admin-ui/page";
 import { button } from "@/features/admin-ui/styles";
 import { loadMenuEditor } from "@/features/menu/load.server";
 import { MenuEditor } from "@/features/menu/menu-editor";
+import { OutIngredientSetting } from "@/features/menu/out-ingredient-setting";
 import { requireMember } from "@/lib/auth/require-member";
 
 export default async function MenuPage() {
@@ -26,6 +27,7 @@ export default async function MenuPage() {
       }
     >
       <NextIntlClientProvider>
+        {data.ingredientsSupported && <OutIngredientSetting initial={data.outIngredientDisplay} />}
         <MenuEditor data={data} />
       </NextIntlClientProvider>
     </AdminPage>

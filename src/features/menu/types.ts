@@ -50,6 +50,10 @@ export type EditorData = {
   windowsSupported: boolean;
   /** The café's time zone, to tell whether a section is hidden right now. */
   timeZone: string;
+  /** False until migration 20261123250000_ingredients_substitutes is applied: the ingredients panel stays hidden. */
+  ingredientsSupported: boolean;
+  /** What a dish without a replacement does when a key ingredient is out (ADR-076). */
+  outIngredientDisplay: "hide" | "sold_out";
   dishes: EditorDish[];
   groups: EditorGroup[];
   prepAreas: { id: string; name: string }[];
