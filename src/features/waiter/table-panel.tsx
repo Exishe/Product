@@ -34,6 +34,8 @@ import {
 import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { StateIcon } from "./floor-map";
 import { TableTimeline } from "./table-timeline";
+import { RewardCards } from "./reward-card";
+import type { WaiterReward } from "./rewards";
 import { button, chip, choice, Sheet } from "./ui";
 
 export type PanelProps = {
@@ -44,6 +46,9 @@ export type PanelProps = {
   onSettle: (sessionId: string) => void;
   onSeatWaiting: (waitingSessionId: string) => void;
   onCancelLine: (lineId: string, quantity: number, reason: string) => Promise<DirectResult>;
+  /** Open game rewards of this table (ADR-075) and the waiter's answer. */
+  rewards: WaiterReward[];
+  onReward: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
   /** Back to the map on phones (the panel is a pushed screen there). */
   onBack: () => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -114,6 +119,8 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
             <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
           </p>
         )}
+
+        <RewardCards rewards={p.rewards} onResolve={p.onReward} />
 
         {age?.kind === "quiet" && (
           <p

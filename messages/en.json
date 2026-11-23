@@ -52,7 +52,9 @@
       "promosHint": "A short announcement at the top of your guest menu, like “Happy hour”. It doesn't change any price: your waiters apply the discount.",
       "attention": "Attention needed",
       "alertSettings": "Alerts for slow tables",
-      "alertSettingsHint": "You and your team get a message in Telegram, and it shows here, when a table waits too long."
+      "alertSettingsHint": "You and your team get a message in Telegram, and it shows here, when a table waits too long.",
+      "rewards": "Game rewards",
+      "rewardsHint": "A guest who reaches a level in a game while waiting earns a reward. Your waiter sees it at the table and gives it. Prices don't change."
     },
     "controls": {
       "orderingOn": "Guests can order.",
@@ -111,6 +113,37 @@
         "failed": "Couldn't save that. Check the connection and try again."
       },
       "requiredNote": "Only the Armenian title is required. The rest is optional."
+    },
+    "rewards": {
+      "on": "Game rewards are on.",
+      "off": "Game rewards are off.",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off",
+      "kind": "Reward",
+      "kindPercent": "Percent off",
+      "kindText": "A gift or offer",
+      "level": "Guest reaches level",
+      "levelHint": "From {min} to {max}. The higher, the harder.",
+      "percent": "Discount, %",
+      "percentHint": "From {min} to {max}.",
+      "text": "Offer text",
+      "textHy": "Armenian (required)",
+      "textRu": "Russian",
+      "textEn": "English",
+      "textHint": "For example: free coffee with dessert.",
+      "game": "In which game",
+      "gameAny": "Any game",
+      "games": {
+        "runner": "Waiter Run",
+        "fighter": "Kitchen Clash",
+        "merge": "Kissing Dishes",
+        "slice": "Salad Panic",
+        "platformer": "Café Cat"
+      },
+      "save": "Save",
+      "saved": "Saved.",
+      "failed": "Couldn't save. Try again.",
+      "invalid": "Check the fields."
     }
   },
   "forbidden": {
@@ -577,7 +610,15 @@
       "close": "Close"
     },
     "hoursShort": "{hours} h {minutes} min",
-    "promoOn": "{count, plural, one {Promo on} other {Promos on}}: {titles}"
+    "promoOn": "{count, plural, one {Promo on} other {Promos on}}: {titles}",
+    "reward": {
+      "earned": "Reward earned: {reward} (level {level})",
+      "hint": "A game reward. Give it with the bill, then tap Applied.",
+      "applied": "Applied",
+      "dismiss": "Dismiss",
+      "failed": "Couldn't save. Try again.",
+      "percent": "{percent}% off"
+    }
   },
   "menu": {
     "title": "Menu",
@@ -1010,7 +1051,17 @@
       "fab": "Play while you wait",
       "cooking": "Your order is being made",
       "soundOff": "Turn sound on",
-      "soundOn": "Sound is on"
+      "soundOn": "Sound is on",
+      "reward": {
+        "percent": "{percent}% off",
+        "goal": "Level {level}. Reward at level {goal}.",
+        "earned": "You earned a reward",
+        "show": "{reward}. Show this to your waiter.",
+        "applied": "{reward}. Your waiter has added it. Enjoy!",
+        "ok": "Got it",
+        "offer": "Reach level {level} in a game and earn: {reward}.",
+        "offerGame": "Reach level {level} in {game} and earn: {reward}."
+      }
     },
     "nav": {
       "label": "Navigation",
