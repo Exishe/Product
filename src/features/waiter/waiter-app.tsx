@@ -6,6 +6,7 @@ import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Megaphon
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { WaiterAlerts } from "@/features/alerts/waiter-alerts";
 import { heartbeat } from "@/features/kitchen/actions";
 import { connectionState, troubleSince } from "@/features/kitchen/connection";
 import { useServerClock } from "@/features/kitchen/use-server-clock";
@@ -458,6 +459,9 @@ function App(p: WaiterAppProps) {
             <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
           </p>
         )}
+        <div className="basis-full empty:hidden">
+          <WaiterAlerts locationId={p.location.id} />
+        </div>
       </header>
       {connection === "offline" ? (
         <p
