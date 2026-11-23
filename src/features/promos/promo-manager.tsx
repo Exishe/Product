@@ -109,7 +109,6 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
 
   const set = (patch: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...patch } : d));
   const full = promos.length >= PROMO_LIMIT;
-  const optional = t("optional");
 
   return (
     <div className="flex flex-col gap-4" data-testid="promo-manager">
@@ -206,11 +205,12 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
           }}
         >
           <h3 className="m-0 text-[1.0625rem] font-bold">{draft.id ? t("editTitle") : t("newTitle")}</h3>
+          <p className="text-staff-label2 -mt-2 mb-0 text-[0.9375rem]">{t("requiredNote")}</p>
           {LANGS.map((l) => (
             <label key={`t-${l}`} htmlFor={`${uid}-t-${l}`} className="flex flex-col gap-1.5">
               <span className={fieldLabel}>
                 {t("titleLabel", { lang: t(`lang.${l}`) })}
-                {l !== "hy" && optional}
+                
               </span>
               <input
                 id={`${uid}-t-${l}`}
@@ -229,7 +229,6 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
             <label key={`x-${l}`} htmlFor={`${uid}-x-${l}`} className="flex flex-col gap-1.5">
               <span className={fieldLabel}>
                 {t("textLabel", { lang: t(`lang.${l}`) })}
-                {optional}
               </span>
               <input
                 id={`${uid}-x-${l}`}
@@ -245,7 +244,6 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
           <label htmlFor={`${uid}-badge`} className="flex flex-col gap-1.5 sm:max-w-48">
             <span className={fieldLabel}>
               {t("badgeLabel")}
-              {optional}
             </span>
             <input
               id={`${uid}-badge`}
@@ -261,7 +259,6 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
             <label htmlFor={`${uid}-start`} className="flex min-w-0 flex-col gap-1.5">
               <span className={fieldLabel}>
                 {t("startsLabel")}
-                {optional}
               </span>
               <input
                 id={`${uid}-start`}
@@ -274,7 +271,6 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
             <label htmlFor={`${uid}-end`} className="flex min-w-0 flex-col gap-1.5">
               <span className={fieldLabel}>
                 {t("endsLabel")}
-                {optional}
               </span>
               <input
                 id={`${uid}-end`}

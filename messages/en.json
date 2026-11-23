@@ -74,7 +74,6 @@
       "failed": "Couldn't save that. Check the connection and try again."
     },
     "promos": {
-      "optional": " (optional)",
       "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
       "add": "Add a promotion",
       "limit": "You can keep up to {count} promotions. Delete one to add another.",
@@ -107,7 +106,8 @@
         "window": "The end must be after the start.",
         "limit": "You already have the most promotions allowed. Delete one first.",
         "failed": "Couldn't save that. Check the connection and try again."
-      }
+      },
+      "requiredNote": "Only the Armenian title is required. The rest is optional."
     }
   },
   "forbidden": {

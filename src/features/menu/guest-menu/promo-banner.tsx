@@ -46,9 +46,8 @@ export function PromoBanners({ promos }: { promos: GuestPromo[] }) {
           key={p.id}
           aria-label={t("menu.promoLabel")}
           data-testid="promo-banner"
-          className="rounded-card border-glow bg-surface text-ink shadow-card relative flex items-start gap-3 border py-3 pr-1 pl-4"
+          className="rounded-card border-glow bg-surface text-ink shadow-card flex items-start gap-3 border py-3 pr-1 pl-4"
         >
-          <span aria-hidden className="bg-accent absolute inset-y-3 left-0 w-1 rounded-r-full" />
           <div className="min-w-0 flex-1 py-0.5">
             <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[1rem] leading-snug font-semibold">
               <span lang={p.title.lang !== locale ? p.title.lang : undefined} data-testid="promo-title">
