@@ -66,8 +66,8 @@ select test.ok(not exists (
 select test.ok((select string_agg(p.proname, ',' order by p.proname)
                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                 where n.nspname = 'api' and has_function_privilege('anon', p.oid, 'execute'))
-               = 'public_menu,public_menu_hints,public_menu_status,push_claim,push_report,record_guest_events,resolve_table_token,telegram_update',
-  'anon can call only the public menu, its hints and status, the table token, the two signed webhooks and record_guest_events (anonymous event batches, validated and rate limited, ADR-072)');
+               = 'public_menu,public_menu_hints,public_menu_status,public_suggestions,push_claim,push_report,record_guest_events,resolve_table_token,telegram_update',
+  'anon can call only the public menu, its hints and status, the table token, the two signed webhooks, record_guest_events (anonymous event batches, validated and rate limited, ADR-072) and public_suggestions (ids and reason keys only, any invalid input gives an empty list, ADR-077)');
 
 select test.ok((select string_agg(p.proname, ',' order by p.proname)
                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -169,7 +169,7 @@ begin
       when t.has_r then 'restaurant_id = $1'
       when t.relname = 'restaurants' then 'id = $1'
       -- The reference list of ingredients has no café: nobody reads it directly (ADR-076).
-      when t.relname = 'ingredient_catalog' then 'true'
+      when t.relname in ('ingredient_catalog', 'item_type_compat_defaults') then 'true'   -- global reference data (ADR-076, ADR-077)
       when t.relname = 'location_counters' then
         'location_id in (select l.id from public.locations l where l.restaurant_id = $1)'
     end;
