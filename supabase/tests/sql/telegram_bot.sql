@@ -80,7 +80,7 @@ select test.ok((select bot_locale = 'en' and locale = 'en' from public.notificat
 select test.ok(test.scr(test.tg_cb(5003, 'l:en')) = 'menu', 'café B picks its language');
 select test.ok(test.scr(test.tg_cb(5002, 'l:choose')) = 'language' and test.scr(test.tg_cb(5002, 'l:en')) = 'menu', 'the menu''s Language button asks again');
 select test.ok(test.scr(test.tg_msg(5002, 'blah')) = 'menu', 'free text answers with the menu');
-select test.ok(test.scr(test.tg_cb(5002, 'a:price')) = 'soon', 'an action not built yet says coming soon');
+select test.ok(test.scr(test.tg_cb(5002, 'a:promo')) = 'soon', 'an action not built yet says coming soon');
 select test.ok(test.tg_cb(5002, 'a:../x') = '{}'::jsonb and test.tg_cb(5002, repeat('a', 70)) = '{}'::jsonb, 'malformed callback data is ignored');
 select test.ok(test.tg_cb(5002, 'a:sold_out', 999) = '{}'::jsonb, 'a press whose sender is not the chat is ignored');
 select test.ok(test.tg_cb(-100123, 'a:sold_out', -100123, 'group') = '{}'::jsonb, 'groups are ignored');
@@ -197,6 +197,102 @@ reset role;
 select test.ok(:'p5' and private.ordering_block(:'la') is null, 'api.set_ordering_pause is unchanged for the admin');
 
 -- ---------------------------------------------------------------------------
+-- Price, hide / show, close the kitchen early. The guest menu is the published
+-- snapshot: every change here publishes (and undo publishes) as the linked owner.
+-- ---------------------------------------------------------------------------
+create function test.snap(p_loc uuid, p_item uuid) returns jsonb language sql as $$
+  select v.snapshot -> 'items' -> p_item::text
+  from public.locations l join public.menu_versions v on v.id = l.published_menu_version_id
+  where l.id = p_loc
+$$;
+insert into public.menu_locations (restaurant_id, menu_id, location_id) values (:'ra', :'menu_a', :'la'), (:'rb', :'menu_b', :'lb');
+
+-- The rate limit (60 presses a minute per chat) is reset between the sections, so the
+-- counts here do not depend on the clock.
+delete from private.rate_limits where key like 'tgbot:%';
+-- price: a foreign café's item is refused by the list; a number is asked, shown, then applied
+select test.tg_cb(5002, 'a:price') as p1 \gset
+select test.ok(:'p1'::jsonb #>> '{bot,screen,type}' = 'pick_item', 'price starts with the item list');
+select test.ok(test.tg_cb(5002, 'p:' || :'cap_b') #>> '{bot,screen,code}' = 'invalid', 'price: a foreign café''s item is refused');
+select test.ok(test.tg_cb(5002, 'p:' || :'cap_a') #>> '{bot,screen,type}' = 'ask_number', 'price asks for the new number');
+select test.tg_msg(5002, '900') as p3 \gset
+select test.ok(:'p3'::jsonb #>> '{bot,screen,type}' = 'confirm' and :'p3'::jsonb #>> '{bot,screen,facts,old}' = '800'
+  and :'p3'::jsonb #>> '{bot,screen,facts,new}' = '900', 'a typed number goes to the preview: 800 to 900');
+select :'p3'::jsonb #>> '{bot,screen,token}' as ptok4 \gset
+select test.ok((select price from public.items where id = :'cap_a') = 800, 'price: nothing changed before confirming');
+select test.tg_cb(5002, 'k:' || :'ptok4') as p4 \gset
+select test.ok(:'p4'::jsonb #>> '{bot,screen,type}' = 'done' and (:'p4'::jsonb #>> '{bot,screen,change,new,price}')::integer = 900,
+  'confirming sets the price');
+select test.ok((select price from public.items where id = :'cap_a') = 900, 'the item price is 900');
+select test.ok(test.snap(:'la', :'cap_a') ->> 'price' = '900', 'the guest menu snapshot shows 900 at once');
+select test.ok(test.tg_cb(5002, 'k:' || :'ptok4') #>> '{bot,screen,type}' = 'expired', 'price: a repeated confirm does nothing');
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as putok \gset
+select test.tg_cb(5002, 'k:' || :'putok') as p5 \gset
+select test.ok((:'p5'::jsonb #>> '{bot,screen,ok}')::boolean and (select price from public.items where id = :'cap_a') = 800,
+  'undo restores the price');
+select test.ok(test.snap(:'la', :'cap_a') ->> 'price' = '800', 'and the guest menu shows 800 again');
+
+-- price changed by hand since the bot set it: undo refuses
+select test.tg_cb(5002, 'a:price') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cap_a') is not null as x \gset
+select test.tg_msg(5002, '950') #>> '{bot,screen,token}' as ptok5 \gset
+select test.tg_cb(5002, 'k:' || :'ptok5') is not null as x \gset
+update public.items set price = 960 where id = :'cap_a';
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as putok2 \gset
+select test.tg_cb(5002, 'k:' || :'putok2') as p6 \gset
+select test.ok(not (:'p6'::jsonb #>> '{bot,screen,ok}')::boolean and (select price from public.items where id = :'cap_a') = 960,
+  'undo refuses when the price changed since');
+
+-- price refused: an item with priced options, and a dish text the admin has not reviewed
+insert into public.modifier_groups (restaurant_id) values (:'ra') returning id as grp_a \gset
+insert into public.modifiers (restaurant_id, group_id, price_delta) values (:'ra', :'grp_a', 150);
+insert into public.item_modifier_groups (restaurant_id, item_id, group_id) values (:'ra', :'esp_a', :'grp_a');
+select test.tg_cb(5002, 'a:price') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'esp_a') is not null as x \gset
+select test.ok(test.tg_msg(5002, '650') #>> '{bot,screen,code}' = 'has_options', 'price: an item with priced options is refused');
+delete from public.item_modifier_groups where item_id = :'esp_a';
+delete from public.modifiers where group_id = :'grp_a';
+delete from public.modifier_groups where id = :'grp_a';
+update public.item_translations set source = 'ai', reviewed_at = null where item_id = :'esp_a' and locale = 'en';
+select test.tg_cb(5002, 'a:price') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'esp_a') is not null as x \gset
+select test.ok(test.tg_msg(5002, '650') #>> '{bot,screen,code}' = 'unreviewed_ai', 'price: an unreviewed AI text stops it (the menu cannot publish)');
+update public.item_translations set source = 'owner', reviewed_at = now() where item_id = :'esp_a' and locale = 'en';
+select test.ok((select price from public.items where id = :'esp_a') = 700, 'the refused prices changed nothing');
+
+-- hide: the preview shows the state now and after; confirm hides it from the guest menu
+delete from private.rate_limits where key like 'tgbot:%';
+select test.tg_cb(5002, 'a:hide') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cap_a') as h1 \gset
+select test.ok(:'h1'::jsonb #>> '{bot,screen,type}' = 'confirm' and (:'h1'::jsonb #>> '{bot,screen,facts,visible_now}')::boolean
+  and not (:'h1'::jsonb #>> '{bot,screen,facts,to_visible}')::boolean, 'hide previews visible now, hidden after');
+select :'h1'::jsonb #>> '{bot,screen,token}' as htok \gset
+select test.ok((select is_active from public.items where id = :'cap_a'), 'hide: nothing changed before confirming');
+select test.tg_cb(5002, 'k:' || :'htok') #>> '{bot,screen,type}' as h2 \gset
+select test.ok(:'h2' = 'done' and not (select is_active from public.items where id = :'cap_a'), 'confirming hides the item');
+select test.ok(test.snap(:'la', :'cap_a') is null, 'the guest menu no longer shows it');
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as hutok \gset
+select test.tg_cb(5002, 'k:' || :'hutok') as h3 \gset
+select test.ok((:'h3'::jsonb #>> '{bot,screen,ok}')::boolean and (select is_active from public.items where id = :'cap_a'), 'undo shows it again');
+select test.ok(test.snap(:'la', :'cap_a') ->> 'price' = '960', 'and the guest menu shows it again');
+
+-- close the kitchen early: no inputs, so the preview comes at once
+delete from private.rate_limits where key like 'tgbot:%';
+select test.tg_cb(5002, 'a:close_kitchen') as k1 \gset
+select test.ok(:'k1'::jsonb #>> '{bot,screen,type}' = 'confirm' and :'k1'::jsonb #>> '{bot,screen,action}' = 'close_kitchen',
+  'close early asks first');
+select test.ok(private.ordering_block(:'la') is null, 'the kitchen stays open before confirming');
+select :'k1'::jsonb #>> '{bot,screen,token}' as ktok \gset
+select test.tg_cb(5002, 'k:' || :'ktok') as k2 \gset
+select test.ok(:'k2'::jsonb #>> '{bot,screen,type}' = 'done' and private.ordering_block(:'la') = 'kitchen_closed',
+  'confirming closes the kitchen; guests are refused');
+select test.ok((api.public_menu_status(:'la') -> 'closed') is not null, 'the guest status shows it closed');
+select test.ok(test.tg_cb(5002, 'a:close_kitchen') #>> '{bot,screen,code}' = 'already_closed', 'closing twice is explained');
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as ktok2 \gset
+select test.tg_cb(5002, 'k:' || :'ktok2') as k3 \gset
+select test.ok((:'k3'::jsonb #>> '{bot,screen,ok}')::boolean and private.ordering_block(:'la') is null, 'undo reopens the kitchen');
+
+-- ---------------------------------------------------------------------------
 -- The number step, with a test-only action (shows how little an action needs)
 -- ---------------------------------------------------------------------------
 insert into private.bot_actions (id, sort, steps, ready) values ('testnum', 99, '{number}', true);
@@ -256,3 +352,4 @@ select test.ok(test.tg_cb(5002, 'm') = '{}'::jsonb, '/stop switches the bot off 
 drop function test.tg_cb(bigint, text, bigint, text);
 drop function test.tg_msg(bigint, text);
 drop function test.scr(jsonb);
+drop function test.snap(uuid, uuid);
