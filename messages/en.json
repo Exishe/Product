@@ -373,6 +373,20 @@
       "quantity": "{quantity}×",
       "plain": "{quantity} plain",
       "empty": "Nothing to cook."
+    },
+    "ingredients": {
+      "button": "Ingredient out",
+      "title": "Ingredients",
+      "hint": "Tap an ingredient that has run out. Tap Back when it is in again.",
+      "search": "Search ingredient",
+      "searchPlaceholder": "Type a name",
+      "outNow": "Out now",
+      "back": "Back",
+      "markOut": "Out",
+      "empty": "No ingredient found.",
+      "moreOut": "{count, plural, one {# more ingredient is out. Search for it to bring it back.} other {# more ingredients are out. Search for them to bring them back.}}",
+      "failed": "That didn't work. Check the connection and try again.",
+      "close": "Close"
     }
   },
   "waiter": {
@@ -714,7 +728,46 @@
     "sectionShown": "Guests",
     "sectionShownToggle": "Show this section to guests",
     "sectionShownHint": "Switching it off hides the section and its dishes. Guests see the change after you publish the menu.",
-    "sectionOff": "off"
+    "sectionOff": "off",
+    "ingredients": {
+      "title": "Ingredients",
+      "hint": "When a key ingredient runs out, the dish is hidden unless it has a replacement.",
+      "empty": "No ingredients yet.",
+      "find": "Find an ingredient",
+      "findHint": "Type a name in Armenian, Russian or English.",
+      "searching": "Searching…",
+      "inCafe": "In your café",
+      "fromList": "From the common ingredients list",
+      "nothingFound": "Nothing found.",
+      "add": "Add",
+      "addFailed": "Could not add the ingredient. Try again.",
+      "amount": "Amount, {unit}",
+      "unit": {
+        "g": "g",
+        "ml": "ml",
+        "pcs": "pcs"
+      },
+      "key": "Key ingredient",
+      "keyHint": "If it runs out, the dish needs a replacement or it is hidden.",
+      "replacedBy": "Can be replaced by",
+      "noReplacement": "No replacement",
+      "priceChange": "Price change, AMD",
+      "priceHint": "Use a minus sign to lower the price. Leave empty for no change.",
+      "needReplacement": "Choose a replacement first.",
+      "save": "Save",
+      "saved": "Saved",
+      "saveFailed": "Could not save. Try again.",
+      "invalidAmount": "Enter an amount above zero.",
+      "invalidPrice": "Enter a whole number of AMD.",
+      "remove": "Remove",
+      "removeFailed": "Could not remove. Try again.",
+      "displayTitle": "When an ingredient runs out",
+      "displayHint": "Applies to dishes whose key ingredient is out and has no replacement.",
+      "displayHide": "Hide the dish",
+      "displaySoldOut": "Show it as sold out",
+      "displaySaved": "Saved",
+      "displayFailed": "Could not save. Try again."
+    }
   },
   "print": {
     "button": "Print ticket",
