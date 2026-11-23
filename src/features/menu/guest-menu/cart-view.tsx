@@ -65,6 +65,11 @@ export function LineRow({
       {detail && item?.description && (
         <Txt value={item.description} locale={locale} className={`text-soft ${col} text-sm break-words`} />
       )}
+      {item?.substitution && available && (
+        <span className={`text-muted ${col} text-sm font-semibold`}>
+          {t("menu.withSub", { to: item.substitution.to })}
+        </span>
+      )}
       {options.length > 0 && (
         <span className={`text-muted ${col} text-sm`}>
           {options.map((m, i) => (

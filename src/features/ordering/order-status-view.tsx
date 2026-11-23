@@ -16,6 +16,7 @@ import { useGuestChannel } from "@/lib/realtime/use-guest-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/lib/supabase/database";
 import { OPEN_CART_KEY, addToCart, cartKey } from "./cart-store";
+import { substituteOf } from "./substitutions-parse";
 import { MAX_PEOPLE, repeatLines, shareOf } from "./repeat";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
@@ -46,6 +47,8 @@ type Line = {
   note: string | null;
   sort: number;
   order_item_modifiers: { name_i18n: Names; modifier_id: string | null }[];
+  /** ADR-076: {from, to, price_delta} when an ingredient was replaced; absent before that migration. */
+  substitution?: unknown;
 };
 type Order = OrderState & {
   id: string;
@@ -64,7 +67,7 @@ const waiting = new Set<DisplayStatus>(["received", "accepted", "cooking"]);
 
 const ORDER_COLUMNS =
   "id, location_id, number, status, kitchen_status, paid_at, total, placed_at, reject_reason, possible_duplicate_of, " +
-  "order_items(id, item_id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, order_item_modifiers(name_i18n, modifier_id))";
+  "order_items(*, order_item_modifiers(name_i18n, modifier_id))";
 
 // The guest session of this phone at this table: remembered from ordering,
 // or (another tab, cleared storage) the newest one RLS lets this user read.
@@ -297,6 +300,11 @@ function OrderCard({
               {l.item_id && details?.[l.item_id] && (
                 <span className="text-soft col-start-1 text-sm break-words" data-testid="line-detail">
                   {details[l.item_id]}
+                </span>
+              )}
+              {substituteOf(l.substitution, locale) && (
+                <span className="text-muted col-start-1 text-sm font-semibold" data-testid="line-sub">
+                  {t("menu.withSub", { to: substituteOf(l.substitution, locale) ?? "" })}
                 </span>
               )}
               {mods.length > 0 && (

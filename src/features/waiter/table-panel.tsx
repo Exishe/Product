@@ -401,6 +401,15 @@ function OrderCard({
                   ))}
                 </span>
               )}
+              {l.substitute && (
+                <span
+                  data-testid="line-substitute"
+                  lang={l.substitute.locale !== locale ? l.substitute.locale : undefined}
+                  className="block text-[0.9375rem] font-bold"
+                >
+                  {t("order.useInstead", { name: l.substitute.text })}
+                </span>
+              )}
               {l.note && <em className="text-amber-text block text-[0.9375rem] not-italic">{l.note}</em>}
               {l.cancelled > 0 && l.quantity > 0 && (
                 <span className="text-staff-label2 block text-[0.9375rem]">
@@ -438,7 +447,7 @@ function OrderCard({
             time={new Date(order.placedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
             lines={order.lines
               .filter((l) => l.quantity > 0)
-              .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), note: l.note }))}
+              .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
             note={order.note}
           />
         </PrintTicketButton>

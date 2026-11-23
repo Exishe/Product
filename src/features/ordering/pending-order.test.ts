@@ -66,4 +66,14 @@ describe("pending order", () => {
     storage.setItem(pendingKey(scope), JSON.stringify({ key: "not-a-uuid", lines }));
     expect(loadPending(storage, scope)).toBeNull();
   });
+
+  it("saves the accepted substitutions with the request, so a retry after a reload sends them", () => {
+    const storage = new MemoryStorage();
+    const first = beginPending(storage, scope, lines, undefined, ["ing-trout"]);
+    expect(first.subsAck).toEqual(["ing-trout"]);
+    expect(loadPending(storage, scope)?.subsAck).toEqual(["ing-trout"]);
+    // a later press with a different list does not change the saved request
+    expect(beginPending(storage, scope, lines, undefined, []).subsAck).toEqual(["ing-trout"]);
+    expect(beginPending(new MemoryStorage(), scope, lines).subsAck).toEqual([]);
+  });
 });

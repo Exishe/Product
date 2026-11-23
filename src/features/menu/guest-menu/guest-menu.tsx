@@ -22,6 +22,7 @@ import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store"
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
 import { OrderSender } from "@/features/ordering/order-sender";
+import type { SubInfo } from "@/features/ordering/substitutions-parse";
 import { normalizeForSearch } from "@/lib/format/search";
 import { NO_HINTS, pairsFor, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
@@ -36,6 +37,7 @@ import styles from "./guest.module.css";
 import { CartBar } from "./order-panel";
 import { PromoBanners } from "./promo-banner";
 import { initialSelection, selectedIds } from "./selection";
+import type { SubAsk } from "./subs-dialog";
 import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
 import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
 
@@ -52,6 +54,10 @@ const newId = () =>
 // first load stays inside the guest JS budget.
 const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
+// The accepted-substitution bookkeeping loads only for a menu with a substituted dish.
+const loadSubs = () => import("@/features/ordering/substitutions");
+// "Made with X instead of Y, OK?" (ADR-076): fetched the first time a substituted dish is added.
+const SubsDialog = lazy(() => import("./subs-dialog").then((m) => ({ default: m.SubsDialog })));
 // "Last time here": fetched only on a phone that has ordered at this café.
 const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.OrderAgain })));
 // The desktop's order rail: fetched only at 1024 px and up.
@@ -164,6 +170,8 @@ export function GuestMenu({
   const [hasLast, setHasLast] = useState(false);
   // Dishes the database said sold out while sending (the menu was loaded earlier).
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
+  // Dishes made with a replacement today: the guest accepts each once per visit (ADR-076).
+  const [ask, setAsk] = useState<{ entry: SubAsk; run: () => void } | null>(null);
   const menuScroll = useRef(0);
   const search = useRef<HTMLInputElement>(null);
   // The big header has scrolled away: show the slim bar above the tabs.
@@ -196,6 +204,10 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
+  const subs = useMemo(
+    () => Object.fromEntries(Object.values(items).flatMap((i): [string, SubInfo][] => (i.substitution ? [[i.id, i.substitution]] : []))),
+    [items],
+  );
 
   const ambiguous = useMemo(() => sameNamed(menu.categories), [menu]);
   const wide = useSyncExternalStore(
@@ -321,15 +333,33 @@ export function GuestMenu({
     for (const a of again) track("item_add", a.itemId, { qty: Math.min(a.quantity, 99), via: "again" });
     setToast({ key: Date.now(), text: t("again.added") });
   };
-  const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) => {
-    sparkFrom(from);
-    flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null });
-    add(item, {
-      modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
-      quantity,
-      note: "",
+  // A dish made with a replacement asks once per visit before it is added.
+  const gate = (item: GuestItem, run: () => void) => {
+    const sub = item.substitution;
+    if (!sub) return run();
+    void loadSubs().then((m) => {
+      if (m.isAccepted(menu.locationId, sub)) run();
+      else setAsk({ entry: { sub, name: item.name.text, price: item.price }, run });
     });
   };
+  const removeDishes = useCallback(
+    (itemIds: string[]) => {
+      const next = lines.filter((l) => !itemIds.includes(l.itemId));
+      updateCart(() => next);
+      if (next.length === 0) closeCart();
+    },
+    [lines, updateCart, closeCart],
+  );
+  const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) =>
+    gate(item, () => {
+      sparkFrom(from);
+      flyToCart(from, { photo: item.image ? dishPhotoUrl(item.image) : null });
+      add(item, {
+        modifierIds: selectedIds(item.groups, initialSelection(item.groups)),
+        quantity,
+        note: "",
+      });
+    });
   const findDish = () => {
     search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
     search.current?.focus({ preventScroll: true });
@@ -401,6 +431,9 @@ export function GuestMenu({
         locationId={menu.locationId}
         table={table}
         orderHref={orderHref}
+        items={items}
+        subs={subs}
+        onRemoveDishes={removeDishes}
         onLocked={setLocked}
         onSoldOut={onSoldOut}
         onPlaced={clearCart}
@@ -771,9 +804,23 @@ export function GuestMenu({
             track={track}
             onClose={() => setSheet(null)}
             onAdd={(a) => {
-              add(sheet, a);
+              gate(sheet, () => add(sheet, a));
               setSheet(null);
             }}
+          />
+        </Suspense>
+      )}
+      {ask && (
+        <Suspense fallback={null}>
+          <SubsDialog
+            mode="add"
+            entries={[ask.entry]}
+            onAccept={() => {
+              void loadSubs().then((m) => m.accept(menu.locationId, [ask.entry.sub]));
+              ask.run();
+              setAsk(null);
+            }}
+            onDecline={() => setAsk(null)}
           />
         </Suspense>
       )}

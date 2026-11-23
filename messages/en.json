@@ -458,6 +458,7 @@
       "kitchen": "Kitchen",
       "duplicate": "May be a repeat",
       "unsentMark": "Sending…",
+      "useInstead": "Use {name}",
       "accept": "Accept",
       "reject": "Reject",
       "serve": "Mark served",
@@ -773,7 +774,8 @@
     "table": "Table",
     "noTable": "No table",
     "order": "Order {number}",
-    "note": "Note: {note}"
+    "note": "Note: {note}",
+    "useInstead": "Use {name}"
   },
   "optionGroups": {
     "title": "Options",
@@ -934,6 +936,7 @@
       "soldOut": "Not today",
       "add": "Add {name}",
       "added": "Added: {name}",
+      "withSub": "Today with {to}",
       "viewOrder": "View order",
       "items": "{count, plural, one {# item} other {# items}}",
       "orderingOff": "Right now your waiter takes the orders.",
@@ -982,6 +985,17 @@
       "quantity": "Quantity",
       "decrease": "Decrease quantity",
       "increase": "Increase quantity"
+    },
+    "subs": {
+      "titleMany": "A small change today",
+      "one": "Today this dish is made with {to} instead of {from}. OK?",
+      "many": "Today these dishes are made a little differently. OK?",
+      "item": "With {to} instead of {from}",
+      "newPrice": "New price: {price}",
+      "order": "Order",
+      "other": "See other dishes",
+      "removeOne": "Remove this dish",
+      "removeMany": "Remove these dishes"
     },
     "cart": {
       "title": "Your order",

@@ -249,3 +249,28 @@ describe("availability (ADR-068)", () => {
     expect(buildGuestMenu(m, "en").promos).toEqual([]);
   });
 });
+
+describe("buildGuestMenu: substitutes (ADR-076)", () => {
+  it("puts the substitution on the dish, in the page's language, and keeps the outage version", () => {
+    const m = menu({ a: item(), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    m.substitutions = {
+      a: {
+        from: { id: "i1", name: { hy: "Իշխան", en: "Trout" } },
+        to: { id: "i2", name: { hy: "Սաղմոն", en: "Salmon" } },
+        price_delta: 500,
+      },
+    };
+    m.outages = "abc123";
+    const built = buildGuestMenu(m, "en");
+    const [a, b] = built.categories[0]!.items;
+    expect(a?.substitution).toMatchObject({ itemId: "a", fromId: "i1", from: "Trout", to: "Salmon", delta: 500 });
+    expect(b?.substitution).toBeNull();
+    expect(built.status.outages).toBe("abc123");
+    expect(buildGuestMenu(m, "ru").categories[0]?.items[0]?.substitution?.to).toBe("Սաղմոն");
+  });
+  it("is unchanged when the answer has none (before the migration)", () => {
+    const built = buildGuestMenu(menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]), "en");
+    expect(built.categories[0]?.items[0]?.substitution).toBeNull();
+    expect(built.status.outages).toBe("");
+  });
+});

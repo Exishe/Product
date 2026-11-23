@@ -38,7 +38,7 @@ export function PrintTicketButton({
   );
 }
 
-export type SheetLine = { quantity: number; name: string; modifiers: string[]; note: string | null };
+export type SheetLine = { quantity: number; name: string; modifiers: string[]; note: string | null; /** ADR-076: the ingredient to use instead */ substitute?: string | null };
 
 // The printed ticket: big table number, time, the items as a plain list, and the notes.
 export function TicketSheet({
@@ -74,6 +74,7 @@ export function TicketSheet({
             {l.modifiers.length > 0 && (
               <span className="block text-xl font-normal">{l.modifiers.join(", ")}</span>
             )}
+            {l.substitute && <span className="block text-2xl font-bold">{t("useInstead", { name: l.substitute })}</span>}
             {l.note && <span className="block text-xl font-bold">{t("note", { note: l.note })}</span>}
           </li>
         ))}
