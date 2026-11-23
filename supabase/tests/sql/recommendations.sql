@@ -471,6 +471,69 @@ select test.ok(not exists (select 1 from pg_class c join pg_namespace n on n.oid
                              and (has_table_privilege('anon', c.oid, 'select') or has_table_privilege('authenticated', c.oid, 'insert,update,delete'))),
                'anon reads none of the tables and nobody writes them directly');
 
+-- ---------------------------------------------------------------------------
+-- Speed (ADR-077 addendum): the cache gives the same answers, the hot path
+-- does not read orders, nobody but the functions can read the cache
+-- ---------------------------------------------------------------------------
+reset role;
+select test.rc5_round(70 + n, array[:'steak', :'salad']::uuid[]) from generate_series(1, 4) n;
+select test.rc5_round(80 + n, array[:'steak', :'fries']::uuid[]) from generate_series(1, 3) n;
+-- a line whose dish was deleted (item_id null) must not break the refresh
+insert into public.order_items (restaurant_id, order_id, item_id, name_i18n, unit_price, quantity, line_total)
+select o.restaurant_id, o.id, null, '{"hy": "x"}', 100, 1, 100 from public.orders o where o.location_id = :'la' limit 1;
+select test.ok(not exists (select 1 from private.suggestion_cache_state where location_id = :'la'),
+               'no cache yet for this café: the strip is computed live');
+select api.public_suggestions(:'la', :'steak') as live_steak, api.public_suggestions(:'la', :'mystery') as live_myst,
+       api.public_menu_hints('cafe-reco', 'main') as live_hints \gset
+select private.refresh_suggestion_caches() >= 1 as refreshed \gset
+select test.ok(:'refreshed', 'the refresh job function ran for the café with orders');
+select count(*) as n_pairs, coalesce(sum(n), 0) as sum_pairs from private.learned_pair_cache where location_id = :'la' \gset
+select count(*) as n_pop, coalesce(sum(n), 0) as sum_pop from private.item_popularity_cache where location_id = :'la' \gset
+select test.ok(:n_pairs > 0 and :n_pop > 0, 'the cache holds pairs and popularity');
+select test.act_as_anon();
+select test.ok(api.public_suggestions(:'la', :'steak') = :'live_steak'::jsonb
+               and api.public_suggestions(:'la', :'mystery') = :'live_myst'::jsonb
+               and api.public_menu_hints('cafe-reco', 'main') = :'live_hints'::jsonb,
+               'cache and live give identical suggestions and hints');
+reset role;
+select test.ok((select count(*) from private.learned_pairs_live(:'la')) = (select count(*) from private.learned_pairs(:'la'))
+               and not exists (select 1 from private.learned_pairs_live(:'la') l
+                               full join private.learned_pairs(:'la') c on c.item_id = l.item_id and c.other_id = l.other_id
+                               where l.n is distinct from c.n),
+               'the cached pairs equal the live pairs row by row');
+select private.refresh_suggestion_cache(:'la');
+select private.refresh_suggestion_cache(:'la');
+select test.ok((select count(*) from private.learned_pair_cache where location_id = :'la') = :n_pairs
+               and (select sum(n) from private.item_popularity_cache where location_id = :'la') = :sum_pop
+               and (select count(*) from private.suggestion_cache_state where location_id = :'la') = 1,
+               'refreshing again changes nothing (idempotent)');
+-- New orders do not change the answer until the next refresh: the hot path reads the cache.
+select test.rc5_round(60 + n, array[:'steak', :'beer']::uuid[]) from generate_series(1, 3) n;
+select test.ok(not exists (select 1 from private.learned_pairs(:'la', :'steak') where other_id = :'beer')
+               and exists (select 1 from private.learned_pairs_live(:'la', :'steak') where other_id = :'beer'),
+               'orders after the refresh are not read by the hot path');
+select test.ok(pg_get_functiondef('api.public_suggestions(uuid, uuid, uuid[])'::regprocedure) !~ 'public\.orders'
+               and pg_get_functiondef('api.public_suggestions(uuid, uuid, uuid[])'::regprocedure) ~ 'private\.item_popularity'
+               and pg_get_functiondef('private.learned_pairs(uuid, uuid)'::regprocedure) ~ 'learned_pair_cache',
+               'public_suggestions never names the orders table; it reads the cache');
+select private.refresh_suggestion_cache(:'la');
+select test.ok(exists (select 1 from private.learned_pairs(:'la', :'steak') where other_id = :'beer'), 'the next refresh picks them up');
+-- Rights
+select test.ok(not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                           where n.nspname = 'private' and c.relname in ('learned_pair_cache', 'item_popularity_cache', 'suggestion_cache_state')
+                             and (has_table_privilege('anon', c.oid, 'select,insert,update,delete')
+                                  or has_table_privilege('authenticated', c.oid, 'select,insert,update,delete'))
+                             or not c.relrowsecurity and c.relname in ('learned_pair_cache', 'item_popularity_cache', 'suggestion_cache_state')),
+               'the cache tables have row level security and no client can read or write them');
+select test.ok(not has_function_privilege('anon', 'private.refresh_suggestion_caches()', 'execute')
+               and not has_function_privilege('authenticated', 'private.refresh_suggestion_cache(uuid)', 'execute')
+               and not has_function_privilege('authenticated', 'private.item_popularity(uuid)', 'execute'),
+               'clients cannot run the refresh or read the cache through functions');
+select test.ok(not exists (select 1 from cron.job where jobname = 'pativ-refresh-suggestion-cache') is false
+               or not exists (select 1 from pg_namespace where nspname = 'cron'),
+               'the refresh is scheduled every 15 minutes where pg_cron exists');
+select test.ok((select schedule from cron.job where jobname = 'pativ-refresh-suggestion-cache') = '*/15 * * * *', 'every 15 minutes');
+
 drop function test.rc5_round(integer, uuid[]);
 drop function test.rc5_item(uuid, text, integer);
 drop function test.rc5_cat(text, integer);
