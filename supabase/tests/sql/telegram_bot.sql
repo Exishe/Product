@@ -80,7 +80,9 @@ select test.ok((select bot_locale = 'en' and locale = 'en' from public.notificat
 select test.ok(test.scr(test.tg_cb(5003, 'l:en')) = 'menu', 'café B picks its language');
 select test.ok(test.scr(test.tg_cb(5002, 'l:choose')) = 'language' and test.scr(test.tg_cb(5002, 'l:en')) = 'menu', 'the menu''s Language button asks again');
 select test.ok(test.scr(test.tg_msg(5002, 'blah')) = 'menu', 'free text answers with the menu');
+update private.bot_actions set ready = false where id = 'promo';   -- every action is built now; pretend one is not
 select test.ok(test.scr(test.tg_cb(5002, 'a:promo')) = 'soon', 'an action not built yet says coming soon');
+update private.bot_actions set ready = true where id = 'promo';
 select test.ok(test.tg_cb(5002, 'a:../x') = '{}'::jsonb and test.tg_cb(5002, repeat('a', 70)) = '{}'::jsonb, 'malformed callback data is ignored');
 select test.ok(test.tg_cb(5002, 'a:sold_out', 999) = '{}'::jsonb, 'a press whose sender is not the chat is ignored');
 select test.ok(test.tg_cb(-100123, 'a:sold_out', -100123, 'group') = '{}'::jsonb, 'groups are ignored');
@@ -541,6 +543,244 @@ delete from public.order_items where order_id::text like 'bb0a0000-%';
 delete from public.bills where restaurant_id in (:'ra', :'rb') and number in (1, 2) and business_date = :'bd';
 delete from public.orders where id::text like 'bb0a0000-%';
 drop function test.snapv(uuid);
+
+-- ---------------------------------------------------------------------------
+-- Add new item: typed names, section, price, optional photo, preview, confirm, undo
+-- ---------------------------------------------------------------------------
+create function test.pend(p_chat bigint) returns setof private.bot_pending language sql as $$
+  select p.* from private.bot_pending p join public.notification_channels c on c.id = p.channel_id where c.telegram_chat_id = p_chat
+$$;
+create function test.tg_photo(p_chat bigint, p_sizes jsonb, p_from bigint default null) returns jsonb
+language sql as $$
+  select api.telegram_update(private.secret('telegram_webhook_secret'), jsonb_build_object('update_id', 3,
+    'message', jsonb_build_object('photo', p_sizes, 'from', jsonb_build_object('id', coalesce(p_from, p_chat)),
+      'chat', jsonb_build_object('id', p_chat, 'type', 'private'))))
+$$;
+delete from private.rate_limits where key like 'tgbot:%';
+select count(*) as n_items0 from public.items where restaurant_id = :'ra' \gset
+select test.ok((select ready and steps = '{text_name_hy,text_name_ru,text_name_en,category,number,photo}' and optional_steps = '{text_name_ru,text_name_en,photo}'
+                from private.bot_actions where id = 'add_item'), 'add_item is ready: names, section, price, photo; ru, en and photo optional');
+select test.ok(not private.bot_photo_enabled(), 'the photo step is off by default');
+
+select test.tg_cb(5002, 'a:add_item') as ai1 \gset
+select test.ok(:'ai1'::jsonb #>> '{bot,screen,type}' = 'ask_text' and :'ai1'::jsonb #>> '{bot,screen,field}' = 'name_hy'
+  and not (:'ai1'::jsonb #>> '{bot,screen,optional}')::boolean, 'it starts with the Armenian name, which cannot be skipped');
+select test.ok(test.tg_cb(5002, 's') #>> '{bot,screen,code}' = 'invalid', 'skip is refused on the required name');
+select test.ok(test.scr(test.tg_msg(5002, repeat('x', 81))) = 'bad_text', 'a name over 80 characters is refused, not cut');
+select test.ok(test.scr(test.tg_msg(5002, '/start')) = 'bad_text' and test.scr(test.tg_msg(5002, chr(8203) || '  ')) = 'bad_text',
+  'a command, or only invisible characters, is no name');
+select test.ok((select want = 'text_name_hy' and not data ? 'name_hy' from test.pend(5002)), 'and nothing was stored');
+select test.tg_msg(5002, 'Cap' || chr(10) || 'puccino' || chr(8203) || chr(8238) || '   ') as ai2 \gset
+select test.ok(:'ai2'::jsonb #>> '{bot,screen,field}' = 'name_ru' and (:'ai2'::jsonb #>> '{bot,screen,optional}')::boolean,
+  'the Armenian name is accepted, then the optional Russian one is asked');
+select test.ok((select data ->> 'name_hy' from test.pend(5002)) = 'Cap puccino', 'newlines become a space, control and invisible characters are dropped');
+select test.ok(test.tg_cb(5002, 'b') #>> '{bot,screen,field}' = 'name_hy' and (select not data ? 'name_hy' from test.pend(5002)),
+  'Back forgets the Armenian name and asks again');
+select test.tg_msg(5002, 'Cap' || chr(10) || 'puccino' || chr(8203)) is not null as x \gset
+select test.ok(test.tg_cb(5002, 's') #>> '{bot,screen,field}' = 'name_en', 'Skip moves from the Russian to the English name');
+select test.ok((select data -> 'name_ru' = 'null'::jsonb from test.pend(5002)), 'a skipped name is stored as empty');
+select test.ok(test.tg_msg(5002, 'Cappuccino') #>> '{bot,screen,type}' = 'pick_category', 'then the section is asked');
+select test.ok(test.tg_cb(5002, 'p:' || :'cat_b') #>> '{bot,screen,code}' = 'invalid', 'a foreign café''s section id is refused');
+select test.ok(test.tg_cb(5002, 'p:' || :'cap_a') #>> '{bot,screen,code}' = 'invalid', 'an item id is not a section');
+select test.ok(test.tg_cb(5002, 'p:' || :'cat_a') #>> '{bot,screen,type}' = 'ask_number', 'the price is asked next');
+select test.ok(test.scr(test.tg_msg(5002, 'abc')) = 'bad_number', 'a price that is not a number is asked again');
+select test.tg_msg(5002, '800') as ai3 \gset
+select test.ok(:'ai3'::jsonb #>> '{bot,screen,type}' = 'confirm' and :'ai3'::jsonb #>> '{bot,screen,facts,item}' = 'Cappuccino'
+  and :'ai3'::jsonb #>> '{bot,screen,facts,category}' = 'Coffee A' and (:'ai3'::jsonb #>> '{bot,screen,facts,price}')::int = 800
+  and not (:'ai3'::jsonb #>> '{bot,screen,facts,photo}')::boolean, 'with the photo step off the preview follows the price');
+select test.ok((select count(*) from public.items where restaurant_id = :'ra') = :n_items0 and not exists (select 1 from public.item_translations where name = 'Cap puccino'),
+  'nothing is created before confirming');
+select test.ok(test.tg_cb(5003, 'k:' || (:'ai3'::jsonb #>> '{bot,screen,token}')) #>> '{bot,screen,type}' = 'expired', 'another café''s chat cannot confirm it');
+select test.tg_cb(5002, 'k:' || (:'ai3'::jsonb #>> '{bot,screen,token}')) as ai4 \gset
+select test.ok(:'ai4'::jsonb #>> '{bot,screen,type}' = 'done' and :'ai4'::jsonb #>> '{bot,screen,change,label}' = 'Cappuccino', 'confirming creates the item');
+select id as new_item from public.items where restaurant_id = :'ra' and id not in (:'cap_a', :'esp_a') and price = 800 and created_at > now() - interval '1 minute' \gset
+select test.ok((select category_id = :'cat_a'::uuid and is_active and price = 800 and allergens = '{}' and tags = '{}' and image_path is null from public.items where id = :'new_item'),
+  'it is active, 800, in the chosen section, with no allergens, tags or photo');
+select test.ok((select string_agg(locale::text || '=' || name || '/' || source, ',' order by locale) from public.item_translations where item_id = :'new_item') = 'hy=Cap puccino/owner,en=Cappuccino/owner',
+  'translations: Armenian and English by the owner, no Russian row, no AI review flag');
+select test.ok(test.snap(:'la', :'new_item') ->> 'price' = '800', 'the guest menu snapshot has it at once');
+select test.ok(exists (select 1 from public.audit_log where restaurant_id = :'ra' and action = 'bot.add_item' and entity_id = :'new_item'), 'audited');
+select test.ok(test.tg_cb(5002, 'k:' || (:'ai3'::jsonb #>> '{bot,screen,token}')) #>> '{bot,screen,type}' = 'expired'
+  and (select count(*) from public.items where restaurant_id = :'ra') = :n_items0 + 1, 'a repeated confirm adds nothing');
+-- undo: no orders, so the item is removed
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as aiu \gset
+select test.tg_cb(5002, 'k:' || :'aiu') as ai5 \gset
+select test.ok((:'ai5'::jsonb #>> '{bot,screen,ok}')::boolean and not exists (select 1 from public.items where id = :'new_item'),
+  'undo removes an item no order mentions');
+select test.ok(test.snap(:'la', :'new_item') is null, 'and republishes without it');
+select test.ok(not exists (select 1 from public.item_translations where item_id = :'new_item'), 'its translations went with it');
+
+-- undo with orders: hidden, not deleted. Undo refuses when the item changed since.
+delete from private.rate_limits where key like 'tgbot:%';
+select test.tg_cb(5002, 'a:add_item') is not null as x \gset
+select test.tg_msg(5002, 'Soup') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cat_a') is not null as x \gset
+select test.tg_msg(5002, '1200 AMD') #>> '{bot,screen,token}' as ai6 \gset
+select test.tg_cb(5002, 'k:' || :'ai6') is not null as x \gset
+select id as soup from public.items where restaurant_id = :'ra' and price = 1200 \gset
+select test.ok((select string_agg(locale::text, ',') from public.item_translations where item_id = :'soup') = 'hy', 'only the Armenian name when both others are skipped');
+select private.business_date(:'la') as bd2 \gset
+select id as own_a2 from public.members where restaurant_id = :'ra' and role = 'owner' \gset
+insert into public.orders (id, restaurant_id, location_id, table_session_id, created_by_member, source, fulfillment, status, locale, business_date,
+                           number, idempotency_key, request_hash, placed_at, total, is_test)
+values ('bb0b0000-0000-0000-0000-000000000001', :'ra', :'la', null, :'own_a2', 'waiter', 'takeaway', 'accepted', 'en', :'bd2', 90, gen_random_uuid(), 'x', now(), 1200, false);
+insert into public.order_items (restaurant_id, order_id, item_id, name_i18n, unit_price, quantity, cancelled_quantity, line_total)
+values (:'ra', 'bb0b0000-0000-0000-0000-000000000001', :'soup', '{"hy":"Soup"}', 1200, 1, 0, 1200);
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as aiu2 \gset
+select test.tg_cb(5002, 'k:' || :'aiu2') as ai7 \gset
+select test.ok((:'ai7'::jsonb #>> '{bot,screen,ok}')::boolean and exists (select 1 from public.items where id = :'soup' and not is_active),
+  'undo hides an item that orders mention instead of deleting it');
+select test.ok(test.snap(:'la', :'soup') is null, 'and the guest menu no longer shows it');
+-- changed since: undo refuses
+select test.tg_cb(5002, 'a:add_item') is not null as x \gset
+select test.tg_msg(5002, 'Salad') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cat_a') is not null as x \gset
+select test.tg_msg(5002, '900') #>> '{bot,screen,token}' as ai8 \gset
+select test.tg_cb(5002, 'k:' || :'ai8') is not null as x \gset
+select id as salad from public.items where restaurant_id = :'ra' and price = 900 and id <> :'cap_a' and id <> :'cap_b' and created_at > now() - interval '1 minute' \gset
+update public.items set price = 950 where id = :'salad';
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as aiu3 \gset
+select test.ok(not (test.tg_cb(5002, 'k:' || :'aiu3') #>> '{bot,screen,ok}')::boolean and exists (select 1 from public.items where id = :'salad'),
+  'undo refuses when the price was changed by hand since');
+-- the rules hold even if the pending data were forged
+select format($f$select private.bot_apply_add_item(private.bot_channel(5002), %L, jsonb_build_object('name_hy', 'X', 'number', 5, 'category_id', %L))$f$,
+              :'la', :'cat_b') as q1 \gset
+select test.fails(:'q1', 'forbidden', 'apply refuses a foreign café''s section');
+select format($f$select private.bot_apply_add_item(private.bot_channel(5002), %L, jsonb_build_object('name_hy', 'X', 'number', 10000001, 'category_id', %L))$f$,
+              :'la', :'cat_a') as q2 \gset
+select test.fails(:'q2', 'invalid_price', 'apply refuses a price over 10 000 000');
+select format($f$select private.bot_apply_add_item(private.bot_channel(5002), %L, jsonb_build_object('name_hy', '  ', 'number', 5, 'category_id', %L))$f$,
+              :'la', :'cat_a') as q3 \gset
+select test.fails(:'q3', 'invalid_price', 'apply refuses an empty Armenian name');
+-- a section that is off cannot take a new dish
+update public.categories set is_active = false where id = :'cat_a';
+select test.tg_cb(5002, 'a:add_item') is not null as x \gset
+select test.tg_msg(5002, 'Tea') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.ok(not (test.tg_cb(5002, 'g:0') #>> '{bot,screen,rows}') like '%' || :'cat_a' || '%' and test.tg_cb(5002, 'p:' || :'cat_a') #>> '{bot,screen,code}' = 'invalid',
+  'an off section is not offered and its id is refused');
+update public.categories set is_active = true where id = :'cat_a';
+delete from private.bot_pending;
+
+-- The photo step (switched on only to test the engine; no worker stores photos yet)
+delete from private.rate_limits where key like 'tgbot:%';
+select vault.create_secret('on', 'bot_photo_enabled', 'test') is not null as x \gset
+select test.ok(private.bot_photo_enabled(), 'the photo step can be switched on from Vault');
+select test.tg_cb(5002, 'a:add_item') is not null as x \gset
+select test.tg_msg(5002, 'Latte') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cat_a') is not null as x \gset
+select test.tg_msg(5002, '1000') as ph1 \gset
+select test.ok(:'ph1'::jsonb #>> '{bot,screen,type}' = 'ask_photo' and (:'ph1'::jsonb #>> '{bot,screen,optional}')::boolean, 'the photo is asked, optional');
+select test.ok(test.tg_photo(5001, '[{"file_id":"AgACAgIAAxkBAAIBaaaaaaaaaaaaaaaaaa","file_size":1000}]') = '{}'::jsonb, 'an unlinked chat''s photo is ignored');
+select test.ok(test.tg_photo(5002, '[{"file_id":"AgACAgIAAxkBAAIBaaaaaaaaaaaaaaaaaa","file_size":1000}]', 777) = '{}'::jsonb, 'a photo whose sender is not the chat is ignored');
+select test.scr(test.tg_photo(5002, '[{"file_id":"AgACAgIAAxkBAAIBaaaaaaaaaaaaaaaaaa","file_size":9000000}]')) = 'bad_photo' as bad \gset
+select test.ok(:'bad', 'a photo with no rendition up to 2 MB is refused');
+select test.ok(test.scr(test.tg_photo(5002, '[{"file_id":"short","file_size":1000}]')) = 'bad_photo', 'a malformed file id is refused');
+select test.ok((select want = 'photo' from test.pend(5002)), 'and the step is still waiting');
+select test.tg_photo(5002, '[{"file_id":"AgACAgIAAxkBAAIBsmall0000000000000000","file_size":900},{"file_id":"AgACAgIAAxkBAAIBmedium000000000000000","file_size":150000},{"file_id":"AgACAgIAAxkBAAIBhuge0000000000000000000","file_size":4000000}]') as ph2 \gset
+select test.ok(:'ph2'::jsonb #>> '{bot,screen,type}' = 'confirm' and (:'ph2'::jsonb #>> '{bot,screen,facts,photo}')::boolean
+  and (select data #>> '{photo,file_id}' = 'AgACAgIAAxkBAAIBmedium000000000000000' from test.pend(5002)),
+  'the largest rendition up to 2 MB is kept, and the preview says there is a photo');
+select test.tg_cb(5002, 'k:' || (:'ph2'::jsonb #>> '{bot,screen,token}')) is not null as x \gset
+select id as latte from public.items where restaurant_id = :'ra' and price = 1000 \gset
+select test.ok((select file_id = 'AgACAgIAAxkBAAIBmedium000000000000000' and file_size = 150000 and status = 'waiting' from private.bot_photo_jobs where item_id = :'latte'),
+  'the photo is queued for the worker; the item has no picture yet');
+select test.ok((select image_path is null from public.items where id = :'latte'), 'no image path is invented');
+select test.ok(test.tg_photo(5002, '[{"file_id":"AgACAgIAAxkBAAIBaaaaaaaaaaaaaaaaaa","file_size":1000}]') = '{}'::jsonb, 'a photo nobody asked for is ignored');
+-- Skip also works on the photo step
+select test.tg_cb(5002, 'a:add_item') is not null as x \gset
+select test.tg_msg(5002, 'Mocha') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 's') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'cat_a') is not null as x \gset
+select test.tg_msg(5002, '1100') is not null as x \gset
+select test.tg_cb(5002, 's') as ph3 \gset
+select test.ok(:'ph3'::jsonb #>> '{bot,screen,type}' = 'confirm' and not (:'ph3'::jsonb #>> '{bot,screen,facts,photo}')::boolean, 'Skip on the photo goes to a preview without a photo');
+delete from vault.secrets where name = 'bot_photo_enabled';
+delete from private.bot_pending;
+delete from public.order_items where order_id::text like 'bb0b0000-%';
+delete from public.orders where id::text like 'bb0b0000-%';
+select test.ok(not private.bot_photo_enabled() and test.tg_photo(5002, '[{"file_id":"AgACAgIAAxkBAAIBaaaaaaaaaaaaaaaaaa","file_size":1000}]') = '{}'::jsonb,
+  'switched off again: photos are ignored');
+drop function test.tg_photo(bigint, jsonb, bigint);
+drop function test.pend(bigint);
+
+-- ---------------------------------------------------------------------------
+-- Promo on / off
+-- ---------------------------------------------------------------------------
+delete from private.rate_limits where key like 'tgbot:%';
+insert into public.promos (restaurant_id, location_id, title, is_on) values
+  (:'ra', :'la', '{"hy": "Երջանիկ ժամեր", "en": "Happy hour"}', false) returning id as promo_a \gset
+insert into public.promos (restaurant_id, location_id, title, is_on, ends_at) values
+  (:'ra', :'la', '{"hy": "Գարնան", "en": "Spring"}', false, now() at time zone 'utc' - interval '2 days') returning id as promo_old \gset
+insert into public.promos (restaurant_id, location_id, title, is_on) values
+  (:'rb', :'lb', '{"hy": "B promo", "en": "B promo"}', false) returning id as promo_b \gset
+select test.ok((select ready and steps = '{promo}' from private.bot_actions where id = 'promo'), 'promo is ready with a promo step');
+select test.tg_cb(5002, 'a:promo') as pr1 \gset
+select test.ok(:'pr1'::jsonb #>> '{bot,screen,type}' = 'pick_promo' and jsonb_array_length(:'pr1'::jsonb #> '{bot,screen,rows}') = 2
+  and (:'pr1'::jsonb #> '{bot,screen,rows}') @> jsonb_build_array(jsonb_build_object('id', :'promo_a', 'label', 'Happy hour', 'off', true, 'on', false))
+  and not (:'pr1'::jsonb #>> '{bot,screen,rows}') like '%' || :'promo_b' || '%', 'the list shows this café''s promos with their state, not another café''s');
+select test.ok(test.tg_cb(5002, 'p:' || :'promo_b') #>> '{bot,screen,code}' = 'invalid', 'a foreign café''s promo id is refused');
+select test.tg_cb(5002, 'a:promo') is not null as x \gset
+select test.ok(test.tg_cb(5002, 'p:' || :'cat_a') #>> '{bot,screen,code}' = 'invalid', 'an id that is not a promo is refused');
+select test.tg_cb(5002, 'a:promo') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'promo_a') as pr2 \gset
+select test.ok(:'pr2'::jsonb #>> '{bot,screen,type}' = 'confirm' and :'pr2'::jsonb #>> '{bot,screen,facts,promo}' = 'Happy hour'
+  and not (:'pr2'::jsonb #>> '{bot,screen,facts,on_now}')::boolean and (:'pr2'::jsonb #>> '{bot,screen,facts,to_on}')::boolean
+  and (:'pr2'::jsonb #>> '{bot,screen,facts,live_after}')::boolean, 'the preview shows off now, on after, and that guests will see it');
+select test.ok(not (select is_on from public.promos where id = :'promo_a') and private.live_promos(:'la') = '[]'::jsonb, 'nothing changed before confirming');
+select test.ok(test.tg_cb(5003, 'k:' || (:'pr2'::jsonb #>> '{bot,screen,token}')) #>> '{bot,screen,type}' = 'expired', 'another café''s chat cannot confirm it');
+select test.tg_cb(5002, 'k:' || (:'pr2'::jsonb #>> '{bot,screen,token}')) as pr3 \gset
+select test.ok(:'pr3'::jsonb #>> '{bot,screen,type}' = 'done' and (:'pr3'::jsonb #>> '{bot,screen,change,new,on}')::boolean
+  and (:'pr3'::jsonb #>> '{bot,screen,change,new,live}')::boolean and (select is_on from public.promos where id = :'promo_a'), 'confirming switches it on');
+select test.ok(private.live_promos(:'la') @> jsonb_build_array(jsonb_build_object('id', :'promo_a')), 'guests see it at once');
+select test.ok(exists (select 1 from public.audit_log where entity_id = :'promo_a' and action = 'promo.on' and actor_kind = 'system')
+  and exists (select 1 from public.audit_log where entity_id = :'promo_a' and action = 'bot.promo'), 'audited, as the linked account');
+select test.ok(test.tg_cb(5002, 'k:' || (:'pr2'::jsonb #>> '{bot,screen,token}')) #>> '{bot,screen,type}' = 'expired', 'a repeated confirm does nothing');
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as pru \gset
+select test.tg_cb(5002, 'k:' || :'pru') as pr4 \gset
+select test.ok((:'pr4'::jsonb #>> '{bot,screen,ok}')::boolean and not (select is_on from public.promos where id = :'promo_a')
+  and private.live_promos(:'la') = '[]'::jsonb, 'undo switches it off again');
+-- switching off from the list, with the state shown
+select test.tg_cb(5002, 'a:promo') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'promo_a') #>> '{bot,screen,token}' as pr5 \gset
+select test.tg_cb(5002, 'k:' || :'pr5') is not null as x \gset
+select test.tg_cb(5002, 'a:promo') as pr6 \gset
+select test.ok((:'pr6'::jsonb #> '{bot,screen,rows}') @> jsonb_build_array(jsonb_build_object('id', :'promo_a', 'off', false, 'on', true)), 'the list marks the promo that is on');
+select test.tg_cb(5002, 'p:' || :'promo_a') as pr7 \gset
+select test.ok((:'pr7'::jsonb #>> '{bot,screen,facts,on_now}')::boolean and not (:'pr7'::jsonb #>> '{bot,screen,facts,to_on}')::boolean, 'its preview says on now, off after');
+select test.tg_cb(5002, 'k:' || (:'pr7'::jsonb #>> '{bot,screen,token}')) is not null as x \gset
+select test.ok(not (select is_on from public.promos where id = :'promo_a'), 'confirming switches it off');
+-- undo refuses when changed by hand
+select test.tg_cb(5002, 'a:promo') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'promo_a') #>> '{bot,screen,token}' as pr8 \gset
+select test.tg_cb(5002, 'k:' || :'pr8') is not null as x \gset
+update public.promos set is_on = false where id = :'promo_a';
+select test.tg_cb(5002, 'u') #>> '{bot,screen,token}' as pru2 \gset
+select test.ok(not (test.tg_cb(5002, 'k:' || :'pru2') #>> '{bot,screen,ok}')::boolean and not (select is_on from public.promos where id = :'promo_a'),
+  'promo: undo refuses when the promo changed since');
+-- on, but outside its dates: the preview and the answer say guests do not see it yet
+select test.tg_cb(5002, 'a:promo') is not null as x \gset
+select test.tg_cb(5002, 'p:' || :'promo_old') as pr9 \gset
+select test.ok(:'pr9'::jsonb #>> '{bot,screen,type}' = 'confirm' and not (:'pr9'::jsonb #>> '{bot,screen,facts,live_after}')::boolean, 'a promo past its end date: the preview says guests will not see it');
+select test.tg_cb(5002, 'k:' || (:'pr9'::jsonb #>> '{bot,screen,token}')) as pr10 \gset
+select test.ok((:'pr10'::jsonb #>> '{bot,screen,change,new,on}')::boolean and not (:'pr10'::jsonb #>> '{bot,screen,change,new,live}')::boolean
+  and private.live_promos(:'la') = '[]'::jsonb, 'it is on but not live');
+-- the admin function works as before and shares the rule
+select test.act_as('bb000000-0000-0000-0000-000000000001');
+select api.set_promo_on(:'promo_a', true) as adm1 \gset
+select test.ok(:'adm1'::boolean and (select is_on from public.promos where id = :'promo_a'), 'api.set_promo_on still switches a promo on and says it is live');
+select test.fails(format('select api.set_promo_on(%L, true)', :'promo_b'), 'forbidden', 'and still refuses another café''s promo');
+reset role;
+select test.ok(exists (select 1 from public.audit_log where entity_id = :'promo_a' and action = 'promo.on' and actor_kind = 'member'), 'the admin''s audit entry is still by the member');
+delete from public.promos where restaurant_id in (:'ra', :'rb');
 
 -- ---------------------------------------------------------------------------
 -- The spinner call, and who stays linked

@@ -2,7 +2,7 @@
 // verb letter and at most one opaque argument. The argument is never trusted:
 // the database checks it against the linked account (private.bot_handle).
 //   m menu | a:<action> | p:<uuid> pick | c:<choice> | g:<page> | b back | x cancel
-//   k:<token> confirm | u undo | h history | l:<hy|ru|en>
+//   k:<token> confirm | u undo | h history | l:<hy|ru|en> | s skip an optional step
 // The database accepts exactly this shape; keep the two in step.
 export const CALLBACK_PATTERN = /^[a-z](:[A-Za-z0-9_-]{1,40})?$/;
 
@@ -13,6 +13,7 @@ export const cb = {
   choice: (value: string) => `c:${value}`,
   page: (n: number) => `g:${n}`,
   back: () => "b",
+  skip: () => "s",
   cancel: () => "x",
   confirm: (token: string) => `k:${token}`,
   undo: () => "u",
