@@ -497,7 +497,7 @@ body:has(.admin-shell) {
 
   /* Stardom (Latin only, Fontshare) first; Armenian and Cyrillic fall
      through per glyph to the Noto serifs. */
-  --font-display: "Stardom", var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif;
+  --font-display: "Stardom", var(--font-noto-sans-armenian), var(--font-noto-serif), Georgia, serif;
   /* Switzer for Latin, Noto Sans Armenian for Armenian, Google Sans for Cyrillic */
   --font-ui: "Switzer", var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif;
   font-family: var(--font-ui);

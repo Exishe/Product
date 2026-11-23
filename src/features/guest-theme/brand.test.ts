@@ -100,7 +100,7 @@ describe("brandTokens", () => {
     expect(v["--guest-tab"]).toBe("#705d4c");
     expect(v["--guest-badge"]).toBe("#c49871");
     expect(v["--guest-line"]).toBe("#ead7bf");
-    expect(v["--font-display"]).toMatch(/^"Cormorant", var\(--font-noto-serif-armenian\)/);
+    expect(v["--font-display"]).toMatch(/^"Cormorant", var\(--font-noto-sans-armenian\)/);
     expect(v["--font-ui"]).toMatch(/^"Jost", var\(--font-noto-sans-armenian\)/);
     expect(v["--brand-font-script"]).toMatch(/^"Great Vibes"/);
   });

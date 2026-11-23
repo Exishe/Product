@@ -170,7 +170,8 @@ export function googleFontsHref(b: Brand | null): string | null {
   return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
 }
 
-const SERIF_STACK = "var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif";
+// Armenian is always Noto Sans Armenian (the owner's choice), even behind a serif or a script.
+const SERIF_STACK = "var(--font-noto-sans-armenian), var(--font-noto-serif), Georgia, serif";
 const SANS_STACK = "var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif";
 const stackFor = (f: BrandFont) => `"${f.family}", ${f.kind === "sans" ? SANS_STACK : SERIF_STACK}`;
 
