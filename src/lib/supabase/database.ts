@@ -237,6 +237,12 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    list_ingredient_outages: {
+      Args: {
+        p_location_id: string;
+      };
+      Returns: { id: string; names: Json; out_at: string; source: string }[];
+    };
     list_staff_logins: {
       Args: {
         p_location_id: string;

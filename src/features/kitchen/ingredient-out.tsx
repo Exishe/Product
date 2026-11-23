@@ -5,6 +5,7 @@ import { CircleAlert, PackageX, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { pickIngredientName } from "@/features/ingredients/names";
+import { mergeOutRows, type OutRow } from "@/features/ingredients/out-rows";
 import type { Locale } from "@/i18n/routing";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
@@ -29,17 +30,32 @@ export function IngredientOut({ locationId }: { locationId: string }) {
   const [known, setKnown] = useState<Map<string, string>>(() => new Map());
   // Active outages of this café (the id of each ingredient that is out now).
   const [outIds, setOutIds] = useState<ReadonlySet<string>>(() => new Set());
+  // Every outage with its name (api.list_ingredient_outages); null on a database without it.
+  const [listed, setListed] = useState<OutRow[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   const refreshOutages = useCallback(async () => {
-    const res = await getBrowserClient()
+    const client = getBrowserClient();
+    const list = await client.schema("api").rpc("list_ingredient_outages", { p_location_id: locationId });
+    if (!list.error) {
+      const rows = (list.data ?? []).map((r) => ({
+        id: r.id,
+        name: pickIngredientName(r.names, locale),
+      }));
+      setListed(rows);
+      setOutIds(new Set(rows.map((r) => r.id)));
+      return;
+    }
+    // A database without the function: ids only, as before.
+    setListed(null);
+    const res = await client
       .from("ingredient_outages")
       .select("ingredient_id, until")
       .eq("location_id", locationId)
       .gt("until", new Date().toISOString());
     if (!res.error) setOutIds(new Set((res.data ?? []).map((r) => r.ingredient_id)));
-  }, [locationId]);
+  }, [locationId, locale]);
 
   // Opening the list reads what is out now.
   useEffect(() => {
@@ -84,11 +100,7 @@ export function IngredientOut({ locationId }: { locationId: string }) {
     await refreshOutages();
   }
 
-  const outRows = [...outIds].flatMap((id) => {
-    const name = known.get(id);
-    return name ? [{ id, name }] : [];
-  });
-  const unknownOut = [...outIds].filter((id) => !known.has(id)).length;
+  const { rows: outRows, unnamed: unknownOut } = mergeOutRows(outIds, listed, known);
   const shownOut = new Set(outRows.map((r) => r.id));
   const others = found.filter((r) => !outIds.has(r.id) && !shownOut.has(r.id));
   const typed = query.trim() !== "";
