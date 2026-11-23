@@ -69,7 +69,8 @@ export function StrokeTitle({
 }) {
   const ref = useRef<HTMLElement>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
-  const [played, setPlayed] = useState(false);
+  // Without IntersectionObserver it plays at once (the svg only exists in the browser).
+  const [played, setPlayed] = useState(() => typeof window !== "undefined" && !("IntersectionObserver" in window));
 
   // Measured once the fonts are in, and again when the width changes.
   useLayoutEffect(() => {
@@ -102,7 +103,7 @@ export function StrokeTitle({
   useEffect(() => {
     const el = ref.current;
     if (!el || !layout || played) return;
-    if (!("IntersectionObserver" in window)) return setPlayed(true);
+    if (!("IntersectionObserver" in window)) return;
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
