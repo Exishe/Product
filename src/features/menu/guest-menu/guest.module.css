@@ -636,3 +636,43 @@
     transition: none;
   }
 }
+
+/* A card of the order page (order-status-view.tsx): white, a thin black line, no
+   shadow, and a header strip with a soft pastel gradient from the café's own
+   colours, like a tier of a pricing table. */
+.sheet {
+  overflow: hidden;
+  border: 1px solid var(--guest-card-border, #14110f);
+  border-radius: 1rem;
+  background: #ffffff;
+  color: var(--guest-ink);
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-bottom: 1px solid var(--guest-card-border, #14110f);
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--guest-badge) 40%, #ffffff),
+    color-mix(in srgb, var(--guest-accent) 12%, #ffffff) 65%,
+    #ffffff
+  );
+  font-weight: 600;
+}
+
+.sheetHead svg {
+  flex: none;
+}
+
+.sheetBody {
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .sheetBody {
+    padding: 1.75rem 2rem;
+  }
+}

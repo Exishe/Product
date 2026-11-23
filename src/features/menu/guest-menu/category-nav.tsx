@@ -110,7 +110,7 @@ export function CategoryNav({
       ref={wrap}
       aria-label={t("menu.categories")}
       data-current={current ?? undefined}
-      className={`bg-page/92 sticky z-10 -mx-4 px-4 py-2.5 backdrop-blur-md transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"}`}
+      className={`bg-page sticky z-10 -mx-4 px-4 py-1.5 transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"}`}
       onKeyDown={(e) => {
         if (e.key !== "Escape" || !open) return;
         setOpen(null);
@@ -144,13 +144,9 @@ export function CategoryNav({
                 hoverAt.current = performance.now();
                 setOpen(b.key);
               }}
-              className={`rounded-pill flex min-h-11 flex-auto items-center justify-center gap-1.5 border px-3 text-[0.9375rem] font-semibold max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base whitespace-nowrap transition-colors duration-150 sm:px-3 md:flex-none md:px-5 ${
-                isOpen
-                  ? "bg-tab text-on-tab border-transparent"
-                  : here
-                    ? "bg-chip text-ink [border-color:var(--guest-line-strong)]"
-                    : "text-soft hover:text-ink bg-surface/60 [border-color:var(--guest-tab-border)]"
-              }`}
+              className={`relative flex min-h-11 flex-auto items-center justify-center gap-1.5 rounded-lg px-3 text-[0.9375rem] font-semibold whitespace-nowrap transition-colors duration-150 max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base md:flex-none md:px-5 ${
+                isOpen ? "bg-chip text-ink" : here ? "text-ink" : "text-soft hover:text-ink hover:bg-chip/60"
+              } ${here ? "after:bg-accent-text after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:content-['']" : ""}`}
             >
               <span>{label(b)}</span>
               <ChevronDown

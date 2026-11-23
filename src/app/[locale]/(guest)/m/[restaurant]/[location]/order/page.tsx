@@ -78,14 +78,20 @@ export default async function OrderStatusPage({
   // The wordmark that reads on the header band's colour (ADR-065).
   const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).header);
 
-  // A few dishes to tempt the guest while the order cooks: those with a photo first.
+  // Dishes to recommend while the order cooks: the café's own pairs first (the
+  // browser picks those that go with this table's order), then dishes with a photo.
   const dishes = published
     ? buildGuestMenu(published, locale, wordmarkTones(theme, parseBrand(look?.brand)))
         .categories.flatMap((c) => c.items)
         .filter((i) => !i.soldOut)
     : [];
-  const showcase = (dishes.filter((i) => i.image).length >= 3 ? dishes.filter((i) => i.image) : dishes)
-    .slice(0, 8)
+  const paired = new Set(Object.values(hints.pairs).flat());
+  const recommend = [
+    ...dishes.filter((i) => paired.has(i.id)),
+    ...dishes.filter((i) => i.image && !paired.has(i.id)),
+    ...dishes.filter((i) => !i.image && !paired.has(i.id)),
+  ]
+    .slice(0, 24)
     .map((i) => ({ id: i.id, name: i.name.text, image: i.image, price: i.price }));
 
   return (
@@ -121,7 +127,8 @@ export default async function OrderStatusPage({
             wait={busy ? null : hints.wait}
             // Two dishes with one name (blini with jam, blini with caviar) are told apart.
             details={published ? sameNameDetails(published, locale) : undefined}
-            showcase={showcase}
+            dishes={recommend}
+            pairs={hints.pairs}
           />
         </GuestI18nProvider>
       ) : (

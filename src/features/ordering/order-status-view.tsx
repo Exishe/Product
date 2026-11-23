@@ -9,7 +9,9 @@ import { useReveal } from "@/features/guest-theme/motion/reveal";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
-import { CheckIcon, MinusIcon, Notice, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
+import guestStyles from "@/features/menu/guest-menu/guest.module.css";
+import { CheckIcon, MinusIcon, Notice, PlusIcon, STEP, Txt } from "@/features/menu/guest-menu/ui";
+import { DishOrbit, type OrbitDish } from "./dish-orbit";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { formatAmd } from "@/lib/format/money";
@@ -23,7 +25,7 @@ import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { NotifyReady } from "./notify-ready";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, Sparkles, Timer, UtensilsCrossed } from "lucide-react";
 import {
   displayStatus,
   isActive,
@@ -214,45 +216,40 @@ function Rise({ children }: { children: ReactNode }) {
   );
 }
 
-export type Showcase = { id: string; name: string; image: string | null; price: number };
-
-// "Order more": a button to the menu and a few dishes to tempt the guest while
-// the order cooks, on the right of the order page beside the status.
-function ShowcaseCard({ dishes, menuHref }: { dishes: Showcase[]; menuHref: string }) {
-  const { t, locale } = useGuestI18n();
+// «Recommended for you» under the order: the dishes the café's own rounds pair
+// with what this table ordered (ADR-060), then the menu's best-looking dishes,
+// turning on an orbit so the page is never an empty block.
+function RecommendedCard({
+  dishes,
+  menuHref,
+  ordered,
+  pairs,
+}: {
+  dishes: OrbitDish[];
+  menuHref: string;
+  ordered: string[];
+  pairs: Record<string, string[]>;
+}) {
+  const { t } = useGuestI18n();
+  const byId = new Map(dishes.map((d) => [d.id, d]));
+  const skip = new Set(ordered);
+  const first = ordered.flatMap((id) => pairs[id] ?? []).flatMap((id) => (byId.get(id) ? [byId.get(id)!] : []));
+  const all = [...new Map([...first, ...dishes].filter((d) => !skip.has(d.id)).map((d) => [d.id, d])).values()];
+  // Plates with a photo only, when there are enough of them; an orbit of empty plates says nothing.
+  const photos = all.filter((d) => d.image);
+  const list = (photos.length >= 4 ? photos : all).slice(0, 9);
+  if (list.length < 3) return null;
   return (
-    <section
-      aria-labelledby="showcase-title"
-      className="bg-surface shadow-card rounded-feature overflow-hidden border p-5 [border-color:var(--guest-card-border)] md:p-6"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="showcase-title" className="display-face text-[1.75rem] leading-tight">
-          {t("order.showcase")}
+    <section aria-labelledby="rec-title" className={guestStyles.sheet}>
+      <div className={guestStyles.sheetHead}>
+        <Sparkles size={20} aria-hidden />
+        <h2 id="rec-title" className="text-[1.0625rem]">
+          {t("order.recommended")}
         </h2>
-        <a
-          href={menuHref}
-          className="bg-add text-on-add rounded-pill inline-flex min-h-11 items-center px-5 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95"
-        >
-          {t("order.orderMore")}
-        </a>
       </div>
-      {dishes.length > 0 && (
-        <ul className="-mx-5 mt-4 flex snap-x scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] md:-mx-6 md:scroll-px-6 md:px-6 [&::-webkit-scrollbar]:hidden">
-          {dishes.map((d) => (
-            <li key={d.id} className="w-[8.25rem] flex-none snap-start">
-              <a href={menuHref} className="block text-center">
-                <Plate src={d.image ? dishPhotoUrl(d.image) : null} size={132} className="mx-auto size-[6.5rem]" />
-                <span className="display-face mt-2 block text-[1.0625rem] leading-tight [overflow-wrap:anywhere]">
-                  {d.name}
-                </span>
-                <span className="num text-accent-text mt-0.5 block text-sm font-semibold">
-                  {formatAmd(d.price, locale as Locale)}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="px-3 pt-4 pb-6 md:px-6">
+        <DishOrbit dishes={list} menuHref={menuHref} />
+      </div>
     </section>
   );
 }
@@ -301,24 +298,30 @@ function OrderCard({
       <section
         aria-label={t("order.title", { number: order.number })}
         data-status={status}
-        className="bg-surface shadow-card rounded-feature border px-5 pt-6 pb-2 [border-color:var(--guest-card-border)] md:px-8 md:pt-8"
+        className={guestStyles.sheet}
       >
-        <p className="text-muted text-sm font-semibold">
-          {t("order.title", { number: order.number })} · {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
-        </p>
-        {status !== "rejected" && status !== "cancelled" && (
-          <h2 className="display-face mt-1 text-[2.5rem] leading-[1.05] md:text-[3rem]" data-testid="order-phase">
-            {t(`order.steps.${status}`)}
-          </h2>
-        )}
-        {statusBlock}
+        <div className={guestStyles.sheetHead}>
+          <Timer size={20} aria-hidden />
+          <p className="text-[1.0625rem]">
+            {t("order.title", { number: order.number })} ·{" "}
+            <span className="font-normal">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</span>
+          </p>
+        </div>
+        <div className={`${guestStyles.sheetBody} pb-2`}>
+          {status !== "rejected" && status !== "cancelled" && (
+            <h2 className="display-face text-[1.875rem] leading-[1.1] md:text-[2.25rem]" data-testid="order-phase">
+              {t(`order.steps.${status}`)}
+            </h2>
+          )}
+          {statusBlock}
+        </div>
       </section>
     );
   return (
     <article
       className={
         latest
-          ? "bg-surface shadow-card rounded-feature mb-5 border [border-color:var(--guest-card-border)] px-5 pt-6 pb-1 md:px-8 md:pt-8"
+          ? `${guestStyles.sheet} ${guestStyles.sheetBody} mb-5 !pb-1`
           : "border-line border-t pt-4"
       }
       data-testid="order"
@@ -419,12 +422,15 @@ export function OrderStatusView({
   vapidPublicKey = null,
   wait = null,
   details,
-  showcase = [],
+  dishes = [],
+  pairs = {},
 }: {
   tableId: string;
   menuHref: string;
-  /** A few dishes to show beside the status: «Order more». */
-  showcase?: Showcase[];
+  /** Dishes to recommend while the order cooks, best first (photos before none). */
+  dishes?: OrbitDish[];
+  /** The café's own "ordered together" pairs, by dish id (ADR-060). */
+  pairs?: Record<string, string[]>;
   vapidPublicKey?: string | null;
   /** The café's usual wait (ADR-060); null when it can't say, or the kitchen set its own. */
   wait?: WaitRange | null;
@@ -543,7 +549,7 @@ export function OrderStatusView({
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-pill border [border-color:var(--guest-field-edge)] bg-surface px-4 font-semibold shadow-card disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
+    "min-h-[52px] rounded-pill border border-[var(--guest-card-border)] bg-white px-4 font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
   // Back to the menu with an earlier round in the cart (this table's cart).
   const repeat = (order: Order) => {
     const newId = () =>
@@ -603,7 +609,7 @@ export function OrderStatusView({
     // The whole screen, not a small block: the order on the left, its status and
     // the menu's showcase on the right (above the order on a phone), and the
     // games across the bottom.
-    <main className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${DOCK_SPACE}`}>
+    <main data-order-page="" className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${DOCK_SPACE}`}>
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
         <div
@@ -741,11 +747,6 @@ export function OrderStatusView({
                   ? t("order.waiterTold")
                   : null}
           </p>
-          <p>
-            <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
-              {t("order.orderMore")}
-            </a>
-          </p>
         </>
       )}
 
@@ -772,13 +773,17 @@ export function OrderStatusView({
         </div>
         <aside className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2" aria-label={t("order.status")}>
           {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
-          <div className="hidden lg:block">
-            <ShowcaseCard dishes={showcase} menuHref={menuHref} />
-          </div>
         </aside>
-        <div className="order-3 lg:hidden">
-          <ShowcaseCard dishes={showcase} menuHref={menuHref} />
-        </div>
+      </div>
+      <div className="mt-6">
+        <Rise>
+          <RecommendedCard
+            dishes={dishes}
+            menuHref={menuHref}
+            pairs={pairs}
+            ordered={orders.flatMap((o) => o.order_items.flatMap((l) => (l.item_id ? [l.item_id] : [])))}
+          />
+        </Rise>
       </div>
       {showGames && latestStatus !== null && (
         <div className="mt-8">

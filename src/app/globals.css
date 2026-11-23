@@ -786,3 +786,13 @@ body:has(.guest-lux[data-guest-theme="wine"]:not([data-guest-preview])) {
 .guest-lux .bg-accent:focus-visible {
   outline-color: var(--guest-deep-accent);
 }
+
+/* The order status page is white: the page and the cards; only the cards have an
+   outline, a thin black one. The brand sets its page colour inline on the root,
+   so the white is painted over it. A dark theme (Wine) keeps its own page. The
+   header band stays the café's colour. */
+.guest-lux:not([data-guest-theme="wine"]):has([data-order-page]),
+body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
+  background: #ffffff !important;
+  --guest-card-border: #14110f;
+}
