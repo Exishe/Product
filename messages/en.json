@@ -714,7 +714,8 @@
     "sectionShown": "Guests",
     "sectionShownToggle": "Show this section to guests",
     "sectionShownHint": "Switching it off hides the section and its dishes. Guests see the change after you publish the menu.",
-    "sectionOff": "off"
+    "sectionOff": "off",
+    "managePairings": "Goes well with"
   },
   "print": {
     "button": "Print ticket",
@@ -1582,6 +1583,59 @@
       "note": "An order counts when the same phone placed it within 2 hours of accepting. Guests who haven't joined a table yet can't be matched to an order, so the real numbers may be higher.",
       "pairs": "Most shown suggestions",
       "pairRow": "{from} → {item}: shown {shown}, accepted {accepted}"
+    }
+  },
+  "recommendations": {
+    "back": "Menu",
+    "title": "Goes well with",
+    "hint": "Choose what the menu suggests next to a dish. A guest sees up to three ideas, only of dishes that are available right now.",
+    "unavailable": "This page is not ready for your café yet. Please try again a little later.",
+    "noDishes": "Add dishes to the menu first, then come back here.",
+    "failed": "Could not save. Please try again.",
+    "cancel": "Cancel",
+    "kinds": {
+      "coffee_tea": "Coffee and tea",
+      "cold_drink": "Cold drinks",
+      "alcohol": "Alcohol",
+      "breakfast": "Breakfast",
+      "starter_salad": "Starters and salads",
+      "soup": "Soups",
+      "main": "Main dishes",
+      "side": "Sides and bread",
+      "sauce": "Sauces",
+      "dessert": "Desserts",
+      "pastry_snack": "Pastries and snacks"
+    },
+    "types": {
+      "title": "Kind of dish",
+      "hint": "Say what each dish is. Dishes without a kind get no automatic ideas.",
+      "suggest": "Suggest kinds",
+      "none": "Not set",
+      "dishKind": "Kind of {dish}",
+      "saved": "Saved",
+      "proposalsTitle": "Kinds we guessed from your section names. Untick what is wrong.",
+      "proposalsEmpty": "Nothing to suggest. Either every dish already has a kind, or the section names are not clear enough.",
+      "apply": "Save {count, plural, one {# kind} other {# kinds}}",
+      "applied": "Kinds saved: {count}"
+    },
+    "pairings": {
+      "title": "Your own pairings",
+      "hint": "Pick a dish and add what to suggest with it. These come first. Up to {max} per dish; a guest sees up to three, never two of the same kind.",
+      "dish": "Dish",
+      "empty": "No pairings for this dish yet.",
+      "remove": "Remove {dish}",
+      "search": "Search dishes to add",
+      "noResults": "No dishes found.",
+      "add": "Add {dish}",
+      "addShort": "Add",
+      "limit": "A dish can have up to {max} pairings."
+    },
+    "matrix": {
+      "title": "What goes with what",
+      "hint": "Under each kind, tick what we may suggest next. Your own pairings ignore this table.",
+      "after": "When a guest adds: {kind}",
+      "changed": "Changed",
+      "reset": "Reset to defaults"
     }
   }
 }
