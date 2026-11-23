@@ -11,18 +11,18 @@ reset role;
 select set_config('request.jwt.claims', '', false);
 
 insert into auth.users (id, email, is_anonymous) values
-  ('ae000000-0000-0000-0000-000000000001', 'owner-ig-a@example.am', false),
-  ('ae000000-0000-0000-0000-000000000002', 'owner-ig-b@example.am', false),
-  ('ae000000-0000-0000-0000-000000000004', null, true),   -- guests
-  ('ae000000-0000-0000-0000-000000000005', null, true),
-  ('ae000000-0000-0000-0000-000000000006', null, true),
-  ('ae000000-0000-0000-0000-000000000007', null, true),
-  ('ae000000-0000-0000-0000-000000000008', null, true),
-  ('ae000000-0000-0000-0000-000000000009', null, true);
+  ('a1b20000-0000-0000-0000-000000000001', 'owner-ig-a@example.am', false),
+  ('a1b20000-0000-0000-0000-000000000002', 'owner-ig-b@example.am', false),
+  ('a1b20000-0000-0000-0000-000000000004', null, true),   -- guests
+  ('a1b20000-0000-0000-0000-000000000005', null, true),
+  ('a1b20000-0000-0000-0000-000000000006', null, true),
+  ('a1b20000-0000-0000-0000-000000000007', null, true),
+  ('a1b20000-0000-0000-0000-000000000008', null, true),
+  ('a1b20000-0000-0000-0000-000000000009', null, true);
 
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.create_restaurant('Ingr A', 'ig-cafe-a', 'Main', 'Owner A') as ra \gset
-select test.act_as('ae000000-0000-0000-0000-000000000002');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
 select api.create_restaurant('Ingr B', 'ig-cafe-b', 'Main', 'Owner B') as rb \gset
 reset role;
 select id as la from public.locations where restaurant_id = :'ra' \gset
@@ -43,14 +43,14 @@ insert into public.item_translations (restaurant_id, item_id, locale, name) valu
 insert into public.tables (restaurant_id, location_id, label) values (:'ra', :'la', '1') returning id as t1 \gset
 
 -- A café B ingredient for the tampering tests.
-select test.act_as('ae000000-0000-0000-0000-000000000002');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
 select api.save_ingredient(:'rb', null, '{"hy": "Ալյուր"}'::jsonb, 'g') as ing_b \gset
 reset role;
 
 -- ---------------------------------------------------------------------------
 -- Ingredients: three names, kcal, the reference list
 -- ---------------------------------------------------------------------------
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.save_ingredient(:'ra', null, '{"hy": "Կաթ", "ru": "Молоко", "en": "Milk"}'::jsonb, 'ml', 0.4, 61) as milk \gset
 select api.save_ingredient(:'ra', null, '{"hy": "Վարսակի կաթ", "ru": "Овсяное молоко", "en": "Oat milk"}'::jsonb, 'ml', 0.9, 45) as oat \gset
 select api.save_ingredient(:'ra', null, '{"hy": "Սերուցք", "en": "Cream"}'::jsonb, 'ml') as cream \gset
@@ -61,7 +61,7 @@ select test.ok((select name = 'Կաթ' and name_i18n = '{"ru": "Молоко", "
                 from public.ingredients where id = :'milk'), 'an ingredient keeps the Armenian name and the other two languages, and its kcal');
 select test.ok(private.ingredient_names(:'cream') = '{"hy": "Սերուցք", "ru": "Սերուցք", "en": "Cream"}'::jsonb,
                'a missing language falls back to the Armenian name');
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select test.fails(format('select api.save_ingredient(%L, null, %L::jsonb, ''g'')', :'ra', '{"hy": "կաթ"}'), 'ingredient_exists', 'the same name twice is refused (case-insensitive)');
 select test.fails(format('select api.save_ingredient(%L, null, %L::jsonb, ''g'')', :'ra', '{"ru": "Соль"}'), 'name_required', 'the Armenian name is required');
 select test.fails(format('select api.save_ingredient(%L, null, %L::jsonb, ''kg'')', :'ra', '{"hy": "Աղ"}'), 'invalid_value', 'a bad unit is refused');
@@ -82,16 +82,16 @@ select test.ok((select kcal_per_100g = 304 and unit = 'g' and name_i18n ->> 'en'
                'copying one reference ingredient creates it once, with its kcal');
 select test.ok(not exists (select 1 from public.ingredient_catalog where name_i18n ->> 'ru' is null or name_i18n ->> 'en' is null),
                'every reference ingredient has Russian and English names');
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select test.fails('select count(*) from public.ingredient_catalog', 'permission denied%', 'the reference table itself is not readable (functions only)');
-select test.act_as('ae000000-0000-0000-0000-000000000004', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000004', true);
 select test.fails('select * from api.ingredient_catalog()', 'forbidden', 'a guest cannot list the reference ingredients');
 reset role;
 
 -- ---------------------------------------------------------------------------
 -- The recipe: key ingredient, substitute, price difference
 -- ---------------------------------------------------------------------------
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.set_item_ingredient(:'latte', :'milk', 200, true, :'oat', 300) is not null as l1 \gset
 select api.set_item_ingredient(:'cake', :'cream', 50, true) is not null as l2 \gset
 -- (the chocolate line is not key: its substitute is dropped)
@@ -105,13 +105,13 @@ select test.ok((select is_key and substitute_ingredient_id = :'oat' and substitu
 select test.ok((select not is_key and substitute_ingredient_id is null and substitute_price_delta is null
                 from public.recipe_lines where item_id = :'cake' and ingredient_id = :'choc'),
                'a line that is not key keeps no substitute');
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 10, true, %L, null)', :'latte', :'ing_b', :'oat'), 'forbidden', 'another café''s ingredient is refused');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 10, true, %L, null)', :'latte', :'milk', :'ing_b'), 'forbidden', 'so is another café''s substitute');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 10, true, %L, 5)', :'latte', :'milk', :'milk'), 'invalid_value', 'an ingredient cannot replace itself');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 10, true, null, 5)', :'latte', :'milk'), 'invalid_value', 'a price difference needs a substitute');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 0, true)', :'latte', :'milk'), 'invalid_value', 'the quantity must be positive');
-select test.act_as('ae000000-0000-0000-0000-000000000002');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
 select test.fails(format('select api.set_item_ingredient(%L, %L, 10, true)', :'latte', :'ing_b'), 'forbidden', 'the owner of B cannot change A''s dish');
 select test.fails(format('select api.remove_item_ingredient(%L, %L)', :'latte', :'milk'), 'forbidden', 'nor remove its lines');
 select test.act_as(:'u_waiter');
@@ -120,14 +120,14 @@ reset role;
 select test.act_as(:'u_waiter');
 select test.ok((select count(*) from public.recipe_lines) = 0 and (select count(*) from public.ingredients) = 0, 'staff logins read no recipes or ingredient list directly');
 reset role;
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.set_item_ingredient(:'tea', :'choc', 5, true, :'nut') as tmp \gset
 select api.remove_item_ingredient(:'tea', :'choc') is null as removed \gset
 reset role;
 select test.ok(not exists (select 1 from public.recipe_lines where item_id = :'tea'), 'a line is removed');
 
 -- Publish, then everything is as before while nothing is out.
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.publish_menu(:'la') is not null as pub \gset
 select api.table_qr_token(:'t1') as tok1 \gset
 reset role;
@@ -135,17 +135,17 @@ select test.ok(not (api.public_menu('ig-cafe-a', 'main') ?| array['outages', 'su
 select test.ok(not (api.public_menu_status(:'la') ? 'outages'), 'nor the status');
 select api.public_menu('ig-cafe-a', 'main') as menu_before \gset
 
-select test.act_as('ae000000-0000-0000-0000-000000000004', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000004', true);
 select api.guest_join_table(:'tok1', 'en') as g1 \gset
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select api.guest_join_table(:'tok1', 'en') as g2 \gset
-select test.act_as('ae000000-0000-0000-0000-000000000006', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000006', true);
 select api.guest_join_table(:'tok1', 'en') as g3 \gset
-select test.act_as('ae000000-0000-0000-0000-000000000007', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000007', true);
 select api.guest_join_table(:'tok1', 'en') as g4 \gset
-select test.act_as('ae000000-0000-0000-0000-000000000008', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000008', true);
 select api.guest_join_table(:'tok1', 'en') as g5 \gset
-select test.act_as('ae000000-0000-0000-0000-000000000009', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000009', true);
 select api.guest_join_table(:'tok1', 'en') as g6 \gset
 reset role;
 \set latte_line '[{"item_id": "' :latte '", "quantity": 2}]'
@@ -153,7 +153,7 @@ reset role;
 \set tea_line '[{"item_id": "' :tea '", "quantity": 1}]'
 \set bowl_line '[{"item_id": "' :bowl '", "quantity": 1}]'
 
-select test.act_as('ae000000-0000-0000-0000-000000000004', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000004', true);
 select api.guest_place_order(:'g1', 'ae100000-0000-0000-0000-000000000001', :'latte_line'::jsonb, null) as o_old \gset
 select api.guest_place_order(:'g1', 'ae100000-0000-0000-0000-000000000002', :'tea_line'::jsonb, null, '[]'::jsonb) as o_old2 \gset
 reset role;
@@ -177,13 +177,13 @@ select api.set_ingredient_out(:'la', :'cream', true) is not null as waiter_ok \g
 select api.set_ingredient_out(:'la', :'cream', false) is null as waiter_back \gset
 reset role;
 select test.ok(:'waiter_ok' and :'waiter_back', 'a waiter may too (the same people as the stop list)');
-select test.act_as('ae000000-0000-0000-0000-000000000002');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
 select test.fails(format('select api.set_ingredient_out(%L, %L, true)', :'la', :'milk'), 'forbidden', 'the owner of another café cannot');
 select test.fails(format('select api.set_ingredient_out(%L, %L, true)', :'lb', :'milk'), 'forbidden', 'nor use A''s ingredient in their own café');
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select test.fails(format('select api.set_ingredient_out(%L, %L, true)', :'la', :'ing_b'), 'forbidden', 'the owner cannot mark another café''s ingredient');
 select test.fails(format('select api.set_ingredient_out(%L, %L, null)', :'la', :'milk'), 'invalid_value', 'a missing value is refused');
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select test.fails(format('select api.set_ingredient_out(%L, %L, true)', :'la', :'cream'), 'forbidden', 'a guest cannot');
 select test.fails(format('select api.search_ingredients(%L, ''a'')', :'la'), 'forbidden', 'nor search the café''s ingredients');
 select test.fails(format('insert into public.ingredient_outages (restaurant_id, location_id, ingredient_id, until, source) values (%L, %L, %L, now(), ''admin'')', :'ra', :'la', :'cream'),
@@ -252,7 +252,7 @@ reset role;
 -- The order
 -- ---------------------------------------------------------------------------
 -- Not acknowledged: asked again, with what to show.
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null)', :'g2', 'ae100000-0000-0000-0000-000000000010', :'latte_line'),
   'substitution_changed', 'a dish with a substitution is refused until the guest has accepted it');
 select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null, ''[]'')', :'g2', 'ae100000-0000-0000-0000-000000000010', :'latte_line'),
@@ -262,7 +262,7 @@ select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null, 
 select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null, ''{"a": 1}'')', :'g2', 'ae100000-0000-0000-0000-000000000010', :'latte_line'),
   'invalid_lines', 'a subs_ack that is not a list is refused');
 reset role;
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select set_config('x.g2', :'g2', false) is not null as c1, set_config('x.latte', :'latte', false) is not null as c2 \gset
 do $$ declare v_detail text; begin
   begin
@@ -281,7 +281,7 @@ select test.ok((current_setting('x.detail')::jsonb -> 0 ->> 'item_id') = :'latte
                'the refusal carries the dish, both ingredients in three languages and the difference');
 
 -- Acknowledged: stored on the line, the price includes the difference.
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select api.guest_place_order(:'g2', 'ae100000-0000-0000-0000-000000000011', :'latte_line'::jsonb, null, json_build_array(:'milk')::text::jsonb) as o_sub \gset
 reset role;
 select test.ok((select unit_price = 1800 and line_total = 3600 and substitution ->> 'price_delta' = '300'
@@ -290,7 +290,7 @@ select test.ok((select unit_price = 1800 and line_total = 3600 and substitution 
                 from public.order_items where order_id = :'o_sub'), 'the order line stores the substitution and the price with the difference');
 select test.ok((select total = 3600 and subtotal = 3600 from public.orders where id = :'o_sub'), 'and the order total includes it');
 -- A retry of the same order, even without the acknowledgement, returns the same order.
-select test.act_as('ae000000-0000-0000-0000-000000000005', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000005', true);
 select api.guest_place_order(:'g2', 'ae100000-0000-0000-0000-000000000011', :'latte_line'::jsonb, null) = :'o_sub'::uuid as replay \gset
 reset role;
 select test.ok(:'replay', 'a replay of the order returns it (the retry never fails on the question)');
@@ -301,12 +301,12 @@ select test.ok(exists (select 1 from public.kitchen_ticket_items kti join public
                        where oi.order_id = :'o_sub' and oi.substitution is not null), 'the kitchen ticket line carries it');
 
 -- The hidden dish is refused with the usual code.
-select test.act_as('ae000000-0000-0000-0000-000000000006', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000006', true);
 select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null)', :'g3', 'ae100000-0000-0000-0000-000000000012', :'cake_line'),
   'item_unavailable', 'a dish hidden by an outage is refused as unavailable');
 reset role;
 select test.ok(exists (select 1 from public.orders where idempotency_key = 'ae100000-0000-0000-0000-000000000012') = false, 'and no order is left behind');
-select test.act_as('ae000000-0000-0000-0000-000000000006', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000006', true);
 select api.guest_place_order(:'g3', 'ae100000-0000-0000-0000-000000000013', :'tea_line'::jsonb, null, json_build_array(:'milk')::text::jsonb) as o_tea \gset
 reset role;
 select test.ok(:'o_tea' is not null and (select substitution is null from public.order_items where order_id = :'o_tea'), 'other dishes order as always (an extra acknowledgement is ignored)');
@@ -327,9 +327,9 @@ reset role;
 -- ---------------------------------------------------------------------------
 select test.act_as(:'u_kitchen');
 select test.fails(format('select api.set_out_ingredient_display(%L, ''sold_out'')', :'la'), 'forbidden', 'the kitchen cannot change the display setting');
-select test.act_as('ae000000-0000-0000-0000-000000000002');
+select test.act_as('a1b20000-0000-0000-0000-000000000002');
 select test.fails(format('select api.set_out_ingredient_display(%L, ''sold_out'')', :'la'), 'forbidden', 'nor another café''s owner');
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select test.fails(format('select api.set_out_ingredient_display(%L, ''gone'')', :'la'), 'invalid_value', 'an unknown mode is refused');
 select api.set_out_ingredient_display(:'la', 'sold_out') is null as set_so \gset
 reset role;
@@ -339,11 +339,11 @@ select test.ok((:'menu_so'::jsonb -> 'sold_out') ? :'cake' and (:'menu_so'::json
                'the blocked dish stays on the menu, marked sold out');
 select test.ok((api.public_menu_status(:'la') -> 'sold_out') ? :'cake', 'and the status lists it as sold out');
 select test.ok((api.public_menu_status(:'la') ->> 'outages') <> (:'st_out'::jsonb ->> 'outages'), 'the status version changes with the setting');
-select test.act_as('ae000000-0000-0000-0000-000000000006', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000006', true);
 select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null)', :'g3', 'ae100000-0000-0000-0000-000000000016', :'cake_line'),
   'item_sold_out', 'ordering it says sold out, as the stop list does');
 reset role;
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select api.set_out_ingredient_display(:'la', 'hide') is null as set_hide \gset
 reset role;
 select test.ok(exists (select 1 from public.audit_log where entity = 'location' and entity_id = :'la' and action = 'ingredient.display'), 'the setting change is in the audit log');
@@ -357,7 +357,7 @@ select test.ok(not (api.public_menu('ig-cafe-a', 'main') ?| array['outages', 'su
                and (api.public_menu('ig-cafe-a', 'main') #> array['menu', 'items', :'cake']) is not null,
                'after the day ends the menu is back to normal with nobody doing anything');
 select test.ok(not (api.public_menu_status(:'la') ? 'outages'), 'and the status says nothing is out');
-select test.act_as('ae000000-0000-0000-0000-000000000006', true);
+select test.act_as('a1b20000-0000-0000-0000-000000000006', true);
 select api.guest_place_order(:'g3', 'ae100000-0000-0000-0000-000000000017', :'cake_line'::jsonb, null) is not null as cake_ok \gset
 reset role;
 select test.ok(:'cake_ok', 'an expired outage no longer blocks an order');
@@ -398,7 +398,7 @@ select test.act_as(:'u_kitchen');
 select test.ok((select is_out from api.search_ingredients(:'la', 'cream')) and not (select is_out from api.search_ingredients(:'la', 'oat milk')), 'each result says whether it is out');
 select test.ok(not exists (select 1 from api.search_ingredients(:'la', '') where id = :'ing_b'), 'another café''s ingredients never show');
 reset role;
-select test.act_as('ae000000-0000-0000-0000-000000000001');
+select test.act_as('a1b20000-0000-0000-0000-000000000001');
 select count(api.save_ingredient(:'ra', null, jsonb_build_object('hy', 'Նյութ ' || n, 'en', 'Thing ' || n), 'g')) as made
 from generate_series(1, 40) n \gset
 select test.ok((select count(*) from api.search_ingredients(:'la', 'thing')) = 30, 'at most 30 are returned');
