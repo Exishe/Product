@@ -65,7 +65,7 @@ const warmSheet = () => {
 const CART_HASH = "#cart";
 
 /** The guest pages' content column: full width on a phone, centred on a desktop. */
-const COLUMN = "mx-auto w-full max-w-[1360px] px-4 md:px-8";
+const COLUMN = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -349,8 +349,21 @@ export function GuestMenu({
   );
   const railAction =
     "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold";
+  // The café's name leads to the top of the menu: from the order view it closes it
+  // (the cart stays in the browser), on the menu it scrolls up.
+  const home = {
+    href: languages.find((l) => l.locale === locale)?.href ?? ".",
+    onGo: () => {
+      if (view === "cart") {
+        menuScroll.current = 0;
+        closeCart();
+      }
+      window.scrollTo({ top: 0, behavior: smooth() });
+    },
+  };
   const header = (
     <GuestHeader
+      home={home}
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
       wordmarkUrl={menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
@@ -459,6 +472,7 @@ export function GuestMenu({
             cafeName={menu.restaurantName}
             logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
             wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : null}
+            home={home}
             wordmarkTestId="slim-wordmark"
           />
           {table.kind === "ok" && (

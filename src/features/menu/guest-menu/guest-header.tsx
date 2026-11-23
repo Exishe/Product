@@ -9,6 +9,31 @@ import { scriptLang } from "./ui";
 
 export type LanguageLink = { locale: Locale; href: string };
 
+/** The menu page, and what to do instead of a page load when the guest is already on it. */
+export type HomeLink = { href: string; onGo?: () => void };
+
+// The café's name or wordmark leads back to the menu. On the menu itself it
+// only closes the order view and returns to the top; the cart lives in the
+// browser, so nothing in it is lost either way.
+function Home({ home, label, children }: { home?: HomeLink; label: string; children: ReactNode }) {
+  if (!home) return <>{children}</>;
+  return (
+    <a
+      href={home.href}
+      aria-label={label}
+      data-testid="home-link"
+      className="inline-flex max-w-full items-center rounded-lg transition-opacity hover:opacity-80 active:opacity-60"
+      onClick={(e) => {
+        if (!home.onGo || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        home.onGo();
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 // The café in a bar: its wordmark at the bar's height, or its mark and the
 // full name set small (wrapping to a second line, never cut with an
 // ellipsis). Used by the short header and by the slim bar that follows the
@@ -19,20 +44,25 @@ export function BrandMark({
   wordmarkUrl,
   wordmarkTestId,
   as: Tag = "span",
+  home,
 }: {
   cafeName: string;
   logoUrl: string | null;
   wordmarkUrl: string | null;
   wordmarkTestId?: string;
   as?: "h1" | "span";
+  /** Where the café's name leads: the menu, from any screen. */
+  home?: HomeLink;
 }) {
   const { locale } = useGuestI18n();
   const nameLang = scriptLang(cafeName);
   if (wordmarkUrl)
     return (
       <Tag className="m-0 flex min-w-0 flex-1 items-center">
-        {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-        <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} data-testid={wordmarkTestId} />
+        <Home home={home} label={cafeName}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+          <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} data-testid={wordmarkTestId} />
+        </Home>
       </Tag>
     );
   return (
@@ -53,7 +83,9 @@ export function BrandMark({
         data-long={cafeName.length > 28 || undefined}
         className={`display-face text-title m-0 min-w-0 ${styles.barName}`}
       >
-        {cafeName}
+        <Home home={home} label={cafeName}>
+          {cafeName}
+        </Home>
       </Tag>
     </span>
   );
@@ -77,6 +109,7 @@ export function GuestHeader({
   languages,
   tools,
   compact = false,
+  home,
 }: {
   cafeName: string;
   logoUrl: string | null;
@@ -88,6 +121,8 @@ export function GuestHeader({
   tools?: ReactNode;
   /** One short bar instead of the large name (order and status views). */
   compact?: boolean;
+  /** The café's name and wordmark lead to the menu. */
+  home?: HomeLink;
 }) {
   const { t, locale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
@@ -120,8 +155,8 @@ export function GuestHeader({
   if (compact)
     return (
       <header className={`guest-head text-ink ${styles.bar}`} data-compact="">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1360px] min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-8">
-          <BrandMark as="h1" cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} />
+        <div className="mx-auto flex min-h-16 w-full max-w-[1120px] min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-8">
+          <BrandMark as="h1" cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} />
           {tableChip}
           {languageNav}
           {tools}
@@ -132,7 +167,7 @@ export function GuestHeader({
   return (
     // guest-head: the brand's header band hooks here (globals.css).
     <header className="guest-head text-ink">
-      <div className="mx-auto grid w-full max-w-[1360px] min-w-0 gap-5 px-4 pt-4 pb-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-x-8 md:pt-6">
+      <div className="mx-auto grid w-full max-w-[1120px] min-w-0 gap-5 px-4 pt-4 pb-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-x-8 md:pt-6">
         {/* Two groups that wrap: the logo and table on the left; languages and
             the round buttons on the right, dropping to their own line when a
             narrow phone can't hold both (a logo, «Սեղան 12», three languages).
@@ -141,16 +176,18 @@ export function GuestHeader({
           {(logoUrl || tableLabel) && (
             <div className="flex min-w-0 items-center gap-3">
               {logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp
-                <img
-                  src={logoUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  decoding="async"
-                  // Beside the wordmark (768 px and up) the mark would say the name twice.
-                  className={`bg-surface shadow-plate size-11 flex-none rounded-full object-cover ${wordmarkUrl ? "md:hidden" : ""}`}
-                />
+                <Home home={home} label={cafeName}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, already sized webp */}
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    width={44}
+                    height={44}
+                    decoding="async"
+                    // Beside the wordmark (768 px and up) the mark would say the name twice.
+                    className={`bg-surface shadow-plate size-11 flex-none rounded-full object-cover ${wordmarkUrl ? "md:hidden" : ""}`}
+                  />
+                </Home>
               )}
               {tableChip}
             </div>
@@ -163,13 +200,15 @@ export function GuestHeader({
         <div className="min-w-0 md:col-start-1 md:row-start-1">
           {wordmarkUrl ? (
             <h1 className="m-0">
-              {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-              <img
-                src={wordmarkUrl}
-                alt={cafeName}
-                height={96}
-                className={`guest-wordmark ${styles.wordmark}`}
-              />
+              <Home home={home} label={cafeName}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+                <img
+                  src={wordmarkUrl}
+                  alt={cafeName}
+                  height={96}
+                  className={`guest-wordmark ${styles.wordmark}`}
+                />
+              </Home>
             </h1>
           ) : (
             <SplitText
@@ -180,7 +219,6 @@ export function GuestHeader({
               className="display-face text-title block text-[clamp(2.75rem,12.5vw,5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
             />
           )}
-          <p className="text-muted mt-2 text-sm">{t("payHint")}</p>
         </div>
       </div>
     </header>

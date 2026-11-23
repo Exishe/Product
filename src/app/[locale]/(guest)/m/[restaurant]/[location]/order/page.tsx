@@ -89,6 +89,7 @@ export default async function OrderStatusPage({
             languages={languages}
             // A short bar: the order starts near the top of the screen.
             compact
+            home={{ href: menuHref }}
           />
           <OrderStatusView
             tableId={table.table_id}
