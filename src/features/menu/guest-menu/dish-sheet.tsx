@@ -153,6 +153,8 @@ export function DishSheet({
               </span>{" "}
               {t("diet.tellWaiter")}
             </>
+          ) : item.allergensConfirmed ? (
+            t("diet.sheetNoneDeclared")
           ) : (
             t("diet.sheetNone")
           )}{" "}

@@ -24,6 +24,8 @@ type SnapshotItem = {
   portion: { amount: number; unit: string } | null;
   tags: string[] | null;
   allergens?: string[] | null;
+  /** The venue reviewed this dish's allergens (ADR-083); missing in menus published before the migration. */
+  allergens_confirmed?: boolean | null;
   /** Approximate kcal per portion, computed when the menu was published; missing when not every ingredient has calories. */
   kcal?: number | null;
   groups: SnapshotGroup[] | null;
@@ -92,8 +94,10 @@ export type GuestItem = {
   price: number;
   portion: { amount: number; unit: "g" | "ml" | "pcs" } | null;
   tags: GuestTag[];
-  /** EU allergen codes the café listed; empty means "not listed", not "none". */
+  /** EU allergen codes the café listed; empty means "none" only when allergensConfirmed, else "not listed". */
   allergens: Allergen[];
+  /** The café reviewed this dish's allergens: an empty list then says "none declared" (ADR-083). */
+  allergensConfirmed: boolean;
   /** Approximate kcal per portion (shown as "≈ N kcal"); null: no number. */
   kcal: number | null;
   soldOut: boolean;
@@ -277,6 +281,8 @@ export function buildGuestMenu(
       portion: raw.portion && unit ? { amount: raw.portion.amount, unit } : null,
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
       allergens: ALLERGENS.filter((a) => raw.allergens?.includes(a)),
+      // A dish with a list is reviewed by definition (older menus have no flag).
+      allergensConfirmed: raw.allergens_confirmed === true || ALLERGENS.some((a) => raw.allergens?.includes(a)),
       kcal: typeof raw.kcal === "number" && raw.kcal > 0 ? raw.kcal : null,
       soldOut: soldOut.has(id),
       substitution: subs[id] ?? null,
@@ -351,7 +357,7 @@ export function buildGuestMenu(
       return title ? [{ id: p.id, title, text: localized(p.text, locale), badge: p.badge }] : [];
     }),
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
-    hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
+    hasAllergens: categories.some((c) => c.items.some((i) => i.allergensConfirmed)),
     hasDietTags: hasDietTags(categories.flatMap((c) => c.items)),
     categories,
   };

@@ -118,12 +118,16 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const [publishStatus, setPublishStatus] = useState<
     "idle" | "publishing" | "published" | "unreviewed" | "failed"
   >("idle");
+  // Owner-facing filter: only dishes whose allergens nobody has reviewed yet (ADR-083).
+  const [onlyUnreviewed, setOnlyUnreviewed] = useState(false);
   const [photoStatus, setPhotoStatus] = useState<"idle" | "uploading" | "failed">("idle");
   // Photos added straight from the list, one dish at a time, without opening it.
   const [rowPhoto, setRowPhoto] = useState<Record<string, "uploading" | "failed">>({});
 
   const category = data.categories.find((c) => c.id === selected) ?? null;
   const dishes = data.dishes.filter((d) => d.categoryId === selected).sort((a, b) => a.sort - b.sort);
+  const unreviewedCount = dishes.filter((d) => !d.allergensConfirmed).length;
+  const shownDishes = onlyUnreviewed ? dishes.filter((d) => !d.allergensConfirmed) : dishes;
 
   function open(next: Panel) {
     setPanel(next);
@@ -149,6 +153,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             prepAreaId: null,
             tags: [],
             allergens: [],
+            allergensConfirmed: false,
             names: emptyNames(),
             descriptions: emptyNames(),
             modifierGroupIds: [],
@@ -243,6 +248,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
           prepAreaId: d.prepAreaId,
           tags: d.tags as (typeof DISH_TAGS)[number][],
           allergens: d.allergens as Allergen[],
+          ...(data.allergenReviewSupported ? { allergensConfirmed: d.allergensConfirmed } : {}),
           modifierGroupIds: d.modifierGroupIds,
           markReviewed: d.markReviewed,
           // Only when it changed: the cost lives in its own owner-only table.
@@ -289,6 +295,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
         prepAreaId: d.prepAreaId,
         tags: d.tags as (typeof DISH_TAGS)[number][],
         allergens: d.allergens as Allergen[],
+        // The list is sent, so the review flag must go with it (an empty list alone would reset it).
+        ...(data.allergenReviewSupported ? { allergensConfirmed: d.allergensConfirmed } : {}),
         modifierGroupIds: d.modifierGroupIds,
         markReviewed: false,
         isActive: !d.isActive,
@@ -710,6 +718,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             <p className="text-staff-label2 m-0 mb-1 w-full text-[0.9375rem]">{t("allergensHint")}</p>
             {ALLERGENS.map((a) => {
               const on = panel.draft.allergens.includes(a);
+              const next = on ? panel.draft.allergens.filter((x) => x !== a) : [...panel.draft.allergens, a];
               return (
                 <button
                   key={a}
@@ -720,9 +729,9 @@ export function MenuEditor({ data }: { data: EditorData }) {
                       kind: "dish",
                       draft: {
                         ...panel.draft,
-                        allergens: on
-                          ? panel.draft.allergens.filter((x) => x !== a)
-                          : [...panel.draft.allergens, a],
+                        allergens: next,
+                        // Any tick implies the dish was reviewed; removing the last one takes it back.
+                        allergensConfirmed: next.length > 0,
                       },
                     })
                   }
@@ -736,6 +745,33 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 </button>
               );
             })}
+            {data.allergenReviewSupported && (
+              <label
+                className="mt-1 flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl bg-staff-fill px-4 py-3 text-[0.9375rem] font-semibold has-[:disabled]:cursor-default has-[:disabled]:opacity-60"
+                data-testid="allergens-none"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-5 shrink-0"
+                  checked={panel.draft.allergensConfirmed && panel.draft.allergens.length === 0}
+                  disabled={panel.draft.allergens.length > 0}
+                  onChange={(e) =>
+                    setPanel({
+                      kind: "dish",
+                      draft: { ...panel.draft, allergens: [], allergensConfirmed: e.target.checked },
+                    })
+                  }
+                />
+                <span>
+                  {t("allergensNone")}
+                  <span className="text-staff-label2 block text-[0.875rem] font-normal">
+                    {panel.draft.allergensConfirmed || panel.draft.allergens.length > 0
+                      ? t("allergensNoneHint")
+                      : t("allergensNotReviewed")}
+                  </span>
+                </span>
+              </label>
+            )}
           </fieldset>
 
           {panel.draft.id && data.ingredientsSupported && (
@@ -879,15 +915,29 @@ export function MenuEditor({ data }: { data: EditorData }) {
               </button>
             </header>
           )}
+          {category && data.allergenReviewSupported && unreviewedCount > 0 && (
+            <button
+              type="button"
+              aria-pressed={onlyUnreviewed}
+              onClick={() => setOnlyUnreviewed((v) => !v)}
+              data-testid="filter-unreviewed"
+              className={clsx(
+                "inline-flex min-h-11 items-center self-start rounded-full px-4 text-[0.9375rem] font-semibold",
+                onlyUnreviewed ? "bg-ink text-white" : "bg-white text-ink",
+              )}
+            >
+              {t("filterUnreviewed", { count: unreviewedCount })}
+            </button>
+          )}
           {category && dishes.length === 0 && (
             <p className="text-staff-label2 m-0 flex items-center gap-3 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
               <UtensilsCrossed aria-hidden="true" className="size-5 shrink-0" />
               {t("emptyCategory")}
             </p>
           )}
-          {dishes.length > 0 && (
+          {shownDishes.length > 0 && (
             <ul className="m-0 flex list-none flex-col overflow-hidden rounded-2xl bg-white p-0">
-              {dishes.map((d) => {
+              {shownDishes.map((d) => {
                 const soldOut = data.soldOut.includes(d.id);
                 const editing = panel?.kind === "dish" && panel.draft.id === d.id;
                 return (
@@ -952,6 +1002,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
                             <span className="sr-only">: {t("languageMissing")}</span>
                           </span>
                         ),
+                      )}
+                      {data.allergenReviewSupported && !d.allergensConfirmed && (
+                        <span className={clsx(chip.base, chip.plain)} data-testid="allergens-unreviewed">
+                          {t("allergensNotReviewedChip")}
+                        </span>
                       )}
                       {d.needsReview && (
                         <span className={clsx(chip.base, chip.wait)}>

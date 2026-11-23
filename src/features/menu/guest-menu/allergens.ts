@@ -1,7 +1,9 @@
 // The 14 allergens EU menus must declare (Regulation 1169/2011, Annex II),
 // as stored in items.allergens. Labels live in messages/*.json under
 // guest.allergens. An empty list means the café hasn't filled it in, never
-// "free of allergens": the guest is told to ask the waiter.
+// "free of allergens": the guest is told to ask the waiter. Only when the café
+// also confirmed the dish (items.allergens_confirmed, ADR-083) does an empty
+// list read "no allergens declared by the venue".
 export const ALLERGENS = [
   "gluten",
   "crustaceans",
@@ -25,13 +27,17 @@ export const isAllergen = (v: unknown): v is Allergen =>
 
 /** What the guest's "I avoid…" choice says about one dish. */
 export type AllergenMatch =
-  | { kind: "none" } // nothing chosen, or the dish lists allergens and none is avoided
+  | { kind: "none" } // nothing chosen, or the dish is reviewed and none of the avoided is listed
   | { kind: "contains"; allergens: Allergen[] }
-  | { kind: "unknown" }; // the café listed nothing for this dish
+  | { kind: "unknown" }; // the café has not reviewed this dish: never shown as safe
 
-export function matchAllergens(dish: readonly Allergen[], avoid: readonly Allergen[]): AllergenMatch {
+export function matchAllergens(
+  dish: readonly Allergen[],
+  avoid: readonly Allergen[],
+  confirmed: boolean = dish.length > 0,
+): AllergenMatch {
   if (avoid.length === 0) return { kind: "none" };
-  if (dish.length === 0) return { kind: "unknown" };
+  if (!confirmed && dish.length === 0) return { kind: "unknown" };
   const hit = dish.filter((a) => avoid.includes(a));
   return hit.length ? { kind: "contains", allergens: hit } : { kind: "none" };
 }

@@ -33,6 +33,8 @@ export const dishInput = z.object({
   prepAreaId: z.uuid().nullable(),
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length),
   allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length),
+  // The owner has reviewed the allergens; with an empty list this says "none" (ADR-083). Undefined keeps the stored value.
+  allergensConfirmed: z.boolean().optional(),
   modifierGroupIds: z.array(z.uuid()).max(20),
   markReviewed: z.boolean(),
   // Undefined leaves the flag as it is.

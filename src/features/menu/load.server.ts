@@ -50,6 +50,15 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
   // The calorie columns (ADR-082) the same way.
   const kcalColumns = await supabase.from("ingredients").select("grams_per_piece").limit(1);
 
+  // Allergen review (ADR-083) the same way: its own read, so a missing column never breaks the editor.
+  const reviewed = await supabase
+    .from("items")
+    .select("id, allergens_confirmed")
+    .eq("restaurant_id", restaurantId);
+  const confirmedIds = new Set(
+    (reviewed.data ?? []).filter((r) => r.allergens_confirmed).map((r) => r.id),
+  );
+
   const [cats, dishes, groups, areas, stops, version, costs] = await Promise.all([
     supabase
       .from("categories")
@@ -119,6 +128,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
     timeZone: location?.timezone ?? "Asia/Yerevan",
     ingredientsSupported: !outDisplay.error,
     kcalSupported: !outDisplay.error && !kcalColumns.error,
+    allergenReviewSupported: !reviewed.error,
     outIngredientDisplay: outDisplay.data?.out_ingredient_display === "sold_out" ? "sold_out" : "hide",
     categories: (cats.data ?? []).map((c) => ({
       window: windowOf.get(c.id) ?? null,
@@ -136,6 +146,7 @@ export async function loadMenuEditor(restaurantId: string, isOwner = false): Pro
       prepAreaId: d.prep_area_id,
       tags: d.tags,
       allergens: d.allergens,
+      allergensConfirmed: confirmedIds.has(d.id) || d.allergens.length > 0,
       imagePath: d.image_path,
       names: names(d.item_translations),
       descriptions: names(d.item_translations, "description"),

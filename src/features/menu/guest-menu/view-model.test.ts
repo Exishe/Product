@@ -193,6 +193,21 @@ describe("buildGuestMenu", () => {
     ]);
     expect(buildGuestMenu(m, "hy").hasAllergens).toBe(false);
   });
+
+  it("reads \"reviewed, none\" apart from \"not listed\" (ADR-083)", () => {
+    const m = menu(
+      {
+        none: item({ allergens: [], allergens_confirmed: true }),
+        unknown: item({ allergens: [], allergens_confirmed: false }),
+        old: item({ allergens: null }),
+        listed: item({ allergens: ["milk"] }),
+      },
+      [{ id: "1", item_ids: ["none", "unknown", "old", "listed"] }],
+    );
+    const built = buildGuestMenu(m, "en");
+    expect(built.categories[0]!.items.map((i) => i.allergensConfirmed)).toEqual([true, false, false, true]);
+    expect(built.hasAllergens).toBe(true);
+  });
 });
 
 describe("calories and diet chips (ADR-082)", () => {
