@@ -98,7 +98,7 @@ export function pickName(names: Json, locale: Locale): LocalizedText {
 }
 
 // The ingredient to use instead, from the substitution stored on the order line.
-function substituteName(sub: Json | null | undefined, locale: Locale): LocalizedText | null {
+export function substituteName(sub: Json | null | undefined, locale: Locale): LocalizedText | null {
   const obj = (v: Json | null | undefined) => (v && typeof v === "object" && !Array.isArray(v) ? v : null);
   const name = obj(obj(obj(sub)?.to)?.name);
   return name ? pickName(name, locale) : null;

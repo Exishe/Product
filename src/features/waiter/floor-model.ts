@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/routing";
 import type { Database, Json } from "@/lib/supabase/types";
-import { pickName, type LocalizedText } from "@/features/kitchen/board-model";
+import { pickName, substituteName, type LocalizedText } from "@/features/kitchen/board-model";
 
 // The waiter's view of the floor (screens.md §5–6, design/waiter.html), built
 // from the rows RLS lets a waiter read. Pure functions: the server page, the
@@ -96,6 +96,8 @@ export type WaiterLine = {
   name: LocalizedText;
   note: string | null;
   modifiers: LocalizedText[];
+  /** "Use this instead" when an ingredient was replaced (ADR-076). */
+  substitute?: LocalizedText | null;
   lineTotal: number;
   stationId: string | null;
   served: boolean;
@@ -203,6 +205,7 @@ function toOrder(
       name: pickName(oi.name_i18n, locale),
       note: oi.note?.trim() || null,
       modifiers: oi.order_item_modifiers.map((m) => pickName(m.name_i18n, locale)),
+      substitute: substituteName(oi.substitution, locale),
       lineTotal: oi.line_total,
       stationId: oi.station_id,
       served: oi.station_id !== null && servedAt.has(oi.station_id),

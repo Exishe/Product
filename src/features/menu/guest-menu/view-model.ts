@@ -2,6 +2,7 @@ import { guestTheme, type GuestTheme } from "@/features/guest-theme/themes";
 import type { Locale } from "@/i18n/routing";
 import { parseStatus, type MenuStatus } from "@/features/availability/status";
 import { normalizeForSearch } from "@/lib/format/search";
+import { parseSubstitutions, type SubInfo } from "@/features/ordering/substitutions-parse";
 import { ALLERGENS, type Allergen } from "./allergens";
 
 // The shape of api.public_menu (published snapshot from api.publish_menu,
@@ -62,6 +63,13 @@ export type PublicMenu = {
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
   /** Live promos (ADR-070); missing until migration 20261123165000_promos. */
   promos?: unknown;
+  /**
+   * Dishes made with a replacement today, by dish id (ADR-076; missing until
+   * migration 20261123250000_ingredients_substitutes); their `price` already
+   * includes the difference.
+   */
+  substitutions?: unknown;
+  outages?: unknown;
 };
 
 /** A piece of menu text and the language it is actually in. */
@@ -84,6 +92,8 @@ export type GuestItem = {
   /** EU allergen codes the café listed; empty means "not listed", not "none". */
   allergens: Allergen[];
   soldOut: boolean;
+  /** Made with a replacement ingredient today (ADR-076); the price already includes the difference. */
+  substitution: SubInfo | null;
   groups: GuestGroup[];
   /** Storage path of the dish photo in the menu-images bucket. */
   image: string | null;
@@ -230,6 +240,7 @@ export function buildGuestMenu(
   dark: WordmarkTones = { header: false, page: false },
 ): GuestMenuData {
   const soldOut = new Set(data.sold_out ?? []);
+  const subs = parseSubstitutions(data.substitutions, locale);
   const hidden = new Set(data.hidden_categories ?? []);
   const item = (id: string): GuestItem | null => {
     const raw = data.menu.items[id];
@@ -246,6 +257,7 @@ export function buildGuestMenu(
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
       allergens: ALLERGENS.filter((a) => raw.allergens?.includes(a)),
       soldOut: soldOut.has(id),
+      substitution: subs[id] ?? null,
       image: typeof raw.image === "string" && raw.image ? raw.image : null,
       groups: (raw.groups ?? []).map((g) => ({
         id: g.id,
@@ -294,6 +306,7 @@ export function buildGuestMenu(
       hidden_categories: data.hidden_categories,
       kitchen_busy: data.kitchen_busy,
       promos: data.promos,
+      outages: data.outages,
     },
     null,
   ) as MenuStatus;

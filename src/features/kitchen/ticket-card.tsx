@@ -253,7 +253,7 @@ function Lines({
               <span
                 data-testid="line-substitute"
                 lang={l.substitute.locale === boardLocale ? undefined : l.substitute.locale}
-                className={clsx("text-slip-dim col-start-2 font-bold", compact ? "text-base" : "text-xl")}
+                className={clsx("text-slip col-start-2 font-bold", compact ? "text-lg" : "text-2xl")}
               >
                 {t("useInstead", { name: l.substitute.text })}
               </span>
@@ -484,7 +484,7 @@ export function OrderTicketCard({
               time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
               lines={ticket.lines
                 .filter((l) => l.quantity > 0)
-                .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), note: l.note }))}
+                .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
               note={ticket.orderNote}
             />
           </PrintTicketButton>

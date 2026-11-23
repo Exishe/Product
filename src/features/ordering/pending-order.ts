@@ -4,7 +4,15 @@ import type { OrderLine } from "./cart";
 // request are saved before the request leaves the phone, and every retry,
 // even after a reload, sends the same key, lines and guest session. The
 // database then returns the original order instead of creating a second one.
-export type PendingOrder = { key: string; lines: OrderLine[]; guestSessionId: string | null; createdAt: string };
+// `subsAck` (ADR-076) lists the replaced ingredients the guest accepted; it is saved
+// with the request, so a retry after a reload sends the same acknowledgement.
+export type PendingOrder = {
+  key: string;
+  lines: OrderLine[];
+  guestSessionId: string | null;
+  createdAt: string;
+  subsAck: string[];
+};
 type Scope = { locationId: string; tableId: string };
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -25,7 +33,8 @@ export function loadPending(storage: StorageLike, scope: Scope): PendingOrder | 
   try {
     const p = JSON.parse(storage.getItem(pendingKey(scope)) ?? "null") as PendingOrder | null;
     if (!p || typeof p.key !== "string" || !UUID.test(p.key) || !Array.isArray(p.lines)) return null;
-    return { key: p.key, lines: p.lines, guestSessionId: p.guestSessionId ?? null, createdAt: String(p.createdAt) };
+    const subsAck = Array.isArray(p.subsAck) ? p.subsAck.filter((x) => typeof x === "string") : [];
+    return { key: p.key, lines: p.lines, guestSessionId: p.guestSessionId ?? null, createdAt: String(p.createdAt), subsAck };
   } catch {
     return null;
   }
@@ -37,11 +46,14 @@ export function beginPending(
   scope: Scope,
   lines: OrderLine[],
   now: () => string = () => new Date().toISOString(),
+  subsAck: readonly string[] = [],
 ): PendingOrder {
   const existing = loadPending(storage, scope);
   if (existing) return existing;
-  const pending: PendingOrder = { key: uuid(), lines, guestSessionId: null, createdAt: now() };
-  storage.setItem(pendingKey(scope), JSON.stringify(pending));
+  const pending: PendingOrder = { key: uuid(), lines, guestSessionId: null, createdAt: now(), subsAck: [...subsAck] };
+  // Only an order that needs one carries an acknowledgement.
+  const { subsAck: ack, ...rest } = pending;
+  storage.setItem(pendingKey(scope), JSON.stringify(ack.length ? pending : rest));
   return pending;
 }
 

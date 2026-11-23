@@ -83,6 +83,11 @@ export function DishRow({
               ))}
             </span>
           )}
+          {item.substitution && (
+            <span className="text-muted mt-1 block text-[0.8125rem] font-semibold">
+              {t("menu.withSub", { to: item.substitution.to })}
+            </span>
+          )}
           {(item.soldOut || item.portion || item.tags.length > 0) && (
             <span className="text-muted mt-1 flex flex-wrap items-center gap-1.5 text-[0.8125rem]">
               {item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>}
