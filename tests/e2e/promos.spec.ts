@@ -17,7 +17,7 @@ test("the owner switches a promo on and off and the open guest menu follows", as
   // A guest has the menu open.
   const guest = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await guest.goto(`/en/m/${cafe.slug}/main?t=${cafe.tables["2"]!.token}`);
-  await expect(guest.getByRole("button", { name: /^Add:/ }).first()).toBeVisible();
+  await expect(guest.getByRole("button", { name: /^Add / }).first()).toBeVisible();
   await expect(guest.getByTestId("promo-banner")).toHaveCount(0);
 
   // The owner makes a promo in the admin.
@@ -46,7 +46,7 @@ test("the owner switches a promo on and off and the open guest menu follows", as
   await guest.getByRole("button", { name: "Close this offer" }).click();
   await expect(guest.getByTestId("promo-banner")).toHaveCount(0);
   await guest.reload();
-  await expect(guest.getByRole("button", { name: /^Add:/ }).first()).toBeVisible();
+  await expect(guest.getByRole("button", { name: /^Add / }).first()).toBeVisible();
   await expect(guest.getByTestId("promo-banner")).toHaveCount(0);
 
   // Off, and a reload of the admin still shows the promo.
@@ -58,6 +58,6 @@ test("the owner switches a promo on and off and the open guest menu follows", as
   // A fresh guest sees none while it is off, and the waiter-facing status is empty.
   const fresh = await (await browser.newContext()).newPage();
   await fresh.goto(`/en/m/${cafe.slug}/main?t=${cafe.tables["2"]!.token}`);
-  await expect(fresh.getByRole("button", { name: /^Add:/ }).first()).toBeVisible();
+  await expect(fresh.getByRole("button", { name: /^Add / }).first()).toBeVisible();
   await expect(fresh.getByTestId("promo-banner")).toHaveCount(0);
 });

@@ -7,6 +7,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
 import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
+import { PromoBanners } from "@/features/menu/guest-menu/promo-banner";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu } from "@/features/menu/guest-menu/view-model";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
@@ -96,6 +97,7 @@ export default async function GuestMenuPage({
     locale,
     wordmarkTones(theme, parseBrand(published.restaurant.brand)),
   );
+  const promoText = menu.promos.length ? await getTranslations({ locale, namespace: "guest.menu" }) : null;
   return (
     <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor} brand={published.restaurant.brand}>
       <GuestI18nProvider locale={locale} messages={messages}>
@@ -104,6 +106,16 @@ export default async function GuestMenuPage({
           table={table}
           languages={languagesFor(menu.locales)}
           hints={hints}
+          promoBanners={
+            promoText && (
+              <PromoBanners
+                promos={menu.promos}
+                locale={locale}
+                label={promoText("promoLabel")}
+                closeLabel={promoText("promoClose")}
+              />
+            )
+          }
           orderHref={
             table.kind === "ok"
               ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`

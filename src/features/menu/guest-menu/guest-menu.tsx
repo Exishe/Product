@@ -1,6 +1,6 @@
 "use client";
 
-import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "./icons";
 import {
   Suspense,
   lazy,
@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ReactNode,
 } from "react";
 import { makeTrack } from "@/features/analytics/track";
 import { flyToCart } from "@/features/guest-theme/motion/fly";
@@ -21,13 +22,11 @@ import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ord
 import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { hasLastOrder, type SavedLine } from "@/features/ordering/last-order";
-import { OrderSender } from "@/features/ordering/order-sender";
+import { hasRequestLeft } from "@/features/ordering/pending-request-key";
 import type { SubInfo } from "@/features/ordering/substitutions-parse";
-import { normalizeForSearch } from "@/lib/format/search";
 import { NO_HINTS, pairsFor, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
-import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
-import { CartView } from "./cart-view";
+import { useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
 import { DishCard } from "./dish-card";
 import { DishRow } from "./dish-row";
@@ -35,7 +34,6 @@ import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-d
 import { BrandMark, GuestHeader, type LanguageLink } from "./guest-header";
 import styles from "./guest.module.css";
 import { CartBar } from "./order-panel";
-import { PromoBanners } from "./promo-banner";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
 import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
@@ -49,9 +47,8 @@ const newId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-// The dish sheet is needed only after a tap: it arrives on its own once the
-// page is idle or first touched (like the animation engine, ADR-052), so the
-// first load stays inside the guest JS budget.
+// The dish sheet is needed only after a tap: it arrives on the first touch,
+// move or scroll (warmSheet), so the first load stays inside the guest JS budget.
 const loadSheet = () => import("./dish-sheet");
 const DishSheet = lazy(() => loadSheet().then((m) => ({ default: m.DishSheet })));
 // The accepted-substitution bookkeeping loads only for a menu with a substituted dish.
@@ -64,11 +61,28 @@ const OrderAgain = lazy(() => import("./order-again").then((m) => ({ default: m.
 const OrderRail = lazy(() => import("./order-rail").then((m) => ({ default: m.OrderRail })));
 // The allergy filter: fetched on the first tap of its button only.
 const AllergenFilter = lazy(() => import("./allergen-filter").then((m) => ({ default: m.AllergenFilter })));
+// The order view and its send area are needed only once something is in the
+// cart: fetched then (the cart's first line, or a cart kept from an earlier visit).
+const loadCart = () => import("./cart-view");
+const loadSender = () => import("@/features/ordering/order-sender");
+const CartView = lazy(() => loadCart().then((m) => ({ default: m.CartView })));
+const OrderSender = lazy(() => loadSender().then((m) => ({ default: m.OrderSender })));
+// First sign of a hand on the page (move, touch, scroll, key): by the time a
+// dish is tapped its sheet is already on the way. Not at idle: a guest who only
+// looks at the menu never downloads it.
+const WARM_ON = ["pointermove", "pointerdown", "touchstart", "scroll", "keydown"] as const;
+// The waiter's question: its code arrives when the question first shows (a tap
+// on the Waiter item, or a request left unsent before a reload).
+const loadPrompt = () => import("./call-waiter-button");
+const CallWaiterPrompt = lazy(() => loadPrompt().then((m) => ({ default: m.CallWaiterPrompt })));
 const warmSheet = () => {
-  const go = () => void loadSheet();
-  if ("requestIdleCallback" in window) window.requestIdleCallback(go, { timeout: 2000 });
-  else setTimeout(go, 300);
-  window.addEventListener("pointerdown", go, { once: true, passive: true });
+  const go = () => {
+    void loadSheet();
+    stop();
+  };
+  const stop = () => WARM_ON.forEach((e) => window.removeEventListener(e, go));
+  WARM_ON.forEach((e) => window.addEventListener(e, go, { passive: true }));
+  return stop;
 };
 
 const CART_HASH = "#cart";
@@ -145,6 +159,7 @@ export function GuestMenu({
   orderHref,
   languages,
   hints = NO_HINTS,
+  promoBanners = null,
 }: {
   menu: GuestMenuData;
   table: TableState;
@@ -153,12 +168,15 @@ export function GuestMenu({
   languages: LanguageLink[];
   /** Pairs and the usual wait from the café's own rounds (ADR-060). */
   hints?: MenuHints;
+  /** The promo banners, rendered on the server (promo-banner.tsx). */
+  promoBanners?: ReactNode;
 }) {
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
   const [lines, updateCart] = useCart(cartKey(menu.locationId, tableId));
   const track = useMemo(() => makeTrack(menu.locationId, tableId), [menu.locationId, tableId]);
   const [query, setQuery] = useState("");
+  const [fold, setFold] = useState<((text: string) => string) | null>(null);
   const [sheet, setSheet] = useState<GuestItem | null>(null);
   const [view, setView] = useState<"menu" | "cart">("menu");
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
@@ -181,6 +199,11 @@ export function GuestMenu({
   // Sold-out, pause, closed kitchen and section hours change while the menu is open (ADR-068).
   useMenuStatus(menu.locationId, menu.status);
   const waiter = useCallWaiter();
+  // The question is mounted once it has shown, or at once when this table has a
+  // request left unsent (checked after hydration: storage is browser-only).
+  const [leftUnsent, setLeftUnsent] = useState(false);
+  const [askedBefore, setAskedBefore] = useState(false);
+  if (waiter.state !== "idle" && !askedBefore) setAskedBefore(true);
 
   const items = useMemo(
     () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
@@ -205,7 +228,12 @@ export function GuestMenu({
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
   const subs = useMemo(
-    () => Object.fromEntries(Object.values(items).flatMap((i): [string, SubInfo][] => (i.substitution ? [[i.id, i.substitution]] : []))),
+    () =>
+      Object.fromEntries(
+        Object.values(items).flatMap((i): [string, SubInfo][] =>
+          i.substitution ? [[i.id, i.substitution]] : [],
+        ),
+      ),
     [items],
   );
 
@@ -220,7 +248,9 @@ export function GuestMenu({
   // "white wine") brings the whole section. Results stay under their section
   // titles, so a found wine says which list it is on. While searching,
   // sections show without their cover photos.
-  const q = normalizeForSearch(query);
+  // The folding table (Armenian and Russian letters to Latin) is fetched on the
+  // first keystroke; until it is here the whole menu stays on screen.
+  const q = fold ? fold(query) : "";
   const shown = useMemo(
     () =>
       q
@@ -236,11 +266,34 @@ export function GuestMenu({
   );
 
   useEffect(() => warmMotion(), []);
+  const hasLines = lines.length > 0;
+  useEffect(() => {
+    if (!hasLines) return;
+    void loadCart();
+    void loadSender();
+  }, [hasLines]);
   useEffect(warmSheet, []);
+  // A table that can order gets the waiter's question at idle: calling the
+  // waiter must work with no signal, so its code is on the phone beforehand.
+  const callsWaiter = canOrder && table.kind === "ok";
+  useEffect(() => {
+    if (!callsWaiter) return;
+    const go = () => void loadPrompt().then((m) => m.warmSender());
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(go, { timeout: 2000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(go, 300);
+    return () => clearTimeout(id);
+  }, [callsWaiter]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setAvoidState(loadAvoid(window.localStorage)), []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setHasLast(hasLastOrder(window.localStorage, menu.locationId)), [menu.locationId]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
+    setLeftUnsent(table.kind === "ok" && hasRequestLeft(window.localStorage, table.id));
+  }, [table]);
   const setAvoid = useCallback((next: Allergen[]) => {
     setAvoidState(next);
     saveAvoid(window.localStorage, next);
@@ -426,18 +479,20 @@ export function GuestMenu({
   );
   const sender =
     canOrder && table.kind === "ok" && orderHref ? (
-      <OrderSender
-        summary={summary}
-        locationId={menu.locationId}
-        table={table}
-        orderHref={orderHref}
-        items={items}
-        subs={subs}
-        onRemoveDishes={removeDishes}
-        onLocked={setLocked}
-        onSoldOut={onSoldOut}
-        onPlaced={clearCart}
-      />
+      <Suspense fallback={null}>
+        <OrderSender
+          summary={summary}
+          locationId={menu.locationId}
+          table={table}
+          orderHref={orderHref}
+          items={items}
+          subs={subs}
+          onRemoveDishes={removeDishes}
+          onLocked={setLocked}
+          onSoldOut={onSoldOut}
+          onPlaced={clearCart}
+        />
+      </Suspense>
     ) : null;
 
   const dockItems: DockItem[] =
@@ -485,22 +540,24 @@ export function GuestMenu({
     return (
       <>
         {header}
-        <CartView
-          summary={summary}
-          items={items}
-          ambiguous={ambiguous}
-          locked={locked}
-          notice={
-            orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
-          }
-          footer={sender}
-          wait={menu.kitchenBusy ? null : hints.wait}
-          onQuantity={(id, quantity) => {
-            // removing the last line returns to the menu (screens.md)
-            if (changeQuantity(id, quantity).length === 0) closeCart();
-          }}
-          onBack={closeCart}
-        />
+        <Suspense fallback={null}>
+          <CartView
+            summary={summary}
+            items={items}
+            ambiguous={ambiguous}
+            locked={locked}
+            notice={
+              orderingNotice ?? (summary.blocked ? <Notice tone="alert">{t("cart.soldOut")}</Notice> : null)
+            }
+            footer={sender}
+            wait={menu.kitchenBusy ? null : hints.wait}
+            onQuantity={(id, quantity) => {
+              // removing the last line returns to the menu (screens.md)
+              if (changeQuantity(id, quantity).length === 0) closeCart();
+            }}
+            onBack={closeCart}
+          />
+        </Suspense>
       </>
     );
   }
@@ -538,7 +595,7 @@ export function GuestMenu({
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
         {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
           <div className="grid gap-2 pt-4">
-            <PromoBanners promos={menu.promos} />
+            {promoBanners}
             {orderingNotice}
             {menu.kitchenBusy && canOrder && (
               <Notice tone="busy">
@@ -569,7 +626,11 @@ export function GuestMenu({
               id="menu-search"
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (!fold)
+                  void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
+              }}
               placeholder={t("menu.search")}
               autoComplete="off"
               enterKeyHint="search"
@@ -783,7 +844,11 @@ export function GuestMenu({
         items={dockItems}
         above={
           <>
-            {canOrder && table.kind === "ok" && <CallWaiterPrompt token={table.token} tableId={table.id} />}
+            {canOrder && table.kind === "ok" && (askedBefore || leftUnsent) && (
+              <Suspense fallback={null}>
+                <CallWaiterPrompt token={table.token} tableId={table.id} />
+              </Suspense>
+            )}
             {lines.length > 0 && (
               <div className="lg:hidden">
                 <CartBar summary={summary} items={items} onOpen={openCart} />

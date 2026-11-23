@@ -1,4 +1,4 @@
-import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "lucide-react";
+import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "./icons";
 import type { ElementType, ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { GuestTag, Text } from "./view-model";

@@ -3,6 +3,8 @@
 // dead connection never loses it. No idempotency key is needed: the database
 // keeps one open request per table and kind (guest_service_request returns
 // the open one), so sending the same request twice rings once.
+import { requestKey } from "./pending-request-key";
+
 export type RequestKind = "call_waiter" | "bring_bill";
 export type PendingRequest = { kind: RequestKind; payment: "card" | "cash" | null; createdAt: string };
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -11,7 +13,7 @@ type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 export const PENDING_MAX_AGE_MS = 15 * 60_000;
 export const RETRY_MS = 10_000;
 
-export const requestKey = (tableId: string, kind: RequestKind) => `pativ:request:v1:${tableId}:${kind}`;
+export { requestKey };
 
 export function loadRequest(
   storage: StorageLike,
