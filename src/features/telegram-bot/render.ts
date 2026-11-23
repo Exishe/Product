@@ -15,6 +15,9 @@ export type Screen =
   | { type: "expired" }
   | { type: "failed"; code: string }
   | { type: "pick_category" | "pick_item" | "pick_promo"; action: string; page: number; has_prev: boolean; has_next: boolean; rows: Row[]; category?: string | null }
+  | { type: "pick_ingredient"; action: string; page: number; has_prev: boolean; has_next: boolean; rows: Row[]; q?: string | null }
+  | { type: "bad_search"; action: string }
+  | { type: "morning_back"; label: string }
   | { type: "choice"; action: string; choices: string[]; context: Ctx }
   | { type: "ask_number" | "bad_number"; action: string; context: Ctx }
   | { type: "ask_text" | "bad_text"; action: string; field: string; optional: boolean }
@@ -43,6 +46,8 @@ const FAILED_TEXT: Record<string, TextKey> = {
   unreviewed_ai: "failed_unreviewed_ai",
   no_section: "failed_no_section",
   no_promo: "failed_no_promo",
+  no_ingredient: "failed_no_ingredient",
+  answered: "failed_answered",
 };
 const s = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
@@ -103,6 +108,26 @@ export function renderScreen(screen: Screen, locale: BotLocale | null): Rendered
         ],
       };
     }
+    case "pick_ingredient": {
+      const paging: Button[] = [];
+      if (screen.has_prev) paging.push(btn(t(l, "page_prev"), cb.page(screen.page - 1)));
+      if (screen.has_next) paging.push(btn(t(l, "page_next"), cb.page(screen.page + 1)));
+      const q = screen.q ?? "";
+      const text = !q ? t(l, "pick_ingredient") : screen.rows.length ? t(l, "pick_ingredient_found", { q }) : t(l, "ingredient_none", { q });
+      return {
+        text,
+        keyboard: [
+          ...screen.rows.map((r) => [btn(r.off ? t(l, "row_out", { label: r.label }) : r.label, cb.pick(r.id))]),
+          ...(paging.length ? [paging] : []),
+          ...(q ? [[btn(t(l, "ingredient_all"), cb.back())]] : []),
+          navRow,
+        ],
+      };
+    }
+    case "bad_search":
+      return { text: `${t(l, "bad_search")}\n${t(l, "pick_ingredient")}`, keyboard: [navRow] };
+    case "morning_back":
+      return { text: `✅ ${t(l, "morning_back", { label: screen.label })}`, keyboard: [menuRow] };
     case "choice": {
       const ctx = screen.context;
       const state = ctx.paused

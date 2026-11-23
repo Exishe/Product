@@ -34,7 +34,8 @@ describe("dictionary", () => {
 describe("callbacks", () => {
   it("every callback fits Telegram's 64 bytes and the shape the database accepts", () => {
     const all = [cb.menu(), cb.action("close_kitchen"), cb.pick(uuid), cb.choice("resume"), cb.page(12), cb.back(), cb.cancel(),
-      cb.confirm("aB3_-xYz"), cb.undo(), cb.history(), cb.language("hy"), cb.language("choose"), cb.skip()];
+      cb.confirm("aB3_-xYz"), cb.undo(), cb.history(), cb.language("hy"), cb.language("choose"), cb.skip(),
+      cb.morningBack(uuid), cb.morningOut(uuid)];
     for (const c of all) {
       expect(new TextEncoder().encode(c).length).toBeLessThanOrEqual(64);
       expect(c).toMatch(CALLBACK_PATTERN);
@@ -44,10 +45,17 @@ describe("callbacks", () => {
 
 describe("registry", () => {
   it("lists the same action ids, in the same order, as private.bot_actions", () => {
-    const sql = readFileSync("supabase/migrations/20261123140000_telegram_bot_actions.sql", "utf8");
-    const block = sql.slice(sql.indexOf("insert into private.bot_actions"), sql.indexOf("-- One pending step"));
-    const ids = [...block.matchAll(/\('([a-z_]+)',\s+(\d+),/g)].sort((a, b) => Number(a[2]) - Number(b[2])).map((m) => m[1]);
-    expect(ids).toEqual(ACTION_IDS);
+    // the ten of the first migration, then the ones later migrations insert, ordered by `sort`
+    const first = readFileSync("supabase/migrations/20261123140000_telegram_bot_actions.sql", "utf8");
+    const block = first.slice(first.indexOf("insert into private.bot_actions"), first.indexOf("-- One pending step"));
+    const later = readFileSync("supabase/migrations/20261123280000_telegram_bot_ingredient_out.sql", "utf8");
+    const rows = [...block.matchAll(/\('([a-z_]+)',\s+(\d+),/g)].map((m) => [m[1]!, Number(m[2])] as const);
+    for (const m of later.matchAll(/insert into private\.bot_actions \(id, sort[^)]*\) values \('([a-z_]+)', (\d+),/g)) rows.push([m[1]!, Number(m[2])]);
+    for (const m of later.matchAll(/update private\.bot_actions set sort = (\d+) where id = '([a-z_]+)'/g)) {
+      const row = rows.find((r) => r[0] === m[2]);
+      if (row) rows[rows.indexOf(row)] = [row[0], Number(m[1])];
+    }
+    expect(rows.sort((a, b) => a[1] - b[1]).map((r) => r[0])).toEqual(ACTION_IDS);
   });
   it("ignores unknown ids, including prototype names", () => {
     expect(actionOf("nope")).toBeUndefined();
@@ -56,7 +64,7 @@ describe("registry", () => {
 });
 
 describe("screens", () => {
-  it("the menu has all ten actions, undo, history and language, in every language", () => {
+  it("the menu has all eleven actions, undo, history and language, in every language", () => {
     for (const loc of BOT_LOCALES) {
       const { keyboard } = renderScreen({ type: "menu" }, loc);
       const data = keyboard.flat().map((b) => b.callback_data);
@@ -266,5 +274,79 @@ describe("renderBotReply", () => {
       error: null,
     }));
     expect(out).toEqual({ status: 200, body: {} });
+  });
+});
+
+describe("ingredient out and the next-morning question", () => {
+  const rows = [
+    { id: uuid, label: "Milk" },
+    { id: "223e4567-e89b-12d3-a456-426614174000", label: "Salmon", off: true },
+  ];
+  const list = (over: Partial<Extract<Screen, { type: "pick_ingredient" }>> = {}): Screen => ({
+    type: "pick_ingredient", action: "ingredient_out", page: 0, has_prev: false, has_next: false, rows, ...over,
+  });
+  it("the list marks what is out, offers paging and has no search chip until a search ran", () => {
+    const { text, keyboard } = renderScreen(list({ has_next: true }), "en");
+    expect(text).toBe(texts.en.pick_ingredient);
+    expect(keyboard.map((r) => r.map((b) => b.callback_data))).toEqual([[`p:${uuid}`], ["p:223e4567-e89b-12d3-a456-426614174000"], ["g:1"], ["b", "x"]]);
+    expect(keyboard[1]![0]!.text).toBe("Salmon (out)");
+  });
+  it("a search result says what it searched for and can return to the whole list", () => {
+    const { text, keyboard } = renderScreen(list({ q: "sal", rows: [rows[1]!] }), "en");
+    expect(text).toBe("Matches for «sal». Tap one or type another name.");
+    expect(keyboard.at(-2)![0]!.callback_data).toBe("b");
+    expect(keyboard.at(-2)![0]!.text).toBe(texts.en.ingredient_all);
+  });
+  it("no match and a bad search have their own sentences in every language", () => {
+    for (const loc of BOT_LOCALES) {
+      expect(renderScreen(list({ q: "zzz", rows: [] }), loc).text).toBe(t(loc, "ingredient_none", { q: "zzz" }));
+      expect(renderScreen({ type: "bad_search", action: "ingredient_out" }, loc).text).toContain(texts[loc].bad_search);
+    }
+  });
+  it("the preview, result and history say which way it went and count the dishes", () => {
+    const a = actionOf("ingredient_out")!;
+    expect(a.confirm!({ ingredient: "Salmon", to_out: true }, "en")).toBe(t("en", "confirm_ingredient_out_on", { ingredient: "Salmon" }));
+    expect(a.confirm!({ ingredient: "Salmon", to_out: false }, "ru")).toBe(t("ru", "confirm_ingredient_out_off", { ingredient: "Salmon" }));
+    const out = { label: "Salmon", old: { out: false }, new: { out: true, hidden: 2, substituted: 1 } };
+    for (const loc of BOT_LOCALES) {
+      const text = a.done!(out, loc);
+      expect(text).toContain("Salmon");
+      expect(text).toContain("2");
+      expect(text).toContain("1");
+    }
+    expect(a.done!({ label: "Salmon", new: { out: false } }, "en")).toBe("«Salmon» is back. Guests see it within seconds.");
+    expect(a.describe!(out, "en")).toBe("ingredient «Salmon» out");
+    expect(a.describe!({ label: "Salmon", new: { out: false } }, "ru")).toBe("«Salmon»: снова есть");
+  });
+  it("guest-facing wording is not used and the staff texts stay plain", () => {
+    for (const loc of BOT_LOCALES) expect(texts[loc].done_ingredient_out_on).not.toMatch(/ran out|закончил|վերջացել/i);
+  });
+  it("the done screen after a morning 'not yet' is the usual done screen with Undo", () => {
+    const { text, keyboard } = renderScreen({ type: "done", action: "ingredient_out", change: { label: "Salmon", new: { out: true, hidden: 1, substituted: 0 } } }, "en");
+    expect(text.startsWith("✅")).toBe(true);
+    expect(keyboard[0]![0]!.callback_data).toBe("u");
+  });
+  it("answering the morning question says so, and the new failure codes have sentences", () => {
+    expect(renderScreen({ type: "morning_back", label: "Salmon" }, "en").text).toBe("✅ Good, «Salmon» is available today.");
+    expect(renderScreen({ type: "failed", code: "answered" }, "ru").text).toBe(texts.ru.failed_answered);
+    expect(renderScreen({ type: "failed", code: "no_ingredient" }, "hy").text).toBe(texts.hy.failed_no_ingredient);
+  });
+});
+
+describe("migration 20261123280000", () => {
+  const sql = readFileSync("supabase/migrations/20261123280000_telegram_bot_ingredient_out.sql", "utf8");
+  it("revokes execute from clients on every private function it creates", () => {
+    const created = [...sql.matchAll(/create (?:or replace )?function (private\.\w+)\(/g)].map((m) => m[1]!);
+    const revoke = sql.slice(sql.lastIndexOf("revoke execute on function"));
+    expect(created.length).toBeGreaterThan(12);
+    for (const fn of created) expect(revoke, fn).toContain(`${fn}(`);
+  });
+  it("every function pins the search path", () => {
+    const fns = sql.split(/create (?:or replace )?function /).slice(1);
+    for (const f of fns) expect(f.slice(0, 600), f.slice(0, 40)).toContain("set search_path = ''");
+  });
+  it("never reads a secret key, and the buttons are built from the payload's id only", () => {
+    expect(sql).not.toMatch(/service_role|secret_key/i);
+    expect(sql).toContain("'y:' || (r.payload ->> 'ingredient_id')");
   });
 });

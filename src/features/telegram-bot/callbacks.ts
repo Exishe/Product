@@ -3,6 +3,8 @@
 // the database checks it against the linked account (private.bot_handle).
 //   m menu | a:<action> | p:<uuid> pick | c:<choice> | g:<page> | b back | x cancel
 //   k:<token> confirm | u undo | h history | l:<hy|ru|en> | s skip an optional step
+//   y:<uuid> / n:<uuid> answers of the next-morning ingredient question (made by the
+//   database's outbox sender, never by this app; listed here for the shape test)
 // The database accepts exactly this shape; keep the two in step.
 export const CALLBACK_PATTERN = /^[a-z](:[A-Za-z0-9_-]{1,40})?$/;
 
@@ -19,4 +21,6 @@ export const cb = {
   undo: () => "u",
   history: () => "h",
   language: (l: string) => `l:${l}`,
+  morningBack: (id: string) => `y:${id}`,
+  morningOut: (id: string) => `n:${id}`,
 };
