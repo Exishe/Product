@@ -19,6 +19,7 @@ import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel } from "@/lib/realtime/use-location-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import {
+  ackCantMake,
   cancelLine,
   sameWaiterAction,
   seatWaitingGuests,
@@ -379,6 +380,13 @@ function App(p: WaiterAppProps) {
     return res;
   };
 
+  // "Told the guest": the alert goes at once on the next read; a failure shows the usual message.
+  const onAckCantMake = async (lineId: string) => {
+    const res = await ackCantMake(getBrowserClient(), lineId);
+    if (!res.ok && (res.reason === "forbidden" || res.reason === "network")) return res;
+    return direct(res);
+  };
+
   const onSeatWaiting = async (waitingSessionId: string) => {
     await direct(await seatWaitingGuests(getBrowserClient(), waitingSessionId));
   };
@@ -591,6 +599,7 @@ function App(p: WaiterAppProps) {
               onCancelLine={onCancelLine}
               rewards={rewards.filter((r) => r.tableId === table.id)}
               onReward={onReward}
+              onAckCantMake={onAckCantMake}
               now={now}
               timeZone={p.location.timeZone}
             />

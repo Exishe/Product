@@ -316,7 +316,14 @@
         "pcs": "{amount} pcs"
       },
       "hours": "{hours} h",
-      "allergy": "Allergy: read the note"
+      "allergy": "Allergy: read the note",
+      "cantMake": "Can't make",
+      "cantMakeAsk": "Can't make {name}? The guest will be told.",
+      "cantMakeYes": "Yes, can't make it",
+      "cantMakeNo": "Back",
+      "cantMakeFailed": "That didn't work. Try again.",
+      "cantMakePaid": "This order is already paid. Tell the waiter.",
+      "cantMakeForbidden": "Food that was served is for a manager to cancel."
     },
     "connection": {
       "online": "Online",
@@ -634,6 +641,12 @@
       "dismiss": "Dismiss",
       "failed": "Couldn't save. Try again.",
       "percent": "{percent}% off"
+    },
+    "cantMake": {
+      "text": "{dish} can't be made. The guest was told.",
+      "hint": "Speak to the guest, then tap the button.",
+      "told": "Told the guest",
+      "failed": "Couldn't save that. Try again."
     }
   },
   "menu": {
@@ -1076,7 +1089,11 @@
       "splitFewer": "Fewer people",
       "splitMore": "More people",
       "wait": "Usually ready in about {minutes} min.",
-      "waitLong": "Taking longer than usual. You can call your waiter."
+      "waitLong": "Taking longer than usual. You can call your waiter.",
+      "cantMake": "Sorry, this dish isn't available right now.",
+      "cantMakeSuggest": "Our chef suggests:",
+      "cantMakeAdd": "Add",
+      "cantMakeAddOne": "Add {name} to your order"
     },
     "games": {
       "title": "Games while you wait",
@@ -1601,7 +1618,8 @@
       "save": "Save",
       "saved": "Saved.",
       "failed": "Couldn't save. Check the numbers and try again."
-    }
+    },
+    "cantMake": "{dish} can't be made, the guest was told"
   },
   "reports": {
     "title": "Reports",

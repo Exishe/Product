@@ -220,6 +220,20 @@ export function sameNameDetails(data: PublicMenu, locale: Locale): Record<string
   return out;
 }
 
+/**
+ * What the order page needs to offer a replacement dish (ADR-081): the name in
+ * the page's language and the price, by dish id. Ids only come from the database's
+ * answer, so a long menu costs nothing until a dish can't be made.
+ */
+export function dishNames(data: PublicMenu, locale: Locale): Record<string, { name: string; price: number }> {
+  const out: Record<string, { name: string; price: number }> = {};
+  for (const [id, raw] of Object.entries(data.menu.items)) {
+    const name = localized(raw.name, locale)?.text;
+    if (name) out[id] = { name, price: raw.price };
+  }
+  return out;
+}
+
 /** Is the background behind the wordmark dark? Worked out on the server (wordmarkTones in brand.ts). */
 export type WordmarkTones = { header: boolean; page: boolean };
 

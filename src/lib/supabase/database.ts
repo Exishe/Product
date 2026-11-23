@@ -55,6 +55,24 @@ export type ApiSchema = {
       };
       Returns: Json;
     };
+    ack_cant_make: {
+      Args: {
+        p_order_item_id: string;
+      };
+      Returns: undefined;
+    };
+    cant_make_alternatives: {
+      Args: {
+        p_order_item_id: string;
+      };
+      Returns: string[];
+    };
+    cant_make_item: {
+      Args: {
+        p_order_item_id: string;
+      };
+      Returns: undefined;
+    };
     cancel_order_item: {
       Args: {
         p_order_item_id: string;
