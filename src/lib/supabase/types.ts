@@ -2685,6 +2685,59 @@ export type Database = {
           },
         ]
       }
+      promos: {
+        Row: {
+          badge: string | null
+          body: Json
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_on: boolean
+          location_id: string
+          restaurant_id: string
+          starts_at: string | null
+          title: Json
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          body?: Json
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_on?: boolean
+          location_id: string
+          restaurant_id: string
+          starts_at?: string | null
+          title: Json
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          body?: Json
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_on?: boolean
+          location_id?: string
+          restaurant_id?: string
+          starts_at?: string | null
+          title?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promos_restaurant_id_location_id_fkey"
+            columns: ["restaurant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["restaurant_id", "id"]
+          },
+        ]
+      }
       printers: {
         Row: {
           address: string | null

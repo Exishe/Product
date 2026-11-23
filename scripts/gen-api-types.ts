@@ -31,7 +31,7 @@ const fns: Fn[] = JSON.parse(execFileSync("psql", ["-qtA", "-c", sql], { env, en
 function ts(type: string): string {
   if (type.endsWith("[]")) return `${ts(type.slice(0, -2))}[]`;
   const t = type.replace(/^public\./, "");
-  if (["uuid", "text", "character varying", "timestamp with time zone", "date", "time without time zone"].includes(t)) return "string";
+  if (["uuid", "text", "character varying", "timestamp with time zone", "timestamp without time zone", "date", "time without time zone"].includes(t)) return "string";
   if (["integer", "smallint", "bigint", "numeric", "double precision"].includes(t)) return "number";
   if (t === "boolean") return "boolean";
   if (t === "jsonb" || t === "json") return "Json";

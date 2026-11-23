@@ -21,7 +21,25 @@ describe("parseStatus", () => {
       soldOut: ["a", "b"],
       hidden: ["y", "z"],
       busy: 20,
+      promos: [],
     });
+  });
+  it("reads live promos and drops broken ones", () => {
+    const s = parseStatus({
+      promos: [
+        { id: "p1", title: { hy: "Ակցիա", xx: "no", ru: " " }, text: { en: "Coffee" }, badge: "-20%" },
+        { id: "p2", title: {}, text: {}, badge: null },
+        { title: { hy: "x" } },
+        "junk",
+      ],
+    });
+    expect(s?.promos).toEqual([{ id: "p1", title: { hy: "Ակցիա" }, text: { en: "Coffee" }, badge: "-20%" }]);
+  });
+  it("a database without promos reads as none, and a new promo makes the status differ", () => {
+    const before = parseStatus({ ordering: true }) as NonNullable<ReturnType<typeof parseStatus>>;
+    expect(before.promos).toEqual([]);
+    const after = parseStatus({ ordering: true, promos: [{ id: "p1", title: { hy: "A" } }] }) as typeof before;
+    expect(sameStatus(before, after)).toBe(false);
   });
   it("an open-ended pause has no end", () => {
     expect(parseStatus({ paused: { until: null } })?.paused).toEqual({ until: null });

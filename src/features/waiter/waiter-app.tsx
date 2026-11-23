@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Wallet, WifiOff } from "lucide-react";
+import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Megaphone, Wallet, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -27,6 +27,7 @@ import {
   type DirectResult,
 } from "./actions";
 import { fetchFloor } from "./floor-data";
+import { fetchLivePromoTitles } from "./promos";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
 import {
@@ -64,6 +65,8 @@ export type WaiterAppProps = {
   isDevice: boolean;
   canChangePassword?: boolean; // a staff login (ADR-067)
   canManageTables: boolean;
+  /** Titles of the promos guests see now (ADR-070); the waiter applies the discount. */
+  initialPromos?: string[];
 };
 
 const POLL_MS = 15_000; // safety poll under the live channel (realtime.md: 15 s on the waiter app)
@@ -122,6 +125,7 @@ function App(p: WaiterAppProps) {
   );
 
   const [rows, setRows] = useState(p.initialRows);
+  const [promos, setPromos] = useState(p.initialPromos ?? []);
   const [fetchFailed, setFetchFailed] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState(p.renderedAt);
   const [sent, setSent] = useState<{ action: WaiterAction; at: number }[]>([]);
@@ -133,6 +137,21 @@ function App(p: WaiterAppProps) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState<Tab>("tables");
   const [recent, setRecent] = useState<SentTap[]>([]);
+
+  // Promos switch on and off during service: look again every 30 s while visible.
+  useEffect(() => {
+    const look = async () => {
+      if (document.hidden) return;
+      const titles = await fetchLivePromoTitles(client(), p.location.id, locale);
+      if (titles) setPromos((old) => (JSON.stringify(old) === JSON.stringify(titles) ? old : titles));
+    };
+    const timer = setInterval(() => void look(), 30_000);
+    document.addEventListener("visibilitychange", look);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", look);
+    };
+  }, [p.location.id, locale]);
 
   const nowRef = useRef(now);
   useEffect(() => {
@@ -430,6 +449,15 @@ function App(p: WaiterAppProps) {
         <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold">
           {formatTime(new Date(now), p.location.timeZone)}
         </span>
+        {promos.length > 0 && (
+          <p
+            data-testid="promo-line"
+            className="bg-tarragon-tint text-tarragon m-0 flex basis-full items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
+          >
+            <Megaphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
+          </p>
+        )}
       </header>
       {connection === "offline" ? (
         <p

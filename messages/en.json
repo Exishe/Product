@@ -47,7 +47,9 @@
       "noPhotos": "{count, plural, one {# dish has} other {# dishes have}} no photo. Dishes with a photo get ordered more.",
       "stopList": "{count, plural, one {# dish is} other {# dishes are}} sold out today.",
       "ordering": "Guest orders",
-      "orderingHint": "Pause new orders from the QR menu, or close the kitchen for today. Guests see a clear message."
+      "orderingHint": "Pause new orders from the QR menu, or close the kitchen for today. Guests see a clear message.",
+      "promos": "Promotions",
+      "promosHint": "A short announcement at the top of your guest menu, like “Happy hour”. It doesn't change any price: your waiters apply the discount."
     },
     "controls": {
       "orderingOn": "Guests can order.",
@@ -70,6 +72,42 @@
       "closeConfirm": "Guests won't be able to order until the next opening. Close the kitchen for today?",
       "closeYes": "Yes, close",
       "failed": "Couldn't save that. Check the connection and try again."
+    },
+    "promos": {
+      "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
+      "add": "Add a promotion",
+      "limit": "You can keep up to {count} promotions. Delete one to add another.",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete “{title}”?",
+      "deleteYes": "Yes, delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "newTitle": "New promotion",
+      "editTitle": "Edit promotion",
+      "switchLabel": "Show “{title}” to guests",
+      "statusLive": "On. Guests see it now.",
+      "statusWaiting": "On, but outside its dates. Guests don't see it now.",
+      "statusOff": "Off. Guests don't see it.",
+      "titleLabel": "Title in {lang}",
+      "textLabel": "One line under the title, in {lang}",
+      "badgeLabel": "Badge, like −20%",
+      "startsLabel": "Starts",
+      "endsLabel": "Ends",
+      "windowHint": "Times are in your café's time zone. Leave them empty to show it whenever it is on.",
+      "lang": {
+        "hy": "Armenian",
+        "ru": "Russian",
+        "en": "English"
+      },
+      "error": {
+        "title": "Write the title in Armenian.",
+        "long": "That text is too long.",
+        "window": "The end must be after the start.",
+        "limit": "You already have the most promotions allowed. Delete one first.",
+        "failed": "Couldn't save that. Check the connection and try again."
+      },
+      "requiredNote": "Only the Armenian title is required. The rest is optional."
     }
   },
   "forbidden": {
@@ -535,7 +573,8 @@
       "error": "Couldn't load it. Check the connection and open it again.",
       "close": "Close"
     },
-    "hoursShort": "{hours} h {minutes} min"
+    "hoursShort": "{hours} h {minutes} min",
+    "promoOn": "{count, plural, one {Promo on} other {Promos on}}: {titles}"
   },
   "menu": {
     "title": "Menu",
@@ -831,7 +870,9 @@
       "paused": "Ordering is paused for a few minutes.",
       "pausedUntil": "Ordering is paused for a few minutes. It resumes at {time}.",
       "pausedNoEnd": "Ordering is paused for now. Please ask your waiter.",
-      "closedToday": "The kitchen is closed for today."
+      "closedToday": "The kitchen is closed for today.",
+      "promoLabel": "Offer",
+      "promoClose": "Close this offer"
     },
     "sheet": {
       "required": "Required",
