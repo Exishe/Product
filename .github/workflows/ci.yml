@@ -10,7 +10,9 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # On the development branch a run in progress is finished and only the newest waiting run is kept,
+  # so a result is never lost to the next push (the database step and the browser tests take minutes).
+  cancel-in-progress: ${{ github.ref != 'refs/heads/claude/new-session-qjsyvc' }}
 
 jobs:
   checks:
