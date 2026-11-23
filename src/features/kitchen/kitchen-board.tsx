@@ -43,6 +43,7 @@ import { nextBusinessDayStart } from "./business-day";
 import { connectionState, troubleSince } from "./connection";
 import { StartShiftOverlay, useShift } from "./start-shift";
 import type { DishSection } from "./station-dishes";
+import { IngredientOut } from "./ingredient-out";
 import { StopList } from "./stop-list";
 import { OrderTicketCard, VoidTicketCard, type Column } from "./ticket-card";
 import { useServerClock } from "./use-server-clock";
@@ -54,6 +55,8 @@ export type KitchenBoardProps = {
   initialTickets: BoardTicket[];
   initialBusy: BusyState;
   initialSoldOut: string[];
+  /** False until the ingredients migration is applied (ADR-076): the button stays hidden. */
+  ingredientsSupported: boolean;
   dishes: DishSection[];
   lineDetails: Record<string, LineDetail>; // same-named dishes, by dish id
   renderedAt: number;
@@ -469,6 +472,7 @@ function Board(p: KitchenBoardProps) {
         />
         <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
         <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
+        {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
         <div className="ml-auto flex items-center gap-3">
           <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
             {clock}
