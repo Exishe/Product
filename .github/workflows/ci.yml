@@ -70,6 +70,11 @@ jobs:
     # as on pull requests), never against a half-applied schema.
     needs: [migrate]
     if: ${{ !cancelled() && needs.migrate.result != 'failure' }}
+    # Browser tests of every branch share one small cloud database; two runs at once made it time out
+    # (sign-ups stuck, 500s, 30-minute limit hit). One run per screen size at a time, across branches.
+    concurrency:
+      group: e2e-dev-db-${{ matrix.project }}
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
