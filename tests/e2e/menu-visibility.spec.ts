@@ -25,3 +25,16 @@ test("a dish hidden in the admin and published disappears from the guest menu", 
   await expect(page.getByTestId("dish").filter({ hasText: "Տոլմա" })).toBeVisible();
   await expect(page.getByTestId("dish").filter({ hasText: "Բորանի" })).toHaveCount(0);
 });
+
+// A dish with only an Armenian name: the guest sees that name in every language.
+test("a dish named only in Armenian shows that name in ru and en", async ({ page }) => {
+  const cafe = await createCafeWithMenu({
+    categories: [{ key: "hot", names: { hy: "Տաք ուտեստներ", ru: "Горячие блюда", en: "Hot dishes" } }],
+    dishes: [{ key: "khash", category: "hot", names: { hy: "Խաշ" }, price: 4100 }],
+  });
+
+  for (const locale of ["hy", "ru", "en"] as const) {
+    await page.goto(`/${locale}/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
+    await expect(page.getByTestId("dish").filter({ hasText: "Խաշ" })).toBeVisible();
+  }
+});
