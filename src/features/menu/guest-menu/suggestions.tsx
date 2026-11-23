@@ -1,0 +1,187 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Track } from "@/features/analytics/track";
+import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
+import { formatAmd } from "@/lib/format/money";
+import styles from "./guest.module.css";
+import {
+  createVisitMemory,
+  fetchSuggestions,
+  reasonText,
+  selectCards,
+  type Suggestion,
+  type VisitMemory,
+} from "./suggestions-logic";
+import { CloseIcon, Plate, Txt, dishPhotoUrl } from "./ui";
+import type { GuestItem } from "./view-model";
+
+// "Goes well with" strip (ADR-077 data, ADR-080 screen). Loaded on the first
+// dish added, never at first paint. A calm panel above the order bar, not a
+// dialog: ordering carries on underneath. It is fixed to the bottom with the
+// dock, so showing it moves nothing on the page.
+export type SuggestTrigger = {
+  /** The dish just added. */
+  id: string;
+  /** Every dish in the cart then, the new one included. */
+  cart: string[];
+  /** A new add of the same dish is a new trigger object. */
+  n: number;
+};
+
+// Answers by (dish, cart) for this page view, and the visit's memory.
+const EMPTY: Suggestion[] = [];
+const answers = new Map<string, Suggestion[]>();
+let memory: { location: string; value: VisitMemory } | null = null;
+const memoryFor = (location: string): VisitMemory => {
+  if (memory?.location !== location) {
+    let store: Storage | null = null;
+    try {
+      store = window.sessionStorage;
+    } catch {}
+    memory = { location, value: createVisitMemory(location, store) };
+  }
+  return memory.value;
+};
+
+export function Suggestions({
+  locationId,
+  trigger,
+  cartIds,
+  items,
+  soldOut,
+  track,
+  onAdd,
+  onChoose,
+  onVisible,
+}: {
+  locationId: string;
+  trigger: SuggestTrigger;
+  /** What is in the cart now (changes as the guest orders more). */
+  cartIds: string[];
+  items: Record<string, GuestItem>;
+  soldOut: string[];
+  track: Track;
+  /** One-tap add of a dish that needs no choice. */
+  onAdd: (item: GuestItem, from: HTMLElement) => void;
+  /** A dish with required choices opens its sheet instead. */
+  onChoose: (item: GuestItem) => void;
+  /** Whether the strip is on screen, so the toast can stay clear of it. */
+  onVisible: (shown: boolean) => void;
+}) {
+  const { t, locale } = useGuestI18n();
+  // The answer belongs to the trigger it was fetched for, so a new add of the
+  // same dish starts empty without resetting state in an effect.
+  const [found, setFound] = useState<{ trigger: SuggestTrigger; list: Suggestion[] } | null>(null);
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() => memoryFor(locationId).dismissed());
+  const tracked = useRef(new Set<string>());
+  const list = found?.trigger === trigger ? found.list : EMPTY;
+
+  useEffect(() => {
+    const mem = memoryFor(locationId);
+    if (mem.wasTriggered(trigger.id)) return;
+    const key = `${trigger.id}|${[...trigger.cart].sort().join(",")}`;
+    const known = answers.get(key);
+    if (known) {
+      const timer = setTimeout(() => setFound({ trigger, list: known }), 0);
+      return () => clearTimeout(timer);
+    }
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), 6_000);
+    void fetchSuggestions(locationId, trigger.id, trigger.cart, abort.signal).then((result) => {
+      clearTimeout(timeout);
+      if (!result || abort.signal.aborted) return; // an error shows nothing and is tried again next time
+      answers.set(key, result);
+      mem.markTriggered(trigger.id);
+      setFound({ trigger, list: result });
+    });
+    return () => {
+      clearTimeout(timeout);
+      abort.abort();
+    };
+  }, [locationId, trigger]);
+
+  const cards = useMemo(
+    () => selectCards(list, items, { triggerId: trigger.id, cartIds, soldOut, dismissed }),
+    [list, items, trigger.id, cartIds, soldOut, dismissed],
+  );
+
+  useEffect(() => {
+    onVisible(cards.length > 0);
+    return () => onVisible(false);
+  }, [cards.length, onVisible]);
+
+  // Counted once per (dish, suggestion) for the visit, not each time it re-renders.
+  useEffect(() => {
+    const mem = memoryFor(locationId);
+    for (const { item } of cards) {
+      const key = `${trigger.id}>${item.id}`;
+      if (tracked.current.has(key) || mem.wasShown(trigger.id, item.id)) continue;
+      tracked.current.add(key);
+      mem.markShown(trigger.id, item.id);
+      track("suggestion_shown", item.id, { from: trigger.id });
+    }
+  }, [cards, locationId, trigger.id, track]);
+
+  if (cards.length === 0) return null;
+  const dismiss = (id: string) => {
+    memoryFor(locationId).dismiss(id);
+    setDismissed((d) => new Set(d).add(id));
+  };
+  return (
+    <section
+      aria-label={t("suggest.title")}
+      data-testid="suggestions"
+      className={`bg-surface text-ink shadow-float rounded-card pointer-events-auto border px-3 pt-2 pb-1 [border-color:var(--guest-card-border)] ${styles.suggest}`}
+    >
+      <h2 className="text-muted px-1 text-[0.8125rem] font-semibold">{t("suggest.title")}</h2>
+      <ul>
+        {cards.map(({ item, suggestion }) => {
+          const reason = reasonText(suggestion, items, trigger.id);
+          const needsChoice = item.groups.some((g) => g.min > 0);
+          return (
+            <li
+              key={item.id}
+              data-testid="suggestion"
+              data-dish={item.id}
+              className="border-line flex items-center gap-2 border-b py-1.5 last:border-b-0"
+            >
+              {item.image && <Plate src={dishPhotoUrl(item.image)} size={44} className="size-11 flex-none" />}
+              <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                <Txt value={item.name} locale={locale} className="font-semibold break-words" />
+                <span className="text-muted text-[0.8125rem]" data-testid="suggestion-reason">
+                  {t(reason.key, reason.vars)}
+                </span>
+                <span className="num text-accent-text text-sm font-semibold">{formatAmd(item.price, locale)}</span>
+              </span>
+              <button
+                type="button"
+                data-testid="suggestion-add"
+                aria-label={t("menu.add", { name: item.name.text })}
+                aria-haspopup={needsChoice ? "dialog" : undefined}
+                onClick={(e) => {
+                  if (needsChoice) return onChoose(item);
+                  track("suggestion_accepted", item.id, { from: trigger.id });
+                  onAdd(item, e.currentTarget);
+                }}
+                className="bg-accent text-on-accent rounded-pill min-h-11 flex-none px-4 text-sm font-semibold"
+              >
+                {t("suggest.add")}
+              </button>
+              <button
+                type="button"
+                data-testid="suggestion-dismiss"
+                aria-label={t("suggest.dismiss", { name: item.name.text })}
+                title={t("suggest.noThanks")}
+                onClick={() => dismiss(item.id)}
+                className="text-muted hover:bg-chip grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
+              >
+                <CloseIcon />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}

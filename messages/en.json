@@ -1178,9 +1178,30 @@
       "added": "Added from your last order",
       "more": "+{count} more"
     },
-    "pairs": {
-      "title": "Often ordered with this",
-      "added": "Added: {name}"
+    "suggest": {
+      "title": "You might also like",
+      "add": "Add",
+      "dismiss": "No thanks to {name}",
+      "noThanks": "No thanks",
+      "reason": {
+        "pairs_with_dish": "Goes well with {name}",
+        "often_together": "Often ordered together",
+        "time_rule": "A good pick right now",
+        "generic": "Goes well with your order"
+      },
+      "perfect": {
+        "coffee_tea": "Perfect with coffee or tea",
+        "cold_drink": "Perfect with a cold drink",
+        "alcohol": "Perfect with a drink from the bar",
+        "breakfast": "Perfect with breakfast",
+        "starter_salad": "Perfect with a starter or salad",
+        "soup": "Perfect with soup",
+        "main": "Perfect with a main dish",
+        "side": "Perfect with a side",
+        "sauce": "Perfect with a sauce",
+        "dessert": "Perfect with dessert",
+        "pastry_snack": "Perfect with a pastry or snack"
+      }
     },
     "wait": {
       "usual": "Usually ready in {low}–{high} min.",
