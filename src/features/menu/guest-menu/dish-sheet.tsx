@@ -3,6 +3,7 @@
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { useEffect, useRef, useState } from "react";
+import type { Track } from "@/features/analytics/track";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
@@ -32,6 +33,7 @@ export function DishSheet({
   onAddPair,
   onOpenPair,
   onClose,
+  track,
 }: {
   item: GuestItem;
   canOrder: boolean;
@@ -42,6 +44,8 @@ export function DishSheet({
   onAddPair?: (pair: GuestItem, from: HTMLElement) => void;
   onOpenPair?: (pair: GuestItem) => void;
   onClose: () => void;
+  /** Anonymous event tracking (ADR-072); absent in tests. */
+  track?: Track;
 }) {
   const { t, locale } = useGuestI18n();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -52,6 +56,14 @@ export function DishSheet({
   const [addedPairs, setAddedPairs] = useState<string[]>([]);
   const valid = isSelectionValid(item.groups, selection);
   const price = unitPrice(item.price, item.groups, selection) * quantity;
+
+  // The sheet is keyed by dish, so this runs once per opening: a view, and the
+  // pairs shown under it.
+  useEffect(() => {
+    track?.("item_view", item.id);
+    for (const pair of pairs) track?.("suggestion_shown", pair.id, { from: item.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const d = dialog.current;
@@ -273,6 +285,7 @@ export function DishSheet({
                         onClick={(e) => {
                           if (needsChoice) return onOpenPair?.(pair);
                           onAddPair?.(pair, e.currentTarget);
+                          track?.("suggestion_accepted", pair.id, { from: item.id });
                           setAddedPairs((ids) => [...ids, pair.id]);
                         }}
                         className="text-ink hover:bg-chip disabled:bg-chip grid size-11 flex-none place-items-center rounded-full border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] [&_svg]:size-[18px]"

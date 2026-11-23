@@ -11,6 +11,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { makeTrack } from "@/features/analytics/track";
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
@@ -150,6 +151,7 @@ export function GuestMenu({
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
   const [lines, updateCart] = useCart(cartKey(menu.locationId, tableId));
+  const track = useMemo(() => makeTrack(menu.locationId, tableId), [menu.locationId, tableId]);
   const [query, setQuery] = useState("");
   const [sheet, setSheet] = useState<GuestItem | null>(null);
   const [view, setView] = useState<"menu" | "cart">("menu");
@@ -309,12 +311,14 @@ export function GuestMenu({
 
   const add = (item: GuestItem, add: { modifierIds: string[]; quantity: number; note: string }) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
+    track("item_add", item.id, { qty: Math.min(add.quantity, 99) });
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
   const addAgain = (again: SavedLine[]) => {
     updateCart((current) =>
       again.reduce((l, a) => addLine(l, { ...a, modifierIds: [...a.modifierIds], note: "" }, newId), current),
     );
+    for (const a of again) track("item_add", a.itemId, { qty: Math.min(a.quantity, 99), via: "again" });
     setToast({ key: Date.now(), text: t("again.added") });
   };
   const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1) => {
@@ -764,6 +768,7 @@ export function GuestMenu({
             pairs={pairsFor(sheet.id, hints, items, soldOutNow)}
             onAddPair={quickAdd}
             onOpenPair={setSheet}
+            track={track}
             onClose={() => setSheet(null)}
             onAdd={(a) => {
               add(sheet, a);
