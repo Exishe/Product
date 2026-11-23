@@ -21,7 +21,7 @@ Telegram -> `/api/telegram` (secret header) -> `api.telegram_update` -> `private
 5. **Registry entry** in `registry.ts`: `confirm(facts)`, `done(change)`, `describe(change)` (copy `sold_out`).
 6. **SQL test** in `supabase/tests/sql/telegram_bot.sql`: nothing changes before `k:<token>`, a foreign café's id is refused, undo restores and refuses after a change.
 
-Rules: never put a user-visible word in SQL; never trust `p_data` ids; the bot changes live data through the same rule the admin uses; a change that guests only see after Publish (price, hide, add) must say so in its `done` text.
+Rules: never put a user-visible word in SQL; never trust `p_data` ids; the bot changes live data through the same rule the admin uses; a change that guests only see after Publish (price, hide, add) must say so in its `done` text. The bot publishes through `private.publish_menu_core(location, actor_kind, actor)`, the same rule as the admin's Publish (`api.publish_menu` only adds the role check); kitchen-closed is `private.apply_kitchen_closed`. Both are called with the linked owner as actor.
 
 ## Operations
 
