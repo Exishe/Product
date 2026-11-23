@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { CartSummary } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { LineRow } from "./cart-view";
+import { LineRow } from "./line-row";
 import styles from "./guest.module.css";
 import type { GuestItem } from "./view-model";
 
