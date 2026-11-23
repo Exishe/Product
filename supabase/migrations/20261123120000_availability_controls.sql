@@ -356,3 +356,47 @@ revoke execute on function api.set_kitchen_closed_today(uuid, boolean) from publ
 grant execute on function api.set_kitchen_closed_today(uuid, boolean) to authenticated;
 revoke execute on function api.set_category_window(uuid, time, time) from public, anon, authenticated;
 grant execute on function api.set_category_window(uuid, time, time) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- Section on/off: api.save_category gains p_is_active (null keeps the stored
+-- value, like save_item's missing key). An off section and its dishes are left
+-- out of the next published menu, so guests see the change after Publish.
+-- A new function replaces the old one (same body otherwise, see menu_editor).
+-- -----------------------------------------------------------------------------
+drop function api.save_category(uuid, uuid, jsonb, uuid);
+create function api.save_category(p_restaurant_id uuid, p_category_id uuid, p_names jsonb, p_prep_area_id uuid,
+                                  p_is_active boolean default null)
+returns uuid
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_menu uuid;
+  v_cat uuid;
+begin
+  perform private.assert_restaurant_role(p_restaurant_id, '{owner,manager}');
+  perform private.require_hy_name(p_names);
+  if p_prep_area_id is not null
+     and not exists (select 1 from public.prep_areas a where a.id = p_prep_area_id and a.restaurant_id = p_restaurant_id) then
+    raise exception using errcode = '42501', message = 'forbidden';
+  end if;
+  if p_category_id is null then
+    v_menu := api.ensure_menu(p_restaurant_id);
+    insert into public.categories (restaurant_id, menu_id, prep_area_id, is_active, sort)
+    values (p_restaurant_id, v_menu, p_prep_area_id, coalesce(p_is_active, true),
+            coalesce((select max(c.sort) + 1 from public.categories c where c.menu_id = v_menu), 0))
+    returning id into v_cat;
+  else
+    update public.categories
+    set prep_area_id = p_prep_area_id, is_active = coalesce(p_is_active, is_active), updated_at = now()
+    where id = p_category_id and restaurant_id = p_restaurant_id
+    returning id into v_cat;
+    if v_cat is null then
+      raise exception using errcode = '42501', message = 'forbidden';
+    end if;
+  end if;
+  -- The panel shows all three names, so saving it counts as reviewing them.
+  perform private.set_translations('category_translations', 'category_id', p_restaurant_id, v_cat, p_names, null, true);
+  return v_cat;
+end $$;
+
+revoke execute on function api.save_category(uuid, uuid, jsonb, uuid, boolean) from public, anon, authenticated;
+grant execute on function api.save_category(uuid, uuid, jsonb, uuid, boolean) to authenticated;

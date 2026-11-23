@@ -194,3 +194,42 @@ describe("buildGuestMenu", () => {
     expect(buildGuestMenu(m, "hy").hasAllergens).toBe(false);
   });
 });
+
+describe("availability (ADR-068)", () => {
+  it("hides a section outside its window instead of greying it", () => {
+    const m = menu({ a: item(), b: item() }, [
+      { id: "bk", item_ids: ["a"] },
+      { id: "all", item_ids: ["b"] },
+    ]);
+    m.hidden_categories = ["bk"];
+    expect(buildGuestMenu(m, "en").categories.map((c) => c.id)).toEqual(["all"]);
+  });
+
+  it("carries a pause with and without an end, and a closed kitchen", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    expect(buildGuestMenu(m, "en").paused).toBeNull();
+    m.location.paused = { until: "2026-11-23T10:00:00Z" };
+    expect(buildGuestMenu(m, "en").paused).toEqual({ until: "2026-11-23T10:00:00Z" });
+    m.location.paused = { until: null };
+    expect(buildGuestMenu(m, "en").paused).toEqual({ until: null });
+    m.location.paused = null;
+    m.location.closed = { until: "2026-11-24T01:00:00Z" };
+    expect(buildGuestMenu(m, "en").closed?.until).toBe("2026-11-24T01:00:00Z");
+  });
+
+  it("builds the same status the polling endpoint answers with", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    m.sold_out = ["a"];
+    m.hidden_categories = ["x"];
+    m.menu.version = 4;
+    expect(buildGuestMenu(m, "en").status).toEqual({
+      version: 4,
+      ordering: true,
+      paused: null,
+      closed: null,
+      soldOut: ["a"],
+      hidden: ["x"],
+      busy: null,
+    });
+  });
+});

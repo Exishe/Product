@@ -1,5 +1,6 @@
 import { guestTheme, type GuestTheme } from "@/features/guest-theme/themes";
 import type { Locale } from "@/i18n/routing";
+import { parseStatus, type MenuStatus } from "@/features/availability/status";
 import { normalizeForSearch } from "@/lib/format/search";
 import { ALLERGENS, type Allergen } from "./allergens";
 
@@ -37,8 +38,19 @@ export type PublicMenu = {
      */
     brand?: unknown;
   };
-  location: { id: string; name: string; locales: string[]; ordering: boolean };
+  location: {
+    id: string;
+    name: string;
+    locales: string[];
+    ordering: boolean;
+    /** ADR-068; missing until migration 20261123120000_availability_controls. */
+    paused?: { until: string | null } | null;
+    closed?: { until: string | null } | null;
+  };
+  /** Categories outside their daily window right now (ADR-068). */
+  hidden_categories?: string[] | null;
   menu: {
+    version?: number;
     menus:
       | { id: string; name: I18n; categories: { id: string; name: I18n; item_ids: string[] }[] | null }[]
       | null;
@@ -101,6 +113,12 @@ export type GuestMenuData = {
   locationId: string;
   locales: string[];
   ordering: boolean;
+  /** Ordering is paused for now; `until` is null when it lasts until the café resumes (ADR-068). */
+  paused: { until: string | null } | null;
+  /** The kitchen is closed for today; `until` is the next opening. */
+  closed: { until: string | null } | null;
+  /** The same facts as api.public_menu_status, to tell when the page is out of date. */
+  status: MenuStatus;
   kitchenBusy: { minutes: number | null } | null;
   /** Some dish lists its allergens: the "I avoid…" filter is worth offering. */
   hasAllergens: boolean;
@@ -207,6 +225,7 @@ export function buildGuestMenu(
   dark: WordmarkTones = { header: false, page: false },
 ): GuestMenuData {
   const soldOut = new Set(data.sold_out ?? []);
+  const hidden = new Set(data.hidden_categories ?? []);
   const item = (id: string): GuestItem | null => {
     const raw = data.menu.items[id];
     const name = raw && localized(raw.name, locale);
@@ -243,6 +262,7 @@ export function buildGuestMenu(
 
   const categories = (data.menu.menus ?? []).flatMap((m) =>
     (m.categories ?? []).flatMap((c) => {
+      if (hidden.has(c.id)) return [];
       const items = c.item_ids.map(item).filter((i): i is GuestItem => i !== null);
       const cover = data.covers?.[c.id];
       return items.length
@@ -269,6 +289,20 @@ export function buildGuestMenu(
     locationId: data.location.id,
     locales: data.location.locales,
     ordering: data.location.ordering,
+    paused: data.location.paused ?? null,
+    closed: data.location.closed ?? null,
+    status: parseStatus(
+      {
+        version: data.menu.version,
+        ordering: data.location.ordering,
+        paused: data.location.paused,
+        closed: data.location.closed,
+        sold_out: data.sold_out,
+        hidden_categories: data.hidden_categories,
+        kitchen_busy: data.kitchen_busy,
+      },
+      null,
+    ) as MenuStatus,
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
     hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
     categories,

@@ -274,5 +274,42 @@ select test.ok((select bool_and(prosecdef and proconfig @> array['search_path=""
                               'api.public_menu_status(uuid)'::regprocedure)),
                'security definer with an empty search_path');
 
+
+-- ---------------------------------------------------------------------------
+-- Section on/off (api.save_category.p_is_active)
+-- ---------------------------------------------------------------------------
+select test.act_as('ac000000-0000-0000-0000-000000000001');
+select api.save_category(:'ra', :'cat_bk', '{"hy": "Նախաճաշ", "en": "Breakfast"}'::jsonb, null) = :'cat_bk'::uuid as kept \gset
+reset role;
+select test.ok(:'kept' and (select is_active from public.categories where id = :'cat_bk'), 'saving without the switch keeps the section on');
+select test.act_as('ac000000-0000-0000-0000-000000000003');
+select api.save_category(:'ra', :'cat_bk', '{"hy": "Նախաճաշ", "en": "Breakfast"}'::jsonb, null, false) as off \gset
+reset role;
+select test.ok(not (select is_active from public.categories where id = :'cat_bk'), 'a manager switches a section off');
+select test.act_as('ac000000-0000-0000-0000-000000000001');
+select api.save_category(:'ra', :'cat_bk', '{"hy": "Նախաճաշ", "en": "Breakfast"}'::jsonb, null) as same \gset
+reset role;
+select test.ok(not (select is_active from public.categories where id = :'cat_bk'), 'and saving the name again keeps it off');
+select test.act_as('ac000000-0000-0000-0000-000000000001');
+select api.publish_menu(:'la') as v_off \gset
+reset role;
+select test.ok(not (select snapshot -> 'items' ? :'eggs' from public.menu_versions where id = :'v_off'), 'after Publish the off section''s dish is not in the guest menu');
+select test.ok(not exists (select 1 from public.menu_versions v, jsonb_array_elements(v.snapshot -> 'menus') m, jsonb_array_elements(m -> 'categories') c
+                           where v.id = :'v_off' and c ->> 'id' = :'cat_bk'), 'nor is the section');
+select test.ok((select snapshot -> 'items' ? :'coffee' from public.menu_versions where id = :'v_off'), 'other sections stay');
+select test.act_as('ac000000-0000-0000-0000-000000000005', true);
+select test.fails(format('select api.guest_place_order(%L, %L, %L::jsonb, null)', :'g2', 'ac100000-0000-0000-0000-000000000009', :'eggs_line'),
+  'item_unavailable', 'a dish of an off section cannot be ordered');
+select test.act_as('ac000000-0000-0000-0000-000000000002');
+select test.fails(format('select api.save_category(%L, %L, %L::jsonb, null, false)', :'ra', :'cat_all', '{"hy": "Այլ"}'), 'forbidden', 'another café''s owner cannot switch a section');
+select test.act_as(:'u_waiter');
+select test.fails(format('select api.save_category(%L, %L, %L::jsonb, null, false)', :'ra', :'cat_all', '{"hy": "Այլ"}'), 'forbidden', 'nor a staff login');
+select test.act_as('ac000000-0000-0000-0000-000000000001');
+select api.save_category(:'ra', :'cat_bk', '{"hy": "Նախաճաշ", "en": "Breakfast"}'::jsonb, null, true) is not null as on \gset
+select api.publish_menu(:'la') as v_on \gset
+reset role;
+select test.ok((select snapshot -> 'items' ? :'eggs' from public.menu_versions where id = :'v_on'), 'switched on and published, the dish is back');
+select test.ok(not has_function_privilege('anon', 'api.save_category(uuid, uuid, jsonb, uuid, boolean)', 'execute'), 'anon cannot call save_category');
+
 select set_config('request.jwt.claims', '', false);
 \echo 'AVAILABILITY CONTROLS TESTS PASSED'

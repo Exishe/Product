@@ -2,6 +2,7 @@ import { CircleCheck, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AdminPage, Notice, Section } from "@/features/admin-ui/page";
+import { VenueControls, type VenueState } from "@/features/availability/venue-controls";
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { deltaPercent, parseDashboard, type Dashboard } from "@/features/dashboard/model";
 import { businessDate } from "@/features/dashboard/range";
@@ -74,6 +75,23 @@ export default async function AdminHome() {
     supabase.from("categories").select("updated_at").eq("restaurant_id", rid),
     supabase.from("modifier_groups").select("updated_at").eq("restaurant_id", rid),
   ]);
+
+  // Pause and closed-kitchen state (ADR-068). Read on its own so the page still
+  // works before the migration has reached this database: no columns, no section.
+  let venue: VenueState | null = null;
+  if (location) {
+    const { data: v, error } = await supabase
+      .from("locations")
+      .select("ordering_paused, ordering_paused_until, kitchen_closed_until")
+      .eq("id", location.id)
+      .maybeSingle();
+    if (v && !error)
+      venue = {
+        paused: v.ordering_paused,
+        pausedUntil: v.ordering_paused_until,
+        closedUntil: v.kitchen_closed_until,
+      };
+  }
 
   let data: Dashboard | null = null;
   try {
@@ -167,6 +185,12 @@ export default async function AdminHome() {
           <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("noSales")}</p>
         )}
       </Section>
+
+      {location && venue && (
+        <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">
+          <VenueControls initial={venue} timeZone={location.timezone} />
+        </Section>
+      )}
 
       <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
         {todos.length === 0 ? (

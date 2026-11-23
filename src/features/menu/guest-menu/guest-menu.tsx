@@ -15,6 +15,7 @@ import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { SplitText } from "@/features/guest-theme/motion/split-text";
+import { useMenuStatus } from "@/features/availability/use-menu-status";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -111,6 +112,25 @@ const subscribeWide = (onChange: () => void) => {
   return () => media.removeEventListener("change", onChange);
 };
 
+const noSubscription = () => () => {};
+
+// "Ordering is paused for a few minutes", with the time it resumes when the
+// café gave minutes. The time is read on the phone (it is at the café), so the
+// server render says the same thing without it.
+function PausedText({ until }: { until: string | null }) {
+  const { t, locale } = useGuestI18n();
+  const time = useSyncExternalStore(
+    noSubscription,
+    () =>
+      until
+        ? new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(until))
+        : null,
+    () => null,
+  );
+  if (!until) return <>{t("menu.pausedNoEnd")}</>;
+  return <>{time ? t("menu.pausedUntil", { time }) : t("menu.paused")}</>;
+}
+
 export function GuestMenu({
   menu,
   table,
@@ -146,7 +166,9 @@ export function GuestMenu({
   // The big header has scrolled away: show the slim bar above the tabs.
   const sentinel = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  const canOrder = menu.ordering && table.kind === "ok";
+  const canOrder = menu.ordering && !menu.paused && !menu.closed && table.kind === "ok";
+  // Sold-out, pause, closed kitchen and section hours change while the menu is open (ADR-068).
+  useMenuStatus(menu.locationId, menu.status);
   const waiter = useCallWaiter();
 
   const items = useMemo(
@@ -313,6 +335,12 @@ export function GuestMenu({
       <Notice tone="alert">{t("menu.badTable")}</Notice>
     ) : !menu.ordering ? (
       <Notice tone="calm">{t("menu.orderingOff")}</Notice>
+    ) : menu.closed ? (
+      <Notice tone="calm">{t("menu.closedToday")}</Notice>
+    ) : menu.paused ? (
+      <Notice tone="calm">
+        <PausedText until={menu.paused.until} />
+      </Notice>
     ) : table.kind === "none" ? (
       <Notice tone="info">{t("menu.noTable")}</Notice>
     ) : null;
