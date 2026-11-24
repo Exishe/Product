@@ -92,6 +92,32 @@ export function BrandMark({
 }
 
 /** Հայ · Рус · Eng, keeping the table token; a line draws under a language on hover. */
+// A label that turns over on hover (front and back are the same text; the back
+// is for the eye only) with a glow behind it. See .flip in guest.module.css.
+function Flip({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span className={styles.flipFront}>{children}</span>
+      <span className={styles.flipBack} aria-hidden="true">
+        {children}
+      </span>
+    </>
+  );
+}
+
+/** The table label in the menu bar: plain text that turns over like the languages. */
+export function TableChip({ label }: { label: string }) {
+  const { t } = useGuestI18n();
+  return (
+    <span
+      className={`text-ink grid min-h-11 flex-none place-items-center px-2 text-sm font-semibold whitespace-nowrap ${styles.flip}`}
+      data-testid="table-chip"
+    >
+      <Flip>{t("table", { label })}</Flip>
+    </span>
+  );
+}
+
 export function LanguageNav({ languages }: { languages: readonly LanguageLink[] }) {
   const { t, locale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
@@ -105,9 +131,9 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold ${styles.navlink}`}
+          className={`text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold ${styles.navlink} ${styles.flip}`}
         >
-          {t(`language.${l}`)}
+          <Flip>{t(`language.${l}`)}</Flip>
         </a>
       ))}
     </nav>
@@ -147,16 +173,9 @@ export function GuestHeader({
   /** The café's name and wordmark lead to the menu. */
   home?: HomeLink;
 }) {
-  const { t, locale } = useGuestI18n();
+  const { locale } = useGuestI18n();
   const nameLang = scriptLang(cafeName);
-  const tableChip = tableLabel && (
-    <span
-      className="border-line-strong/60 text-ink rounded-pill flex-none border px-3 py-1 text-sm font-semibold whitespace-nowrap"
-      data-testid="table-chip"
-    >
-      {t("table", { label: tableLabel })}
-    </span>
-  );
+  const tableChip = tableLabel && <TableChip label={tableLabel} />;
   const languageNav = <LanguageNav languages={languages} />;
 
   if (compact)

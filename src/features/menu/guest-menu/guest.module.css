@@ -733,14 +733,98 @@
 }
 
 .navlink:hover::after,
-.navlink:focus-visible::after,
-.navlink[aria-current="true"]::after,
-.navlink[aria-expanded="true"]::after {
+.navlink:focus-visible::after {
   transform: scaleX(1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .navlink::after {
+    transition: none;
+  }
+}
+
+
+/* Table and language items in the menu bar: on hover the label turns over like a
+   card (rotateX) while a soft glow in the brand's accent blooms behind it. After
+   the Hover Gradient nav bar; plain CSS, so no animation library. Touch
+   screens and "reduce motion" get the glow and colour only, no turning. */
+.flip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  perspective: 600px;
+  border-radius: 1rem;
+}
+
+.flip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--guest-accent-text, currentColor) 22%, transparent) 0%,
+    color-mix(in srgb, var(--guest-accent-text, currentColor) 8%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 500ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 500ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.flipFront,
+.flipBack {
+  grid-area: 1 / 1;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transition:
+    transform 500ms cubic-bezier(0.3, 0.7, 0.2, 1),
+    opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flipFront {
+  transform-origin: center bottom;
+}
+
+.flipBack {
+  transform-origin: center top;
+  opacity: 0;
+}
+
+.flip:hover::before,
+.flip:focus-visible::before,
+.flip:focus-within::before {
+  opacity: 1;
+  transform: scale(1.5);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .flipBack {
+    transform: rotateX(90deg);
+  }
+
+  .flip:hover .flipFront,
+  .flip:focus-visible .flipFront {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+
+  .flip:hover .flipBack,
+  .flip:focus-visible .flipBack {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip::before,
+  .flipFront,
+  .flipBack {
     transition: none;
   }
 }
