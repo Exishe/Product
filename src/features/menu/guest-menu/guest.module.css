@@ -523,6 +523,41 @@
   object-fit: cover;
 }
 
+/* Parallax: the photo is a little taller than its frame and drifts slower than
+   the page while the banner crosses the screen. Pure CSS (scroll-driven), so no
+   scroll listener; browsers without it, and people who asked for less motion,
+   see the still photo. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* The frame is the timeline's subject: the photo moving inside it must not
+       move its own timeline. */
+    .sectionHead {
+      view-timeline: --cover block;
+    }
+
+    .cover {
+      position: absolute;
+      top: -9%;
+      height: 118%;
+      animation-name: coverDrift;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --cover;
+      animation-range: cover;
+    }
+  }
+}
+
+@keyframes coverDrift {
+  from {
+    transform: translateY(-7%);
+  }
+  to {
+    transform: translateY(7%);
+  }
+}
+
 /* A printed section with a featured card (guest-menu.tsx). In one column
    the card leads and the list's two halves join into one card. */
 .spreadLead {
