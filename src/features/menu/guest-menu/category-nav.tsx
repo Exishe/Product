@@ -117,7 +117,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       }}
       onPointerEnter={() => window.clearTimeout(closeTimer.current)}
     >
-      <div className="flex [scrollbar-width:none] gap-1.5 overflow-x-auto sm:gap-2 [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-1.5 overflow-x-auto sm:gap-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {buckets.map((b) => {
           const isOpen = open === b.key;
           const here = currentBucket?.key === b.key;

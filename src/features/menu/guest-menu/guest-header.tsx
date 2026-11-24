@@ -61,13 +61,7 @@ export function BrandMark({
       <Tag className="m-0 flex min-w-0 flex-1 items-center">
         <Home home={home} label={cafeName}>
           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-          <img
-            src={wordmarkUrl}
-            alt={cafeName}
-            height={40}
-            className={styles.barWordmark}
-            data-testid={wordmarkTestId}
-          />
+          <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} data-testid={wordmarkTestId} />
         </Home>
       </Tag>
     );

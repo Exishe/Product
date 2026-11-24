@@ -344,9 +344,7 @@ export function GuestMenu({
       home={home}
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-      wordmarkUrl={
-        menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
-      }
+      wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
@@ -452,7 +450,7 @@ export function GuestMenu({
           placeholder={t("menu.search")}
           autoComplete="off"
           enterKeyHint="search"
-          className="placeholder:text-muted focus:border-accent-text rounded-pill min-h-10 w-full border [border-color:var(--guest-line-strong)] bg-transparent pr-4 pl-10 text-[0.9375rem]"
+          className="placeholder:text-muted focus:border-accent-text rounded-pill min-h-10 w-full border bg-transparent pr-4 pl-10 text-[0.9375rem] [border-color:var(--guest-line-strong)]"
         />
       </div>
       {offerFilter && (
@@ -462,7 +460,7 @@ export function GuestMenu({
           aria-pressed={avoid.length > 0}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill inline-flex min-h-10 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 text-sm font-semibold"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill inline-flex min-h-10 flex-none items-center gap-2 border px-3.5 text-sm font-semibold [border-color:var(--guest-line-strong)]"
         >
           <ShieldAlert size={16} aria-hidden />
           {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
@@ -476,11 +474,7 @@ export function GuestMenu({
         cafeName={menu.restaurantName}
         logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
         wordmarkUrl={
-          menu.wordmarkBar
-            ? dishPhotoUrl(menu.wordmarkBar)
-            : menu.wordmark
-              ? dishPhotoUrl(menu.wordmark)
-              : null
+          menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
         }
         home={home}
         tableLabel={table.kind === "ok" ? table.label : null}
@@ -618,7 +612,11 @@ export function GuestMenu({
                         ) : (
                           // Two columns filled row by row (a grid, not CSS columns), so the
                           // hairlines sit between rows and no column ends on a stray rule.
-                          <ul className={`${rowList} md:grid-cols-2`}>{rows(rest)}</ul>
+                          <ul
+                            className={`${rowList} md:grid-cols-2`}
+                          >
+                            {rows(rest)}
+                          </ul>
                         )}
                       </div>
                     ) : (

@@ -578,6 +578,7 @@
   padding-top: 0;
 }
 
+
 /* Side by side (a tablet, and a desktop wide enough beside the order rail):
    the card and the first lines in one column, the rest in the other. The
    grid stretches both, so the columns end on the same line. */
@@ -613,6 +614,7 @@
     border-radius: var(--guest-r-feature);
     padding-top: 0.25rem;
   }
+
 }
 
 /* «Բաժիններ» at the left edge of the section tabs: it stays while the tabs
@@ -733,6 +735,7 @@
     transition: none;
   }
 }
+
 
 /* Table and language items in the menu bar: on hover the label turns over like a
    card (rotateX) while a soft glow in the brand's accent blooms behind it. After

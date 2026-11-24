@@ -11,10 +11,7 @@ export type Selection = Record<string, string[]>;
 export function initialSelection(groups: readonly Group[]): Selection {
   const out: Selection = {};
   for (const g of groups) {
-    const chosen = g.modifiers
-      .filter((m) => m.isDefault)
-      .map((m) => m.id)
-      .slice(0, g.max);
+    const chosen = g.modifiers.filter((m) => m.isDefault).map((m) => m.id).slice(0, g.max);
     for (const m of g.modifiers) {
       if (chosen.length >= g.min) break;
       if (!chosen.includes(m.id)) chosen.push(m.id);
@@ -46,9 +43,7 @@ export function isSelectionValid(groups: readonly Group[], selection: Selection)
   return groups.every((g) => {
     const chosen = selection[g.id] ?? [];
     return (
-      chosen.length >= g.min &&
-      chosen.length <= g.max &&
-      chosen.every((id) => g.modifiers.some((m) => m.id === id))
+      chosen.length >= g.min && chosen.length <= g.max && chosen.every((id) => g.modifiers.some((m) => m.id === id))
     );
   });
 }
@@ -59,8 +54,7 @@ export function selectedIds(groups: readonly Group[], selection: Selection): str
 
 export function unitPrice(price: number, groups: readonly Group[], selection: Selection): number {
   return groups.reduce(
-    (sum, g) =>
-      sum + g.modifiers.filter((m) => selection[g.id]?.includes(m.id)).reduce((s, m) => s + m.delta, 0),
+    (sum, g) => sum + g.modifiers.filter((m) => selection[g.id]?.includes(m.id)).reduce((s, m) => s + m.delta, 0),
     price,
   );
 }
