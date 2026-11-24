@@ -3,7 +3,7 @@
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import styles from "./guest.module.css";
-import { Plate, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import { sizesOf, type GuestItem } from "./view-model";
 
 // One dish as a line of a printed menu: the name in the display face with
@@ -36,9 +36,19 @@ export function DishRow({
   const needsChoice = item.groups.some((g) => g.min > 0);
   const muted = item.soldOut ? "text-muted" : "";
   const sizes = sizesOf(item);
+  // A dish with a photo shows it as a rounded square at the start of its card;
+  // one without stays a plain line.
+  const photo = Boolean(item.image);
+  const price = (
+    <span className={`num text-accent-text flex-none font-semibold whitespace-nowrap ${muted}`}>
+      {formatAmd(item.price, locale)}
+    </span>
+  );
   return (
     <li
-      className="bg-surface shadow-card rounded-card relative flex items-start gap-3 border p-4 [border-color:var(--guest-card-border)]"
+      className={`bg-surface shadow-card rounded-card relative flex items-start gap-3 border [border-color:var(--guest-card-border)] ${
+        photo ? "p-3" : "p-4"
+      }`}
       data-testid="dish"
       data-dish-id={item.id}
       data-layout="row"
@@ -51,25 +61,26 @@ export function DishRow({
         className="flex min-h-11 min-w-0 flex-1 items-start gap-3 self-stretch rounded-[0.5rem] text-left disabled:cursor-default"
       >
         {item.image && (
-          <Plate
-            src={dishPhotoUrl(item.image)}
-            size={64}
-            muted={item.soldOut}
-            className="size-16 flex-none"
-          />
+          <span className="bg-plate block size-24 flex-none overflow-hidden rounded-[0.875rem]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+            <img
+              src={dishPhotoUrl(item.image)}
+              alt=""
+              width={400}
+              height={300}
+              loading="lazy"
+              className={`size-full object-cover ${item.soldOut ? "opacity-50 grayscale" : ""}`}
+            />
+          </span>
         )}
         <span className="block min-w-0 flex-1">
           <span className="flex items-baseline gap-3">
             <Txt
               value={item.name}
               locale={locale}
-              className={`display-face min-w-0 flex-1 text-[1.3125rem] leading-[1.15] break-words hyphens-auto ${muted}`}
+              className={`display-face min-w-0 flex-1 text-[1.0625rem] leading-[1.2] break-words hyphens-auto ${muted}`}
             />
-            {sizes.length === 0 && (
-              <span className={`num text-accent-text flex-none font-semibold whitespace-nowrap ${muted}`}>
-                {formatAmd(item.price, locale)}
-              </span>
-            )}
+            {sizes.length === 0 && price}
           </span>
           {sizes.length > 0 && (
             <span
