@@ -14,7 +14,6 @@ import {
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
-import { StrokeTitle } from "@/features/guest-theme/motion/stroke-title";
 import { addLine, cartSummary, setQuantity, type CartMenu } from "@/features/ordering/cart";
 import { OPEN_CART_KEY, cartKey, useCart } from "@/features/ordering/cart-store";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -26,8 +25,8 @@ import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens
 import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
-import { DishCard } from "./dish-card";
 import { DishRow } from "./dish-row";
+import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
 import { MenuBar } from "./menu-bar";
@@ -70,39 +69,6 @@ const COLUMN = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-
-// The featured card of a section (three dishes or more): its first popular
-// dish with a photo that can be had today, else its first dish with a photo.
-// It spans the row and breaks the grid's rhythm. A section with a cover
-// photo has none: the cover is its lead picture, and cafés cut covers from
-// their dish photos, so a card under it would show the same plate twice.
-function featuredOf(c: { items: GuestItem[]; cover: string | null }): string | undefined {
-  if (c.cover || c.items.length < 3) return undefined;
-  const pictured = c.items.filter((i) => i.image && !i.soldOut);
-  return (pictured.find((i) => i.tags.includes("popular")) ?? pictured[0])?.id;
-}
-
-// A printed section beside its featured card (two columns): how many of its
-// lines go under the card so both columns end together. Heights are
-// estimated in "plain lines": a description or tags make a line taller, and
-// the card stands about four and a half lines tall. The grid then stretches
-// the shorter column, so the estimate only has to be close.
-const FEATURED_LINES = 4.5;
-const lineWeight = (i: GuestItem) =>
-  1 + (i.description ? 0.4 : 0) + (i.tags.length || i.portion ? 0.25 : 0) + (i.image ? 0.15 : 0);
-function underFeatured(rest: GuestItem[]): number {
-  const weights = rest.map(lineWeight);
-  const all = weights.reduce((s, w) => s + w, 0);
-  let best = 0;
-  let bestGap = Infinity;
-  let left = FEATURED_LINES;
-  for (let n = 0; n < rest.length; n++) {
-    const gap = Math.abs(left - (all + FEATURED_LINES - left));
-    if (gap < bestGap) [best, bestGap] = [n, gap];
-    left += weights[n] as number;
-  }
-  return best;
-}
 
 // A desktop: the order rail is on screen (and sends the order itself).
 const WIDE = "(min-width: 1024px)";
@@ -300,8 +266,6 @@ export function GuestMenu({
 
   const count = summary.count;
   // The first featured photo on the page is fetched at once (likely the LCP).
-  const firstFeatured = shown.map(featuredOf).find(Boolean);
-  const firstCover = shown.find((c) => c.cover)?.id;
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
   const iconButton =
     "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
@@ -513,17 +477,11 @@ export function GuestMenu({
                 {t("menu.noResults")}
               </p>
             ) : (
-              shown.map((c, at) => {
-                // Plates only where there is food to show: a section where at
-                // least half the dishes have photos is a grid of plates; any
-                // other reads as a printed menu (DishRow), led by its featured
-                // photo when it has one. No rows of identical empty plates.
-                const plates = c.items.filter((i) => i.image).length * 2 >= c.items.length;
-                const featured = featuredOf(c);
-                const rest = c.items.filter((item) => item.id !== featured);
-                // Lines that go under the featured card when the two sit side by side.
-                const under = featured && !plates ? underFeatured(rest) : 0;
-                const rowList = "grid content-start gap-3";
+              // One compact page: the four clusters (food, desserts, drinks, wine) one
+              // after another, each with its sections and their dishes as small cards.
+              // No cover photos and no big titles, so nothing jumps while scrolling.
+              (() => {
+                const clusters = groupSections(shown);
                 const rows = (list: GuestItem[]) =>
                   list.map((item) => (
                     <DishRow
@@ -535,113 +493,35 @@ export function GuestMenu({
                       onQuickAdd={quickAdd}
                     />
                   ));
-                // The dish's place on the page, counted over the sections before.
-                const before = shown.slice(0, at).reduce((n, x) => n + x.items.length, 0);
-                return (
-                  <section
-                    key={c.id}
-                    id={sectionId(c.id)}
-                    aria-labelledby={`h-${c.id}`}
-                    className="scroll-mt-44 pt-8"
-                  >
-                    {/* The section's cover photo (brand profile, ADR-058): decoration, the
-                        title names it. Above the title on a phone; beside it from
-                        768 px, where a full-width band would crop the plate away. */}
-                    <div className={c.cover ? styles.sectionHead : undefined}>
-                      {c.cover && (
-                        // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
-                        <img
-                          src={dishPhotoUrl(c.cover)}
-                          alt=""
-                          width={1200}
-                          height={514}
-                          loading="lazy"
-                          fetchPriority={c.id === firstCover ? "high" : undefined}
-                          className={styles.cover}
-                        />
-                      )}
-                      {/* guest-flourish: the brand's script font, when it has one (globals.css). */}
-                      {c.name && (
-                        <StrokeTitle
-                          as="h2"
-                          id={`h-${c.id}`}
-                          text={c.name.text}
-                          lang={c.name.lang === locale ? undefined : c.name.lang}
-                          className={`display-face guest-flourish text-title ${c.cover ? "" : "mb-5"} text-[1.5rem] leading-[1.15] md:text-[1.75rem] ${styles.sectionTitle}`}
-                        />
-                      )}
-                    </div>
-                    {!plates ? (
-                      <div className={featured ? styles.spread : undefined}>
-                        {featured && (
-                          <ul className={`grid grid-cols-2 ${styles.spreadLead}`}>
-                            {c.items
-                              .filter((item) => item.id === featured)
-                              .map((item) => (
-                                <DishCard
-                                  key={item.id}
-                                  item={item}
-                                  canOrder={canOrder}
-                                  warning={warningFor(item)}
-                                  featured
-                                  priority={item.id === firstFeatured}
-                                  index={before}
-                                  onOpen={setSheet}
-                                  onQuickAdd={quickAdd}
-                                />
-                              ))}
-                          </ul>
-                        )}
-                        {featured ? (
-                          // Beside the card the list is cut in two: the first lines sit
-                          // under the card, the rest fill the other column. In one
-                          // column (a phone) the two halves join into one list again.
-                          <>
-                            {under > 0 && (
-                              <ul className={`${rowList} ${styles.spreadUnder}`}>
-                                {rows(rest.slice(0, under))}
-                              </ul>
-                            )}
-                            <ul
-                              className={`${rowList} ${styles.spreadSide}`}
-                              data-joined={under > 0 || undefined}
-                            >
-                              {rows(rest.slice(under))}
-                            </ul>
-                          </>
-                        ) : (
-                          // Two columns filled row by row (a grid, not CSS columns), so the
-                          // hairlines sit between rows and no column ends on a stray rule.
-                          <ul
-                            className={`${rowList} md:grid-cols-2`}
-                          >
-                            {rows(rest)}
-                          </ul>
-                        )}
-                      </div>
-                    ) : (
-                      <ul className="grid grid-cols-2 gap-x-4 gap-y-6 max-[359px]:grid-cols-1 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2 xl:grid-cols-3">
-                        {/* The featured dish leads its section, so the grid below it stays whole. */}
-                        {[...c.items]
-                          .sort((a, b) => Number(b.id === featured) - Number(a.id === featured))
-                          .map((item, i) => (
-                            <DishCard
-                              key={item.id}
-                              item={item}
-                              canOrder={canOrder}
-                              warning={warningFor(item)}
-                              featured={item.id === featured}
-                              priority={item.id === firstFeatured}
-                              index={before + i}
-                              onOpen={setSheet}
-                              onQuickAdd={quickAdd}
-                            />
-                          ))}
-                      </ul>
+                return clusters.map(({ group, sections }) => (
+                  <div key={group} id={`group-${group}`} className="scroll-mt-44 pt-6" data-group={group}>
+                    {clusters.length > 1 && (
+                      <h2 className="text-title border-line mb-1 border-b pb-2 text-[1.25rem] leading-[1.2] font-semibold">
+                        {t(`menu.groups.${group}`)}
+                      </h2>
                     )}
-                  </section>
-                );
-              })
+                    {sections.map((c) => (
+                      <section
+                        key={c.id}
+                        id={sectionId(c.id)}
+                        aria-labelledby={`h-${c.id}`}
+                        className="scroll-mt-44 pt-4"
+                      >
+                        {c.name && (
+                          <h3
+                            id={`h-${c.id}`}
+                            lang={c.name.lang === locale ? undefined : c.name.lang}
+                            className="text-ink mb-2.5 text-[1rem] leading-[1.25] font-semibold"
+                          >
+                            {c.name.text}
+                          </h3>
+                        )}
+                        <ul className="grid content-start items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>
+                      </section>
+                    ))}
+                  </div>
+                ));
+              })()
             )}
           </main>
           <div className="hidden pt-8 lg:block">
