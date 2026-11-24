@@ -9,7 +9,9 @@ const dish = (page: Page, name: string): Locator => page.getByTestId("dish").fil
 const visibleDishNames = (page: Page) =>
   page.getByTestId("dish").evaluateAll((els) => els.map((e) => e.getAttribute("data-dish-id")).sort());
 const noHorizontalScroll = async (page: Page) =>
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+  ).toBeLessThanOrEqual(0);
 
 test.describe("guest menu at the demo café", () => {
   test.skip(!ownerEmail || !ownerPassword, "needs E2E_OWNER_EMAIL and E2E_OWNER_PASSWORD from .env.local");
@@ -37,7 +39,9 @@ test.describe("guest menu at the demo café", () => {
     await noHorizontalScroll(page);
   });
 
-  test("tabs, the dish sheet's option rules, the cart and its totals; switching language keeps the table", async ({ page }) => {
+  test("tabs, the dish sheet's option rules, the cart and its totals; switching language keeps the table", async ({
+    page,
+  }) => {
     const { token } = await demoTable("9");
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
     await expect(page.getByTestId("table-chip")).toHaveText("Սեղան 9");
@@ -51,19 +55,20 @@ test.describe("guest menu at the demo café", () => {
     // Cappuccino: size is required with 250 ml preselected; milk is optional, one at most.
     await dish(page, "Կապուչինո").getByRole("button", { name: "Ավելացնել՝ Կապուչինո" }).click();
     const sheet = page.getByRole("dialog", { name: "Կապուչինո" });
-    const add = sheet.getByRole("button", { name: /^Ավելացնել\s+\d/ });
+    const add = sheet.getByRole("button", { name: "Ավելացնել", exact: true });
+    const total = sheet.getByTestId("sheet-total");
     await expect(sheet.getByRole("radio", { name: "250 մլ" })).toBeChecked();
-    await expect(add).toContainText(formatAmd(1300, "hy"));
+    await expect(total).toContainText(formatAmd(1300, "hy"));
     await sheet.getByRole("radio", { name: "350 մլ" }).check();
-    await expect(add).toContainText(formatAmd(1600, "hy"));
+    await expect(total).toContainText(formatAmd(1600, "hy"));
     await sheet.getByRole("checkbox", { name: "Վարսակի կաթ" }).check();
-    await expect(add).toContainText(formatAmd(1900, "hy"));
+    await expect(total).toContainText(formatAmd(1900, "hy"));
     await sheet.getByRole("checkbox", { name: "Առանց լակտոզի կաթ" }).check();
     await expect(sheet.getByRole("checkbox", { name: "Վարսակի կաթ" })).not.toBeChecked();
-    await expect(add).toContainText(formatAmd(1800, "hy"));
+    await expect(total).toContainText(formatAmd(1800, "hy"));
     await sheet.getByRole("checkbox", { name: "Առանց լակտոզի կաթ" }).uncheck();
     await sheet.getByRole("button", { name: "Ավելացնել քանակը" }).click();
-    await expect(add).toContainText(formatAmd(3200, "hy"));
+    await expect(total).toContainText(formatAmd(3200, "hy"));
     await add.click();
     await expect(sheet).toBeHidden();
 
@@ -125,7 +130,10 @@ test.describe("guest menu edge cases at a fresh café", () => {
       const priceBox = (await price.boundingBox())!;
       expect(priceBox.x + priceBox.width).toBeLessThanOrEqual(viewport.width);
       expect(priceBox.height).toBeLessThan(40);
-      await row.getByRole("button", { name: new RegExp(name.slice(0, 20)) }).first().click();
+      await row
+        .getByRole("button", { name: new RegExp(name.slice(0, 20)) })
+        .first()
+        .click();
       await noHorizontalScroll(page);
       await page.keyboard.press("Escape");
     }
@@ -139,16 +147,22 @@ test.describe("guest menu edge cases at a fresh café", () => {
     expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
   });
 
-  test("missing translations fall back to Armenian, then Russian, marked with lang (Review focus 5)", async ({ page }) => {
+  test("missing translations fall back to Armenian, then Russian, marked with lang (Review focus 5)", async ({
+    page,
+  }) => {
     await page.goto(`/en/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
     await expect(dish(page, "Tolma").getByText("Tolma", { exact: true })).not.toHaveAttribute("lang");
     await expect(dish(page, "Բորանի").getByText("Բորանի", { exact: true })).toHaveAttribute("lang", "hy");
-    await expect(dish(page, "Сырники со сметаной").getByText("Сырники со сметаной", { exact: true })).toHaveAttribute("lang", "ru");
+    await expect(
+      dish(page, "Сырники со сметаной").getByText("Сырники со сметаной", { exact: true }),
+    ).toHaveAttribute("lang", "ru");
     // The café name is Armenian on an English page.
     await expect(page.getByRole("heading", { level: 1 })).toHaveAttribute("lang", "hy");
 
     await page.goto(`/hy/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
-    await expect(dish(page, "Сырники со сметаной").getByText("Сырники со сметаной", { exact: true })).toHaveAttribute("lang", "ru");
+    await expect(
+      dish(page, "Сырники со сметаной").getByText("Сырники со сметаной", { exact: true }),
+    ).toHaveAttribute("lang", "ru");
     await expect(dish(page, "Բորանի").getByText("Բորանի", { exact: true })).not.toHaveAttribute("lang");
   });
 
@@ -197,8 +211,13 @@ test.describe("guest menu edge cases at a fresh café", () => {
     // The choice belongs to the guest: it is still there after a reload.
     await page.reload();
     await expect(dish(page, "Բորանի")).toContainText("Contains milk");
-    await dish(page, "Բորանի").getByRole("button", { name: /Բորանի/ }).first().click();
-    await expect(page.getByRole("dialog", { name: "Բորանի" }).getByTestId("allergens")).toContainText("Contains milk");
+    await dish(page, "Բորանի")
+      .getByRole("button", { name: /Բորանի/ })
+      .first()
+      .click();
+    await expect(page.getByRole("dialog", { name: "Բորանի" }).getByTestId("allergens")).toContainText(
+      "Contains milk",
+    );
     await page.keyboard.press("Escape");
 
     await openChooser("Allergies: 1");
@@ -225,7 +244,9 @@ test.describe("guest menu edge cases at a fresh café", () => {
 });
 
 test.describe("guest menu when the café switches ordering off", () => {
-  test("the menu shows a calm notice and the cart explains that the waiter takes orders", async ({ page }) => {
+  test("the menu shows a calm notice and the cart explains that the waiter takes orders", async ({
+    page,
+  }) => {
     test.setTimeout(120_000);
     const cafe = await createTestCafe();
     const url = `/ru/m/${cafe.slug}/main?t=${cafe.tables["2"]!.token}`;
@@ -233,7 +254,11 @@ test.describe("guest menu when the café switches ordering off", () => {
     await dish(page, "Толма").getByRole("button", { name: "Добавить: Толма" }).click();
     await expect(page.getByRole("button", { name: /Посмотреть заказ/ })).toContainText("1 блюдо");
 
-    const off = await cafe.owner.from("locations").update({ qr_ordering_enabled: false }).eq("id", cafe.locationId).select("id");
+    const off = await cafe.owner
+      .from("locations")
+      .update({ qr_ordering_enabled: false })
+      .eq("id", cafe.locationId)
+      .select("id");
     expect(off.error).toBeNull();
     await page.reload();
     await expect(page.getByText("Сейчас заказы принимает официант.")).toBeVisible();

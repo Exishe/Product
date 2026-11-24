@@ -1,12 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { initialSelection, isSelectionValid, selectedIds, toggleOption, unitPrice, type Group } from "./selection";
+import {
+  initialSelection,
+  isSelectionValid,
+  selectedIds,
+  toggleOption,
+  unitPrice,
+  type Group,
+} from "./selection";
 
 const opt = (id: string, delta = 0, isDefault = false) => ({ id, delta, isDefault });
 const size: Group = { id: "size", min: 1, max: 1, modifiers: [opt("s250"), opt("s350", 300)] };
-const sugar: Group = { id: "sugar", min: 1, max: 1, modifiers: [opt("none"), opt("medium", 0, true), opt("sweet")] };
+const sugar: Group = {
+  id: "sugar",
+  min: 1,
+  max: 1,
+  modifiers: [opt("none"), opt("medium", 0, true), opt("sweet")],
+};
 const milk: Group = { id: "milk", min: 0, max: 1, modifiers: [opt("oat", 300), opt("lactose", 200)] };
-const extras: Group = { id: "extras", min: 0, max: 2, modifiers: [opt("honey", 150), opt("cinnamon", 100), opt("lemon", 50)] };
-const sauces: Group = { id: "sauces", min: 2, max: 3, modifiers: [opt("a"), opt("b", 0, true), opt("c"), opt("d")] };
+const extras: Group = {
+  id: "extras",
+  min: 0,
+  max: 2,
+  modifiers: [opt("honey", 150), opt("cinnamon", 100), opt("lemon", 50)],
+};
+const sauces: Group = {
+  id: "sauces",
+  min: 2,
+  max: 3,
+  modifiers: [opt("a"), opt("b", 0, true), opt("c"), opt("d")],
+};
 
 describe("initialSelection", () => {
   it("preselects defaults, and the first option of a required group without one", () => {
@@ -88,6 +110,10 @@ describe("unitPrice and selectedIds", () => {
 
   it("lists chosen option ids in menu order, whatever order they were tapped in", () => {
     const groups = [size, extras];
-    expect(selectedIds(groups, { extras: ["lemon", "honey"], size: ["s350"] })).toEqual(["s350", "honey", "lemon"]);
+    expect(selectedIds(groups, { extras: ["lemon", "honey"], size: ["s350"] })).toEqual([
+      "s350",
+      "honey",
+      "lemon",
+    ]);
   });
 });

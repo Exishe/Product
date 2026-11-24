@@ -169,7 +169,9 @@ export function CartView({
           {t("cart.back")}
         </button>
       </div>
-      <h2 className="display-face mt-4 mb-1 text-[1.75rem] leading-[1.15] md:text-[2rem]">{t("cart.title")}</h2>
+      <h2 className="display-face mt-4 mb-1 text-[1.75rem] leading-[1.15] md:text-[2rem]">
+        {t("cart.title")}
+      </h2>
       <ul className="rounded-feature bg-surface shadow-card mt-5 border [border-color:var(--guest-card-border)] px-4 sm:px-6">
         {summary.lines.map((p) => (
           <LineRow
@@ -182,8 +184,8 @@ export function CartView({
           />
         ))}
       </ul>
-      <div className="flex items-baseline justify-between px-1 pt-6 pb-4 text-2xl font-semibold">
-        <span className="display-face text-[1.75rem]">{t("cart.total")}</span>
+      <div className="flex items-baseline justify-between px-1 pt-5 pb-3 text-xl font-semibold">
+        <span>{t("cart.total")}</span>
         <span className="num" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>

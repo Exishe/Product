@@ -77,51 +77,70 @@ export function DishSheet({
       }}
       className={`rounded-t-feature bg-surface text-ink md:rounded-feature md:shadow-float mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[600px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
-      <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-7 md:max-h-[88dvh] md:px-9 md:pt-9">
-        {/* The expanded card (owner's reference): the plate bleeds off the
-            top-right corner, a round × floats top-left, and the name,
-            description and price sit beside the plate. */}
-        {/* Without a photo there is no plate: an empty dark disc would be
-            the largest thing on the sheet and say nothing. */}
+      <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-0 md:max-h-[88dvh] md:px-9">
+        {/* A big photo across the top with a round × floating on it; without a photo
+            the × sits on its own above the name. */}
         <div
-          className={`relative -mx-5 -mt-7 overflow-hidden px-5 pt-5 pb-1 md:-mx-9 md:-mt-9 md:px-9 md:pt-7 ${item.image ? "min-h-[13.5rem] md:min-h-[16rem]" : ""}`}
+          className={`relative -mx-5 overflow-hidden md:-mx-9 ${item.image ? "bg-plate aspect-[4/3] md:aspect-[16/10]" : "px-5 pt-5 md:px-9 md:pt-7"}`}
         >
           {item.image && (
-            <Plate
+            // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+            <img
               src={dishPhotoUrl(item.image)}
-              size={440}
-              lazy={false}
-              className="pointer-events-none absolute top-[-1.75rem] right-[-3.25rem] w-[min(58%,17rem)] md:top-[-2.5rem] md:right-[-3rem] md:w-[19rem]"
+              alt=""
+              width={800}
+              height={600}
+              className="size-full object-cover"
             />
           )}
           <button
             type="button"
             onClick={onClose}
             aria-label={t("sheet.close")}
-            className="text-ink bg-surface shadow-card relative grid size-12 flex-none place-items-center rounded-full"
+            className={`text-ink bg-surface shadow-card grid size-12 flex-none place-items-center rounded-full ${
+              item.image ? "absolute top-4 left-4 md:top-5 md:left-5" : "relative"
+            }`}
           >
             <CloseIcon />
           </button>
-          <div className={`relative mt-5 ${item.image ? "pr-[44%] md:pr-[46%]" : ""}`}>
+        </div>
+        <div className="mt-5 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
             <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
               <Txt
                 value={item.name}
                 locale={locale}
-                className="display-face block text-[1.5rem] leading-[1.15] break-words hyphens-auto md:text-[1.75rem]"
+                className="display-face block text-[1.375rem] leading-[1.2] break-words hyphens-auto md:text-[1.5rem]"
               />
             </h2>
-            <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
-              {item.portion && (
-                <span className={styles.portion}>
-                  {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
-                </span>
-              )}
-              {item.tags.map((tag) => (
-                <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
-              ))}
+            <p className="num text-accent-text mt-1 text-[1.125rem] font-semibold">
+              {formatAmd(item.price, locale)}
             </p>
           </div>
+          {canOrder && (
+            <Stepper
+              value={quantity}
+              max={MAX_QUANTITY}
+              onChange={setQuantity}
+              labels={{
+                decrease: t("sheet.decrease"),
+                increase: t("sheet.increase"),
+                quantity: t("sheet.quantity"),
+              }}
+              button="size-11"
+            />
+          )}
         </div>
+        <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+          {item.portion && (
+            <span className={styles.portion}>
+              {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
+            </span>
+          )}
+          {item.tags.map((tag) => (
+            <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+          ))}
+        </p>
         {item.description && (
           <Txt
             value={item.description}
@@ -130,9 +149,6 @@ export function DishSheet({
             className="text-muted mt-3 text-[0.9375rem] leading-relaxed"
           />
         )}
-        <p className="num text-accent-text mt-3 text-[1.625rem] font-semibold">
-          {formatAmd(item.price, locale)}
-        </p>
         {/* Allergens as the café listed them; when it listed none, say so
             (an empty list is not "free of"), and always send serious
             allergies to the waiter. */}
@@ -295,20 +311,16 @@ export function DishSheet({
           }
         >
           {canOrder ? (
-            <div className="flex gap-3">
-              <span className="inline-flex flex-none items-center gap-1">
-                <Stepper
-                  value={quantity}
-                  max={MAX_QUANTITY}
-                  onChange={setQuantity}
-                  labels={{
-                    decrease: t("sheet.decrease"),
-                    increase: t("sheet.increase"),
-                    quantity: t("sheet.quantity"),
-                  }}
-                  button="size-12"
-                />
-              </span>
+            <div className="flex items-center gap-4">
+              <p className="grid flex-none leading-tight">
+                <span className="text-muted text-[0.8125rem]">{t("cart.total")}</span>
+                <span
+                  className="num text-[1.375rem] font-semibold whitespace-nowrap"
+                  data-testid="sheet-total"
+                >
+                  {formatAmd(price, locale)}
+                </span>
+              </p>
               <button
                 type="button"
                 disabled={!valid}
@@ -317,10 +329,9 @@ export function DishSheet({
                   flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-6 font-semibold`}
+                className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-center gap-3 px-6 font-semibold`}
               >
-                <span>{t("sheet.add")}</span>
-                <span className="num whitespace-nowrap">{formatAmd(price, locale)}</span>
+                {t("sheet.add")}
               </button>
             </div>
           ) : null}
