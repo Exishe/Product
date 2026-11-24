@@ -303,11 +303,11 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
                   <p className={styles.eye}>{eyebrow(i)}</p>
                   <h3 style={{ margin: 0, font: "inherit" }}>
                     {a && (
-                      <span data-t1="" className={styles.t1} style={{ fontSize: `${fit(a.length, 52, 330, 0.5)}px` } as CSSProperties}>
+                      <span data-t1="" className={styles.t1} style={{ fontSize: `${fit(a.length, 30, 330, 0.5)}px` } as CSSProperties}>
                         {a}
                       </span>
                     )}
-                    <span data-t2="" className={styles.t2} style={{ fontSize: `${fit(b.length, 58, 330, 0.62)}px` } as CSSProperties}>
+                    <span data-t2="" className={styles.t2} style={{ fontSize: `${fit(b.length, 34, 330, 0.62)}px` } as CSSProperties}>
                       {b}
                     </span>
                   </h3>

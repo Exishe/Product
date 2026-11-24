@@ -169,7 +169,7 @@ export function CartView({
           {t("cart.back")}
         </button>
       </div>
-      <h2 className="display-face mt-4 mb-1 text-[3rem] leading-[1.02] md:text-[4rem]">{t("cart.title")}</h2>
+      <h2 className="display-face mt-4 mb-1 text-[1.75rem] leading-[1.15] md:text-[2rem]">{t("cart.title")}</h2>
       <ul className="rounded-feature bg-surface shadow-card mt-5 border [border-color:var(--guest-card-border)] px-4 sm:px-6">
         {summary.lines.map((p) => (
           <LineRow

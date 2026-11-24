@@ -567,7 +567,7 @@ export function GuestMenu({
                           id={`h-${c.id}`}
                           text={c.name.text}
                           lang={c.name.lang === locale ? undefined : c.name.lang}
-                          className={`display-face guest-flourish text-title ${c.cover ? "" : "mb-5"} text-[2.125rem] leading-[1.02] md:text-[2.75rem] ${styles.sectionTitle}`}
+                          className={`display-face guest-flourish text-title ${c.cover ? "" : "mb-5"} text-[1.5rem] leading-[1.15] md:text-[1.75rem] ${styles.sectionTitle}`}
                         />
                       )}
                     </div>

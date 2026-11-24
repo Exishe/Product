@@ -309,7 +309,7 @@ function OrderCard({
         </div>
         <div className={`${guestStyles.sheetBody} pb-2`}>
           {status !== "rejected" && status !== "cancelled" && (
-            <h2 className="display-face text-[1.875rem] leading-[1.1] md:text-[2.25rem]" data-testid="order-phase">
+            <h2 className="display-face text-[1.375rem] leading-[1.2] md:text-[1.5rem]" data-testid="order-phase">
               {t(`order.steps.${status}`)}
             </h2>
           )}
@@ -330,7 +330,7 @@ function OrderCard({
     >
       <div className="flex items-baseline justify-between gap-3">
         <Title
-          className={`display-face leading-[1.05] ${latest ? "text-[2.75rem] md:text-[3.25rem]" : "text-2xl"}`}
+          className={`display-face leading-[1.05] ${latest ? "text-[1.75rem] md:text-[2rem]" : "text-xl"}`}
         >
           {t("order.title", { number: order.number })}
         </Title>

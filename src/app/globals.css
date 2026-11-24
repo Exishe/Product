@@ -756,7 +756,7 @@ body:has(.admin-shell) {
 /* Overscroll beyond the page shows the café's page colour too (not for the
    miniature previews on the admin page, marked data-guest-preview). */
 body:has(.guest-lux:not([data-guest-preview])) {
-  background: #f6f1e7;
+  background: #fbfaf4;
 }
 body:has(.guest-lux[data-guest-theme="soft"]:not([data-guest-preview])) {
   background: #eceef1;
@@ -781,7 +781,7 @@ body:has(.guest-lux[data-guest-theme="wine"]:not([data-guest-preview])) {
 .guest-lux:not([data-guest-theme="wine"]):has([data-order-page]),
 body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   background: #ffffff !important;
-  --guest-card-border: #14110f;
+  --guest-card-border: #e8e3d6;
 }
 
 /* The bottom bar keeps the page colour, which is white on the order page. */
@@ -792,4 +792,33 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
 /* Full-screen section photos reach past the column; the page never scrolls sideways. */
 .guest-lux {
   overflow-x: clip;
+}
+
+
+/* Comfort pass (owner, Nov 2026): a light, calm guest page. Near-white page, white
+   cards with a hairline edge instead of a shadow, round black "+" buttons, one plain
+   text face for every heading at modest sizes and a regular-to-semibold weight.
+   Not for Wine, which keeps its dark look. The brand's own colours still reach the
+   header, prices, badges and the main button (brand.ts). */
+.guest-lux:not([data-guest-theme="wine"]) {
+  --font-display: var(--font-ui);
+  --guest-display-weight: 600;
+  --guest-display-stretch: 100%;
+  --guest-page: #fbfaf4;
+  --guest-surface: #ffffff;
+  --guest-card-border: #ebe6d9;
+  --guest-shadow-card: 0 1px 2px rgb(27 23 18 / 0.04);
+  --guest-r-card: 20px;
+  --guest-add: var(--guest-ink);
+  --guest-on-add: #ffffff;
+  --guest-add-shadow: none;
+}
+
+.guest-lux:not([data-guest-theme="wine"]) .display-face {
+  letter-spacing: 0;
+}
+
+.guest-lux[data-brand-script] .guest-flourish {
+  font-family: inherit;
+  font-weight: 600;
 }

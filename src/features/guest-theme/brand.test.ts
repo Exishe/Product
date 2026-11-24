@@ -92,7 +92,7 @@ describe("brandTokens", () => {
     const { style, check } = brandTokens("soft", BLANCA);
     const v = vars(style);
     expect(check.ignored).toEqual([]);
-    expect(v["--guest-page"]).toBe("#f9f0e3");
+    expect(v["--guest-page"]).toBe("#fdfaf5");
     expect(v["--brand-header"]).toBe("#3e312f");
     expect(v["--guest-accent"]).toBe("#3e312f"); // filled buttons
     expect(v["--brand-on-header"]).toBe("#f9f0e3"); // cream on espresso
@@ -100,9 +100,10 @@ describe("brandTokens", () => {
     expect(v["--guest-tab"]).toBe("#705d4c");
     expect(v["--guest-badge"]).toBe("#c49871");
     expect(v["--guest-line"]).toBe("#ead7bf");
-    expect(v["--font-display"]).toMatch(/^"Cormorant", var\(--font-noto-sans-armenian\)/);
+    // Headings and the script accent stay in the plain text face on the guest page.
+    expect(v["--font-display"]).toBeUndefined();
     expect(v["--font-ui"]).toMatch(/^"Jost", var\(--font-noto-sans-armenian\)/);
-    expect(v["--brand-font-script"]).toMatch(/^"Great Vibes"/);
+    expect(v["--brand-font-script"]).toBeUndefined();
   });
 
   it("keeps the header's tool icons visible on the theme's surface", () => {
@@ -169,7 +170,7 @@ describe("brandTokens", () => {
     const brand: Brand = { ...EMPTY_BRAND, colors: { header: "#7a5c2e", page: "#d8c9a8" } };
     expect(vars(brandStyle("soft", "#7a5c2e"))["--guest-accent-text"]).toBe("#7a5c2e");
     const v = vars(brandTokens("soft", brand).style);
-    expect(v["--guest-page"]).toBe("#d8c9a8");
+    expect(v["--guest-page"]).toBe("#f1ece1");
     expect(v["--guest-accent-text"]).toBeUndefined();
     for (const theme of GUEST_THEMES) {
       const t = vars(brandTokens(theme, brand).style);
@@ -221,7 +222,7 @@ describe("pickWordmark", () => {
 
   it("knows what is behind the wordmark: the header band, and the page under the slim bar", () => {
     // Blanca: a dark band on a cream page.
-    expect(wordmarkBackgrounds("soft", BLANCA)).toEqual({ header: "#3e312f", page: "#f9f0e3" });
+    expect(wordmarkBackgrounds("soft", BLANCA)).toEqual({ header: "#3e312f", page: "#fdfaf5" });
     expect(wordmarkTones("soft", BLANCA)).toEqual({ header: true, page: false });
     // No header colour: the name sits on the page.
     expect(wordmarkTones("soft", { ...both })).toEqual({ header: false, page: false });

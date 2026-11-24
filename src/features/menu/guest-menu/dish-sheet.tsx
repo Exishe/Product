@@ -107,7 +107,7 @@ export function DishSheet({
               <Txt
                 value={item.name}
                 locale={locale}
-                className="display-face block text-[clamp(1.75rem,8vw,2.125rem)] leading-[1.06] break-words hyphens-auto md:text-[2.75rem]"
+                className="display-face block text-[1.5rem] leading-[1.15] break-words hyphens-auto md:text-[1.75rem]"
               />
             </h2>
             <p className="text-muted mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">

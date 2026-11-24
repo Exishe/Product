@@ -242,7 +242,7 @@ export function GuestHeader({
               reveal="load"
               text={cafeName}
               lang={nameLang && nameLang !== locale ? nameLang : undefined}
-              className="display-face text-title block text-[clamp(2.75rem,12.5vw,5rem)] leading-[0.98] tracking-[-0.01em] text-balance [overflow-wrap:anywhere]"
+              className="display-face text-title block text-[clamp(1.75rem,6vw,2.5rem)] leading-[1.1] text-balance [overflow-wrap:anywhere]"
             />
           )}
         </div>
