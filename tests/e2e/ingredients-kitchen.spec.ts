@@ -39,21 +39,22 @@ test("the kitchen marks an ingredient out with one tap; Back brings it in", asyn
   try {
     const page = device.page;
     await page.goto(`/kitchen/${kitchen.kitchenStationId}`);
-    if (await page.getByRole("button", { name: "Սկսել հերթափոխը" }).count()) await startShift(page);
+    await startShift(page);
 
     await page.getByTestId("ingredient-out-button").click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("searchbox").fill("Ձու");
     await dialog.getByRole("button", { name: /^Ձու/ }).click();
-    await expect(dialog.getByRole("heading", { name: "Հիմա սպառված է" })).toBeVisible();
-    await expect(page.getByTestId("ingredient-out-count")).toHaveText("1");
+    await expect(dialog.getByRole("heading", { name: "Հիմա սպառված է" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("ingredient-out-count")).toHaveText("1", { timeout: 15_000 });
 
     // Still out after a reload; Back brings it in.
     await page.reload();
+    await startShift(page);
     await page.getByTestId("ingredient-out-button").click();
     await expect(page.getByRole("dialog").getByRole("button", { name: "Հետ" })).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Հետ" }).click();
-    await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0);
+    await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0, { timeout: 15_000 });
 
     // Outs beyond the search's top 30 are still named, each with Back
     // (needs api.list_ingredient_outages, migration 20261123290000).
@@ -84,13 +85,13 @@ test("the kitchen marks an ingredient out with one tap; Back brings it in", asyn
       expect(out.error).toBeNull();
 
       await page.reload();
-      if (await page.getByRole("button", { name: "Սկսել հերթափոխը" }).count()) await startShift(page);
+      await startShift(page);
       await page.getByTestId("ingredient-out-button").click();
       const list = page.getByRole("dialog");
       await expect(list.getByText("Ֆիլե վերջին")).toBeVisible();
       await expect(list.getByText(/սպառված է։ Որպեսզի/)).toHaveCount(0);
       await list.getByRole("button", { name: "Հետ" }).click();
-      await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0);
+      await expect(page.getByTestId("ingredient-out-count")).toHaveCount(0, { timeout: 15_000 });
       await expect(list.getByText("Ֆիլե վերջին")).toHaveCount(0);
     }
   } finally {

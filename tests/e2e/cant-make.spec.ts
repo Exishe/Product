@@ -75,10 +75,12 @@ test.describe("can't make", () => {
       const { data: order } = await cafe.owner.from("orders").select("id, total, status").eq("location_id", cafe.locationId).single();
       expect(order?.total).toBe(0);
 
-      // One tap puts a dish in the cart and opens the menu; nothing is ordered.
+      // One tap puts a dish in the cart and opens the menu with the cart showing; nothing is ordered.
       await alts.first().getByRole("button").click();
       await expect(page).toHaveURL(new RegExp(`/m/${cafe.slug}/main`), { timeout: 30_000 });
-      await expect(page.getByRole("button", { name: /View order/ })).toBeVisible();
+      // The menu opens with the cart already showing the chosen dish, waiting for the guest to send it.
+      await expect(page.getByRole("heading", { name: "Your order" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Send to the kitchen" })).toBeVisible();
       const { count } = await cafe.owner.from("orders").select("id", { count: "exact", head: true }).eq("location_id", cafe.locationId);
       expect(count).toBe(1);
 

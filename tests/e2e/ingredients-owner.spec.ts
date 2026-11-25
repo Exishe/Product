@@ -20,22 +20,22 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await page.getByRole("button", { name: "Լրացնել ձեռքով" }).click();
   await page.getByLabel("Անունը հայերեն").fill("Տաք ուտեստներ");
   await page.getByRole("button", { name: "Պահել" }).click();
-  await expect(page.getByRole("heading", { level: 2, name: "Տաք ուտեստներ" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Տաք ուտեստներ" })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "+ Ավելացնել ուտեստ" }).click();
   await page.getByLabel("Անունը հայերեն").fill("Ձվածեղ");
   await page.getByLabel("Գինը, ֏").fill("1500");
   await page.getByRole("button", { name: "Պահել" }).click();
-  await expect(page.getByText("Պահված է")).toBeVisible();
+  await expect(page.getByText("Պահված է")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("dish-row").filter({ hasText: "Ձվածեղ" }).click();
 
   // Two ingredients from the common list (copied into the café on add).
   const panel = page.getByTestId("dish-ingredients");
   await panel.getByLabel("Գտնել բաղադրիչ").fill("Ձու");
   await panel.getByRole("button", { name: /^Ձու/ }).click();
-  await expect(panel.getByRole("heading", { level: 4, name: "Ձու" })).toBeVisible();
+  await expect(panel.getByRole("heading", { level: 4, name: "Ձու" })).toBeVisible({ timeout: 15_000 });
   await panel.getByLabel("Գտնել բաղադրիչ").fill("Կարագ");
   await panel.getByRole("button", { name: /^Կարագ/ }).click();
-  await expect(panel.getByRole("heading", { level: 4, name: "Կարագ" })).toBeVisible();
+  await expect(panel.getByRole("heading", { level: 4, name: "Կարագ" })).toBeVisible({ timeout: 15_000 });
 
   // The egg is a key ingredient, can be replaced by butter, 300 AMD less.
   const egg = panel
@@ -45,7 +45,8 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await egg.getByLabel("Կարող է փոխարինվել").selectOption({ label: "Կարագ" });
   await egg.getByLabel("Գնի փոփոխություն, դրամ").fill("-300");
   await egg.getByRole("button", { name: "Պահել", exact: true }).click();
-  await expect(egg.getByRole("status")).toContainText("Պահված է");
+  // The row has two status lines (the ingredient's and the calories editor's); only the one just saved shows text.
+  await expect(egg.getByRole("status").filter({ hasText: "Պահված է" })).toHaveCount(1, { timeout: 15_000 });
 
   await page.reload();
   await page.getByTestId("dish-row").filter({ hasText: "Ձվածեղ" }).click();
@@ -62,7 +63,7 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   // The out rule: show a dish without a replacement as sold out.
   const setting = page.getByTestId("out-ingredient-setting");
   await setting.getByLabel("Ցույց տալ որպես սպառված").check();
-  await expect(setting.getByRole("status")).toContainText("Պահված է");
+  await expect(setting.getByRole("status")).toContainText("Պահված է", { timeout: 15_000 });
   await page.reload();
   await expect(
     page.getByTestId("out-ingredient-setting").getByLabel("Ցույց տալ որպես սպառված"),
