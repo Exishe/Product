@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
+import { GuestBusy } from "@/features/menu/guest-menu/guest-busy";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
 import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
 import { PromoBanners } from "@/features/menu/guest-menu/promo-banner";
@@ -50,7 +51,10 @@ export default async function GuestMenuPage({
   const token = first((await searchParams).t);
 
   const [published, resolved, hints] = await Promise.all([
-    getPublicMenu(restaurant, location),
+    getPublicMenu(restaurant, location).catch((e: unknown) => {
+      console.error(e instanceof Error ? e.message : e);
+      return "unavailable" as const;
+    }),
     token ? resolveTable(token) : null,
     getMenuHints(restaurant, location),
   ]);
@@ -70,6 +74,13 @@ export default async function GuestMenuPage({
         href: `/${l}/m/${restaurant}/${location}${token ? `?t=${encodeURIComponent(token)}` : ""}`,
       }));
   const messages = (await getMessages()).guest as GuestMessages;
+
+  // The database could not answer even after retries: a calm page that tries
+  // again by itself, never an error screen (ADR-089).
+  if (published === "unavailable") {
+    const t = await getTranslations({ locale, namespace: "guest.entry" });
+    return <GuestBusy title={t("busyTitle")} body={t("busyBody")} retry={t("retry")} />;
+  }
 
   if (!published) {
     // A valid sticker of a café that hasn't published its menu yet.
