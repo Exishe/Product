@@ -134,7 +134,7 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
           : t("order.notes.received")
       : t(`order.notes.${status}`);
   return (
-    <ol className="my-6 grid" data-testid="tracker">
+    <ol className="my-4 grid" data-testid="tracker">
       {steps.map((step, i) => {
         const done = i <= now;
         const current = i === now;
@@ -144,29 +144,29 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
         return (
           <li
             key={step}
-            className="relative grid min-h-[52px] grid-cols-[28px_1fr] items-start gap-3"
+            className="relative grid min-h-[38px] grid-cols-[20px_1fr] items-start gap-2.5"
             aria-current={current ? "step" : undefined}
           >
             {!last && (
               <span
                 aria-hidden="true"
-                className="bg-line absolute top-7 -bottom-1 left-[13px] w-0.5 overflow-hidden"
+                className="bg-line absolute top-5 -bottom-0.5 left-[9px] w-0.5 overflow-hidden"
               >
-                <span className={`bg-tarragon ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
+                <span className={`bg-accent ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
               </span>
             )}
             <span
               aria-hidden="true"
-              className={`relative z-[1] grid size-7 place-items-center rounded-full border-2 ${
-                done ? "border-tarragon bg-matsoni text-white" : "border-line-strong bg-matsoni"
-              } ${current ? "shadow-[0_0_0_5px_var(--color-tarragon-tint)]" : ""}`}
+              className={`relative z-[1] grid size-5 place-items-center rounded-full border-[1.5px] [&_svg]:size-3 ${
+                done ? "border-accent bg-surface text-white" : "border-line-strong bg-surface"
+              } ${current ? "shadow-[0_0_0_4px_color-mix(in_srgb,var(--guest-accent)_16%,transparent)]" : ""}`}
             >
               {current && status !== "served" && status !== "paid" ? (
                 <span className={motionStyles.pulse} />
               ) : null}
               {done ? (
                 <span
-                  className={`bg-tarragon absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
+                  className={`bg-accent absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
                   style={tickAt}
                 >
                   <CheckIcon />
@@ -174,10 +174,15 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
               ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
-              <div className={`leading-7 ${done ? "font-semibold" : "text-muted"}`}>
+              <div className={`flex items-center gap-2 text-[12px] leading-5 ${done ? "font-semibold" : "text-muted"}`}>
                 {t(`order.steps.${step}`)}
+                {current && status !== "served" && status !== "paid" && (
+                  <span className="text-accent-text bg-[#fbe9e0] rounded-[5px] px-1.5 py-px text-[10px] font-semibold">
+                    {t("order.now")}
+                  </span>
+                )}
               </div>
-              {current && <p className="text-muted text-sm">{note}</p>}
+              {current && <p className="text-muted text-[11px] leading-snug">{note}</p>}
             </div>
           </li>
         );
@@ -198,7 +203,7 @@ function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
   }, []);
   const late = waitState(wait, placedAt, now) === "late";
   return (
-    <p className="text-muted -mt-2 mb-4 text-sm" data-testid="order-wait" data-late={late}>
+    <p className="text-muted -mt-1 mb-3 text-[11px]" data-testid="order-wait" data-late={late}>
       {late ? t("wait.late") : t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
     </p>
   );
@@ -243,7 +248,7 @@ function RecommendedCard({
     <section aria-labelledby="rec-title" className={guestStyles.sheet}>
       <div className={guestStyles.sheetHead}>
         <Sparkles size={20} aria-hidden />
-        <h2 id="rec-title" className="text-[1.0625rem]">
+        <h2 id="rec-title" className="text-[13px]">
           {t("order.recommended")}
         </h2>
       </div>
@@ -301,15 +306,15 @@ function OrderCard({
         className={guestStyles.sheet}
       >
         <div className={guestStyles.sheetHead}>
-          <Timer size={20} aria-hidden />
-          <p className="text-[1.0625rem]">
+          <Timer size={16} aria-hidden />
+          <p className="text-[12px]">
             {t("order.title", { number: order.number })} ·{" "}
             <span className="font-normal">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</span>
           </p>
         </div>
         <div className={`${guestStyles.sheetBody} pb-2`}>
           {status !== "rejected" && status !== "cancelled" && (
-            <h2 className="display-face text-[1.375rem] leading-[1.2] md:text-[1.5rem]" data-testid="order-phase">
+            <h2 className="text-[14px] leading-[1.25] font-semibold" data-testid="order-phase">
               {t(`order.steps.${status}`)}
             </h2>
           )}
@@ -330,17 +335,17 @@ function OrderCard({
     >
       <div className="flex items-baseline justify-between gap-3">
         <Title
-          className={`display-face leading-[1.05] ${latest ? "text-[1.75rem] md:text-[2rem]" : "text-xl"}`}
+          className={`display-face leading-[1.15] ${latest ? "text-[1.25rem]" : "text-[1rem]"}`}
         >
           {t("order.title", { number: order.number })}
         </Title>
         {!latest && (
-          <span className="text-muted text-sm font-semibold">
+          <span className="text-muted text-[11px] font-semibold">
             {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
           </span>
         )}
       </div>
-      <p className="text-muted text-sm">
+      <p className="text-muted text-[11px]">
         {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
       </p>
       {part === "all" && statusBlock}
@@ -354,10 +359,10 @@ function OrderCard({
           return (
             <li
               key={l.id}
-              className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-3 last:border-b-0"
+              className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-2.5 last:border-b-0"
             >
               <span
-                className={`display-face text-xl leading-tight [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
+                className={`text-[12px] leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
               >
                 <span className="num">
                   {l.cancelled_quantity > 0 && left > 0 ? (
@@ -368,16 +373,16 @@ function OrderCard({
                 {" × "}
                 {name ? <Txt value={name} locale={locale as Locale} /> : null}
               </span>
-              <span className="num text-right font-semibold whitespace-nowrap">
+              <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
                 {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
               </span>
               {l.item_id && details?.[l.item_id] && (
-                <span className="text-soft col-start-1 text-sm break-words" data-testid="line-detail">
+                <span className="text-soft col-start-1 text-[11px] break-words" data-testid="line-detail">
                   {details[l.item_id]}
                 </span>
               )}
               {mods.length > 0 && (
-                <span className="text-muted col-start-1 text-sm">
+                <span className="text-muted col-start-1 text-[11px]">
                   {mods.map((m, i) => (
                     <span key={i}>
                       {i > 0 ? ", " : null}
@@ -386,12 +391,12 @@ function OrderCard({
                   ))}
                 </span>
               )}
-              {l.note && <span className="text-muted col-start-1 text-sm break-words">{l.note}</span>}
+              {l.note && <span className="text-muted col-start-1 text-[11px] break-words">{l.note}</span>}
             </li>
           );
         })}
       </ul>
-      <div className="flex items-baseline justify-between py-4 text-xl font-semibold">
+      <div className="flex items-baseline justify-between py-4 text-[15px] font-semibold">
         <span>{t("order.total")}</span>
         <span className="num">
           {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
@@ -402,7 +407,7 @@ function OrderCard({
           <button
             type="button"
             onClick={() => onRepeat(order)}
-            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-sm font-semibold"
+            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[11px] font-semibold"
           >
             <RotateCcw size={16} aria-hidden />
             {t("order.sameAgain")}
@@ -549,7 +554,7 @@ export function OrderStatusView({
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-pill border border-[var(--guest-card-border)] bg-white px-4 font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
+    "min-h-11 rounded-pill border border-[var(--guest-line-strong)] bg-white px-4 text-[12px] font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
   // Back to the menu with an earlier round in the cart (this table's cart).
   const repeat = (order: Order) => {
     const newId = () =>
@@ -621,7 +626,7 @@ export function OrderStatusView({
           <span className="bg-on-accent text-accent grid size-9 flex-none place-items-center rounded-full">
             <CheckIcon />
           </span>
-          <span className="display-face text-[1.75rem] leading-none">{t("order.steps.ready")}</span>
+          <span className="display-face text-[1.125rem] leading-none">{t("order.steps.ready")}</span>
         </div>
       )}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-8">
@@ -635,7 +640,7 @@ export function OrderStatusView({
               onRepeat={closed ? undefined : repeat}
             />
           )}
-      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-sm">{t("order.reconnecting")}</p>}
+      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[11px]">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {latestStatus
           ? t(
@@ -713,11 +718,11 @@ export function OrderStatusView({
                     </span>
                   </div>
                   {people > 1 && (
-                    <p className="num text-accent-text text-xl font-semibold" data-testid="split-share">
+                    <p className="num text-accent-text text-[15px] font-semibold" data-testid="split-share">
                       {t("order.splitEach", { amount: formatAmd(shareOf(grand, people), locale as Locale) })}
                     </p>
                   )}
-                  <p className="text-muted text-sm">{t("order.splitNote")}</p>
+                  <p className="text-muted text-[11px]">{t("order.splitNote")}</p>
                 </div>
               )}
               <p className="m-0 font-semibold">{t("order.payTitle")}</p>
@@ -738,7 +743,7 @@ export function OrderStatusView({
               </button>
             </div>
           )}
-          <p className="mt-2 min-h-6 text-sm" role="status" aria-live="polite" key={told?.key}>
+          <p className="mt-2 min-h-6 text-[11px]" role="status" aria-live="polite" key={told?.key}>
             {told?.kind === "error"
               ? t("order.requestFailed")
               : told?.kind === "bring_bill" || (!told && open.has("bring_bill"))
@@ -752,7 +757,7 @@ export function OrderStatusView({
 
       {earlier.length > 0 && (
         <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
-          <h2 id="earlier-orders" className="text-lg font-semibold">
+          <h2 id="earlier-orders" className="text-[14px] font-semibold">
             {t("order.earlier")}
           </h2>
           {earlier.map((o) => (
@@ -764,7 +769,7 @@ export function OrderStatusView({
               onRepeat={closed ? undefined : repeat}
             />
           ))}
-          <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">
+          <div className="border-line flex items-baseline justify-between border-t py-4 text-[15px] font-semibold">
             <span>{t("order.allRounds")}</span>
             <span className="num">{formatAmd(grand, locale as Locale)}</span>
           </div>

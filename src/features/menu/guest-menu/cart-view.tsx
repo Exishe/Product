@@ -6,7 +6,7 @@ import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import type { WaitRange } from "./hints";
-import { BackIcon, MinusIcon, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
+import { BackIcon, MinusIcon, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
@@ -29,7 +29,7 @@ export function LineRow({
 }) {
   const { t, locale } = useGuestI18n();
   const { line, status } = priced;
-  const step = `${STEP} ${dense ? "size-11" : "size-12"}`;
+  const step = `${STEP} size-10`;
   const name = item?.name.text ?? "";
   const options = (item?.groups ?? []).flatMap((g) =>
     g.modifiers.filter((m) => line.modifierIds.includes(m.id)),
@@ -42,31 +42,38 @@ export function LineRow({
   const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className={`border-line grid gap-x-4 gap-y-1 border-b last:border-b-0 ${dense ? "py-3" : "py-5"} ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5" : "py-3.5"} ${photo ? "grid-cols-[3.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
       data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
-        <span className="row-span-5">
-          <Plate src={photo} size={64} muted={!available} className="size-16" />
+        <span className="bg-plate row-span-5 block size-14 overflow-hidden rounded-[10px]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+          <img
+            src={photo}
+            alt=""
+            width={112}
+            height={112}
+            className={`size-full object-cover ${available ? "" : "opacity-50 grayscale"}`}
+          />
         </span>
       )}
       {item ? (
         <Txt
           value={item.name}
           locale={locale}
-          className={`display-face leading-tight break-words hyphens-auto ${dense ? "text-[1.125rem]" : "text-[1.375rem]"} ${available ? "" : "text-muted line-through"}`}
+          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-[12px]" : "text-[13px]"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
       )}
-      <span className="num text-right font-semibold whitespace-nowrap">
+      <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {detail && item?.description && (
-        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-sm break-words`} />
+        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-[11px] break-words`} />
       )}
       {options.length > 0 && (
-        <span className={`text-muted ${col} text-sm`}>
+        <span className={`text-muted ${col} text-[11px]`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -76,14 +83,14 @@ export function LineRow({
         </span>
       )}
       {line.note && (
-        <span className={`text-muted ${col} text-sm break-words`}>
+        <span className={`text-muted ${col} text-[11px] break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className={`text-alert ${col} text-sm font-semibold`} role="status">
+        <span className={`text-alert ${col} text-[11px] font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}
@@ -99,7 +106,7 @@ export function LineRow({
             >
               <MinusIcon />
             </button>
-            <output className="num min-w-7 text-center font-semibold">{line.quantity}</output>
+            <output className="num min-w-6 text-center text-[13px] font-semibold">{line.quantity}</output>
             <button
               type="button"
               className={step}
@@ -114,7 +121,7 @@ export function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="rounded-pill border-line-strong bg-surface min-h-12 border px-5 font-semibold"
+            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-[12px] font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}
@@ -154,25 +161,18 @@ export function CartView({
   const { t, locale } = useGuestI18n();
   return (
     <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-12 md:px-8" data-testid="cart">
-      <div className="pt-3 md:pt-6">
+      <div className="flex items-center gap-2 pt-2 md:pt-5">
         <button
           type="button"
           onClick={onBack}
-          className="text-ink inline-flex min-h-12 items-center gap-3 font-semibold"
+          aria-label={t("cart.back")}
+          className="text-ink hover:bg-chip grid size-11 flex-none place-items-center rounded-full"
         >
-          <span
-            aria-hidden="true"
-            className="bg-surface shadow-card grid size-12 place-items-center rounded-full"
-          >
-            <BackIcon />
-          </span>
-          {t("cart.back")}
+          <BackIcon />
         </button>
+        <h2 className="display-face text-[1.125rem] leading-[1.2]">{t("cart.title")}</h2>
       </div>
-      <h2 className="display-face mt-4 mb-1 text-[1.75rem] leading-[1.15] md:text-[2rem]">
-        {t("cart.title")}
-      </h2>
-      <ul className="rounded-feature bg-surface shadow-card mt-5 border [border-color:var(--guest-card-border)] px-4 sm:px-6">
+      <ul className="bg-surface rounded-card mt-2 border [border-color:var(--guest-card-border)] px-3.5">
         {summary.lines.map((p) => (
           <LineRow
             key={p.line.id}
@@ -184,20 +184,20 @@ export function CartView({
           />
         ))}
       </ul>
-      <div className="flex items-baseline justify-between px-1 pt-5 pb-3 text-xl font-semibold">
-        <span>{t("cart.total")}</span>
-        <span className="num" data-testid="cart-total">
+      <div className="flex items-baseline justify-between px-1 pt-4 pb-3">
+        <span className="text-[13px]">{t("cart.total")}</span>
+        <span className="num text-[18px] font-semibold" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>
       </div>
-      <p className="text-muted mb-4 text-sm">
+      <div className="bg-chip text-muted mb-4 grid gap-1.5 rounded-[10px] px-3.5 py-3 text-[11px] leading-snug">
         {wait && (
           <span className="text-ink block font-semibold" data-testid="cart-wait">
             {t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
           </span>
         )}
-        {t("cart.payNote")}
-      </p>
+        <span>{t("cart.payNote")}</span>
+      </div>
       {notice && <div className="mb-4">{notice}</div>}
       {footer}
     </main>

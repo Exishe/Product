@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import styles from "./guest.module.css";
 import { groupSections, type SectionGroup } from "./section-groups";
-import { Txt } from "./ui";
+import { Txt, dishPhotoUrl } from "./ui";
 import type { GuestCategory } from "./view-model";
 
 export const sectionId = (id: string) => `cat-${id}`;
@@ -46,6 +46,8 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       ? [{ key: "all", sections: categories }]
       : groups.map((g) => ({ key: g.group, sections: g.sections as GuestCategory[] }));
   }, [categories]);
+  // A group's chip on a phone carries a tiny photo of its first pictured dish.
+  const photoOf = (b: Bucket) => b.sections.flatMap((s) => s.items).find((i) => i.image)?.image ?? null;
   const label = (b: Bucket) => (b.key === "all" ? t("menu.sections") : t(`menu.groups.${b.key}`));
   const currentBucket = buckets.find((b) => b.sections.some((s) => s.id === current));
   const openBucket = buckets.find((b) => b.key === open);
@@ -117,10 +119,11 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       }}
       onPointerEnter={() => window.clearTimeout(closeTimer.current)}
     >
-      <div className="flex gap-1.5 overflow-x-auto sm:gap-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="flex gap-1.5 overflow-x-auto pb-2.5 lg:gap-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {buckets.map((b) => {
           const isOpen = open === b.key;
           const here = currentBucket?.key === b.key;
+          const photo = photoOf(b);
           return (
             <button
               key={b.key}
@@ -139,15 +142,28 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                 setOpen(b.key);
               }}
               aria-current={here ? "true" : undefined}
-              className={`${styles.navlink} flex min-h-11 flex-auto items-center justify-center gap-1.5 rounded-lg px-3 text-[0.9375rem] font-semibold whitespace-nowrap transition-colors duration-150 max-[400px]:px-2 max-[400px]:text-[0.875rem] sm:text-base md:flex-none md:px-4 ${
-                isOpen ? "bg-chip text-ink" : here ? "text-ink" : "text-soft hover:text-ink hover:bg-chip/60"
-              }`}
+              className={`${styles.navlink} flex min-h-11 flex-none items-center gap-1.5 rounded-full border py-1 pr-3.5 pl-1 text-[12px] whitespace-nowrap transition-colors duration-150 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-3 ${
+                here
+                  ? "bg-accent text-on-accent border-transparent font-semibold lg:text-ink"
+                  : "bg-surface text-muted hover:text-ink border-line"
+              } ${isOpen ? "lg:text-ink" : ""} ${photo ? "" : "pl-3.5"}`}
             >
+              {photo && (
+                // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                <img
+                  src={dishPhotoUrl(photo)}
+                  alt=""
+                  width={28}
+                  height={28}
+                  loading="lazy"
+                  className="size-7 flex-none rounded-full object-cover lg:hidden"
+                />
+              )}
               <span>{label(b)}</span>
               <ChevronDown
-                size={16}
+                size={14}
                 aria-hidden
-                className={`hidden flex-none transition-transform duration-200 sm:block ${isOpen ? "rotate-180" : ""}`}
+                className={`hidden flex-none transition-transform duration-200 lg:block ${isOpen ? "rotate-180" : ""}`}
               />
             </button>
           );

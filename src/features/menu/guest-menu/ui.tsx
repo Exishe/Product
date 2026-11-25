@@ -53,7 +53,7 @@ export function dishPhotoUrl(path: string): string {
 // any brand (the field-border grey, darkened a quarter towards the ink), so
 // the control never fades into a cream page. The glyph is the ink.
 export const STEP =
-  "bg-surface text-ink border-[1.5px] [border-color:color-mix(in_srgb,var(--guest-line-strong)_75%,var(--guest-ink))] disabled:text-line-strong disabled:[border-color:var(--guest-line-strong)] grid flex-none place-items-center rounded-full [&_svg]:size-[18px]";
+  "bg-surface text-ink border [border-color:var(--guest-line-strong)] hover:[border-color:var(--guest-ink)] disabled:text-line-strong disabled:[border-color:var(--guest-line)] grid flex-none place-items-center rounded-full [&_svg]:size-[14px]";
 
 // − n + : the dish sheet's and the featured card's quantity, 1 to `max`.
 export function Stepper({

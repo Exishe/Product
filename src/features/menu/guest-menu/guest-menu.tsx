@@ -25,6 +25,7 @@ import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens
 import { CallWaiterPrompt, useCallWaiter } from "./call-waiter-button";
 import { CartView } from "./cart-view";
 import { CategoryNav, sectionId } from "./category-nav";
+import { SectionList } from "./section-list";
 import { DishRow } from "./dish-row";
 import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
@@ -290,7 +291,7 @@ export function GuestMenu({
     </span>
   );
   const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold";
+    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-10 items-center gap-2 border border-line px-3 text-[12px] font-semibold";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -414,7 +415,7 @@ export function GuestMenu({
           placeholder={t("menu.search")}
           autoComplete="off"
           enterKeyHint="search"
-          className="placeholder:text-muted focus:border-accent-text rounded-pill min-h-10 w-full border bg-transparent pr-4 pl-10 text-[0.9375rem] [border-color:var(--guest-line-strong)]"
+          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border pr-4 pl-10 text-[13px] [border-color:var(--guest-line-strong)]"
         />
       </div>
       {offerFilter && (
@@ -424,9 +425,9 @@ export function GuestMenu({
           aria-pressed={avoid.length > 0}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill inline-flex min-h-10 flex-none items-center gap-2 border px-3.5 text-sm font-semibold [border-color:var(--guest-line-strong)]"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border px-3.5 text-[12px] font-semibold [border-color:var(--guest-line-strong)]"
         >
-          <ShieldAlert size={16} aria-hidden />
+          <ShieldAlert size={15} aria-hidden />
           {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
         </button>
       )}
@@ -470,7 +471,8 @@ export function GuestMenu({
             {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
           </p>
         )}
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12">
+        <div className="lg:grid lg:grid-cols-[11.5rem_minmax(0,1fr)_16rem] lg:gap-6 xl:grid-cols-[12.5rem_minmax(0,1fr)_17rem]">
+          <SectionList categories={shown} />
           <main className="min-w-0">
             {shown.length === 0 ? (
               <p className="text-muted py-12 text-center" role="status">
@@ -482,21 +484,28 @@ export function GuestMenu({
               // No cover photos and no big titles, so nothing jumps while scrolling.
               (() => {
                 const clusters = groupSections(shown);
-                const rows = (list: GuestItem[]) =>
-                  list.map((item) => (
-                    <DishRow
-                      key={item.id}
-                      item={item}
-                      canOrder={canOrder}
-                      warning={warningFor(item)}
-                      onOpen={setSheet}
-                      onQuickAdd={quickAdd}
-                    />
-                  ));
+                // In a longer section the first pictured dish leads as a large card
+                // on a phone, so the list of rows changes pace (design merge from A).
+                const rows = (list: GuestItem[]) => {
+                  const lead = list.length >= 3 ? list.find((i) => i.image && !i.soldOut)?.id : undefined;
+                  return [...list]
+                    .sort((a, b) => Number(b.id === lead) - Number(a.id === lead))
+                    .map((item) => (
+                      <DishRow
+                        key={item.id}
+                        item={item}
+                        canOrder={canOrder}
+                        warning={warningFor(item)}
+                        feature={item.id === lead}
+                        onOpen={setSheet}
+                        onQuickAdd={quickAdd}
+                      />
+                    ));
+                };
                 return clusters.map(({ group, sections }) => (
-                  <div key={group} id={`group-${group}`} className="scroll-mt-44 pt-6" data-group={group}>
+                  <div key={group} id={`group-${group}`} className="scroll-mt-48 pt-5" data-group={group}>
                     {clusters.length > 1 && (
-                      <h2 className="text-title border-line mb-1 border-b pb-2 text-[1.25rem] leading-[1.2] font-semibold">
+                      <h2 className="display-face text-title text-[1.25rem] leading-[1.2]">
                         {t(`menu.groups.${group}`)}
                       </h2>
                     )}
@@ -505,18 +514,19 @@ export function GuestMenu({
                         key={c.id}
                         id={sectionId(c.id)}
                         aria-labelledby={`h-${c.id}`}
-                        className="scroll-mt-44 pt-4"
+                        className="scroll-mt-48 pt-4"
                       >
                         {c.name && (
                           <h3
                             id={`h-${c.id}`}
                             lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-2.5 text-[1rem] leading-[1.25] font-semibold"
+                            className="text-ink mb-2.5 flex items-baseline gap-2 text-[14px] leading-[1.25] font-semibold"
                           >
                             {c.name.text}
+                            <span className="num text-soft text-[11px] font-normal">{c.items.length}</span>
                           </h3>
                         )}
-                        <ul className="grid content-start items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>
+                        <ul className="grid items-start gap-2.5 md:grid-cols-2 xl:grid-cols-3">{rows(c.items)}</ul>
                       </section>
                     ))}
                   </div>
@@ -524,8 +534,8 @@ export function GuestMenu({
               })()
             )}
           </main>
-          <div className="hidden pt-8 lg:block">
-            <div className="sticky top-36">
+          <div className="hidden pt-5 lg:block">
+            <div className="sticky top-44">
               {/* Only where the rail is on screen: a phone sends from the order view. */}
               {wide && (
                 <Suspense fallback={null}>

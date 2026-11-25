@@ -75,7 +75,7 @@ export function BrandMark({
           width={40}
           height={40}
           decoding="async"
-          className="bg-surface shadow-plate size-10 flex-none rounded-full object-cover"
+          className="border-line size-9 flex-none rounded-full border object-cover"
         />
       )}
       <Tag
@@ -91,7 +91,6 @@ export function BrandMark({
   );
 }
 
-/** Հայ · Рус · Eng, keeping the table token; a line draws under a language on hover. */
 // A label that turns over on hover (front and back are the same text; the back
 // is for the eye only) with a glow behind it. See .flip in guest.module.css.
 function Flip({ children }: { children: ReactNode }) {
@@ -110,14 +109,22 @@ export function TableChip({ label }: { label: string }) {
   const { t } = useGuestI18n();
   return (
     <span
-      className={`text-ink grid min-h-11 flex-none place-items-center px-2 text-sm font-semibold whitespace-nowrap ${styles.flip}`}
+      className={`text-ink grid min-h-11 flex-none place-items-center text-[11px] font-semibold whitespace-nowrap ${styles.flip}`}
       data-testid="table-chip"
     >
-      <Flip>{t("table", { label })}</Flip>
+      <Flip>
+        <span className="bg-chip inline-flex h-8 items-center gap-1.5 rounded-[8px] px-2.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 9h18M5 9v10M19 9v10M8 9V6h8v3" />
+          </svg>
+          {t("table", { label })}
+        </span>
+      </Flip>
     </span>
   );
 }
 
+/** Հայ · Рус · Eng, keeping the table token: a small segmented switch, the current one on beige. */
 export function LanguageNav({ languages }: { languages: readonly LanguageLink[] }) {
   const { t, locale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
@@ -131,9 +138,11 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center px-1.5 text-sm font-semibold ${styles.navlink} ${styles.flip}`}
+          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[11px] aria-[current=true]:font-semibold ${styles.flip}`}
         >
-          <Flip>{t(`language.${l}`)}</Flip>
+          <Flip>
+            <span className="group-aria-[current=true]:bg-chip rounded-[6px] px-2 py-1">{t(`language.${l}`)}</span>
+          </Flip>
         </a>
       ))}
     </nav>

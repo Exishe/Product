@@ -756,7 +756,7 @@ body:has(.admin-shell) {
 /* Overscroll beyond the page shows the café's page colour too (not for the
    miniature previews on the admin page, marked data-guest-preview). */
 body:has(.guest-lux:not([data-guest-preview])) {
-  background: #fbfaf4;
+  background: #fbf9f5;
 }
 body:has(.guest-lux[data-guest-theme="soft"]:not([data-guest-preview])) {
   background: #eceef1;
@@ -780,13 +780,13 @@ body:has(.guest-lux[data-guest-theme="wine"]:not([data-guest-preview])) {
    header band stays the café's colour. */
 .guest-lux:not([data-guest-theme="wine"]):has([data-order-page]),
 body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
-  background: #ffffff !important;
-  --guest-card-border: #e8e3d6;
+  background: #fbf9f5 !important;
 }
 
 /* The bottom bar keeps the page colour, which is white on the order page. */
 [data-order-page] [data-testid="guest-dock"] {
   background: #ffffff;
+  border-top: 1px solid #eae3d8;
 }
 
 /* Full-screen section photos reach past the column; the page never scrolls sideways. */
@@ -795,23 +795,52 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
 }
 
 
-/* Comfort pass (owner, Nov 2026): a light, calm guest page. Near-white page, white
-   cards with a hairline edge instead of a shadow, round black "+" buttons, one plain
-   text face for every heading at modest sizes and a regular-to-semibold weight.
-   Not for Wine, which keeps its dark look. The brand's own colours still reach the
-   header, prices, badges and the main button (brand.ts). */
+/* Pativ guest look (owner, Nov 2026; design battle entry B with merges): one
+   palette for every café so Blanca and the demo look the same. A warm white page,
+   white cards on beige hairlines, one beige band, deep green for actions, rust for
+   prices and counts, Noto Sans Armenian at small sizes, Noto Serif Armenian for the
+   few titles. The café's brand colours no longer repaint the guest page (they are
+   set inline by brand.ts, hence !important); its logo and wordmark still show.
+   Wine keeps its dark look. */
 .guest-lux:not([data-guest-theme="wine"]) {
-  --font-display: var(--font-ui);
+  --font-display: var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif !important;
+  --font-ui: var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif !important;
   --guest-display-weight: 600;
   --guest-display-stretch: 100%;
-  --guest-page: #fbfaf4;
-  --guest-surface: #ffffff;
-  --guest-card-border: #ebe6d9;
-  --guest-shadow-card: 0 1px 2px rgb(27 23 18 / 0.04);
-  --guest-r-card: 20px;
-  --guest-add: var(--guest-ink);
-  --guest-on-add: #ffffff;
+  --guest-page: #fbf9f5 !important;
+  --guest-surface: #ffffff !important;
+  --guest-band: #f4eee4;
+  --guest-chip: #f4eee4 !important;
+  --guest-plate: #ece3d5 !important;
+  --guest-ink: #1e1c19 !important;
+  --guest-muted: #5f5950 !important;
+  --guest-soft: #6e675c !important;
+  --guest-line: #eae3d8 !important;
+  --guest-line-strong: #dcd3c5 !important;
+  --guest-card-border: #eae3d8 !important;
+  --guest-accent: #2f4b3b !important;
+  --guest-on-accent: #ffffff !important;
+  --guest-accent-text: #b4431b !important;
+  --guest-title: #1e1c19 !important;
+  --guest-tab: #2f4b3b !important;
+  --guest-on-tab: #ffffff !important;
+  --guest-tab-border: #eae3d8 !important;
+  --guest-badge: #b4431b !important;
+  --guest-on-badge: #ffffff !important;
+  --guest-glow: #b4431b !important;
+  --guest-flourish: #b4431b !important;
+  --guest-dock: #ffffff !important;
+  --guest-dock-ink: #1e1c19 !important;
+  --guest-dock-muted: #6e675c !important;
+  --guest-shadow-card: none;
+  --guest-r-card: 12px;
+  --guest-r-pill: 10px;
+  --guest-r-field: 10px;
+  --guest-add: #2f4b3b !important;
+  --guest-on-add: #ffffff !important;
   --guest-add-shadow: none;
+  --brand-tool-ink: #1e1c19 !important;
+  font-size: 13px;
 }
 
 .guest-lux:not([data-guest-theme="wine"]) .display-face {

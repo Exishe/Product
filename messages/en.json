@@ -880,7 +880,8 @@
       "splitFewer": "Fewer people",
       "splitMore": "More people",
       "wait": "Usually ready in about {minutes} min.",
-      "waitLong": "Taking longer than usual. You can call your waiter."
+      "waitLong": "Taking longer than usual. You can call your waiter.",
+      "now": "now"
     },
     "games": {
       "title": "Games while you wait",

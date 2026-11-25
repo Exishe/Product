@@ -47,16 +47,16 @@ export function OrderRail({
       aria-labelledby="order-panel-title"
       data-fly-target="1"
       data-testid="order-rail"
-      className="bg-surface shadow-card rounded-feature hidden max-h-[calc(100dvh-10rem)] flex-col border [border-color:var(--guest-card-border)] px-5 pt-6 pb-5 lg:flex"
+      className="bg-surface rounded-card hidden max-h-[calc(100dvh-12rem)] flex-col border [border-color:var(--guest-card-border)] px-4 pt-4 pb-4 lg:flex"
     >
-      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-[1.875rem] leading-[1.05]">
+      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-[1rem] leading-[1.2]">
         {t("cart.title")}
       </h2>
       {summary.lines.length === 0 ? (
-        <p className="text-muted mt-3 text-[0.875rem] leading-relaxed">{t("panel.empty")}</p>
+        <p className="text-muted mt-2 text-[12px] leading-relaxed">{t("panel.empty")}</p>
       ) : (
         <>
-          <ul className="-mx-5 mt-3 min-h-0 flex-1 overflow-y-auto px-5">
+          <ul className="-mx-4 mt-2 min-h-0 flex-1 overflow-y-auto px-4">
             {summary.lines.map((p) => (
               <LineRow
                 key={p.line.id}
@@ -69,20 +69,20 @@ export function OrderRail({
               />
             ))}
           </ul>
-          <div className="border-line-strong/50 flex items-baseline justify-between gap-3 border-t pt-4">
-            <span className="display-face text-[1.375rem] leading-none">{t("cart.total")}</span>
-            <span className="num text-[1.25rem] font-semibold" data-testid="rail-total">
+          <div className="border-line flex items-baseline justify-between gap-3 border-t pt-3">
+            <span className="text-muted text-[12px]">{t("cart.total")}</span>
+            <span className="num text-[16px] font-semibold" data-testid="rail-total">
               {formatAmd(summary.total, locale)}
             </span>
           </div>
-          <p className="text-muted mt-1 mb-3 text-[0.8125rem]">{t("cart.payNote")}</p>
+          <p className="text-muted mt-1 mb-3 text-[11px]">{t("cart.payNote")}</p>
           {send}
           <button
             type="button"
             onClick={onOpen}
             className={
               send
-                ? "text-accent-text mt-1 min-h-11 text-sm font-semibold"
+                ? "text-accent-text mt-1 min-h-11 text-[12px] font-semibold"
                 : `${styles.cta} flex min-h-12 w-full items-center justify-center px-5 font-semibold`
             }
           >

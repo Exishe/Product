@@ -3,12 +3,12 @@
 import type { ReactNode } from "react";
 import { BrandMark, LanguageNav, TableChip, type HomeLink, type LanguageLink } from "./guest-header";
 
-// The menu's one bar, on the page's own colour (no brand band behind it): the
-// café's wordmark, the section groups (they refer to the page's sections, so
-// they live in the bar), the table, the languages and the order button, with
-// the search field in a thin, wide row under them. It stays at the top while
-// the menu scrolls. On a phone the groups drop to a row of their own between
-// the wordmark and the search. The section dropdown opens under the whole bar
+// The menu's bar (design battle entry B): a white strip with the café's mark on
+// the left and the table and languages on the right, then one beige band holding
+// the section groups and the search with the allergy filter. On a phone the
+// search comes first and the groups sit under it as tabs; from 1024 px the groups
+// take the left of the band and the search the right. The whole header stays at
+// the top while the menu scrolls; the section dropdown opens under it
 // (category-nav.tsx finds it by data-menubar).
 export function MenuBar({
   cafeName,
@@ -35,19 +35,23 @@ export function MenuBar({
   search: ReactNode;
 }) {
   return (
-    <header data-menubar="" data-testid="menubar" className="bg-page sticky top-0 z-20">
-      <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center gap-x-3 gap-y-0.5 px-4 pt-2 md:px-8">
-        <div className="min-w-0 flex-none">
+    <header data-menubar="" data-testid="menubar" className="bg-surface sticky top-0 z-20">
+      <div className="mx-auto flex w-full max-w-[1240px] items-center gap-3 px-4 py-1.5 md:px-8">
+        <div className="min-w-0 flex-1">
           <BrandMark cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} as="h1" />
         </div>
-        <div className="order-last w-full min-w-0 lg:order-none lg:w-auto lg:flex-1">{nav}</div>
-        <div className="ml-auto flex flex-none items-center gap-2 lg:ml-0">
+        <div className="flex flex-none items-center gap-1.5">
           {tableLabel && <TableChip label={tableLabel} />}
           <LanguageNav languages={languages} />
           {tools}
         </div>
       </div>
-      <div className="mx-auto w-full max-w-[1120px] px-4 pt-1 pb-2 md:px-8">{search}</div>
+      <div className="bg-[var(--guest-band)] border-line border-b">
+        <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-end gap-x-6 px-4 pt-3 md:px-8 lg:pt-2">
+          <div className="w-full lg:order-2 lg:w-[26rem] lg:flex-none lg:pb-2">{search}</div>
+          <div className="w-full min-w-0 lg:order-1 lg:w-auto lg:flex-1">{nav}</div>
+        </div>
+      </div>
     </header>
   );
 }

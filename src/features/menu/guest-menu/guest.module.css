@@ -250,7 +250,8 @@
 
 @media (hover: hover) {
   .add:hover,
-  .plus:hover {
+  .plus:hover,
+  .hit:hover .plus {
     transform: translateY(-2px) scale(1.1);
     filter: saturate(1.1) brightness(1.04);
     box-shadow:
@@ -259,30 +260,62 @@
   }
 
   .add:hover svg,
-  .plus:hover svg {
+  .plus:hover svg,
+  .hit:hover .plus svg {
     transform: rotate(90deg);
   }
 }
 
 .add:active,
 .plus:active,
+.hit:active .plus,
 .featureAdd:active {
   transform: scale(0.88);
   filter: brightness(0.96);
 }
 
 .add:active svg,
-.plus:active svg {
+.plus:active svg,
+.hit:active .plus svg {
   transform: rotate(180deg) scale(0.9);
 }
 
 .add:active::after,
-.plus:active::after {
+.plus:active::after,
+.hit:active .plus::after {
   opacity: 1;
   transform: scale(1.7);
   transition:
     transform 260ms ease-out,
     opacity 260ms ease-out;
+}
+
+.hit {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hit .plus {
+  width: 2rem;
+  height: 2rem;
+}
+
+.hit .plus svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hit:focus-visible {
+  outline: 3px solid var(--guest-ink);
+  outline-offset: -2px;
+  border-radius: 999px;
 }
 
 .add:focus-visible,
@@ -449,7 +482,7 @@
   display: block;
   width: auto;
   max-width: 100%;
-  height: 2.5rem;
+  height: 2.25rem;
   object-fit: contain;
   object-position: left;
 }
@@ -457,7 +490,7 @@
 /* The full name, never an ellipsis: it wraps to a second line, and a very
    long one is set smaller on three. */
 .barName {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1.1;
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -639,12 +672,11 @@
 }
 
 /* The main actions (add to the order, the cart bar, send to the kitchen) wear the
-   same highlight colour as the dish "+", so the one thing to press is always
-   the same colour. Pure keeps its own black pill. They lift on a mouse and sink
-   when pressed. */
+   same colour as the dish "+" (deep green in the Pativ look), so the one thing to
+   press is always the same colour. They lift on a mouse and sink when pressed. */
 :global(.guest-lux:not([data-guest-theme="soft"])) .cta:not(:disabled) {
-  background: var(--guest-badge);
-  color: var(--guest-on-badge);
+  background: var(--guest-add);
+  color: var(--guest-on-add);
 }
 
 .cta {
