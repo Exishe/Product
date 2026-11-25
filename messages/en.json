@@ -1779,6 +1779,66 @@
       "after": "When a guest adds: {kind}",
       "changed": "Changed",
       "reset": "Reset to defaults"
+    },
+    "timeRules": {
+      "title": "By time of day",
+      "hint": "Suggest something at certain hours, whatever the guest ordered. For example coffee in the morning or a dessert in the evening. Times are in your café's time. Up to {max} rules.",
+      "add": "Add a rule",
+      "empty": "No rules yet.",
+      "unavailable": "The rules by time of day could not be loaded. Please try again a little later.",
+      "suggest": "Suggest: {what}",
+      "dishGone": "a dish no longer on the menu",
+      "everyDay": "Every day",
+      "overnight": "past midnight",
+      "edit": "Edit",
+      "editRule": "Edit the rule for {from}–{to}",
+      "removeRule": "Delete the rule for {from}–{to}",
+      "newTitle": "New rule",
+      "editTitle": "Edit rule",
+      "from": "From",
+      "to": "Until",
+      "passesMidnight": "This window passes midnight. Its days are the days it starts on.",
+      "daysTitle": "Days",
+      "daysHint": "Tick none for every day.",
+      "whatTitle": "What to suggest",
+      "whatKind": "A kind of dish",
+      "whatDish": "One dish",
+      "kind": "Kind of dish",
+      "kindPlaceholder": "Choose a kind",
+      "dish": "Dish",
+      "dishPlaceholder": "Choose a dish",
+      "order": "Order (optional)",
+      "orderHint": "Rules with a lower number come first. You can leave it empty.",
+      "save": "Save",
+      "saved": "Saved",
+      "removed": "Deleted",
+      "days": {
+        "short": {
+          "1": "Mon",
+          "2": "Tue",
+          "3": "Wed",
+          "4": "Thu",
+          "5": "Fri",
+          "6": "Sat",
+          "7": "Sun"
+        },
+        "long": {
+          "1": "Monday",
+          "2": "Tuesday",
+          "3": "Wednesday",
+          "4": "Thursday",
+          "5": "Friday",
+          "6": "Saturday",
+          "7": "Sunday"
+        }
+      },
+      "errors": {
+        "times": "Enter two different times.",
+        "kind": "Choose a kind of dish.",
+        "dish": "Choose a dish.",
+        "order": "Enter a whole number from -1000 to 1000, or leave it empty.",
+        "limit": "You can have up to {max} rules."
+      }
     }
   }
 }

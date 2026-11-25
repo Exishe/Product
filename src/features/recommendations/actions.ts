@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireMember } from "@/lib/auth/require-member";
 import { untypedClient } from "./db.server";
 import { ITEM_TYPES, MAX_PAIRINGS, isItemType, type ItemType } from "./model";
+import { MAX_SORT, checkTimeRule, type TimeRuleInput } from "./time-rules";
 
 // Each action checks the session and makes database calls; who may do it is
 // enforced in Postgres (api.set_item_type, api.set_item_pairing, ...).
@@ -107,5 +108,56 @@ export async function resetCompat(): Promise<Result> {
   if (!location) return { ok: false, error: "failed" };
   const db = await untypedClient();
   const { error } = await db.schema("api").rpc("reset_compat_rules", { p_location_id: location });
+  return error ? { ok: false, error: "failed" } : { ok: true };
+}
+
+// "By time of day" (ADR-086). The window, days and target are checked again in
+// Postgres (api.save_time_rule); the limit of 10 per café is only known there.
+export type SaveTimeRuleResult =
+  | { ok: true; id: string }
+  | { ok: false; error: "limit" | "invalid" | "failed" };
+
+const clock = z.string().regex(/^\d{2}:\d{2}$/);
+const timeRuleShape = z.object({
+  id: id.nullable(),
+  from: clock,
+  to: clock,
+  weekdays: z.array(z.number().int().min(1).max(7)).min(1).max(7).nullable(),
+  toType: kind.nullable(),
+  toItemId: id.nullable(),
+  sort: z.number().int().min(-MAX_SORT).max(MAX_SORT),
+});
+
+export async function saveTimeRule(rule: TimeRuleInput): Promise<SaveTimeRuleResult> {
+  const me = await requireMember(["owner", "manager"]);
+  const parsed = timeRuleShape.safeParse(rule);
+  if (!parsed.success || checkTimeRule(parsed.data) !== null) return { ok: false, error: "invalid" };
+  const location = await firstLocationId(me.restaurantId);
+  if (!location) return { ok: false, error: "failed" };
+  const r = parsed.data;
+  const db = await untypedClient();
+  const { data, error } = await db.schema("api").rpc("save_time_rule", {
+    p_location_id: location,
+    p_id: r.id,
+    p_from: r.from,
+    p_to: r.to,
+    p_weekdays: r.weekdays,
+    p_to_type: r.toType,
+    p_to_item_id: r.toItemId,
+    p_sort: r.sort,
+  });
+  if (error) {
+    if (error.message?.includes("too_many_rules")) return { ok: false, error: "limit" };
+    return { ok: false, error: error.code === "22023" ? "invalid" : "failed" };
+  }
+  return typeof data === "string" ? { ok: true, id: data } : { ok: false, error: "failed" };
+}
+
+export async function removeTimeRule(ruleId: string): Promise<Result> {
+  await requireMember(["owner", "manager"]);
+  const parsed = id.safeParse(ruleId);
+  if (!parsed.success) return { ok: false, error: "failed" };
+  const db = await untypedClient();
+  const { error } = await db.schema("api").rpc("remove_time_rule", { p_rule_id: parsed.data });
   return error ? { ok: false, error: "failed" } : { ok: true };
 }
