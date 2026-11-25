@@ -75,7 +75,7 @@ export function DishSheet({
       onClick={(e) => {
         if (e.target === dialog.current) onClose(); // a tap on the backdrop
       }}
-      className={`bg-surface text-ink md:shadow-float mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[560px] rounded-t-[16px] md:rounded-[16px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
+      className={`bg-surface text-ink md:shadow-float mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[560px] rounded-t-[20px] md:rounded-[20px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
       <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-0 md:max-h-[88dvh] md:px-6">
         {/* A big photo across the top with a round × floating on it; without a photo
@@ -114,7 +114,7 @@ export function DishSheet({
                 className="display-face block text-[1.125rem] leading-[1.25] break-words hyphens-auto"
               />
             </h2>
-            <p className="num text-accent-text mt-1 text-[14px] font-semibold">
+            <p className="num text-accent-text mt-1 text-[15px] font-semibold">
               {formatAmd(item.price, locale)}
             </p>
           </div>
@@ -132,7 +132,7 @@ export function DishSheet({
             />
           )}
         </div>
-        <p className="text-muted mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+        <p className="text-muted mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
           {item.portion && (
             <span className={styles.portion}>
               {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
@@ -147,13 +147,13 @@ export function DishSheet({
             value={item.description}
             locale={locale}
             as="p"
-            className="text-muted mt-2 text-[12px] leading-relaxed"
+            className="text-muted mt-2 text-[13px] leading-relaxed"
           />
         )}
         {/* Allergens as the café listed them; when it listed none, say so
             (an empty list is not "free of"), and always send serious
             allergies to the waiter. */}
-        <p className="bg-chip text-muted mt-3 rounded-[10px] px-3 py-2.5 text-[11px] leading-snug" data-testid="allergens">
+        <p className="bg-chip text-muted mt-3 rounded-[12px] px-3 py-2.5 text-[12px] leading-snug" data-testid="allergens">
           {item.allergens.length > 0 ? (
             <>
               <span className="text-ink font-semibold">
@@ -182,10 +182,10 @@ export function DishSheet({
             .join(", ");
           return (
             <fieldset key={group.id} className="mt-5 min-w-0" data-testid="option-group">
-              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-[13px] font-semibold">
+              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-[14px] font-semibold">
                 {group.name ? <Txt value={group.name} locale={locale} /> : <span />}
                 <span
-                  className={`rounded-[6px] px-1.5 py-0.5 text-[10px] ${group.min > 0 ? "bg-[#fbe9e0] text-[#8e3a1d] font-semibold" : "text-muted font-normal"}`}
+                  className={`rounded-[8px] px-1.5 py-0.5 text-[11px] ${group.min > 0 ? "bg-[#fbe9e0] text-[#8e3a1d] font-semibold" : "text-muted font-normal"}`}
                 >
                   {hint}
                 </span>
@@ -195,7 +195,7 @@ export function DishSheet({
                 return (
                   <label
                     key={m.id}
-                    className="border-line flex min-h-11 items-center gap-3 border-b text-[12px] has-disabled:opacity-60"
+                    className="border-line flex min-h-11 items-center gap-3 border-b text-[13px] has-disabled:opacity-60"
                   >
                     <input
                       type={single ? "radio" : "checkbox"}
@@ -208,12 +208,12 @@ export function DishSheet({
                     />
                     <Txt value={m.name} locale={locale} className="min-w-0 flex-1" />
                     {asPrice ? (
-                      <span className="num text-muted text-[11px] whitespace-nowrap">
+                      <span className="num text-muted text-[12px] whitespace-nowrap">
                         {formatAmd(item.price + m.delta, locale)}
                       </span>
                     ) : (
                       m.delta !== 0 && (
-                        <span className="num text-muted text-[11px] whitespace-nowrap">
+                        <span className="num text-muted text-[12px] whitespace-nowrap">
                           {m.delta > 0 ? "+" : "−"}
                           {formatAmd(Math.abs(m.delta), locale)}
                         </span>
@@ -227,7 +227,7 @@ export function DishSheet({
         })}
 
         {canOrder && (
-          <label className="mt-5 grid gap-1.5 text-[13px] font-semibold" htmlFor="dish-note">
+          <label className="mt-5 grid gap-1.5 text-[14px] font-semibold" htmlFor="dish-note">
             {t("sheet.note")}
             <textarea
               id="dish-note"
@@ -236,10 +236,10 @@ export function DishSheet({
               rows={2}
               placeholder={t("sheet.notePlaceholder")}
               onChange={(e) => setNote(e.target.value)}
-              className="rounded-field border-line-strong bg-surface min-h-[60px] resize-y border p-3 text-[12px] font-normal"
+              className="rounded-field border-line-strong bg-surface min-h-[60px] resize-y border p-3 text-[13px] font-normal"
             />
             {note.length >= NOTE_COUNTER_FROM && (
-              <span className="num text-muted justify-self-end text-[11px] font-normal" aria-live="polite">
+              <span className="num text-muted justify-self-end text-[12px] font-normal" aria-live="polite">
                 {note.length}/{MAX_NOTE}
               </span>
             )}
@@ -248,7 +248,7 @@ export function DishSheet({
 
         {pairs.length > 0 && (
           <section aria-labelledby="pairs-title" className="mt-5" data-testid="pairs">
-            <h3 id="pairs-title" className="text-[13px] font-semibold">
+            <h3 id="pairs-title" className="text-[14px] font-semibold">
               {t("pairs.title")}
             </h3>
             <ul className="-mx-4 mt-2 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
@@ -258,7 +258,7 @@ export function DishSheet({
                 return (
                   <li
                     key={pair.id}
-                    className="border-line bg-surface flex w-[13.5rem] flex-none snap-start items-center gap-2.5 rounded-[12px] border p-1.5"
+                    className="border-line bg-surface flex w-[13.5rem] flex-none snap-start items-center gap-2.5 rounded-[16px] border p-1.5"
                   >
                     <button
                       type="button"
@@ -266,14 +266,14 @@ export function DishSheet({
                       className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 text-left"
                     >
                       {pair.image && (
-                        <span className="bg-plate block size-12 flex-none overflow-hidden rounded-[8px]">
+                        <span className="bg-plate block size-12 flex-none overflow-hidden rounded-[10px]">
                           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
                           <img src={dishPhotoUrl(pair.image)} alt="" width={96} height={96} className="size-full object-cover" />
                         </span>
                       )}
                       <span className="grid min-w-0 flex-1">
-                        <Txt value={pair.name} locale={locale} className="line-clamp-2 text-[12px] font-semibold break-words" />
-                        <span className="num text-accent-text text-[11px] font-semibold whitespace-nowrap">
+                        <Txt value={pair.name} locale={locale} className="line-clamp-2 text-[13px] font-semibold break-words" />
+                        <span className="num text-accent-text text-[12px] font-semibold whitespace-nowrap">
                           {formatAmd(pair.price, locale)}
                         </span>
                       </span>
@@ -315,7 +315,7 @@ export function DishSheet({
           {canOrder ? (
             <div className="flex items-center gap-4">
               <p className="grid flex-none leading-tight">
-                <span className="text-muted text-[11px]">{t("cart.total")}</span>
+                <span className="text-muted text-[12px]">{t("cart.total")}</span>
                 <span
                   className="num text-[17px] font-semibold whitespace-nowrap"
                   data-testid="sheet-total"
@@ -331,7 +331,7 @@ export function DishSheet({
                   flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className={`${styles.cta} flex min-h-12 min-w-0 flex-1 items-center justify-center gap-3 px-6 text-[13px] font-semibold`}
+                className={`${styles.cta} flex min-h-12 min-w-0 flex-1 items-center justify-center gap-3 px-6 text-[14px] font-semibold`}
               >
                 {t("sheet.add")}
               </button>

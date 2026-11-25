@@ -21,7 +21,7 @@ export function SectionList({ categories }: { categories: GuestCategory[] }) {
         {clusters.map(({ group, sections }) => (
           <div key={group} className="pb-1">
             {clusters.length > 1 && (
-              <p className="text-soft px-2 pt-2 pb-1 text-[10px] font-semibold tracking-[0.06em] uppercase">
+              <p className="text-soft px-2 pt-2 pb-1 text-[11px] font-semibold tracking-[0.06em] uppercase">
                 {t(`menu.groups.${group}`)}
               </p>
             )}
@@ -36,10 +36,10 @@ export function SectionList({ categories }: { categories: GuestCategory[] }) {
                         .getElementById(sectionId(c.id))
                         ?.scrollIntoView({ behavior: smooth(), block: "start" });
                     }}
-                    className="text-ink hover:bg-chip flex min-h-8 items-center justify-between gap-2 rounded-[8px] px-2 py-1 text-[12px]"
+                    className="text-ink hover:bg-chip flex min-h-8 items-center justify-between gap-2 rounded-[10px] px-2 py-1 text-[13px]"
                   >
                     {c.name ? <Txt value={c.name} locale={locale} className="min-w-0 break-words" /> : null}
-                    <span className="num text-soft flex-none text-[10px]">{c.items.length}</span>
+                    <span className="num text-soft flex-none text-[11px]">{c.items.length}</span>
                   </a>
                 </li>
               ))}

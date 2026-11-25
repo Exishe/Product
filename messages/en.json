@@ -743,6 +743,11 @@
     "scan": "Scan to order"
   },
   "guest": {
+    "palette": {
+      "label": "Colours",
+      "mono": "Black and white",
+      "blue": "Blue and white"
+    },
     "language": {
       "label": "Language",
       "hy": "Հայ",

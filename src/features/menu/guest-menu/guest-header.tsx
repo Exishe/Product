@@ -1,5 +1,6 @@
 "use client";
 
+import { DemoPalette } from "./demo-palette";
 import type { ReactNode } from "react";
 import { SplitText } from "@/features/guest-theme/motion/split-text";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
@@ -61,7 +62,13 @@ export function BrandMark({
       <Tag className="m-0 flex min-w-0 flex-1 items-center">
         <Home home={home} label={cafeName}>
           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-          <img src={wordmarkUrl} alt={cafeName} height={40} className={styles.barWordmark} data-testid={wordmarkTestId} />
+          <img
+            src={wordmarkUrl}
+            alt={cafeName}
+            height={40}
+            className={styles.barWordmark}
+            data-testid={wordmarkTestId}
+          />
         </Home>
       </Tag>
     );
@@ -109,12 +116,22 @@ export function TableChip({ label }: { label: string }) {
   const { t } = useGuestI18n();
   return (
     <span
-      className={`text-ink grid min-h-11 flex-none place-items-center text-[11px] font-semibold whitespace-nowrap ${styles.flip}`}
+      className={`text-ink grid min-h-11 flex-none place-items-center text-[12px] font-semibold whitespace-nowrap ${styles.flip}`}
       data-testid="table-chip"
     >
       <Flip>
-        <span className="bg-chip inline-flex h-8 items-center gap-1.5 rounded-[8px] px-2.5">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <span className="bg-chip inline-flex h-8 items-center gap-1.5 rounded-[10px] px-2.5">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M3 9h18M5 9v10M19 9v10M8 9V6h8v3" />
           </svg>
           {t("table", { label })}
@@ -138,10 +155,12 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[11px] aria-[current=true]:font-semibold ${styles.flip}`}
+          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[12px] aria-[current=true]:font-semibold ${styles.flip}`}
         >
           <Flip>
-            <span className="group-aria-[current=true]:bg-chip rounded-[6px] px-2 py-1">{t(`language.${l}`)}</span>
+            <span className="group-aria-[current=true]:bg-chip rounded-[8px] px-2 py-1">
+              {t(`language.${l}`)}
+            </span>
           </Flip>
         </a>
       ))}
@@ -185,7 +204,12 @@ export function GuestHeader({
   const { locale } = useGuestI18n();
   const nameLang = scriptLang(cafeName);
   const tableChip = tableLabel && <TableChip label={tableLabel} />;
-  const languageNav = <LanguageNav languages={languages} />;
+  const languageNav = (
+    <>
+      <DemoPalette />
+      <LanguageNav languages={languages} />
+    </>
+  );
 
   if (compact)
     return (

@@ -4,6 +4,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
+import { isDemoCafe } from "@/features/guest-theme/demo";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
@@ -101,7 +102,12 @@ export default async function OrderStatusPage({
     }));
 
   return (
-    <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>
+    <GuestThemeScope
+      theme={theme}
+      brandColor={look?.brand_color}
+      brand={look?.brand}
+      demo={isDemoCafe(restaurant)}
+    >
       {table ? (
         <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
           <GuestHeader

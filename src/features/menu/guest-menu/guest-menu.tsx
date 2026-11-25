@@ -291,7 +291,7 @@ export function GuestMenu({
     </span>
   );
   const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-10 items-center gap-2 border border-line px-3 text-[12px] font-semibold";
+    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-10 items-center gap-2 border border-line px-3 text-[13px] font-semibold";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -415,7 +415,7 @@ export function GuestMenu({
           placeholder={t("menu.search")}
           autoComplete="off"
           enterKeyHint="search"
-          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border pr-4 pl-10 text-[13px] [border-color:var(--guest-line-strong)]"
+          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border pr-4 pl-10 text-[14px] [border-color:var(--guest-line-strong)]"
         />
       </div>
       {offerFilter && (
@@ -425,7 +425,7 @@ export function GuestMenu({
           aria-pressed={avoid.length > 0}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border px-3.5 text-[12px] font-semibold [border-color:var(--guest-line-strong)]"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border px-3.5 text-[13px] font-semibold [border-color:var(--guest-line-strong)]"
         >
           <ShieldAlert size={15} aria-hidden />
           {avoid.length ? t("diet.openCount", { count: avoid.length }) : t("diet.open")}
@@ -521,10 +521,10 @@ export function GuestMenu({
                           <h3
                             id={`h-${c.id}`}
                             lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-2.5 flex items-baseline gap-2 text-[14px] leading-[1.25] font-semibold"
+                            className="text-ink mb-2.5 flex items-baseline gap-2 text-[15px] leading-[1.25] font-semibold"
                           >
                             {c.name.text}
-                            <span className="num text-soft text-[11px] font-normal">{c.items.length}</span>
+                            <span className="num text-soft text-[12px] font-normal">{c.items.length}</span>
                           </h3>
                         )}
                         <ul className="grid items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>

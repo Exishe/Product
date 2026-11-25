@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
+import { isDemoCafe } from "@/features/guest-theme/demo";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
@@ -97,7 +98,12 @@ export default async function GuestMenuPage({
     wordmarkTones(theme, parseBrand(published.restaurant.brand)),
   );
   return (
-    <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor} brand={published.restaurant.brand}>
+    <GuestThemeScope
+      theme={menu.theme}
+      brandColor={menu.brandColor}
+      brand={published.restaurant.brand}
+      demo={isDemoCafe(restaurant)}
+    >
       <GuestI18nProvider locale={locale} messages={messages}>
         <GuestMenu
           menu={menu}

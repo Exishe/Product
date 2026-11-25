@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { preconnect, preload } from "react-dom";
 import { BrandFonts } from "./brand-fonts";
 import { brandPage, brandTokens, googleFontsHref, parseBrand } from "./brand";
+import { DEMO_PALETTE_KEY } from "./demo";
 import type { GuestTheme } from "./themes";
 
 // Overscroll beyond the page shows the brand's page colour; `page` is a
@@ -18,12 +19,15 @@ export function GuestThemeScope({
   theme,
   brandColor,
   brand: rawBrand,
+  demo = false,
   children,
 }: {
   theme: GuestTheme;
   brandColor?: string | null;
   /** restaurants.brand as api.public_menu returns it. */
   brand?: unknown;
+  /** One of the public demo cafés: black and white, or blue and white by choice. */
+  demo?: boolean;
   children: ReactNode;
 }) {
   const brand = parseBrand(rawBrand);
@@ -42,8 +46,18 @@ export function GuestThemeScope({
       data-plate={brand?.plate ?? undefined}
       data-brand-header={brand?.colors.header ? "" : undefined}
       data-brand-script={brand?.scriptFont ? "" : undefined}
+      data-demo={demo ? "" : undefined}
+      // The demo palette a guest picked is set before the first paint (below).
+      suppressHydrationWarning={demo}
       style={style}
     >
+      {demo && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem(${JSON.stringify(DEMO_PALETTE_KEY)})==="blue")document.currentScript.parentElement.setAttribute("data-demo-palette","blue")}catch(e){}`,
+          }}
+        />
+      )}
       {page && <style dangerouslySetInnerHTML={{ __html: overscroll(page) }} />}
       {children}
       {fonts && <BrandFonts href={fonts} />}

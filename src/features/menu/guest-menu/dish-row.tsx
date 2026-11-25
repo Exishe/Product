@@ -81,8 +81,8 @@ export function DishRow({
           <span
             className={`bg-plate relative block flex-none overflow-hidden ${
               feature
-                ? "aspect-[4/3] w-full md:m-1.5 md:mb-0 md:w-[calc(100%-0.75rem)] md:rounded-[9px]"
-                : "max-md:min-h-[7rem] max-md:w-28 max-md:self-stretch md:m-1.5 md:mb-0 md:aspect-[4/3] md:w-[calc(100%-0.75rem)] md:rounded-[9px]"
+                ? "aspect-[4/3] w-full md:m-1.5 md:mb-0 md:w-[calc(100%-0.75rem)] md:rounded-[10px]"
+                : "max-md:min-h-[7rem] max-md:w-28 max-md:self-stretch md:m-1.5 md:mb-0 md:aspect-[4/3] md:w-[calc(100%-0.75rem)] md:rounded-[10px]"
             }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
@@ -95,7 +95,7 @@ export function DishRow({
               className={`absolute inset-0 size-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.04] motion-reduce:transition-none ${item.soldOut ? "opacity-50 grayscale" : ""}`}
             />
             {popular && (
-              <span className="bg-accent text-on-accent absolute top-2 left-2 rounded-[6px] px-1.5 py-1 text-[10px] leading-none font-semibold">
+              <span className="bg-accent text-on-accent absolute top-2 left-2 rounded-[8px] px-1.5 py-1 text-[11px] leading-none font-semibold">
                 {t("menu.tags.popular")}
               </span>
             )}
@@ -106,17 +106,17 @@ export function DishRow({
             <Txt
               value={section}
               locale={locale}
-              className="border-line text-muted mb-1.5 hidden self-start rounded-[6px] border px-1.5 py-0.5 text-[10px] leading-none md:block"
+              className="border-line text-muted mb-1.5 hidden self-start rounded-[8px] border px-1.5 py-0.5 text-[11px] leading-none md:block"
             />
           )}
           <Txt
             value={item.name}
             locale={locale}
-            className={`min-w-0 text-[13px] leading-[1.3] font-semibold break-words hyphens-auto ${muted}`}
+            className={`min-w-0 text-[14px] leading-[1.3] font-semibold break-words hyphens-auto ${muted}`}
           />
           {sizes.length > 0 && (
             <span
-              className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] ${muted}`}
+              className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] ${muted}`}
               data-testid="sizes"
             >
               {sizes.map((s) => (
@@ -128,7 +128,7 @@ export function DishRow({
             </span>
           )}
           {(item.soldOut || item.portion || item.tags.some((tag) => tag !== "popular" || !photo)) && (
-            <span className="text-muted mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="text-muted mt-1 flex flex-wrap items-center gap-1.5 text-[12px]">
               {item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>}
               {item.portion && (
                 <span>{t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}</span>
@@ -142,8 +142,8 @@ export function DishRow({
           )}
           {item.origin ? (
             // Latin on every page: wine names and regions are not translated.
-            <span className="text-muted mt-1 block text-[11px] leading-snug break-words" lang="en">
-              <span className="block text-[10px] font-semibold tracking-[0.08em] uppercase">
+            <span className="text-muted mt-1 block text-[12px] leading-snug break-words" lang="en">
+              <span className="block text-[11px] font-semibold tracking-[0.08em] uppercase">
                 {item.origin.region}
               </span>
               <span className="block">{item.origin.grape}</span>
@@ -153,13 +153,13 @@ export function DishRow({
               <Txt
                 value={item.description}
                 locale={locale}
-                className="text-muted mt-0.5 line-clamp-2 block text-[11px] leading-snug break-words"
+                className="text-muted mt-0.5 line-clamp-2 block text-[12px] leading-snug break-words"
               />
             )
           )}
           {warning && (
             <span
-              className={`mt-1 block text-[11px] font-semibold ${warning.strong ? "text-alert" : "text-muted"}`}
+              className={`mt-1 block text-[12px] font-semibold ${warning.strong ? "text-alert" : "text-muted"}`}
             >
               {warning.text}
             </span>
@@ -168,7 +168,7 @@ export function DishRow({
             className={`mt-auto flex items-center pt-1 max-md:min-h-11 md:min-h-7 ${canOrder && !item.soldOut && !feature ? "max-md:pr-10" : ""}`}
           >
             {sizes.length === 0 && (
-              <span className={`num text-accent-text text-[13px] font-semibold whitespace-nowrap ${muted}`}>
+              <span className={`num text-accent-text text-[14px] font-semibold whitespace-nowrap ${muted}`}>
                 {formatAmd(item.price, locale)}
               </span>
             )}
@@ -194,7 +194,7 @@ export function DishRow({
         // − n + and «Ավելացնել» under the card (from 768 px; on a phone only on the large card).
         <div className={`gap-2 px-2.5 pb-2.5 ${feature ? "flex" : "hidden md:flex"}`}>
           {!needsChoice && (
-            <span className="border-line-strong flex h-10 flex-none items-center rounded-[8px] border">
+            <span className="border-line-strong flex h-10 flex-none items-center rounded-[10px] border">
               <button
                 type="button"
                 aria-label={t("sheet.decrease")}
@@ -205,7 +205,7 @@ export function DishRow({
                 <MinusIcon />
               </button>
               <output
-                className="num w-5 text-center text-[12px] font-semibold"
+                className="num w-5 text-center text-[13px] font-semibold"
                 aria-label={t("sheet.quantity")}
               >
                 {count}
@@ -231,7 +231,7 @@ export function DishRow({
               setCount(1);
               setAdded(true);
             }}
-            className={`${styles.addBtn} flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[8px] text-[12px] font-semibold`}
+            className={`${styles.addBtn} flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[10px] text-[13px] font-semibold`}
             data-added={added || undefined}
           >
             {added ? <CheckIcon /> : null}

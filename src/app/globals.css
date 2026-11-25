@@ -851,14 +851,16 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   --guest-dock-ink: #1e1c19 !important;
   --guest-dock-muted: #6e675c !important;
   --guest-shadow-card: none;
-  --guest-r-card: 12px;
-  --guest-r-pill: 10px;
-  --guest-r-field: 10px;
+  /* Soft corners (owner, Nov 2026: "not sharp"). */
+  --guest-r-card: 16px;
+  --guest-r-feature: 20px;
+  --guest-r-pill: 14px;
+  --guest-r-field: 14px;
   --guest-add: #2f4b3b !important;
   --guest-on-add: #ffffff !important;
   --guest-add-shadow: none;
   --brand-tool-ink: #1e1c19 !important;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* The demo café's own colours (owner, Nov 2026: colour battle entry Y, "Lake Sevan"):
@@ -906,4 +908,86 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
 .guest-lux[data-brand-script] .guest-flourish {
   font-family: inherit;
   font-weight: 600;
+}
+
+/* The demo cafés (owner, Nov 2026): black and white, with a switch at the top
+   of the menu to blue and white (demo-palette.tsx). The guest pages set
+   data-demo on the café's .guest-lux for the demo slugs only; the switch sets
+   data-demo-palette="blue". Contrast: ink 18.9:1 on white, muted 7.5:1; the
+   blue #1d4ed8 has white text at 6.7:1 and is 6.7:1 as text on white. */
+.guest-lux[data-demo][data-guest-theme] {
+  --guest-page: #fafafa !important;
+  --guest-surface: #ffffff !important;
+  --guest-band: #f1f1f1;
+  --guest-chip: #f1f1f1 !important;
+  --guest-plate: #e7e7e7 !important;
+  --guest-ink: #111111 !important;
+  --guest-muted: #555555 !important;
+  --guest-soft: #5c5c5c !important;
+  --guest-line: #e6e6e6 !important;
+  --guest-line-strong: #cfcfcf !important;
+  --guest-card-border: #e6e6e6 !important;
+  --guest-accent: #111111 !important;
+  --guest-on-accent: #ffffff !important;
+  --guest-accent-text: #111111 !important;
+  --guest-title: #111111 !important;
+  --guest-tab: #111111 !important;
+  --guest-on-tab: #ffffff !important;
+  --guest-tab-border: #e6e6e6 !important;
+  --guest-badge: #111111 !important;
+  --guest-on-badge: #ffffff !important;
+  --guest-glow: #111111 !important;
+  --guest-flourish: #111111 !important;
+  --guest-dock: #ffffff !important;
+  --guest-dock-ink: #111111 !important;
+  --guest-dock-muted: #5c5c5c !important;
+  --guest-add: #111111 !important;
+  --guest-on-add: #ffffff !important;
+  --brand-tool-ink: #111111 !important;
+}
+.guest-lux[data-demo][data-guest-theme][data-demo-palette="blue"] {
+  --guest-page: #f6f8fc !important;
+  --guest-band: #e8eef8;
+  --guest-chip: #e8eef8 !important;
+  --guest-plate: #dbe4f1 !important;
+  --guest-ink: #0f1b2d !important;
+  --guest-muted: #485870 !important;
+  --guest-soft: #4f5f77 !important;
+  --guest-line: #e0e7f1 !important;
+  --guest-line-strong: #c6d2e3 !important;
+  --guest-card-border: #e0e7f1 !important;
+  --guest-accent: #1d4ed8 !important;
+  --guest-accent-text: #1d4ed8 !important;
+  --guest-title: #0f1b2d !important;
+  --guest-tab: #1d4ed8 !important;
+  --guest-tab-border: #e0e7f1 !important;
+  --guest-badge: #1d4ed8 !important;
+  --guest-glow: #1d4ed8 !important;
+  --guest-flourish: #1d4ed8 !important;
+  --guest-dock-ink: #0f1b2d !important;
+  --guest-dock-muted: #4f5f77 !important;
+  --guest-add: #1d4ed8 !important;
+  --brand-tool-ink: #0f1b2d !important;
+}
+body:has(.guest-lux[data-demo]:not([data-guest-preview])):has(.guest-lux[data-demo]) {
+  background: #fafafa !important;
+}
+body:has(.guest-lux[data-demo][data-demo-palette="blue"]):has(.guest-lux[data-demo]) {
+  background: #f6f8fc !important;
+}
+.guest-lux[data-demo] [data-order-page],
+.guest-lux[data-demo]:has([data-order-page]) {
+  background: var(--guest-page) !important;
+}
+/* The switch shows on the demo cafés only. */
+.demo-palette {
+  display: none !important;
+}
+.guest-lux[data-demo] .demo-palette {
+  display: flex !important;
+}
+/* Diet tags («առանց մսի») go grey in black and white; blue keeps them green. */
+.guest-lux[data-demo]:not([data-demo-palette="blue"]) .rounded-full.bg-success-tint.text-success {
+  background: #efefef;
+  color: #111111;
 }

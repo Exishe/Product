@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DemoPalette } from "./demo-palette";
 import { BrandMark, LanguageNav, TableChip, type HomeLink, type LanguageLink } from "./guest-header";
 
 // The menu's bar (design battle entry B): a white strip with the café's mark on
@@ -42,11 +43,12 @@ export function MenuBar({
         </div>
         <div className="flex flex-none items-center gap-1.5">
           {tableLabel && <TableChip label={tableLabel} />}
+          <DemoPalette />
           <LanguageNav languages={languages} />
           {tools}
         </div>
       </div>
-      <div className="bg-[var(--guest-band)] border-line border-b">
+      <div className="border-line border-b bg-[var(--guest-band)]">
         <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-end gap-x-6 px-4 pt-3 md:px-8 lg:pt-2">
           <div className="w-full lg:order-2 lg:w-[26rem] lg:flex-none lg:pb-2">{search}</div>
           <div className="w-full min-w-0 lg:order-1 lg:w-auto lg:flex-1">{nav}</div>
