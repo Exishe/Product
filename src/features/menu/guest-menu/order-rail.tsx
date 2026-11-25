@@ -49,11 +49,11 @@ export function OrderRail({
       data-testid="order-rail"
       className="bg-surface rounded-card hidden max-h-[calc(100dvh-12rem)] flex-col border [border-color:var(--guest-card-border)] px-4 pt-4 pb-4 lg:flex"
     >
-      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-[1rem] leading-[1.2]">
+      <h2 id="order-panel-title" data-fly-bump="" className="display-face text-[1.25rem] leading-[1.2]">
         {t("cart.title")}
       </h2>
       {summary.lines.length === 0 ? (
-        <p className="text-muted mt-2 text-[13px] leading-relaxed">{t("panel.empty")}</p>
+        <p className="text-muted mt-2 text-[14px] leading-[1.45]">{t("panel.empty")}</p>
       ) : (
         <>
           <ul className="-mx-4 mt-2 min-h-0 flex-1 overflow-y-auto px-4">
@@ -70,7 +70,7 @@ export function OrderRail({
             ))}
           </ul>
           <div className="border-line flex items-baseline justify-between gap-3 border-t pt-3">
-            <span className="text-muted text-[13px]">{t("cart.total")}</span>
+            <span className="text-muted text-[12px]">{t("cart.total")}</span>
             <span className="num text-[16px] font-semibold" data-testid="rail-total">
               {formatAmd(summary.total, locale)}
             </span>
@@ -82,7 +82,7 @@ export function OrderRail({
             onClick={onOpen}
             className={
               send
-                ? "text-accent-text mt-1 min-h-11 text-[13px] font-semibold"
+                ? "text-accent-text mt-1 min-h-11 text-[14px] font-semibold"
                 : `${styles.cta} flex min-h-12 w-full items-center justify-center px-5 font-semibold`
             }
           >

@@ -106,6 +106,11 @@
   --radius-feature: var(--guest-r-feature);
   --radius-pill: var(--guest-r-pill);
   --radius-field: var(--guest-r-field);
+  /* The guest's three corner sizes (badges and photo insets; controls; cards
+     and sheets). Circles stay rounded-full. */
+  --radius-guest-sm: var(--guest-r-sm);
+  --radius-guest-md: var(--guest-r-md);
+  --radius-guest-lg: var(--guest-r-lg);
   --shadow-card: var(--guest-shadow-card);
   --shadow-plate: var(--guest-shadow-plate);
 }
@@ -484,6 +489,9 @@ html:has(.staff-shell) body {
   --guest-r-feature: 30px;
   --guest-r-pill: 999px;
   --guest-r-field: 14px;
+  --guest-r-sm: 8px;
+  --guest-r-md: 12px;
+  --guest-r-lg: 16px;
   --guest-display-weight: 400;
   --guest-display-stretch: 87.5%;
   --guest-title: var(--guest-ink); /* the café name and section headings */
@@ -873,11 +881,13 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   --guest-dock-ink: #1e1c19 !important;
   --guest-dock-muted: #6e675c !important;
   --guest-shadow-card: none;
-  /* Soft corners (owner, Nov 2026: "not sharp"). */
+  /* Soft corners (owner, Nov 2026: "not sharp"), three sizes only: 8 px for
+     badges and photo insets, 12 px for controls (buttons, fields, chips),
+     16 px for cards, sheets and panels. */
   --guest-r-card: 16px;
-  --guest-r-feature: 20px;
-  --guest-r-pill: 14px;
-  --guest-r-field: 14px;
+  --guest-r-feature: 16px;
+  --guest-r-pill: 12px;
+  --guest-r-field: 12px;
   --guest-add: #2f4b3b !important;
   --guest-on-add: #ffffff !important;
   --guest-add-shadow: none;
@@ -1007,9 +1017,4 @@ body:has(.guest-lux[data-demo][data-demo-palette="blue"]):has(.guest-lux[data-de
 }
 .guest-lux[data-demo] .demo-palette {
   display: flex !important;
-}
-/* Diet tags («առանց մսի») go grey in black and white; blue keeps them green. */
-.guest-lux[data-demo]:not([data-demo-palette="blue"]) .rounded-full.bg-success-tint.text-success {
-  background: #efefef;
-  color: #111111;
 }

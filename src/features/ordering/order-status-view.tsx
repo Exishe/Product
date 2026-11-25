@@ -37,7 +37,15 @@ import {
 import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, Sparkles, Timer, UtensilsCrossed } from "lucide-react";
+import {
+  ConciergeBell,
+  Gamepad2,
+  ReceiptText,
+  RotateCcw,
+  Sparkles,
+  Timer,
+  UtensilsCrossed,
+} from "lucide-react";
 import {
   displayStatus,
   isActive,
@@ -202,10 +210,12 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
               ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
-              <div className={`flex items-center gap-2 text-[13px] leading-5 ${done ? "font-semibold" : "text-muted"}`}>
+              <div
+                className={`flex items-center gap-2 text-[13px] leading-5 ${done ? "font-semibold" : "text-muted"}`}
+              >
                 {t(`order.steps.${step}`)}
                 {current && status !== "served" && status !== "paid" && (
-                  <span className="text-accent-text bg-[#fbe9e0] rounded-[6px] px-1.5 py-px text-[11px] font-semibold">
+                  <span className="text-accent-text rounded-[6px] bg-[#fbe9e0] px-1.5 py-px text-[11px] font-semibold">
                     {t("order.now")}
                   </span>
                 )}
@@ -266,8 +276,12 @@ function RecommendedCard({
   const { t } = useGuestI18n();
   const byId = new Map(dishes.map((d) => [d.id, d]));
   const skip = new Set(ordered);
-  const first = ordered.flatMap((id) => pairs[id] ?? []).flatMap((id) => (byId.get(id) ? [byId.get(id)!] : []));
-  const all = [...new Map([...first, ...dishes].filter((d) => !skip.has(d.id)).map((d) => [d.id, d])).values()];
+  const first = ordered
+    .flatMap((id) => pairs[id] ?? [])
+    .flatMap((id) => (byId.get(id) ? [byId.get(id)!] : []));
+  const all = [
+    ...new Map([...first, ...dishes].filter((d) => !skip.has(d.id)).map((d) => [d.id, d])).values(),
+  ];
   // Plates with a photo only, when there are enough of them; an orbit of empty plates says nothing.
   const photos = all.filter((d) => d.image);
   const list = (photos.length >= 4 ? photos : all).slice(0, 9);
@@ -333,16 +347,18 @@ function OrderCard({
       <section
         aria-label={t("order.title", { number: order.number })}
         data-status={status}
-        className={guestStyles.sheet}
+        className={guestStyles.orderCard}
       >
-        <div className={guestStyles.sheetHead}>
+        <div className={guestStyles.orderCardHead}>
           <Timer size={16} aria-hidden />
           <p className="text-[13px]">
             {t("order.title", { number: order.number })} ·{" "}
-            <span className="font-normal">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</span>
+            <span className="font-normal">
+              {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
+            </span>
           </p>
         </div>
-        <div className={`${guestStyles.sheetBody} pb-2`}>
+        <div className={`${guestStyles.orderCardBody} pb-2`}>
           {status !== "rejected" && status !== "cancelled" && (
             <h2 className="text-[15px] leading-[1.25] font-semibold" data-testid="order-phase">
               {t(`order.steps.${status}`)}
@@ -356,7 +372,7 @@ function OrderCard({
     <article
       className={
         latest
-          ? `${guestStyles.sheet} ${guestStyles.sheetBody} mb-5 !pb-1`
+          ? `${guestStyles.orderCard} ${guestStyles.orderCardBody} mb-5 !pb-1`
           : "border-line border-t pt-4"
       }
       data-testid="order"
@@ -364,9 +380,7 @@ function OrderCard({
       data-status={status}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <Title
-          className={`display-face leading-[1.15] ${latest ? "text-[1.25rem]" : "text-[1rem]"}`}
-        >
+        <Title className={`display-face leading-[1.15] ${latest ? "text-[1.25rem]" : "text-[1rem]"}`}>
           {t("order.title", { number: order.number })}
         </Title>
         {!latest && (
@@ -884,140 +898,158 @@ export function OrderStatusView({
               cantMake={cantMake}
             />
           )}
-      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[12px]">{t("order.reconnecting")}</p>}
-      <p className="sr-only" role="status" aria-live="polite">
-        {latestStatus
-          ? t(
-              `order.steps.${latestStatus === "rejected" || latestStatus === "cancelled" ? "received" : latestStatus}`,
-            )
-          : null}
-      </p>
-
-      {closed ? (
-        <div className="my-4">
-          <Notice tone="calm">{t("order.tableClosed")}</Notice>
-        </div>
-      ) : (
-        <>
-          {db && guestSessionId && latestStatus && waiting.has(latestStatus) && (
-            <NotifyReady db={db} guestSessionId={guestSessionId} vapidPublicKey={vapidPublicKey} />
+          {channel === "down" && (
+            <p className="text-muted -mt-2 mb-2 text-[12px]">{t("order.reconnecting")}</p>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              className={secondary}
-              aria-pressed={open.has("call_waiter")}
-              disabled={asking !== null}
-              onClick={() => void ask("call_waiter")}
-            >
-              {t("order.callWaiter")}
-            </button>
-            <button
-              type="button"
-              className={secondary}
-              aria-pressed={open.has("bring_bill")}
-              disabled={asking !== null}
-              aria-expanded={choosing}
-              ref={billButton}
-              onClick={() => setChoosing((x) => !x)}
-            >
-              {t("order.askBill")}
-            </button>
-          </div>
-          {choosing && (
-            <div
-              role="group"
-              aria-label={t("order.payTitle")}
-              data-testid="pay-choice"
-              ref={payPanel}
-              className="mt-3 grid scroll-mb-[calc(110px+env(safe-area-inset-bottom,0px))] gap-2"
-            >
-              {grand > 0 && (
-                <div
-                  className="bg-surface shadow-card rounded-card mb-2 grid gap-2 border [border-color:var(--guest-card-border)] px-4 py-3"
-                  data-testid="split"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="font-semibold">{t("order.splitLabel")}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <button
-                        type="button"
-                        className={stepButton}
-                        aria-label={t("order.splitFewer")}
-                        disabled={people <= 1}
-                        onClick={() => setPeople((n) => Math.max(1, n - 1))}
-                      >
-                        <MinusIcon />
-                      </button>
-                      <output className="num min-w-[5.5rem] text-center font-semibold" aria-live="polite">
-                        {t("order.splitPeople", { count: people })}
-                      </output>
-                      <button
-                        type="button"
-                        className={stepButton}
-                        aria-label={t("order.splitMore")}
-                        disabled={people >= MAX_PEOPLE}
-                        onClick={() => setPeople((n) => Math.min(MAX_PEOPLE, n + 1))}
-                      >
-                        <PlusIcon />
-                      </button>
-                    </span>
-                  </div>
-                  {people > 1 && (
-                    <p className="num text-accent-text text-[16px] font-semibold" data-testid="split-share">
-                      {t("order.splitEach", { amount: formatAmd(shareOf(grand, people), locale as Locale) })}
-                    </p>
-                  )}
-                  <p className="text-muted text-[12px]">{t("order.splitNote")}</p>
-                </div>
+          <p className="sr-only" role="status" aria-live="polite">
+            {latestStatus
+              ? t(
+                  `order.steps.${latestStatus === "rejected" || latestStatus === "cancelled" ? "received" : latestStatus}`,
+                )
+              : null}
+          </p>
+
+          {closed ? (
+            <div className="my-4">
+              <Notice tone="calm">{t("order.tableClosed")}</Notice>
+            </div>
+          ) : (
+            <>
+              {db && guestSessionId && latestStatus && waiting.has(latestStatus) && (
+                <NotifyReady db={db} guestSessionId={guestSessionId} vapidPublicKey={vapidPublicKey} />
               )}
-              <p className="m-0 font-semibold">{t("order.payTitle")}</p>
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" className={secondary} onClick={() => void ask("bring_bill", "card")}>
-                  {t("order.payCard")}
+                <button
+                  type="button"
+                  className={secondary}
+                  aria-pressed={open.has("call_waiter")}
+                  disabled={asking !== null}
+                  onClick={() => void ask("call_waiter")}
+                >
+                  {t("order.callWaiter")}
                 </button>
-                <button type="button" className={secondary} onClick={() => void ask("bring_bill", "cash")}>
-                  {t("order.payCash")}
+                <button
+                  type="button"
+                  className={secondary}
+                  aria-pressed={open.has("bring_bill")}
+                  disabled={asking !== null}
+                  aria-expanded={choosing}
+                  ref={billButton}
+                  onClick={() => setChoosing((x) => !x)}
+                >
+                  {t("order.askBill")}
                 </button>
               </div>
-              <button
-                type="button"
-                className="text-accent-text min-h-12 justify-self-start font-semibold"
-                onClick={() => {
-                  setChoosing(false);
-                  billButton.current?.focus({ preventScroll: true });
-                }}
-              >
-                {t("order.payBack")}
-              </button>
-            </div>
+              {choosing && (
+                <div
+                  role="group"
+                  aria-label={t("order.payTitle")}
+                  data-testid="pay-choice"
+                  ref={payPanel}
+                  className="mt-3 grid scroll-mb-[calc(110px+env(safe-area-inset-bottom,0px))] gap-2"
+                >
+                  {grand > 0 && (
+                    <div
+                      className="bg-surface shadow-card rounded-card mb-2 grid gap-2 border [border-color:var(--guest-card-border)] px-4 py-3"
+                      data-testid="split"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="font-semibold">{t("order.splitLabel")}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            className={stepButton}
+                            aria-label={t("order.splitFewer")}
+                            disabled={people <= 1}
+                            onClick={() => setPeople((n) => Math.max(1, n - 1))}
+                          >
+                            <MinusIcon />
+                          </button>
+                          <output className="num min-w-[5.5rem] text-center font-semibold" aria-live="polite">
+                            {t("order.splitPeople", { count: people })}
+                          </output>
+                          <button
+                            type="button"
+                            className={stepButton}
+                            aria-label={t("order.splitMore")}
+                            disabled={people >= MAX_PEOPLE}
+                            onClick={() => setPeople((n) => Math.min(MAX_PEOPLE, n + 1))}
+                          >
+                            <PlusIcon />
+                          </button>
+                        </span>
+                      </div>
+                      {people > 1 && (
+                        <p
+                          className="num text-accent-text text-[16px] font-semibold"
+                          data-testid="split-share"
+                        >
+                          {t("order.splitEach", {
+                            amount: formatAmd(shareOf(grand, people), locale as Locale),
+                          })}
+                        </p>
+                      )}
+                      <p className="text-muted text-[12px]">{t("order.splitNote")}</p>
+                    </div>
+                  )}
+                  <p className="m-0 font-semibold">{t("order.payTitle")}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      className={secondary}
+                      onClick={() => void ask("bring_bill", "card")}
+                    >
+                      {t("order.payCard")}
+                    </button>
+                    <button
+                      type="button"
+                      className={secondary}
+                      onClick={() => void ask("bring_bill", "cash")}
+                    >
+                      {t("order.payCash")}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-accent-text min-h-12 justify-self-start font-semibold"
+                    onClick={() => {
+                      setChoosing(false);
+                      billButton.current?.focus({ preventScroll: true });
+                    }}
+                  >
+                    {t("order.payBack")}
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
 
-      {earlier.length > 0 && (
-        <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
-          <h2 id="earlier-orders" className="text-[15px] font-semibold">
-            {t("order.earlier")}
-          </h2>
-          {earlier.map((o) => (
-            <OrderCard
-              key={o.id}
-              order={o}
-              latest={false}
-              details={details}
-              onRepeat={closed ? undefined : repeat}
-              cantMake={cantMake}
-            />
-          ))}
-          <div className="border-line flex items-baseline justify-between border-t py-4 text-[16px] font-semibold">
-            <span>{t("order.allRounds")}</span>
-            <span className="num">{formatAmd(grand, locale as Locale)}</span>
-          </div>
-        </section>
-      )}
+          {earlier.length > 0 && (
+            <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
+              <h2 id="earlier-orders" className="text-[15px] font-semibold">
+                {t("order.earlier")}
+              </h2>
+              {earlier.map((o) => (
+                <OrderCard
+                  key={o.id}
+                  order={o}
+                  latest={false}
+                  details={details}
+                  onRepeat={closed ? undefined : repeat}
+                  cantMake={cantMake}
+                />
+              ))}
+              <div className="border-line flex items-baseline justify-between border-t py-4 text-[16px] font-semibold">
+                <span>{t("order.allRounds")}</span>
+                <span className="num">{formatAmd(grand, locale as Locale)}</span>
+              </div>
+            </section>
+          )}
         </div>
-        <aside className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2" aria-label={t("order.status")}>
+        <aside
+          className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2"
+          aria-label={t("order.status")}
+        >
           {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
         </aside>
       </div>
@@ -1034,7 +1066,11 @@ export function OrderStatusView({
       {showGames && latestStatus !== null && (
         <div className="mt-8">
           <Rise>
-            <GamesCorner ready={latestStatus === "ready"} waiting={waiting.has(latestStatus)} reward={rewardCtx} />
+            <GamesCorner
+              ready={latestStatus === "ready"}
+              waiting={waiting.has(latestStatus)}
+              reward={rewardCtx}
+            />
           </Rise>
         </div>
       )}

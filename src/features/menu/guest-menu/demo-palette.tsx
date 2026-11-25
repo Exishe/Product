@@ -39,33 +39,36 @@ export function DemoPalette() {
     }
   };
 
+  // One small segmented control: a 36 px track holding two solid dots, the
+  // current one ringed. Each button keeps a 44 px hit area (it reaches past
+  // the track's top and bottom), so the switch looks small but taps easily.
   return (
     <div
       ref={ref}
       role="group"
       aria-label={t("palette.label")}
-      className="demo-palette flex flex-none items-center"
+      className="demo-palette mr-2 flex h-11 flex-none items-center"
     >
-      {(["mono", "blue"] as const).map((p) => (
-        <button
-          key={p}
-          type="button"
-          aria-pressed={palette === p}
-          aria-label={t(`palette.${p}`)}
-          title={t(`palette.${p}`)}
-          onClick={() => pick(p)}
-          className="group grid size-11 place-items-center rounded-full"
-        >
-          <span
-            aria-hidden="true"
-            className="grid size-7 place-items-center rounded-full ring-1 ring-black/15 ring-offset-2 ring-offset-[var(--guest-surface)] group-aria-pressed:ring-2 group-aria-pressed:ring-[var(--guest-ink)]"
+      <span className="rounded-guest-md flex h-9 items-center bg-[var(--guest-chip)] px-0.5">
+        {(["mono", "blue"] as const).map((p) => (
+          <button
+            key={p}
+            type="button"
+            aria-pressed={palette === p}
+            aria-label={t(`palette.${p}`)}
+            title={t(`palette.${p}`)}
+            onClick={() => pick(p)}
+            className="group -my-1 grid h-11 w-9 place-items-center"
           >
             <span
-              className={`block size-6 overflow-hidden rounded-full ${p === "mono" ? "bg-[linear-gradient(90deg,#111_50%,#fff_50%)]" : "bg-[linear-gradient(90deg,#1d4ed8_50%,#fff_50%)]"}`}
+              aria-hidden="true"
+              className={`block size-4 rounded-full group-aria-pressed:shadow-[0_0_0_2px_var(--guest-surface),0_0_0_3.5px_var(--guest-ink)] ${
+                p === "mono" ? "bg-[#111111]" : "bg-[#1d4ed8]"
+              }`}
             />
-          </span>
-        </button>
-      ))}
+          </button>
+        ))}
+      </span>
     </div>
   );
 }

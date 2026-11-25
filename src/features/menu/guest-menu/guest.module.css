@@ -626,7 +626,6 @@
   padding-top: 0;
 }
 
-
 /* Side by side (a tablet, and a desktop wide enough beside the order rail):
    the card and the first lines in one column, the rest in the other. The
    grid stretches both, so the columns end on the same line. */
@@ -662,7 +661,6 @@
     border-radius: var(--guest-r-feature);
     padding-top: 0.25rem;
   }
-
 }
 
 /* «Բաժիններ» at the left edge of the section tabs: it stays while the tabs
@@ -719,18 +717,19 @@
   }
 }
 
-/* A card of the order page (order-status-view.tsx): white, a thin black line, no
-   shadow, and a header strip with a soft pastel gradient from the café's own
-   colours, like a tier of a pricing table. */
-.sheet {
+/* A card of the order page (order-status-view.tsx): the card colour, a thin
+   line, no shadow, 16 px corners. Not called .sheet: that name is the dialogs'
+   rise, and a module class beats Tailwind's layered utilities, so sharing it
+   gave the dish sheet this card's border and corners. */
+.orderCard {
   overflow: hidden;
   border: 1px solid var(--guest-card-border, #ebe6d9);
-  border-radius: 1.25rem;
-  background: #ffffff;
+  border-radius: var(--guest-r-lg, 16px);
+  background: var(--guest-surface);
   color: var(--guest-ink);
 }
 
-.sheetHead {
+.orderCardHead {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -738,16 +737,16 @@
   font-weight: 600;
 }
 
-.sheetHead svg {
+.orderCardHead svg {
   flex: none;
 }
 
-.sheetBody {
+.orderCardBody {
   padding: 1.25rem;
 }
 
 @media (min-width: 768px) {
-  .sheetBody {
+  .orderCardBody {
     padding: 1.75rem 2rem;
   }
 }
@@ -782,7 +781,6 @@
     transition: none;
   }
 }
-
 
 /* Table and language items in the menu bar: on hover the label turns over like a
    card (rotateX) while a soft glow in the brand's accent blooms behind it. After
@@ -869,28 +867,27 @@
   }
 }
 
-/* Sweetco-style add button under a card: outlined, fills with the action colour
-   on hover, and stays filled with a tick for a moment after the dish goes in. */
+/* «Ավելացնել» under a card: filled in the action colour, the same as the round
+   "+", so adding a dish looks the same on every card. It lifts a little on a
+   mouse and shows a tick for a moment after the dish goes in. */
 .addBtn {
-  border: 1px solid var(--guest-line-strong);
-  background: var(--guest-surface);
-  color: var(--guest-ink);
+  border: 0;
+  background: var(--guest-add);
+  color: var(--guest-on-add);
   transition:
-    background-color 180ms ease-out,
-    border-color 180ms ease-out,
-    color 180ms ease-out,
+    filter 180ms ease-out,
     transform 160ms cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
-.addBtn:hover,
-.addBtn[data-added] {
-  border-color: var(--guest-add);
-  background: var(--guest-add);
-  color: var(--guest-on-add);
+@media (hover: hover) {
+  .addBtn:hover {
+    filter: brightness(1.12);
+  }
 }
 
 .addBtn:active {
   transform: scale(0.97);
+  filter: brightness(0.94);
 }
 
 .addBtn svg {
@@ -919,5 +916,33 @@
 
   .addBtn {
     transition: none;
+  }
+}
+
+/* The menu's loading skeleton (loading.tsx): grey shapes that breathe gently
+   while the café's menu is on its way; still under reduced motion. */
+.skeleton {
+  background: var(--guest-plate);
+  animation: skeleton 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+
+/* The desktop section list: when it is taller than the screen, its foot fades
+   into the card, so the cut reads as "more below" rather than a clipped box. */
+.sectionScroll {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
   }
 }
