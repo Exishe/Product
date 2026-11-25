@@ -28,11 +28,21 @@ export const iconButton = (extra?: string) =>
     extra,
   );
 
-// Text fields and pickers: white, a 3.4:1 border, 48 px tall.
+// Text fields and pickers: white, a 3.4:1 border, 48 px tall. Keyboard focus
+// thickens the field's own edge to 2 px ink instead of drawing a second ring
+// around it; a field marked aria-invalid gets a red edge.
 export const field =
-  "w-full min-w-0 rounded-xl border border-staff-field bg-white px-3 text-[1.0625rem] text-ink placeholder:text-staff-label2 disabled:bg-staff-fill disabled:text-staff-label2";
+  "w-full min-w-0 rounded-xl border border-staff-field bg-white px-3 text-[1.0625rem] text-ink placeholder:text-staff-label2 disabled:bg-staff-fill disabled:text-staff-label2 focus-visible:border-ink focus-visible:outline-2 focus-visible:-outline-offset-1 aria-invalid:border-pomegranate aria-invalid:outline-pomegranate";
 export const input = clsx(field, "h-12");
 export const fieldLabel = "text-[0.9375rem] font-semibold text-staff-label2";
+
+// A message inside a form (an error from the server, a notice): one shape,
+// 12 px corners like the fields, a 16 px icon on the first line.
+export const alert = {
+  base: "m-0 flex items-start gap-2 rounded-xl px-3 py-2.5 [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0",
+  error: "bg-pom-tint text-pomegranate",
+  notice: "bg-amber-tint text-ink [&_svg]:text-amber-text",
+};
 
 // Grouped content on the grey page: white, rounded, no border (iOS inset grouped).
 export const card = "rounded-2xl bg-white p-4 sm:p-5"; // floats on --shadow-soft (globals.css, ADR-056)

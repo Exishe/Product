@@ -1,50 +1,63 @@
 "use client";
 
-import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { button, fieldLabel, input } from "@/features/admin-ui/styles";
-import { useActionState } from "react";
+import { useActionState, useState, type FormEvent } from "react";
+import { FormError, SubmitButton, TextField, focusFirstInvalid, formValue } from "@/features/admin-ui/form-parts";
 import { signIn, type SignInState } from "./actions";
 
 const initial: SignInState = { error: null };
 
+type Field = "email" | "password";
+
+// The browser's own validation bubbles are English, so the form checks empty
+// fields itself (noValidate) and says so under each field.
 export function LoginForm({ next }: { next?: string }) {
-  const t = useTranslations("auth.login");
+  const t = useTranslations("auth");
   const [state, action, pending] = useActionState(signIn, initial);
+  const [missing, setMissing] = useState<Field[]>([]);
+
+  function check(event: FormEvent<HTMLFormElement>) {
+    if (pending) return event.preventDefault();
+    const form = event.currentTarget;
+    const empty = (["email", "password"] as const).filter((name) => !formValue(form, name).trim());
+    setMissing(empty);
+    if (empty.length) {
+      event.preventDefault();
+      focusFirstInvalid(form);
+    }
+  }
+  const clear = (name: Field) => () =>
+    setMissing((list) => (list.includes(name) ? list.filter((f) => f !== name) : list));
+  const required = (name: Field) => (missing.includes(name) ? t("required") : null);
+
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} onSubmit={check} noValidate className="flex flex-col gap-4">
       {next && <input type="hidden" name="next" value={next} />}
-      <label className="flex flex-col gap-1.5">
-        <span className={fieldLabel}>{t("email")}</span>
-        <input
-          name="email"
-          type="text"
-          inputMode="email"
-          autoComplete="username"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          required
-          defaultValue={state.login}
-          className={input}
-        />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={fieldLabel}>{t("password")}</span>
-        <input name="password" type="password" autoComplete="current-password" required className={input} />
-      </label>
-      {state.error && (
-        <p
-          role="alert"
-          className="bg-pom-tint text-pomegranate m-0 flex items-start gap-2 rounded-xl px-3 py-2.5"
-        >
-          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          {t(state.error === "busy" ? "busy" : "error")}
-        </p>
-      )}
-      <button type="submit" disabled={pending} className={button("primary", "mt-1")}>
-        {pending ? t("pending") : t("submit")}
-      </button>
+      <TextField
+        label={t("login.email")}
+        error={required("email")}
+        onChange={clear("email")}
+        name="email"
+        type="text"
+        inputMode="email"
+        autoComplete="username"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        required
+        defaultValue={state.login}
+      />
+      <TextField
+        label={t("login.password")}
+        error={required("password")}
+        onChange={clear("password")}
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        required
+      />
+      {state.error && <FormError>{t(state.error === "busy" ? "login.busy" : "login.error")}</FormError>}
+      <SubmitButton pending={pending} label={t("login.submit")} pendingLabel={t("login.pending")} />
     </form>
   );
 }
