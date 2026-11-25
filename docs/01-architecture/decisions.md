@@ -1039,3 +1039,5 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - The sound is per café, not per waiter or per device (the kitchen's pitch stays per device).
   - Nothing is added to the guest page.
 - Consequences: apply the migration through CI as usual; until then the section is hidden, the kitchen plays its old beeps and the waiter screen uses the default doorbell, with all the alert behaviour. The sound design was judged on paper and on the waveform plan only: nobody has listened on a real tablet speaker yet, so the levels may need one adjustment after the owner's first try.
+
+- Addendum (25 Nov, owner request "high, loud sounds"): six loud sounds added (pager, smoke alarm, whistle, phone ring, bicycle bell, siren), high (2.5 to 3 kHz, where hearing is most sensitive) and buzzy (square or sawtooth waves), marked "Loud" in the picker; the player now uses a firmer limiter with make-up gain so every sound is louder without clipping. Migration `20261124170000_loud_sounds.sql` widens the checks. 20 sounds in all.

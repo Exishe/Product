@@ -12,8 +12,8 @@ import {
 } from "./library";
 
 describe("sound library", () => {
-  it("has eight sounds with unique ids that match their descriptors", () => {
-    expect(SOUND_IDS).toHaveLength(14);
+  it("has twenty sounds with unique ids that match their descriptors", () => {
+    expect(SOUND_IDS).toHaveLength(20);
     expect(new Set(SOUND_IDS).size).toBe(SOUND_IDS.length);
     for (const id of SOUND_IDS) expect(SOUNDS[id].id).toBe(id);
   });
@@ -31,12 +31,25 @@ describe("sound library", () => {
       expect(voice.gain).toBeLessThanOrEqual(0.6);
       expect(voice.dur).toBeGreaterThan(0);
       expect(voice.at).toBeGreaterThanOrEqual(0);
+      if (voice.to !== undefined) {
+        expect(voice.to).toBeGreaterThanOrEqual(MIN_HZ);
+        expect(voice.to).toBeLessThanOrEqual(MAX_HZ);
+      }
+    }
+  });
+
+  it("has a loud set of six high sounds (2.5 kHz and up, or a sweep that reaches it)", () => {
+    const loud = SOUND_IDS.filter((id) => SOUNDS[id].loud);
+    expect(loud).toEqual(["pager", "smoke", "whistle", "phone", "bikebell", "siren"]);
+    for (const id of loud) {
+      const top = Math.max(...SOUNDS[id].voices.map((voice) => Math.max(voice.freq, voice.to ?? 0)));
+      expect(top).toBeGreaterThanOrEqual(1800);
     }
   });
 
   it("recognises ids and falls back for anything else", () => {
     expect(isSoundId("bell")).toBe(true);
-    expect(isSoundId("siren")).toBe(false);
+    expect(isSoundId("foghorn")).toBe(false);
     expect(isSoundId(null)).toBe(false);
     expect(soundOr("gong", "bell")).toBe("gong");
     expect(soundOr(undefined, "doorbell")).toBe("doorbell");

@@ -4,7 +4,7 @@ import { Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState, useTransition } from "react";
 import { button } from "@/features/admin-ui/styles";
-import { play, SOUND_IDS, unlockedContext, type SoundId } from "@/lib/sounds/library";
+import { play, SOUND_IDS, SOUNDS, unlockedContext, type SoundId } from "@/lib/sounds/library";
 import { saveStaffSounds } from "./actions";
 
 export type StaffSounds = { orderSound: SoundId; callSound: SoundId };
@@ -121,6 +121,11 @@ function Picker({
                   data-testid={`sound-${name}-${id}`}
                 />
                 <span className="min-w-0 [overflow-wrap:anywhere]">{t(`names.${id}`)}</span>
+                {SOUNDS[id].loud && (
+                  <span className="bg-staff-fill text-staff-label2 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold">
+                    {t("settings.loud")}
+                  </span>
+                )}
               </label>
               <button
                 type="button"

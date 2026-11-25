@@ -73,8 +73,8 @@ select test.ok((select order_sound = 'bell' and call_sound = 'doorbell' from pub
 
 -- Validation
 select test.act_as('5d5d0000-0000-0000-0000-000000000001');
-select test.fails(format('select api.set_staff_sounds(%L, ''siren'', ''alarm'')', :'la'), 'invalid_order_sound', 'an unknown order sound is refused');
-select test.fails(format('select api.set_staff_sounds(%L, ''bell'', ''siren'')', :'la'), 'invalid_call_sound', 'an unknown call sound is refused');
+select test.fails(format('select api.set_staff_sounds(%L, ''foghorn'', ''alarm'')', :'la'), 'invalid_order_sound', 'an unknown order sound is refused');
+select test.fails(format('select api.set_staff_sounds(%L, ''bell'', ''foghorn'')', :'la'), 'invalid_call_sound', 'an unknown call sound is refused');
 select test.fails(format('select api.set_staff_sounds(%L, null, ''bell'')', :'la'), 'invalid_order_sound', 'null is refused');
 select test.fails(format('select api.set_staff_sounds(%L, ''bell'', null)', :'la'), 'invalid_call_sound', 'for the call sound too');
 reset role;
@@ -84,3 +84,9 @@ select test.fails(format('update public.locations set call_sound = ''x'' where i
 -- Grants
 select test.ok(not has_function_privilege('anon', 'api.set_staff_sounds(uuid, text, text)', 'execute'), 'anon cannot execute the function');
 select test.ok(has_function_privilege('authenticated', 'api.set_staff_sounds(uuid, text, text)', 'execute'), 'authenticated can');
+
+-- The loud set (20261124170000) is accepted
+select test.act_as('5d5d0000-0000-0000-0000-000000000001');
+select api.set_staff_sounds(:'la', 'smoke', 'siren');
+reset role;
+select test.ok((select order_sound = 'smoke' and call_sound = 'siren' from public.locations where id = :'la'), 'a loud sound can be chosen for both');

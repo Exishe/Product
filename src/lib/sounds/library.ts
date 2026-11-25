@@ -18,6 +18,12 @@ export const SOUND_IDS = [
   "harp",
   "ship",
   "coin",
+  "pager",
+  "smoke",
+  "whistle",
+  "phone",
+  "bikebell",
+  "siren",
 ] as const;
 export type SoundId = (typeof SOUND_IDS)[number];
 
@@ -39,12 +45,16 @@ export type Voice = {
   dur: number;
   /** Peak level, 0..1, before the master volume. */
   gain: number;
-  wave: "sine" | "triangle";
+  /** Square and sawtooth are buzzier and sound louder at the same level (the loud set). */
+  wave: "sine" | "triangle" | "square" | "sawtooth";
+  /** Optional glide: the pitch slides to this frequency by the end of the voice (siren). */
+  to?: number;
   /** Optional simple FM: a modulator at `freq * ratio` bends the carrier by `index * freq` Hz. */
   fm?: { ratio: number; index: number };
 };
 
-export type SoundDescriptor = { id: SoundId; voices: readonly Voice[] };
+/** `loud`: high and buzzy, made to cut through a noisy kitchen or floor. */
+export type SoundDescriptor = { id: SoundId; voices: readonly Voice[]; loud?: boolean };
 
 export const MIN_SOUND_SECONDS = 0.6;
 export const MAX_SOUND_SECONDS = 1.6;
@@ -58,7 +68,8 @@ const v = (
   gain: number,
   wave: Voice["wave"] = "sine",
   fm?: Voice["fm"],
-): Voice => ({ at, freq, dur, gain, wave, fm });
+  to?: number,
+): Voice => ({ at, freq, dur, gain, wave, fm, to });
 
 export const SOUNDS: Readonly<Record<SoundId, SoundDescriptor>> = {
   // One bright bell: FM with an inharmonic ratio, plus a quiet upper partial.
@@ -128,6 +139,38 @@ export const SOUNDS: Readonly<Record<SoundId, SoundDescriptor>> = {
   },
   // A quick two-note "coin".
   coin: { id: "coin", voices: [v(0, 988, 0.08, 0.45, "triangle"), v(0.08, 1319, 0.55, 0.45, "triangle")] },
+  // Loud and high (2.5 to 3 kHz, where the ear is most sensitive), for noisy rooms.
+  // A pager: two bursts of three sharp beeps.
+  pager: {
+    id: "pager",
+    loud: true,
+    voices: [0, 0.16, 0.32, 0.7, 0.86, 1.02].map((at) => v(at, 2900, 0.1, 0.32, "square")),
+  },
+  // A smoke-alarm style: three long piercing pulses.
+  smoke: { id: "smoke", loud: true, voices: [0, 0.4, 0.8].map((at) => v(at, 3100, 0.28, 0.3, "square")) },
+  // A referee whistle with a fast trill.
+  whistle: { id: "whistle", loud: true, voices: [v(0, 2800, 1.0, 0.55, "sine", { ratio: 0.011, index: 0.04 })] },
+  // An old phone ringing: two tones alternating fast.
+  phone: {
+    id: "phone",
+    loud: true,
+    voices: Array.from({ length: 16 }, (_, i) => v(i * 0.06, i % 2 ? 1800 : 1400, 0.06, 0.3, "square")),
+  },
+  // A bicycle bell: two quick bright rings.
+  bikebell: {
+    id: "bikebell",
+    loud: true,
+    voices: [
+      v(0, 2600, 0.7, 0.5, "sine", { ratio: 1.4, index: 0.9 }),
+      v(0.22, 2600, 0.9, 0.5, "sine", { ratio: 1.4, index: 0.9 }),
+    ],
+  },
+  // A siren: the pitch sweeps up, twice.
+  siren: {
+    id: "siren",
+    loud: true,
+    voices: [v(0, 1200, 0.55, 0.3, "sawtooth", undefined, 2600), v(0.6, 1200, 0.55, 0.3, "sawtooth", undefined, 2600)],
+  },
 };
 
 /** Length of a sound in seconds. */
@@ -160,15 +203,25 @@ export function play(ctx: AudioContext, id: SoundId, options: PlayOptions = {}):
     master.gain.value = volume;
     // Loud in a noisy café without clipping when voices overlap.
     const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -12;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 8;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.1;
+    // Make-up gain after the limiter: louder overall, peaks still held under full scale.
+    const makeup = ctx.createGain();
+    makeup.gain.value = 1.6;
     master.connect(limiter);
-    limiter.connect(ctx.destination);
+    limiter.connect(makeup);
+    makeup.connect(ctx.destination);
     for (const voice of descriptor.voices) {
       const t = start + voice.at;
       const end = t + voice.dur;
       const freq = voice.freq * pitch;
       const osc = ctx.createOscillator();
       osc.type = voice.wave;
-      osc.frequency.value = freq;
+      osc.frequency.setValueAtTime(freq, t);
+      if (voice.to) osc.frequency.exponentialRampToValueAtTime(voice.to * pitch, end);
       const env = ctx.createGain();
       env.gain.setValueAtTime(FLOOR, t);
       env.gain.exponentialRampToValueAtTime(voice.gain, t + ATTACK);

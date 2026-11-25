@@ -1871,7 +1871,13 @@
       "xylophone": "Xylophone",
       "harp": "Harp",
       "ship": "Ship's bell",
-      "coin": "Coin"
+      "coin": "Coin",
+      "pager": "Pager",
+      "smoke": "Smoke alarm",
+      "whistle": "Whistle",
+      "phone": "Phone ring",
+      "bikebell": "Bicycle bell",
+      "siren": "Siren"
     },
     "settings": {
       "orderLabel": "New order in the kitchen",
@@ -1880,6 +1886,7 @@
       "callHint": "Waiters hear this when a guest calls or asks for the bill. It repeats every 20 seconds until someone answers.",
       "listen": "Listen",
       "listenTo": "Listen to {name}",
+      "loud": "Loud",
       "save": "Save",
       "saved": "Saved.",
       "failed": "Couldn't save. Please try again.",
