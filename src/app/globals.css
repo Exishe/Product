@@ -395,6 +395,24 @@ body:has(.admin-shell) {
   }
 }
 
+/* Kitchen and waiter tablets are tapped fast with wet or gloved hands. A
+   downward swipe must not pull-to-refresh the board, a quick second tap must
+   not zoom it, and a long press on a ticket must not select its text or open
+   the browser's callout. Fields stay selectable. */
+html:has(.staff-shell),
+html:has(.staff-shell) body {
+  overscroll-behavior: none;
+}
+.staff-shell {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.staff-shell :where(button, a, [data-testid="ticket"], [data-testid="table"], nav, h1, h2) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* Guest theme presets (ADR-051, ADR-052). Each café picks one in /admin
    («Հյուրի էջի տեսքը»); the guest pages put it on a .guest-lux wrapper as
    data-guest-theme. Every guest colour is a --guest-* custom property defined

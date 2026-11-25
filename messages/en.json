@@ -275,6 +275,7 @@
       "plain": "{quantity} plain",
       "empty": "Nothing to cook."
     },
+    "oldest": "Waiting longest",
     "newOrder": "New order",
     "newOrders": "{count} new orders"
   },

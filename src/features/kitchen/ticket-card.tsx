@@ -29,6 +29,8 @@ import { ageLabel, classifyLateness, type Lateness } from "./lateness";
 
 export type Column = "new" | "cooking" | "ready";
 
+const REMOVAL = /^(առանց|без|no|without)(\s|$)/i;
+
 const BAND: Record<Lateness | "void", string> = {
   normal: "bg-basalt-4 text-slip",
   hurry: "bg-apricot text-ink",
@@ -257,7 +259,13 @@ function Lines({
                 data-testid="line-modifiers"
                 className={clsx("text-slip-dim col-start-2 font-semibold", compact ? "text-base" : "text-xl")}
               >
-                {l.modifiers.map((m) => m.text).join(", ")}
+                {l.modifiers.map((m, i) => (
+                  <span key={i}>
+                    {i > 0 && ", "}
+                    {/* A removal («Առանց …», «Без …», "No …") is the one a cook must not miss. */}
+                    <span className={clsx(REMOVAL.test(m.text) && "text-pom-on-dark font-bold")}>{m.text}</span>
+                  </span>
+                ))}
               </span>
             )}
             {l.note && (
