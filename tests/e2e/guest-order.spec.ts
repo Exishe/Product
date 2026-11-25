@@ -96,7 +96,8 @@ test.describe("ordering at a fresh café", () => {
     const order = page.getByTestId("order").first();
     await expect(order.getByRole("heading", { level: 2 })).toHaveText(/^Պատվեր \d+$/);
     await expect(order).toHaveAttribute("data-status", "accepted");
-    await expect(order.getByText("Պատվերն ընդունված է, շուտով կսկսեն պատրաստել։")).toBeVisible();
+    // The progress notes sit in the status card beside the order lines.
+    await expect(page.getByTestId("tracker").getByText("Պատվերն ընդունված է, շուտով կսկսեն պատրաստել։")).toBeVisible();
     await expect(page.getByRole("button", { name: "Կանչել մատուցողին" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Խնդրել հաշիվը" })).toBeVisible();
 
@@ -119,7 +120,7 @@ test.describe("ordering at a fresh café", () => {
       await expect(order).toHaveAttribute("data-status", label, { timeout: 2_000 });
       console.log(`${info.project.name}: ${label} shown ${Date.now() - changed} ms after the kitchen's change`);
     }
-    await expect(order.getByText("Պատրաստ է, մատուցողը բերում է։")).toBeVisible();
+    await expect(page.getByTestId("tracker").getByText("Պատրաստ է, մատուցողը բերում է։")).toBeVisible();
 
     // The cart is empty again; "order more" goes back to the menu at the same table.
     await page.getByRole("link", { name: "Պատվիրել ևս" }).click();
@@ -207,7 +208,7 @@ test("two phones at one table ordering the same dishes: the second waits for the
     const order = page.getByTestId("order").first();
     await expect(order).toHaveAttribute("data-status", /accepted|received/);
     statuses.push((await order.getAttribute("data-status")) ?? "");
-    if (phone === 1) await expect(order.getByText("Someone at your table already ordered the same dishes. Your waiter will confirm.")).toBeVisible();
+    if (phone === 1) await expect(page.getByTestId("tracker").getByText("Someone at your table already ordered the same dishes. Your waiter will confirm.")).toBeVisible();
     await context.close();
   }
   expect(statuses).toEqual(["accepted", "received"]);

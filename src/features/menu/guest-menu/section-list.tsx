@@ -16,7 +16,7 @@ export function SectionList({ categories }: { categories: GuestCategory[] }) {
   if (categories.length < 2) return <div className="hidden lg:block" />;
   const clusters = groupSections(categories);
   return (
-    <nav aria-label={t("menu.categories")} className="hidden pt-5 lg:block">
+    <nav aria-label={t("menu.sections")} className="hidden pt-5 lg:block">
       <div className="bg-surface rounded-card sticky top-44 max-h-[calc(100dvh-12rem)] [scrollbar-width:thin] overflow-y-auto border [border-color:var(--guest-card-border)] p-2">
         {clusters.map(({ group, sections }) => (
           <div key={group} className="pb-1">
