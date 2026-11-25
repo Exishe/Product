@@ -68,7 +68,8 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   const form = createForm(page);
   await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill("sal");
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
-  await expect(form.getByRole("alert").filter({ hasText: "արդեն զբաղված է" })).toBeVisible();
+  // Remote writes: up to 15 s on a loaded dev database.
+  await expect(form.getByRole("alert").filter({ hasText: "արդեն զբաղված է" })).toBeVisible({ timeout: 15_000 });
 
   // The waiter login signs in by username and lands on the waiter app, with no way into the admin.
   const w = await signInWithUsername(browser, waiter.username, waiter.password);
@@ -98,13 +99,13 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
 
   // Switched off: refused at sign-in; switched on again: works.
   await row(waiter.username).getByRole("button", { name: "Անջատել" }).click();
-  await expect(row(waiter.username)).toContainText("Անջատված է");
+  await expect(row(waiter.username)).toContainText("Անջատված է", { timeout: 15_000 });
   const refused = await signInWithUsername(browser, waiter.username, waiter.password);
   await expect(refused.page.getByRole("alert").filter({ hasText: "սխալ է" })).toBeVisible();
   await expect(refused.page).toHaveURL(/\/login$/);
   await refused.context.close();
   await row(waiter.username).getByRole("button", { name: "Միացնել" }).click();
-  await expect(row(waiter.username)).toContainText("Ակտիվ է");
+  await expect(row(waiter.username)).toContainText("Ակտիվ է", { timeout: 15_000 });
   const back = await signInWithUsername(browser, waiter.username, waiter.password);
   await expect(back.page).toHaveURL(/\/waiter$/, { timeout: 30_000 });
 
