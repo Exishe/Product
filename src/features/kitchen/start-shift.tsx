@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import { Power, Volume2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { play as playLibrarySound, type SoundId } from "@/lib/sounds/library";
+import { play as playLibrarySound, preload, type SoundId } from "@/lib/sounds/library";
 
 type WakeLock = { release: () => Promise<void>; released: boolean };
 type WakeLockNavigator = Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeLock> } };
@@ -99,6 +99,8 @@ export function useShift(stationId: string, orderSound: SoundId | null = null) {
       if (Ctx) {
         audio.current ??= new Ctx();
         void audio.current.resume();
+        // A recorded sound is downloaded now, so the first order rings on time.
+        if (orderSoundRef.current) preload(audio.current, orderSoundRef.current);
       }
     } catch {
       audio.current = null; // no sound on this device; the board still works

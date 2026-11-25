@@ -1,7 +1,9 @@
-// A small library of notification sounds, synthesized in the browser with Web
-// Audio (ADR-088): no files, no downloads, no licences. Each sound is a plain
-// description (voices with a start, a pitch and a length) so it can be unit
-// tested; `play` turns the description into oscillators and gain envelopes.
+// A small library of notification sounds (ADR-088). Most are synthesized in
+// the browser with Web Audio: no files, no downloads, no licences. Each is a
+// plain description (voices with a start, a pitch and a length) so it can be
+// unit tested; `play` turns the description into oscillators and gain
+// envelopes. A few are recordings the owner picked from free libraries
+// (`file`, under public/sounds/, licence noted in public/sounds/LICENSES.md).
 
 export const SOUND_IDS = [
   "bell",
@@ -24,10 +26,11 @@ export const SOUND_IDS = [
   "phone",
   "bikebell",
   "siren",
+  "alarmclock",
 ] as const;
 export type SoundId = (typeof SOUND_IDS)[number];
 
-export const DEFAULT_ORDER_SOUND: SoundId = "bell";
+export const DEFAULT_ORDER_SOUND: SoundId = "alarmclock";
 export const DEFAULT_CALL_SOUND: SoundId = "doorbell";
 
 export const isSoundId = (value: unknown): value is SoundId =>
@@ -53,8 +56,16 @@ export type Voice = {
   fm?: { ratio: number; index: number };
 };
 
-/** `loud`: high and buzzy, made to cut through a noisy kitchen or floor. */
-export type SoundDescriptor = { id: SoundId; voices: readonly Voice[]; loud?: boolean };
+/**
+ * `loud`: high and buzzy, made to cut through a noisy kitchen or floor.
+ * `file`: a recording served from /sounds/ instead of voices, with its length.
+ */
+export type SoundDescriptor = {
+  id: SoundId;
+  voices: readonly Voice[];
+  loud?: boolean;
+  file?: { src: string; seconds: number };
+};
 
 export const MIN_SOUND_SECONDS = 0.6;
 export const MAX_SOUND_SECONDS = 1.6;
@@ -171,11 +182,44 @@ export const SOUNDS: Readonly<Record<SoundId, SoundDescriptor>> = {
     loud: true,
     voices: [v(0, 1200, 0.55, 0.3, "sawtooth", undefined, 2600), v(0.6, 1200, 0.55, 0.3, "sawtooth", undefined, 2600)],
   },
+  // A real mechanical alarm clock ringing (recording, Pixabay Content License).
+  alarmclock: { id: "alarmclock", loud: true, voices: [], file: { src: "/sounds/alarm-clock.mp3", seconds: 2.85 } },
 };
+
+/** The recordings; everything else is synthesized. */
+export const isRecording = (id: SoundId): boolean => SOUNDS[id].file !== undefined;
 
 /** Length of a sound in seconds. */
 export const soundSeconds = (id: SoundId): number =>
-  Math.max(...SOUNDS[id].voices.map((voice) => voice.at + voice.dur));
+  SOUNDS[id].file?.seconds ?? Math.max(...SOUNDS[id].voices.map((voice) => voice.at + voice.dur));
+
+// Recordings are fetched once per page and decoded once per audio context.
+const fileBytes = new Map<string, Promise<ArrayBuffer>>();
+const decoded = new WeakMap<BaseAudioContext, Map<string, Promise<AudioBuffer>>>();
+
+function recording(ctx: BaseAudioContext, src: string): Promise<AudioBuffer> {
+  let perContext = decoded.get(ctx);
+  if (!perContext) decoded.set(ctx, (perContext = new Map()));
+  let buffer = perContext.get(src);
+  if (!buffer) {
+    let bytes = fileBytes.get(src);
+    if (!bytes) {
+      bytes = fetch(src).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))));
+      fileBytes.set(src, bytes);
+      bytes.catch(() => fileBytes.delete(src)); // a failed download is tried again next time
+    }
+    buffer = bytes.then((b) => ctx.decodeAudioData(b.slice(0)));
+    perContext.set(src, buffer);
+    buffer.catch(() => perContext.delete(src));
+  }
+  return buffer;
+}
+
+/** Fetches and decodes a recording ahead of time, so its first ring is not late. No-op for synthesized sounds. */
+export function preload(ctx: AudioContext | null, id: SoundId): void {
+  const file = SOUNDS[id].file;
+  if (ctx && file) recording(ctx, file.src).catch(() => undefined);
+}
 
 export type PlayOptions = {
   /** 0..1, default 1. */
@@ -214,6 +258,18 @@ export function play(ctx: AudioContext, id: SoundId, options: PlayOptions = {}):
     master.connect(limiter);
     limiter.connect(makeup);
     makeup.connect(ctx.destination);
+    if (descriptor.file) {
+      recording(ctx, descriptor.file.src)
+        .then((buffer) => {
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.playbackRate.value = pitch;
+          source.connect(master);
+          source.start(Math.max(ctx.currentTime, start)); // late by the download on the very first ring
+        })
+        .catch(() => undefined); // offline or blocked: silence, the banner still shows
+      return soundSeconds(id);
+    }
     for (const voice of descriptor.voices) {
       const t = start + voice.at;
       const end = t + voice.dur;

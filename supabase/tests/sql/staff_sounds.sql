@@ -29,12 +29,12 @@ insert into public.members (restaurant_id, user_id, role, display_name)
 values (:'ra', '5d5d0000-0000-0000-0000-000000000003', 'manager', 'Manager A');
 
 -- Defaults
-select test.ok((select order_sound = 'bell' and call_sound = 'doorbell' from public.locations where id = :'la'),
-               'a new café starts with the bell for orders and the doorbell for calls');
+select test.ok((select order_sound = 'alarmclock' and call_sound = 'doorbell' from public.locations where id = :'la'),
+               'a new café starts with the alarm clock for orders and the doorbell for calls');
 
 -- Staff read the two names through the location row they already load
 select test.act_as(:'u_kitchen', false);
-select test.ok((select order_sound = 'bell' from public.locations where id = :'la'), 'a kitchen login reads the order sound');
+select test.ok((select order_sound = 'alarmclock' from public.locations where id = :'la'), 'a kitchen login reads the order sound');
 reset role;
 select test.act_as(:'u_waiter', false);
 select test.ok((select call_sound = 'doorbell' from public.locations where id = :'la'), 'a waiter login reads the call sound');
@@ -69,7 +69,7 @@ select test.ok((select order_sound = 'pop' and call_sound = 'gong' from public.l
 select test.act_as('5d5d0000-0000-0000-0000-000000000002');
 select test.fails(format('select api.set_staff_sounds(%L, ''chime'', ''alarm'')', :'la'), 'forbidden', 'another café''s owner cannot');
 reset role;
-select test.ok((select order_sound = 'bell' and call_sound = 'doorbell' from public.locations where id = :'lb'), 'café B is untouched');
+select test.ok((select order_sound = 'alarmclock' and call_sound = 'doorbell' from public.locations where id = :'lb'), 'café B is untouched');
 
 -- Validation
 select test.act_as('5d5d0000-0000-0000-0000-000000000001');
@@ -90,3 +90,9 @@ select test.act_as('5d5d0000-0000-0000-0000-000000000001');
 select api.set_staff_sounds(:'la', 'smoke', 'siren');
 reset role;
 select test.ok((select order_sound = 'smoke' and call_sound = 'siren' from public.locations where id = :'la'), 'a loud sound can be chosen for both');
+
+-- The recorded alarm clock (20261124190000) is accepted too
+select test.act_as('5d5d0000-0000-0000-0000-000000000001');
+select api.set_staff_sounds(:'la', 'alarmclock', 'bell');
+reset role;
+select test.ok((select order_sound = 'alarmclock' and call_sound = 'bell' from public.locations where id = :'la'), 'the alarm clock can be chosen');
