@@ -264,7 +264,7 @@ function App(p: WaiterAppProps) {
   );
   // Calls and bill requests: sound, vibration, banners (ADR-088). The list is
   // the one the tiles show, so an answered call leaves it at once.
-  const requests = useMemo(() => openRequests(tables), [tables]);
+  const requests = useMemo(() => openRequests(tables, now), [tables, now]);
   const alertText = useCallback(
     (r: AlertRequest) => ({
       title: t(r.kind === "call" ? "alerts.call" : "alerts.bill", { label: r.label }),

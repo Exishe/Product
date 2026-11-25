@@ -21,12 +21,16 @@ export const BILL_VOLUME = 0.6;
 /** How many banners are shown at once; the rest are "and N more". */
 export const MAX_BANNERS = 3;
 
-/** The requests still open on the floor, oldest first. */
-export function openRequests(tables: readonly FloorTable[]): AlertRequest[] {
+/** Older requests stay on the table tile but no longer ring or get a banner (a forgotten one from yesterday). */
+export const STALE_MS = 60 * 60_000;
+
+/** The requests still open on the floor and asked within the last hour, oldest first. */
+export function openRequests(tables: readonly FloorTable[], now: number): AlertRequest[] {
   const out: AlertRequest[] = [];
+  const recent = (at: number) => now - at <= STALE_MS;
   for (const t of tables) {
-    if (t.call) out.push({ id: t.call.id, kind: "call", tableId: t.id, label: t.label, at: t.call.at });
-    if (t.bill) out.push({ id: t.bill.id, kind: "bill", tableId: t.id, label: t.label, at: t.bill.at });
+    if (t.call && recent(t.call.at)) out.push({ id: t.call.id, kind: "call", tableId: t.id, label: t.label, at: t.call.at });
+    if (t.bill && recent(t.bill.at)) out.push({ id: t.bill.id, kind: "bill", tableId: t.id, label: t.label, at: t.bill.at });
   }
   return out.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 }

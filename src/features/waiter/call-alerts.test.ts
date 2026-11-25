@@ -6,6 +6,7 @@ import {
   MAX_REPEATS,
   openRequests,
   REPEAT_MS,
+  STALE_MS,
   stepAlerts,
   type AlertRequest,
   type AlertState,
@@ -23,10 +24,17 @@ describe("openRequests", () => {
       { id: "b", label: "2", call: null, bill: { id: "b1", minutes: 0, at: 3000, payment: null } },
       { id: "c", label: "3", call: null, bill: null },
     ] as unknown as FloorTable[];
-    expect(openRequests(tables).map((r) => [r.id, r.kind, r.label])).toEqual([
+    expect(openRequests(tables, 6000).map((r) => [r.id, r.kind, r.label])).toEqual([
       ["b1", "bill", "2"],
       ["c1", "call", "1"],
     ]);
+  });
+  it("leaves out a request older than an hour (it stays on the tile, without sound)", () => {
+    const tables = [
+      { id: "a", label: "1", call: { id: "old", minutes: 0, at: 0 }, bill: null },
+      { id: "b", label: "2", call: { id: "new", minutes: 0, at: STALE_MS }, bill: null },
+    ] as unknown as FloorTable[];
+    expect(openRequests(tables, STALE_MS + 1).map((r) => r.id)).toEqual(["new"]);
   });
 });
 
