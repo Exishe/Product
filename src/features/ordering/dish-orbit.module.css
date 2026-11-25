@@ -36,8 +36,9 @@
 }
 
 .arc path {
-  fill: var(--tint, var(--guest-badge));
-  opacity: 0.34;
+  /* The menu's beige band, so the swoosh reads as part of the page. */
+  fill: var(--tint, var(--guest-band));
+  opacity: 0.9;
   transition: fill 1100ms ease-in-out;
 }
 
@@ -120,10 +121,10 @@
   left: 732px;
   width: 210px;
   padding: 18px 18px 20px;
-  border: 1px solid var(--guest-card-border, #14110f);
-  border-radius: 18px;
-  background: color-mix(in srgb, #ffffff 78%, transparent);
-  backdrop-filter: blur(10px);
+  /* Like the menu's dish cards. */
+  border: 1px solid var(--guest-card-border, #ebe6d9);
+  border-radius: 14px;
+  background: var(--guest-surface, #ffffff);
 }
 
 .bodies {
@@ -144,8 +145,9 @@
   min-width: 46px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: var(--tint, var(--guest-badge));
-  color: var(--guest-ink);
+  /* The menu's price colour on a quiet chip. */
+  background: var(--guest-chip);
+  color: var(--guest-accent-text);
   font-size: 20px;
   font-weight: 700;
   line-height: 1;

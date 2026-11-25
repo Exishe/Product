@@ -1,4 +1,4 @@
-import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "lucide-react";
+import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "./icons";
 import type { ElementType, ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { GuestTag, Text } from "./view-model";
@@ -107,6 +107,7 @@ const TAG_STYLES: Record<GuestTag, string> = {
   gluten_free: DIET,
   lactose_free: DIET,
   new: "bg-badge text-on-badge",
+  chefs_pick: "bg-badge text-on-badge",
 };
 
 export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {

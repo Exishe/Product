@@ -38,7 +38,10 @@ import {
   setDishPhoto,
   setSoldOut,
 } from "./actions";
+import { saveCategoryWindow } from "@/features/availability/actions";
+import { inDailyWindow, localMinutes, validWindow } from "@/features/availability/window";
 import { ALLERGENS, type Allergen } from "./guest-menu/allergens";
+import { IngredientsPanel } from "./ingredients-panel";
 import { resizeToWebp } from "./photo";
 import { DISH_TAGS, parsePriceInput } from "./schema";
 import { emptyNames, type EditorCategory, type EditorData, type EditorDish, type Names } from "./types";
@@ -53,10 +56,28 @@ type DishDraft = Omit<EditorDish, "id" | "sort" | "needsReview" | "price"> & {
   needsReview: boolean;
   markReviewed: boolean;
 };
-type CategoryDraft = { id?: string; names: Names; prepAreaId: string | null };
+type CategoryDraft = {
+  id?: string;
+  names: Names;
+  prepAreaId: string | null;
+  isActive: boolean;
+  /** Only at certain hours (ADR-068); `from`/`to` are "HH:MM". */
+  limited: boolean;
+  from: string;
+  to: string;
+};
 type Panel = { kind: "dish"; draft: DishDraft } | { kind: "category"; draft: CategoryDraft } | null;
 type Status =
-  "idle" | "saving" | "saved" | "failed" | "costFailed" | "priceInvalid" | "costInvalid" | "nameRequired";
+  | "idle"
+  | "saving"
+  | "saved"
+  | "failed"
+  | "costFailed"
+  | "priceInvalid"
+  | "costInvalid"
+  | "nameRequired"
+  | "windowInvalid"
+  | "windowFailed";
 
 // Resizes the photo in the browser, stores it and points the dish at it.
 async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
@@ -89,6 +110,9 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const wide = useMediaQuery("(min-width: 64rem)");
+  // Three columns (sections, dishes, panel) need a big screen; on a laptop the
+  // section list steps aside while the panel is open, so dish names keep room.
+  const roomy = useMediaQuery("(min-width: 90rem)");
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string | null>(data.categories[0]?.id ?? null);
   const [panel, setPanel] = useState<Panel>(null);
@@ -97,12 +121,16 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const [publishStatus, setPublishStatus] = useState<
     "idle" | "publishing" | "published" | "unreviewed" | "failed"
   >("idle");
+  // Owner-facing filter: only dishes whose allergens nobody has reviewed yet (ADR-083).
+  const [onlyUnreviewed, setOnlyUnreviewed] = useState(false);
   const [photoStatus, setPhotoStatus] = useState<"idle" | "uploading" | "failed">("idle");
   // Photos added straight from the list, one dish at a time, without opening it.
   const [rowPhoto, setRowPhoto] = useState<Record<string, "uploading" | "failed">>({});
 
   const category = data.categories.find((c) => c.id === selected) ?? null;
   const dishes = data.dishes.filter((d) => d.categoryId === selected).sort((a, b) => a.sort - b.sort);
+  const unreviewedCount = dishes.filter((d) => !d.allergensConfirmed).length;
+  const shownDishes = onlyUnreviewed ? dishes.filter((d) => !d.allergensConfirmed) : dishes;
 
   function open(next: Panel) {
     setPanel(next);
@@ -128,10 +156,12 @@ export function MenuEditor({ data }: { data: EditorData }) {
             prepAreaId: null,
             tags: [],
             allergens: [],
+            allergensConfirmed: false,
             names: emptyNames(),
             descriptions: emptyNames(),
             modifierGroupIds: [],
             needsReview: false,
+            isActive: true,
             markReviewed: false,
           },
     });
@@ -141,8 +171,23 @@ export function MenuEditor({ data }: { data: EditorData }) {
     open({
       kind: "category",
       draft: c
-        ? { id: c.id, names: c.names, prepAreaId: c.prepAreaId }
-        : { names: emptyNames(), prepAreaId: null },
+        ? {
+            id: c.id,
+            names: c.names,
+            prepAreaId: c.prepAreaId,
+            isActive: c.isActive,
+            limited: c.window !== null,
+            from: c.window?.from ?? "08:00",
+            to: c.window?.to ?? "12:00",
+          }
+        : {
+            names: emptyNames(),
+            prepAreaId: null,
+            isActive: true,
+            limited: false,
+            from: "08:00",
+            to: "12:00",
+          },
     });
   }
 
@@ -169,8 +214,26 @@ export function MenuEditor({ data }: { data: EditorData }) {
     setStatus("saving");
     startTransition(async () => {
       if (panel.kind === "category") {
-        const result = await saveCategory({ ...panel.draft });
+        const d = panel.draft;
+        const before = d.id ? (data.categories.find((c) => c.id === d.id)?.window ?? null) : null;
+        const next = d.limited ? { from: d.from, to: d.to } : null;
+        const windowChanged = before?.from !== next?.from || before?.to !== next?.to;
+        if (data.windowsSupported && d.limited && !validWindow(d.from, d.to))
+          return setStatus("windowInvalid");
+        const result = await saveCategory({
+          id: d.id,
+          names: d.names,
+          prepAreaId: d.prepAreaId,
+          isActive: d.isActive,
+        });
         if (!result.ok) return setStatus("failed");
+        if (data.windowsSupported && windowChanged) {
+          const saved = await saveCategoryWindow(result.id, next?.from ?? null, next?.to ?? null);
+          if (!saved) {
+            setSelected(result.id);
+            return setStatus("windowFailed");
+          }
+        }
         setSelected(result.id);
         setPanel(null);
       } else {
@@ -188,6 +251,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
           prepAreaId: d.prepAreaId,
           tags: d.tags as (typeof DISH_TAGS)[number][],
           allergens: d.allergens as Allergen[],
+          ...(data.allergenReviewSupported ? { allergensConfirmed: d.allergensConfirmed } : {}),
           modifierGroupIds: d.modifierGroupIds,
           markReviewed: d.markReviewed,
           // Only when it changed: the cost lives in its own owner-only table.
@@ -218,6 +282,28 @@ export function MenuEditor({ data }: { data: EditorData }) {
     startTransition(async () => {
       const result = await publishMenu();
       setPublishStatus(result.ok ? "published" : result.error);
+      router.refresh();
+    });
+  }
+
+  // Hiding is saved with the dish; the guest menu changes at the next publish.
+  function toggleDishActive(d: EditorDish) {
+    startTransition(async () => {
+      await saveDish({
+        id: d.id,
+        categoryId: d.categoryId,
+        price: d.price,
+        names: d.names,
+        descriptions: d.descriptions,
+        prepAreaId: d.prepAreaId,
+        tags: d.tags as (typeof DISH_TAGS)[number][],
+        allergens: d.allergens as Allergen[],
+        // The list is sent, so the review flag must go with it (an empty list alone would reset it).
+        ...(data.allergenReviewSupported ? { allergensConfirmed: d.allergensConfirmed } : {}),
+        modifierGroupIds: d.modifierGroupIds,
+        markReviewed: false,
+        isActive: !d.isActive,
+      });
       router.refresh();
     });
   }
@@ -355,6 +441,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "costInvalid" && t("costInvalid")}
       {status === "costFailed" && t("costFailed")}
       {status === "nameRequired" && t("nameRequired")}
+      {status === "windowInvalid" && t("windowInvalid")}
+      {status === "windowFailed" && t("windowFailed")}
     </p>
   );
 
@@ -504,6 +592,72 @@ export function MenuEditor({ data }: { data: EditorData }) {
         </label>
       </Group>
 
+      {panel.kind === "category" && (
+        <Group title={t("sectionShown")}>
+          <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <input
+              type="checkbox"
+              className={check}
+              checked={panel.draft.isActive}
+              onChange={(e) =>
+                setPanel({ kind: "category", draft: { ...panel.draft, isActive: e.target.checked } })
+              }
+            />
+            {t("sectionShownToggle")}
+          </label>
+          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("sectionShownHint")}</p>
+        </Group>
+      )}
+
+      {panel.kind === "category" && data.windowsSupported && (
+        <Group title={t("windowTitle")}>
+          <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <input
+              type="checkbox"
+              className={check}
+              checked={panel.draft.limited}
+              onChange={(e) =>
+                setPanel({ kind: "category", draft: { ...panel.draft, limited: e.target.checked } })
+              }
+            />
+            {t("windowToggle")}
+          </label>
+          {panel.draft.limited ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5">
+                  <span className={fieldLabel}>{t("windowFrom")}</span>
+                  <input
+                    type="time"
+                    required
+                    value={panel.draft.from}
+                    onChange={(e) =>
+                      setPanel({ kind: "category", draft: { ...panel.draft, from: e.target.value } })
+                    }
+                    className={clsx(input, "num")}
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={fieldLabel}>{t("windowTo")}</span>
+                  <input
+                    type="time"
+                    required
+                    value={panel.draft.to}
+                    onChange={(e) =>
+                      setPanel({ kind: "category", draft: { ...panel.draft, to: e.target.value } })
+                    }
+                    className={clsx(input, "num")}
+                  />
+                </label>
+              </div>
+              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("windowHint")}</p>
+            </>
+          ) : (
+            <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("windowAllDay")}</p>
+          )}
+        </Group>
+      )}
+
       {panel.kind === "dish" && (
         <>
           <fieldset className="m-0 flex min-w-0 flex-col gap-1 rounded-2xl border-0 bg-white p-4">
@@ -567,6 +721,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             <p className="text-staff-label2 m-0 mb-1 w-full text-[0.9375rem]">{t("allergensHint")}</p>
             {ALLERGENS.map((a) => {
               const on = panel.draft.allergens.includes(a);
+              const next = on ? panel.draft.allergens.filter((x) => x !== a) : [...panel.draft.allergens, a];
               return (
                 <button
                   key={a}
@@ -577,9 +732,9 @@ export function MenuEditor({ data }: { data: EditorData }) {
                       kind: "dish",
                       draft: {
                         ...panel.draft,
-                        allergens: on
-                          ? panel.draft.allergens.filter((x) => x !== a)
-                          : [...panel.draft.allergens, a],
+                        allergens: next,
+                        // Any tick implies the dish was reviewed; removing the last one takes it back.
+                        allergensConfirmed: next.length > 0,
                       },
                     })
                   }
@@ -593,7 +748,43 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 </button>
               );
             })}
+            {data.allergenReviewSupported && (
+              <label
+                className="mt-1 flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl bg-staff-fill px-4 py-3 text-[0.9375rem] font-semibold has-[:disabled]:cursor-default has-[:disabled]:opacity-60"
+                data-testid="allergens-none"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-5 shrink-0"
+                  checked={panel.draft.allergensConfirmed && panel.draft.allergens.length === 0}
+                  disabled={panel.draft.allergens.length > 0}
+                  onChange={(e) =>
+                    setPanel({
+                      kind: "dish",
+                      draft: { ...panel.draft, allergens: [], allergensConfirmed: e.target.checked },
+                    })
+                  }
+                />
+                <span>
+                  {t("allergensNone")}
+                  <span className="text-staff-label2 block text-[0.875rem] font-normal">
+                    {panel.draft.allergensConfirmed || panel.draft.allergens.length > 0
+                      ? t("allergensNoneHint")
+                      : t("allergensNotReviewed")}
+                  </span>
+                </span>
+              </label>
+            )}
           </fieldset>
+
+          {panel.draft.id && data.ingredientsSupported && (
+            <IngredientsPanel
+              itemId={panel.draft.id}
+              restaurantId={data.restaurantId}
+              locationId={data.locationId}
+              kcalSupported={data.kcalSupported}
+            />
+          )}
 
           {panel.draft.needsReview && (
             <label className="bg-amber-tint flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2 text-[1.0625rem]">
@@ -623,11 +814,16 @@ export function MenuEditor({ data }: { data: EditorData }) {
         className={clsx(
           "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5",
           panel && wide
-            ? "lg:grid-cols-[13rem_minmax(0,1fr)_minmax(22rem,26rem)]"
+            ? roomy
+              ? "lg:grid-cols-[13rem_minmax(0,1fr)_minmax(22rem,26rem)]"
+              : "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)]"
             : "lg:grid-cols-[15rem_minmax(0,1fr)]",
         )}
       >
-        <nav aria-label={t("categories")} className="flex min-w-0 flex-col gap-2 lg:self-start">
+        <nav
+          aria-label={t("categories")}
+          className={clsx("flex min-w-0 flex-col gap-2 lg:self-start", panel && wide && !roomy && "hidden")}
+        >
           <h2 className="m-0 px-1 text-[1.1875rem] leading-tight font-semibold">{t("categories")}</h2>
           <ul className="relative flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:bg-white lg:p-2">
             {data.categories.map((c) => {
@@ -647,6 +843,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     )}
                   >
                     {nameFor(c.names, locale)}
+                    {!c.isActive && <span className="font-normal"> · {t("sectionOff")}</span>}
                   </button>
                   <span className="hidden lg:flex">
                     <button
@@ -693,6 +890,19 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 className="m-0 min-w-0 flex-1 basis-48 text-[1.5rem] leading-tight font-bold break-words"
               >
                 {nameFor(category.names, locale)}
+                {category.window && (
+                  <span
+                    data-testid="category-window"
+                    className="text-staff-label2 num ml-3 inline-block align-middle text-[0.9375rem] font-semibold whitespace-nowrap"
+                  >
+                    {t("windowBadge", { from: category.window.from, to: category.window.to })}
+                    {!inDailyWindow(
+                      localMinutes(new Date(), data.timeZone),
+                      category.window.from,
+                      category.window.to,
+                    ) && ` · ${t("windowHiddenNow")}`}
+                  </span>
+                )}
               </h2>
               <button
                 type="button"
@@ -713,15 +923,29 @@ export function MenuEditor({ data }: { data: EditorData }) {
               </button>
             </header>
           )}
+          {category && data.allergenReviewSupported && unreviewedCount > 0 && (
+            <button
+              type="button"
+              aria-pressed={onlyUnreviewed}
+              onClick={() => setOnlyUnreviewed((v) => !v)}
+              data-testid="filter-unreviewed"
+              className={clsx(
+                "inline-flex min-h-11 items-center self-start rounded-full px-4 text-[0.9375rem] font-semibold",
+                onlyUnreviewed ? "bg-ink text-white" : "bg-white text-ink",
+              )}
+            >
+              {t("filterUnreviewed", { count: unreviewedCount })}
+            </button>
+          )}
           {category && dishes.length === 0 && (
             <p className="text-staff-label2 m-0 flex items-center gap-3 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
               <UtensilsCrossed aria-hidden="true" className="size-5 shrink-0" />
               {t("emptyCategory")}
             </p>
           )}
-          {dishes.length > 0 && (
+          {shownDishes.length > 0 && (
             <ul className="m-0 flex list-none flex-col overflow-hidden rounded-2xl bg-white p-0">
-              {dishes.map((d) => {
+              {shownDishes.map((d) => {
                 const soldOut = data.soldOut.includes(d.id);
                 const editing = panel?.kind === "dish" && panel.draft.id === d.id;
                 return (
@@ -787,6 +1011,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
                           </span>
                         ),
                       )}
+                      {data.allergenReviewSupported && !d.allergensConfirmed && (
+                        <span className={clsx(chip.base, chip.plain)} data-testid="allergens-unreviewed">
+                          {t("allergensNotReviewedChip")}
+                        </span>
+                      )}
                       {d.needsReview && (
                         <span className={clsx(chip.base, chip.wait)}>
                           <TriangleAlert aria-hidden="true" />
@@ -794,6 +1023,18 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         </span>
                       )}
                       <span className="ml-auto flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-pressed={d.isActive}
+                          disabled={pending}
+                          onClick={() => toggleDishActive(d)}
+                          className={clsx(
+                            "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-semibold",
+                            d.isActive ? "text-staff-label2" : "bg-pom-tint text-pomegranate",
+                          )}
+                        >
+                          {d.isActive ? t("dishOn") : t("dishOff")}
+                        </button>
                         <button
                           type="button"
                           aria-pressed={soldOut}

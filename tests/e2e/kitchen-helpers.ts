@@ -136,7 +136,8 @@ export async function pairKitchenDevice(browser: Browser, api: Api, cafe: Cafe, 
   await page.goto("/pair");
   await page.getByLabel("Վեցանիշ կոդը").fill(code);
   await page.getByRole("button", { name: "Միացնել" }).click();
-  await expect(page).toHaveURL(new RegExp(`/kitchen/${cafe.kitchenStationId}$`));
+  // Anonymous sign-in plus the redeem call can take several seconds on the busy dev database.
+  await expect(page).toHaveURL(new RegExp(`/kitchen/${cafe.kitchenStationId}$`), { timeout: 30_000 });
   const { data: member } = await api.from("members").select("id").eq("restaurant_id", cafe.restaurantId).eq("display_name", label).single();
   if (!member) throw new Error("device member not found");
   return { context, page, memberId: member.id, label };
@@ -190,6 +191,17 @@ export async function instrumentShift(context: BrowserContext): Promise<void> {
 export async function startShift(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Սկսել հերթափոխը" }).click();
   await expect(page.getByRole("button", { name: "Սկսել հերթափոխը" })).toBeHidden();
+}
+
+// The big «Նոր պատվեր» banner stays on the board until a cook taps «Տեսա».
+// A spec that works the board after an order arrived live taps it away first,
+// the way a cook would. Nothing to do if no banner is up.
+export async function ackNewOrders(page: Page): Promise<void> {
+  const ack = page.getByTestId("new-order-ack");
+  if (await ack.isVisible()) {
+    await ack.click();
+    await expect(page.getByTestId("new-order-alert")).toBeHidden();
+  }
 }
 
 export const slip = (page: Page, ticketId: string) => page.locator(`[data-ticket-id="${ticketId}"]`);

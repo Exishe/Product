@@ -31,8 +31,12 @@ import {
   type WaiterLine,
   type WaiterOrder,
 } from "./floor-model";
+import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { StateIcon } from "./floor-map";
 import { TableTimeline } from "./table-timeline";
+import { CantMakeCards } from "./cant-make-card";
+import { RewardCards } from "./reward-card";
+import type { WaiterReward } from "./rewards";
 import { button, chip, choice, Sheet } from "./ui";
 
 export type PanelProps = {
@@ -43,6 +47,11 @@ export type PanelProps = {
   onSettle: (sessionId: string) => void;
   onSeatWaiting: (waitingSessionId: string) => void;
   onCancelLine: (lineId: string, quantity: number, reason: string) => Promise<DirectResult>;
+  /** Open game rewards of this table (ADR-075) and the waiter's answer. */
+  rewards: WaiterReward[];
+  onReward: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
+  /** "Told the guest" on a dish the kitchen could not make (ADR-081). */
+  onAckCantMake: (lineId: string) => Promise<DirectResult>;
   /** Back to the map on phones (the panel is a pushed screen there). */
   onBack: () => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -113,6 +122,15 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
             <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
           </p>
         )}
+
+        <CantMakeCards
+          items={table.orders.flatMap((o) =>
+            o.lines.filter((l) => l.cantMakePending).map((l) => ({ id: l.id, name: l.name.text })),
+          )}
+          onAck={p.onAckCantMake}
+        />
+
+        <RewardCards rewards={p.rewards} onResolve={p.onReward} />
 
         {age?.kind === "quiet" && (
           <p
@@ -193,6 +211,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
               <OrderCard
                 key={o.id}
                 order={o}
+                tableLabel={p.table.label}
                 locale={locale}
                 held
                 onAction={p.onAction}
@@ -210,6 +229,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
           <OrderCard
             key={o.id}
             order={o}
+            tableLabel={p.table.label}
             locale={locale}
             onAction={p.onAction}
             onReject={setRejecting}
@@ -280,6 +300,7 @@ function statusWord(
 
 function OrderCard({
   order,
+  tableLabel,
   locale,
   held,
   onAction,
@@ -287,6 +308,7 @@ function OrderCard({
   onCancel,
 }: {
   order: WaiterOrder;
+  tableLabel: string;
   locale: Locale;
   held?: boolean;
   onAction: (action: WaiterAction) => void;
@@ -294,6 +316,7 @@ function OrderCard({
   onCancel: (line: WaiterLine) => void;
 }) {
   const t = useTranslations("waiter");
+  const tPrint = useTranslations("print");
   const placed = order.status === "placed";
   const live = order.status === "accepted" && order.number !== null;
   const ready = live ? order.tickets.filter((k) => k.status === "ready") : [];
@@ -388,6 +411,15 @@ function OrderCard({
                   ))}
                 </span>
               )}
+              {l.substitute && (
+                <span
+                  data-testid="line-substitute"
+                  lang={l.substitute.locale !== locale ? l.substitute.locale : undefined}
+                  className="block text-[0.9375rem] font-bold"
+                >
+                  {t("order.useInstead", { name: l.substitute.text })}
+                </span>
+              )}
               {l.note && <em className="text-amber-text block text-[0.9375rem] not-italic">{l.note}</em>}
               {l.cancelled > 0 && l.quantity > 0 && (
                 <span className="text-staff-label2 block text-[0.9375rem]">
@@ -413,6 +445,22 @@ function OrderCard({
       </ul>
       {order.note && (
         <p className="text-amber-text m-0 text-[0.9375rem]">{t("order.note", { note: order.note })}</p>
+      )}
+      {order.number !== null && order.lines.length > 0 && (
+        <PrintTicketButton
+          label={tPrint("button")}
+          className="border-staff-sep text-ink inline-flex min-h-11 items-center gap-2 self-start rounded-xl border px-4 text-[0.9375rem] font-semibold"
+        >
+          <TicketSheet
+            table={tableLabel}
+            orderNumber={order.number}
+            time={new Date(order.placedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+            lines={order.lines
+              .filter((l) => l.quantity > 0)
+              .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
+            note={order.note}
+          />
+        </PrintTicketButton>
       )}
       {order.status === "rejected" && order.rejectReason && (
         <p className="text-staff-label2 m-0 text-[0.9375rem]">

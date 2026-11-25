@@ -50,7 +50,8 @@ async function pushApplied(): Promise<boolean> {
 async function orderAsGuest(context: BrowserContext, token: string): Promise<Page> {
   const page = await context.newPage();
   await page.goto(`/t/${token}`);
-  await expect(page).toHaveURL(new RegExp(`/hy/m/${cafe.slug}/main\\?t=`));
+  // The QR address resolves the table (a remote read), and sending the order below is a remote write.
+  await expect(page).toHaveURL(new RegExp(`/hy/m/${cafe.slug}/main\\?t=`), { timeout: 30_000 });
   await page
     .getByTestId("dish")
     .filter({ hasText: "Տոլմա" })
@@ -58,7 +59,7 @@ async function orderAsGuest(context: BrowserContext, token: string): Promise<Pag
     .click();
   await page.getByRole("button", { name: /Դիտել պատվերը/ }).click();
   await page.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-  await expect(page).toHaveURL(new RegExp(`/hy/m/${cafe.slug}/main/order\\?t=`));
+  await expect(page).toHaveURL(new RegExp(`/hy/m/${cafe.slug}/main/order\\?t=`), { timeout: 30_000 });
   return page;
 }
 

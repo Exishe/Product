@@ -60,7 +60,13 @@ export async function placeOrder(args: { token: string; tableId: string; locatio
 
     const placed = await supabase
       .schema("api")
-      .rpc("guest_place_order", { p_guest_session_id: guestSessionId, p_idempotency_key: pending.key, p_lines: pending.lines })
+      .rpc("guest_place_order", {
+        p_guest_session_id: guestSessionId,
+        p_idempotency_key: pending.key,
+        p_lines: pending.lines,
+        // Only sent when there is one: a database without the substitutes migration has no such parameter.
+        ...(pending.subsAck.length ? { p_subs_ack: pending.subsAck } : {}),
+      })
       .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
     if (!placed.error && placed.data) return { kind: "placed", orderId: placed.data };
 

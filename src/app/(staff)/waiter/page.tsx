@@ -1,8 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { fetchSoldOut } from "@/features/kitchen/board-data";
 import { buildGuestMenu, type PublicMenu } from "@/features/menu/guest-menu/view-model";
 import { fetchFloor } from "@/features/waiter/floor-data";
+import { fetchLivePromoTitles } from "@/features/waiter/promos";
 import { WaiterApp } from "@/features/waiter/waiter-app";
 import type { Locale } from "@/i18n/routing";
 import { requireMember } from "@/lib/auth/require-member";
@@ -67,12 +69,21 @@ export default async function WaiterPage() {
       ).categories
     : [];
 
+  // The café's sound for a guest call (ADR-088); the column is missing before its migration: the default.
+  const { data: soundRow, error: soundError } = await (supabase as unknown as SupabaseClient)
+    .from("locations")
+    .select("call_sound")
+    .eq("id", location.id)
+    .maybeSingle();
+  const callSound = !soundError && typeof soundRow?.call_sound === "string" ? soundRow.call_sound : null;
+
+  const promoTitles = await fetchLivePromoTitles(supabase as unknown as SupabaseClient, location.id, locale);
   const messages = await getMessages();
   return (
     <NextIntlClientProvider
       locale={locale}
       timeZone={location.timezone}
-      messages={{ waiter: messages.waiter, staffAccount: messages.staffAccount }}
+      messages={{ waiter: messages.waiter, alerts: messages.alerts, print: messages.print, staffAccount: messages.staffAccount }}
     >
       <WaiterApp
         cafeName={restaurant?.name ?? ""}
@@ -91,6 +102,8 @@ export default async function WaiterPage() {
         isDevice={me.kind === "device"}
         canChangePassword={me.kind === "person" && me.role === "waiter"}
         canManageTables={me.role === "owner" || me.role === "manager"}
+        initialPromos={promoTitles ?? []}
+        callSound={callSound}
       />
     </NextIntlClientProvider>
   );

@@ -37,10 +37,12 @@ export async function saveDish(input: DishInput): Promise<SaveDishResult> {
       prep_area_id: d.prepAreaId,
       tags: d.tags,
       allergens: d.allergens,
+      ...(d.allergensConfirmed === undefined ? {} : { allergens_confirmed: d.allergensConfirmed }),
       names: d.names,
       descriptions: d.descriptions,
       modifier_group_ids: d.modifierGroupIds,
       mark_reviewed: d.markReviewed,
+      is_active: d.isActive,
     } as Json,
   });
   if (error || !data) return { ok: false, error: "failed" };
@@ -65,6 +67,7 @@ export async function saveCategory(input: CategoryInput): Promise<SaveResult> {
     p_category_id: parsed.data.id ?? (null as unknown as string),
     p_names: parsed.data.names,
     p_prep_area_id: parsed.data.prepAreaId ?? (null as unknown as string),
+    ...(parsed.data.isActive === undefined ? {} : { p_is_active: parsed.data.isActive }),
   });
   if (error || !data) return { ok: false, error: "failed" };
   revalidatePath("/admin/menu");

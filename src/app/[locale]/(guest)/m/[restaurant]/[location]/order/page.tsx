@@ -9,7 +9,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
-import { buildGuestMenu, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
+import { buildGuestMenu, dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { OrderStatusView } from "@/features/ordering/order-status-view";
@@ -139,6 +139,8 @@ export default async function OrderStatusPage({
             wait={busy ? null : hints.wait}
             // Two dishes with one name (blini with jam, blini with caviar) are told apart.
             details={published ? sameNameDetails(published, locale) : undefined}
+            // When the kitchen can't make a dish, similar ones are offered (ADR-081).
+            cantMakeDishes={published ? dishNames(published, locale) : undefined}
             dishes={recommend}
             pairs={hints.pairs}
           />

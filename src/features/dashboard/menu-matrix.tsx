@@ -92,9 +92,10 @@ function QuadrantCard({
         <QuadrantMark q={q} />
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 id={`q-${q}`} className="m-0 text-[1.0625rem] leading-tight font-bold">
-            {t(`${q}.title`)}
+            {t(`${q}.name`)}
             <span className="text-staff-label2 num font-semibold"> · {dishes.length}</span>
           </h3>
+          <p className="m-0 text-[0.9375rem] font-semibold">{t(`${q}.title`)}</p>
           <p className="text-staff-label2 m-0 text-[0.9375rem]">{t(`${q}.action`)}</p>
         </div>
       </div>

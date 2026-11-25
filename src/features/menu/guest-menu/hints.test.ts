@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_HINTS, pairsFor, parseHints, waitState } from "./hints";
+import { NO_HINTS, parseHints, waitState } from "./hints";
 
 describe("parseHints", () => {
   it("keeps up to two pairs per dish and a sane wait", () => {
@@ -17,20 +17,6 @@ describe("parseHints", () => {
     expect(parseHints({ pairs: [], wait: { low: 20, high: 10 } })).toEqual(NO_HINTS);
     expect(parseHints({ pairs: {}, wait: { low: 0, high: 10 } })).toEqual(NO_HINTS);
     expect(parseHints({ pairs: {}, wait: { low: 10, high: 999 } })).toEqual(NO_HINTS);
-  });
-});
-
-describe("pairsFor", () => {
-  const items = {
-    coffee: { id: "coffee", soldOut: false },
-    tea: { id: "tea", soldOut: true },
-    juice: { id: "juice", soldOut: false },
-  };
-  it("suggests only dishes on today's menu that can be ordered", () => {
-    const hints = { pairs: { eggs: ["gone", "tea", "coffee"], toast: ["juice"] }, wait: null };
-    expect(pairsFor("eggs", hints, items)).toEqual([items.coffee]);
-    expect(pairsFor("toast", hints, items, ["juice"])).toEqual([]);
-    expect(pairsFor("nothing", hints, items)).toEqual([]);
   });
 });
 

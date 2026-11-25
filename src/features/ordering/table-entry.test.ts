@@ -45,4 +45,9 @@ describe("resolveTableEntry", () => {
     const resolve = vi.fn().mockResolvedValue({ ...demo, restaurant_slug: "//evil.example" });
     expect(await resolveTableEntry(TOKEN, { acceptLanguage: "en" }, resolve)).toEqual({ kind: "invalid" });
   });
+
+  it("tells a busy database apart from a refused token", async () => {
+    const resolve = vi.fn().mockResolvedValue("unavailable");
+    expect(await resolveTableEntry(TOKEN, { acceptLanguage: "en" }, resolve)).toEqual({ kind: "unavailable" });
+  });
 });

@@ -1,14 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import styles from "@/features/menu/guest-menu/guest.module.css";
+import type { SubAsk } from "@/features/menu/guest-menu/subs-dialog";
+import type { GuestItem } from "@/features/menu/guest-menu/view-model";
 import type { Locale } from "@/i18n/routing";
 import { toOrderLines, type CartLine, type CartSummary } from "./cart";
 import { useGuestI18n } from "./guest-i18n-context";
 import type { OrderErrorKind } from "./order-errors";
 import { saveLastOrder } from "./last-order";
 import { beginPending, clearPending, loadPending } from "./pending-order";
+import type { SubInfo } from "./substitutions-parse";
+
+// The bookkeeping for substitutions loads with the first dish that has one (or when an order is refused for one).
+const loadSubs = () => import("./substitutions");
+
+// The "made with X instead of Y, OK?" pop-up (ADR-076) is fetched only when it is first needed.
+const SubsDialog = lazy(() => import("@/features/menu/guest-menu/subs-dialog").then((m) => ({ default: m.SubsDialog })));
 
 type Phase =
   { name: "idle" } | { name: "sending" } | { name: "offline" } | { name: "error"; why: OrderErrorKind };
@@ -25,6 +34,9 @@ export function OrderSender({
   locationId,
   table,
   orderHref,
+  items,
+  subs,
+  onRemoveDishes,
   onLocked,
   onSoldOut,
   onPlaced,
@@ -33,6 +45,12 @@ export function OrderSender({
   locationId: string;
   table: { id: string; token: string };
   orderHref: string;
+  /** The menu's dishes (names and prices for the pop-up). */
+  items: Record<string, GuestItem>;
+  /** The dishes made with a replacement today, by dish id. */
+  subs: Record<string, SubInfo>;
+  /** The guest chose not to have these dishes after all. */
+  onRemoveDishes: (itemIds: string[]) => void;
   onLocked: (locked: boolean) => void;
   onSoldOut: (itemId: string) => void;
   onPlaced: () => void;
@@ -48,6 +66,10 @@ export function OrderSender({
   const placed = useRef(false);
   // The lines this press sent, remembered as "last time here" once placed.
   const sent = useRef<CartLine[]>([]);
+  // Substitutions the server named when it refused an order (newer than the menu on screen).
+  const [serverSubs, setServerSubs] = useState<Record<string, SubInfo>>({});
+  const [asking, setAsking] = useState<SubAsk[] | null>(null);
+  const allSubs = { ...subs, ...serverSubs };
 
   const send = useCallback(async () => {
     if (busy.current) return;
@@ -77,13 +99,23 @@ export function OrderSender({
       clearPending(window.localStorage, { locationId, tableId: table.id });
       onLocked(false);
       if (result.kind === "sold_out" && result.itemId) onSoldOut(result.itemId);
+      if (result.kind === "substitution_changed") {
+        // A replacement started after the guest added the dish: ask about exactly those dishes, once.
+        const asked = (await loadSubs()).refusal(result.details, locale, items);
+        if (asked) {
+          setServerSubs((prev) => ({ ...prev, ...asked.subs }));
+          setAsking(asked.asks);
+          setPhase({ name: "idle" });
+          return;
+        }
+      }
       setPhase({ name: "error", why: result });
     } catch {
       setPhase({ name: "offline" }); // the sending code itself didn't load
     } finally {
       busy.current = false;
     }
-  }, [locationId, table.id, table.token, locale, orderHref, router, onLocked, onSoldOut]);
+  }, [locationId, table.id, table.token, locale, orderHref, router, items, onLocked, onSoldOut]);
 
   // An order left unsent (no answer, then a reload): try it again at once.
   const resumed = useRef(false);
@@ -117,10 +149,20 @@ export function OrderSender({
     [onPlaced],
   );
 
-  const start = () => {
-    sent.current = summary.lines.map((p) => p.line);
-    beginPending(window.localStorage, scope, toOrderLines(summary.lines.map((p) => p.line)));
+  const begin = (ack: string[]) => {
+    const lines = summary.lines.map((p) => p.line);
+    sent.current = lines;
+    beginPending(window.localStorage, scope, toOrderLines(lines), undefined, ack);
     void send();
+  };
+  const start = () => {
+    // A dish with a replacement the guest has not accepted yet is asked about first.
+    if (Object.keys(allSubs).length === 0) return begin([]);
+    void loadSubs().then((m) => {
+      const { ask, ack } = m.plan(locationId, summary.lines.map((p) => p.line), allSubs, items);
+      if (ask.length > 0) setAsking(ask);
+      else begin(ack);
+    });
   };
 
   const message =
@@ -130,14 +172,37 @@ export function OrderSender({
         ? ({
             sold_out: t("cart.soldOut"),
             menu_changed: t("cart.menuChanged"),
+            substitution_changed: t("cart.menuChanged"), // the menu reloads with the note; the asking screen comes with the pop-up
             rate_limited: t("cart.rateLimited"),
             ordering_off: t("menu.orderingOff"),
+            paused: t("menu.paused"),
+            closed: t("menu.closedToday"),
           }[phase.why.kind as string] ?? t("cart.failed"))
         : null;
 
+  const dialog = asking && (
+    <Suspense fallback={null}>
+      <SubsDialog
+        mode="send"
+        entries={asking}
+        onAccept={() => {
+          setAsking(null);
+          void loadSubs().then((m) => {
+            m.accept(locationId, asking.map((e) => e.sub));
+            begin(m.plan(locationId, summary.lines.map((p) => p.line), allSubs, items).ack);
+          });
+        }}
+        onDecline={() => {
+          onRemoveDishes(asking.map((e) => e.sub.itemId));
+          setAsking(null);
+        }}
+      />
+    </Suspense>
+  );
   const primary = `${styles.cta} flex min-h-12 w-full items-center justify-center rounded-[16px] px-6 text-[14px] font-semibold`;
   return (
     <div className="grid gap-3">
+      {dialog}
       <p
         role="status"
         aria-live="polite"
@@ -145,7 +210,7 @@ export function OrderSender({
       >
         {message}
       </p>
-      {phase.name === "error" && phase.why.kind === "menu_changed" ? (
+      {phase.name === "error" && (phase.why.kind === "menu_changed" || phase.why.kind === "substitution_changed") ? (
         <button type="button" className={primary} onClick={() => window.location.reload()}>
           {t("cart.reload")}
         </button>

@@ -3,9 +3,11 @@
 import { flyToCart } from "@/features/guest-theme/motion/fly";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { useEffect, useRef, useState } from "react";
+import type { Track } from "@/features/analytics/track";
 import { MAX_NOTE, MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
+import { formatKcal } from "./kcal";
 import {
   initialSelection,
   isSelectionValid,
@@ -15,7 +17,7 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CheckIcon, CloseIcon, PlusIcon, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { CloseIcon, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -27,21 +29,16 @@ const NOTE_COUNTER_FROM = 160;
 export function DishSheet({
   item,
   canOrder,
-  pairs = [],
   onAdd,
-  onAddPair,
-  onOpenPair,
   onClose,
+  track,
 }: {
   item: GuestItem;
   canOrder: boolean;
-  /** "Guests here often add" (ADR-060): dishes from the café's own rounds. */
-  pairs?: GuestItem[];
   onAdd: (add: { modifierIds: string[]; quantity: number; note: string }) => void;
-  /** One tap adds a pair that needs no choice, as the menu's "+" does. */
-  onAddPair?: (pair: GuestItem, from: HTMLElement) => void;
-  onOpenPair?: (pair: GuestItem) => void;
   onClose: () => void;
+  /** Anonymous event tracking (ADR-072); absent in tests. */
+  track?: Track;
 }) {
   const { t, locale } = useGuestI18n();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -49,9 +46,14 @@ export function DishSheet({
   const [selection, setSelection] = useState<Selection>(() => initialSelection(item.groups));
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
-  const [addedPairs, setAddedPairs] = useState<string[]>([]);
   const valid = isSelectionValid(item.groups, selection);
   const price = unitPrice(item.price, item.groups, selection) * quantity;
+
+  // The sheet is keyed by dish, so this runs once per opening: a view.
+  useEffect(() => {
+    track?.("item_view", item.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const d = dialog.current;
@@ -150,6 +152,11 @@ export function DishSheet({
             className="text-muted mt-2 text-[13px] leading-relaxed"
           />
         )}
+        {item.kcal !== null && (
+          <p className="num text-muted mt-2 text-[12px]" data-testid="kcal">
+            {formatKcal(item.kcal, (value) => t("menu.kcal", { value }), locale)}
+          </p>
+        )}
         {/* Allergens as the café listed them; when it listed none, say so
             (an empty list is not "free of"), and always send serious
             allergies to the waiter. */}
@@ -163,9 +170,12 @@ export function DishSheet({
               </span>{" "}
               {t("diet.tellWaiter")}
             </>
+          ) : item.allergensConfirmed ? (
+            t("diet.sheetNoneDeclared")
           ) : (
             t("diet.sheetNone")
-          )}
+          )}{" "}
+          {t("diet.venueNote")}
         </p>
 
         {item.groups.map((group) => {
@@ -244,65 +254,6 @@ export function DishSheet({
               </span>
             )}
           </label>
-        )}
-
-        {pairs.length > 0 && (
-          <section aria-labelledby="pairs-title" className="mt-5" data-testid="pairs">
-            <h3 id="pairs-title" className="text-[14px] font-semibold">
-              {t("pairs.title")}
-            </h3>
-            <ul className="-mx-4 mt-2 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 md:-mx-6 md:px-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-              {pairs.map((pair) => {
-                const needsChoice = pair.groups.some((g) => g.min > 0);
-                const added = addedPairs.includes(pair.id);
-                return (
-                  <li
-                    key={pair.id}
-                    className="border-line bg-surface flex w-[13.5rem] flex-none snap-start items-center gap-2.5 rounded-[16px] border p-1.5"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onOpenPair?.(pair)}
-                      className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 text-left"
-                    >
-                      {pair.image && (
-                        <span className="bg-plate block size-12 flex-none overflow-hidden rounded-[10px]">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
-                          <img src={dishPhotoUrl(pair.image)} alt="" width={96} height={96} className="size-full object-cover" />
-                        </span>
-                      )}
-                      <span className="grid min-w-0 flex-1">
-                        <Txt value={pair.name} locale={locale} className="line-clamp-2 text-[13px] font-semibold break-words" />
-                        <span className="num text-accent-text text-[12px] font-semibold whitespace-nowrap">
-                          {formatAmd(pair.price, locale)}
-                        </span>
-                      </span>
-                    </button>
-                    {canOrder && (
-                      <button
-                        type="button"
-                        aria-label={
-                          added
-                            ? t("pairs.added", { name: pair.name.text })
-                            : t("menu.add", { name: pair.name.text })
-                        }
-                        aria-haspopup={needsChoice ? "dialog" : undefined}
-                        disabled={added}
-                        onClick={(e) => {
-                          if (needsChoice) return onOpenPair?.(pair);
-                          onAddPair?.(pair, e.currentTarget);
-                          setAddedPairs((ids) => [...ids, pair.id]);
-                        }}
-                        className="bg-accent text-on-accent disabled:bg-chip disabled:text-ink grid size-9 flex-none place-items-center rounded-full [&_svg]:size-[14px]"
-                      >
-                        {added ? <CheckIcon /> : <PlusIcon />}
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
         )}
 
         <div

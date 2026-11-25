@@ -7,9 +7,12 @@ import {
   lineKey,
   mentionsAllergy,
   pickName,
-  pruneStruck,
+  reconcileStrikes,
+  serverSharesStrikes,
+  struckLines,
   toBoardTickets,
   type BoardTicket,
+  type LocalStrikes,
   type TicketRow,
 } from "./board-model";
 
@@ -127,6 +130,19 @@ describe("toBoardTickets", () => {
     first(r.kitchen_ticket_items).order_items!.cancelled_quantity = 1;
     const t = first(toBoardTickets([r], "hy"));
     expect(t.lines[1]).toMatchObject({ quantity: 1, orderedQuantity: 2 });
+  });
+
+  it("shows the replacement ingredient on a line, in the kitchen's language (ADR-076)", () => {
+    const r = row();
+    const oi = first(r.kitchen_ticket_items).order_items!;
+    oi.substitution = {
+      from: { id: "m", name: { hy: "Կաթ", en: "Milk" } },
+      to: { id: "o", name: { hy: "Վարսակի կաթ", ru: "Овсяное молоко", en: "Oat milk" } },
+      price_delta: 300,
+    };
+    const lines = first(toBoardTickets([r], "ru")).lines;
+    expect(lines.find((l) => l.id === oi.id)?.substitute).toEqual({ text: "Овсяное молоко", locale: "ru" });
+    expect(toBoardTickets([row()], "hy")[0]?.lines.every((l) => !l.substitute)).toBe(true);
   });
 
   it("drops an order slip once nothing on it is left to cook", () => {
@@ -381,15 +397,105 @@ describe("item-level bump", () => {
       { ...plain, id: "b", quantity: 0, name: "B" },
     ],
   });
+  const two = ticket({
+    id: "u",
+    status: "cooking",
+    lines: [
+      { ...plain, id: "x", quantity: 1, name: "X", struck: true },
+      { ...plain, id: "y", quantity: 1, name: "Y" },
+    ],
+  });
+  // [line key, tapped struck?, when the server confirmed it]
+  const local = (entries: [string, boolean, number?][]): LocalStrikes =>
+    new Map(entries.map(([k, want, ackedAt]) => [k, { want, ackedAt: ackedAt ?? null }]));
 
   it("is done when every line still wanted is struck", () => {
     expect(allLinesStruck(cooking, new Set())).toBe(false);
     expect(allLinesStruck(cooking, new Set([lineKey("t", "a")]))).toBe(true);
   });
 
-  it("forgets strikes of tickets that left Cooking", () => {
-    const struck = new Set([lineKey("t", "a"), lineKey("gone", "x")]);
-    expect([...pruneStruck(struck, [cooking])]).toEqual([lineKey("t", "a")]);
-    expect([...pruneStruck(struck, [{ ...cooking, status: "ready" }])]).toEqual([]);
+  it("reads a line as struck from the server's row", () => {
+    const r = row({ id: "t2", status: "cooking" });
+    r.kitchen_ticket_items[0]!.struck_at = at(3); // sorted last: sort 2
+    r.kitchen_ticket_items[1]!.struck_at = null;
+    const lines = first(toBoardTickets([r], "hy")).lines;
+    expect(lines.map((l) => [l.id, l.struck])).toEqual([
+      ["i0", false],
+      ["i1", true],
+    ]);
+  });
+
+  it("tells a database without the column (no struck_at in the rows) from one where nothing is struck", () => {
+    const without = toBoardTickets([row({ status: "cooking" })], "hy");
+    expect(without.flatMap((t) => t.lines).every((l) => l.struck === undefined)).toBe(true);
+    expect(serverSharesStrikes(without)).toBe(false);
+
+    const r = row({ status: "cooking" });
+    for (const k of r.kitchen_ticket_items) k.struck_at = null;
+    const withColumn = toBoardTickets([r], "hy");
+    expect(withColumn.flatMap((t) => t.lines).every((l) => l.struck === false)).toBe(true);
+    expect(serverSharesStrikes(withColumn)).toBe(true);
+    expect(serverSharesStrikes([])).toBe(false); // an empty board has nothing to strike
+  });
+
+  it("never reads a cancellation slip's lines as struck", () => {
+    const r = row({ kind: "void" });
+    for (const k of r.kitchen_ticket_items) k.struck_at = at(1);
+    expect(first(toBoardTickets([r], "hy")).lines.every((l) => l.struck === false)).toBe(true);
+  });
+
+  it("draws the server's strikes when this screen has not tapped", () => {
+    expect([...struckLines([two], local([]))]).toEqual([lineKey("u", "x")]);
+  });
+
+  it("puts this screen's taps on top of the server's rows, both ways", () => {
+    const struck = struckLines([two], local([[lineKey("u", "y"), true], [lineKey("u", "x"), false]]));
+    expect([...struck]).toEqual([lineKey("u", "y")]);
+    // the same taps, already confirmed by the server: the same picture
+    expect([...struckLines([two], local([[lineKey("u", "y"), true, 5], [lineKey("u", "x"), false, 5]]))]).toEqual([
+      lineKey("u", "y"),
+    ]);
+  });
+
+  it("shows nothing struck on a ticket that is not in Cooking, whoever struck it", () => {
+    const struck = local([[lineKey("u", "y"), true]]);
+    expect(struckLines([{ ...two, status: "ready" }], struck).size).toBe(0);
+    expect(struckLines([{ ...two, status: "new" }], struck).size).toBe(0);
+    expect(struckLines([{ ...two, kind: "void" }], struck).size).toBe(0);
+    expect(struckLines([], struck).size).toBe(0);
+  });
+
+  it("two screens agree: the same rows give the same strikes", () => {
+    const rowsFromServer = [two, cooking];
+    expect([...struckLines(rowsFromServer, local([]))]).toEqual([...struckLines(rowsFromServer, local([]))]);
+    expect(allLinesStruck(two, struckLines([two], local([[lineKey("u", "y"), true]])))).toBe(true);
+  });
+
+  describe("after a refresh", () => {
+    it("forgets taps on tickets that left Cooking or the board", () => {
+      const taps = local([[lineKey("t", "a"), true], [lineKey("gone", "x"), true]]);
+      expect([...reconcileStrikes(taps, [cooking], 10).keys()]).toEqual([lineKey("t", "a")]);
+      expect(reconcileStrikes(taps, [{ ...cooking, status: "ready" }], 10).size).toBe(0);
+    });
+
+    it("keeps a tap the server has not confirmed, even when the rows agree", () => {
+      const taps = local([[lineKey("u", "x"), true]]); // not acknowledged: still on its way
+      expect(reconcileStrikes(taps, [two], 10)).toBe(taps);
+    });
+
+    it("lets the server's word win once a refresh that began after the confirmation has seen it", () => {
+      const taps = local([
+        [lineKey("u", "x"), true, 5], // confirmed at 5
+        [lineKey("u", "y"), false, 20], // confirmed at 20
+      ]);
+      const after = reconcileStrikes(taps, [two], 10); // this refresh began at 10
+      expect([...after.keys()]).toEqual([lineKey("u", "y")]); // 20 is later: that refresh may not know it
+      expect([...reconcileStrikes(after, [two], 30).keys()]).toEqual([]);
+    });
+
+    it("returns the same map when nothing changed (no re-render)", () => {
+      const taps = local([[lineKey("u", "y"), true]]);
+      expect(reconcileStrikes(taps, [two], 10)).toBe(taps);
+    });
   });
 });

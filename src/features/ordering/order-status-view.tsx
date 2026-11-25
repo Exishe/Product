@@ -1,6 +1,7 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
@@ -19,12 +20,23 @@ import { useGuestChannel } from "@/lib/realtime/use-guest-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import type { Database } from "@/lib/supabase/database";
 import { OPEN_CART_KEY, addToCart, cartKey } from "./cart-store";
+import { substituteOf } from "./substitutions-parse";
 import { MAX_PEOPLE, repeatLines, shareOf } from "./repeat";
 import { useGuestI18n } from "./guest-i18n-context";
 import { loadGuestSession, saveGuestSession } from "./guest-session";
+import { classifyOrderError } from "./order-errors";
+import { beginRequest, clearRequest, loadRequest, RETRY_MS, type PendingRequest } from "./pending-request";
 import { NotifyReady } from "./notify-ready";
+import {
+  answeredSince,
+  nextExpiry,
+  serviceLines,
+  type ServiceKind,
+  type ServiceRequest,
+} from "./service-status";
+import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
-import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
+import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
 import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, Sparkles, Timer, UtensilsCrossed } from "lucide-react";
 import {
   displayStatus,
@@ -34,6 +46,9 @@ import {
   type DisplayStatus,
   type OrderState,
 } from "./order-status";
+
+// Only fetched when the kitchen could not make a dish (ADR-081).
+const CantMakeNote = dynamic(() => import("./cant-make").then((m) => m.CantMakeNote), { ssr: false });
 
 type Db = SupabaseClient<Database>;
 type Names = Record<string, string | null> | null;
@@ -47,6 +62,10 @@ type Line = {
   note: string | null;
   sort: number;
   order_item_modifiers: { name_i18n: Names; modifier_id: string | null }[];
+  /** ADR-076: {from, to, price_delta} when an ingredient was replaced; absent before that migration. */
+  substitution?: unknown;
+  /** ADR-081: when the kitchen could not make it; absent before that migration. */
+  cant_make_at?: string | null;
 };
 type Order = OrderState & {
   id: string;
@@ -57,7 +76,7 @@ type Order = OrderState & {
   reject_reason: string | null;
   order_items: Line[];
 };
-type Request = { id: string; kind: "call_waiter" | "bring_bill"; status: string };
+type Request = ServiceRequest;
 type Data = { orders: Order[]; requests: Request[]; closed: boolean };
 
 // The stages before "ready": the only time «Notify me when it's ready» makes sense.
@@ -65,7 +84,7 @@ const waiting = new Set<DisplayStatus>(["received", "accepted", "cooking"]);
 
 const ORDER_COLUMNS =
   "id, location_id, number, status, kitchen_status, paid_at, total, placed_at, reject_reason, possible_duplicate_of, " +
-  "order_items(id, item_id, name_i18n, quantity, cancelled_quantity, line_total, note, sort, order_item_modifiers(name_i18n, modifier_id))";
+  "order_items(*, order_item_modifiers(name_i18n, modifier_id))";
 
 // The guest session of this phone at this table: remembered from ordering,
 // or (another tab, cleared storage) the newest one RLS lets this user read.
@@ -87,6 +106,19 @@ async function findGuestSession(db: Db, tableId: string): Promise<string | null>
   return id;
 }
 
+// The table's open requests and the ones answered a moment ago («Գնում եմ»),
+// also those another phone at the table started (ADR-090). Before that
+// migration is applied: this guest's own rows, as before.
+async function loadRequests(db: Db, guestSessionId: string) {
+  const viaTable = await db.schema("api").rpc("guest_service_status", { p_guest_session_id: guestSessionId });
+  if (viaTable.error?.code !== "PGRST202") return viaTable;
+  return db
+    .from("service_requests")
+    .select("id, kind, status, resolved_at")
+    .eq("guest_session_id", guestSessionId)
+    .or(`status.neq.resolved,resolved_at.gte.${answeredSince(Date.now())}`);
+}
+
 async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   const [orders, requests, session] = await Promise.all([
     db
@@ -94,11 +126,7 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
       .select(ORDER_COLUMNS)
       .eq("guest_session_id", guestSessionId)
       .order("placed_at", { ascending: false }),
-    db
-      .from("service_requests")
-      .select("id, kind, status")
-      .eq("guest_session_id", guestSessionId)
-      .neq("status", "resolved"),
+    loadRequests(db, guestSessionId),
     db.from("guest_sessions").select("revoked_at, expires_at").eq("id", guestSessionId).maybeSingle(),
   ]);
   if (orders.error || requests.error || session.error) return null;
@@ -245,14 +273,13 @@ function RecommendedCard({
   const list = (photos.length >= 4 ? photos : all).slice(0, 9);
   if (list.length < 3) return null;
   return (
-    <section aria-labelledby="rec-title" className={guestStyles.sheet}>
-      <div className={guestStyles.sheetHead}>
-        <Sparkles size={20} aria-hidden />
-        <h2 id="rec-title" className="text-[14px]">
-          {t("order.recommended")}
-        </h2>
-      </div>
-      <div className="px-3 pt-4 pb-6 md:px-6">
+    // Part of the page, not a card on it: the page colour, the menu's heading style.
+    <section aria-labelledby="rec-title">
+      <h2 id="rec-title" className="flex items-center gap-2 text-[15px] font-semibold">
+        <Sparkles size={18} aria-hidden className="text-accent-text" />
+        {t("order.recommended")}
+      </h2>
+      <div className="pt-2">
         <DishOrbit dishes={list} menuHref={menuHref} />
       </div>
     </section>
@@ -266,12 +293,15 @@ function OrderCard({
   wait = null,
   details,
   onRepeat,
+  cantMake,
 }: {
   order: Order;
   latest: boolean;
   /** The newest order is shown in two places: its status on the right, its lines on the left. */
   part?: "all" | "lines" | "status";
   details?: Record<string, string>;
+  /** Alternatives for a dish the kitchen could not make (ADR-081). */
+  cantMake?: { db: Db | null; dishes: Dishes | undefined; onAdd?: (order: Order, itemId: string) => void };
   wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
   onRepeat?: (order: Order) => void;
@@ -381,6 +411,11 @@ function OrderCard({
                   {details[l.item_id]}
                 </span>
               )}
+              {substituteOf(l.substitution, locale) && (
+                <span className="text-muted col-start-1 text-sm font-semibold" data-testid="line-sub">
+                  {t("menu.withSub", { to: substituteOf(l.substitution, locale) ?? "" })}
+                </span>
+              )}
               {mods.length > 0 && (
                 <span className="text-muted col-start-1 text-[12px]">
                   {mods.map((m, i) => (
@@ -392,6 +427,14 @@ function OrderCard({
                 </span>
               )}
               {l.note && <span className="text-muted col-start-1 text-[12px] break-words">{l.note}</span>}
+              {l.cant_make_at && cantMake?.db && (
+                <CantMakeNote
+                  db={cantMake.db}
+                  lineId={l.id}
+                  dishes={cantMake.dishes}
+                  onAdd={cantMake.onAdd ? (itemId) => cantMake.onAdd?.(order, itemId) : undefined}
+                />
+              )}
             </li>
           );
         })}
@@ -429,6 +472,7 @@ export function OrderStatusView({
   details,
   dishes = [],
   pairs = {},
+  cantMakeDishes,
 }: {
   tableId: string;
   menuHref: string;
@@ -441,6 +485,8 @@ export function OrderStatusView({
   wait?: WaitRange | null;
   /** Descriptions of same-named dishes by dish id (view-model sameNameDetails). */
   details?: Record<string, string>;
+  /** Name and price of every dish, by id: for the replacement dishes of ADR-081. */
+  cantMakeDishes?: Dishes;
 }) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
@@ -448,9 +494,27 @@ export function OrderStatusView({
   const [data, setData] = useState<Data | null>(null);
   const [phase, setPhase] = useState<"loading" | "ready" | "none">("loading");
   const [slow, setSlow] = useState(false);
-  const [told, setTold] = useState<{ kind: Request["kind"] | "error"; key: number } | null>(null);
+  const [told, setTold] = useState<{ kind: "error" | "unsent"; key: number } | null>(null);
+  // Just sent, not yet read back: bridges the moment before the next refresh.
+  const [sentKinds, setSentKinds] = useState<ReadonlySet<ServiceKind>>(() => new Set());
+  const [now, setNow] = useState(() => Date.now());
+  const billButton = useRef<HTMLButtonElement>(null);
+  const payPanel = useRef<HTMLDivElement>(null);
   const [asking, setAsking] = useState<Request["kind"] | null>(null);
   const [choosing, setChoosing] = useState(false);
+  // Requests with no answer yet: kept in storage, retried, never shown as sent.
+  // Read in the browser only; requests left unsent before a reload come back here.
+  const [unsent, setUnsent] = useState<PendingRequest[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return (["call_waiter", "bring_bill"] as const)
+        .map((k) => loadRequest(window.localStorage, tableId, k))
+        .filter((r): r is PendingRequest => r !== null);
+    } catch {
+      return [];
+    }
+  });
+  const sending = useRef(false);
   const [people, setPeople] = useState(1);
   const router = useRouter();
 
@@ -479,13 +543,44 @@ export function OrderStatusView({
 
   const refresh = useCallback(() => {
     if (!db || !guestSessionId) return;
-    void load(db, guestSessionId).then((loaded) => loaded && setData(loaded));
+    void load(db, guestSessionId).then((loaded) => {
+      if (!loaded) return;
+      setData(loaded);
+      setNow(Date.now());
+      setSentKinds(new Set());
+    });
   }, [db, guestSessionId]);
 
   const active = useMemo(
-    () => (data ? data.orders.some(isActive) || data.requests.length > 0 : false),
+    () => (data ? data.orders.some(isActive) || data.requests.some((r) => r.status !== "resolved") : false),
     [data],
   );
+
+  // A failed request's note leaves after a few seconds.
+  useEffect(() => {
+    if (told?.kind !== "error") return;
+    const timer = setTimeout(() => setTold(null), 6000);
+    return () => clearTimeout(timer);
+  }, [told]);
+
+  // The «waiter is on the way» line leaves by itself after a while.
+  const requests = data?.requests;
+  useEffect(() => {
+    if (!requests) return;
+    const at = nextExpiry(requests, Date.now());
+    if (at === null) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, at - Date.now()) + 50);
+    return () => clearTimeout(timer);
+  }, [requests, now]);
+
+  // The bill panel opens below the buttons, often under the fold: bring it in view.
+  useEffect(() => {
+    if (!choosing) return;
+    payPanel.current?.scrollIntoView({
+      block: "nearest",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [choosing]);
 
   // "Ready": a banner slides in, and if it became ready while the guest
   // watched, a big spark bursts from it.
@@ -501,19 +596,102 @@ export function OrderStatusView({
   }, [topStatus]);
   const channel = useGuestChannel({ supabase: db, guestSessionId, refresh, poll: active && !data?.closed });
 
+  // One attempt at a saved request. The database keeps one open request per
+  // table and kind, so a repeat after a lost answer never rings twice.
+  const attemptSend = useCallback(
+    async (req: PendingRequest): Promise<"sent" | "offline" | "failed"> => {
+      if (!db || !guestSessionId) return "offline";
+      const { error, status } = await db
+        .schema("api")
+        .rpc("guest_service_request", {
+          p_guest_session_id: guestSessionId,
+          p_kind: req.kind,
+          ...(req.payment ? { p_payment_preference: req.payment } : {}),
+        })
+        .abortSignal(AbortSignal.timeout(15_000))
+        .then(
+          (r) => r,
+          () => ({ error: { message: "network" }, status: 0 }),
+        );
+      const done = (r: "sent" | "failed") => {
+        clearRequest(window.localStorage, tableId, req.kind);
+        setUnsent((list) => list.filter((x) => x.kind !== req.kind));
+        return r;
+      };
+      if (!error) return done("sent");
+      return classifyOrderError({ status, error }).kind === "offline" ? "offline" : done("failed");
+    },
+    [db, guestSessionId, tableId],
+  );
+
   const ask = async (kind: Request["kind"], payment?: "card" | "cash") => {
     if (!db || !guestSessionId) return;
-    setChoosing(false);
+    if (choosing) {
+      setChoosing(false);
+      // The panel with the focused button is going away: keep focus on the opener.
+      billButton.current?.focus({ preventScroll: true });
+    }
     setAsking(kind);
-    const { error } = await db.schema("api").rpc("guest_service_request", {
-      p_guest_session_id: guestSessionId,
-      p_kind: kind,
-      ...(payment ? { p_payment_preference: payment } : {}),
-    });
+    let req: PendingRequest = { kind, payment: payment ?? null, createdAt: new Date().toISOString() };
+    try {
+      req = beginRequest(window.localStorage, tableId, kind, payment ?? null);
+    } catch {
+      // storage blocked: still send, just without the saved copy
+    }
+    const result = await attemptSend(req);
     setAsking(null);
-    setTold({ kind: error ? "error" : kind, key: Date.now() });
-    if (!error) refresh();
+    if (result === "offline") {
+      setUnsent((list) => [...list.filter((x) => x.kind !== kind), req]);
+      setTold({ kind: "unsent", key: Date.now() });
+      return;
+    }
+    if (result === "failed") setTold({ kind: "error", key: Date.now() });
+    else {
+      setTold(null);
+      setSentKinds((s) => new Set(s).add(kind));
+      refresh();
+    }
   };
+
+  const retryUnsent = useCallback(async () => {
+    if (sending.current || !guestSessionId) return;
+    sending.current = true;
+    try {
+      for (const req of unsent) {
+        const result = await attemptSend(req);
+        if (result === "sent") {
+          setTold(null);
+          setSentKinds((s) => new Set(s).add(req.kind));
+          refresh();
+        } else if (result === "failed") setTold({ kind: "error", key: Date.now() });
+      }
+    } finally {
+      sending.current = false;
+    }
+  }, [unsent, guestSessionId, attemptSend, refresh]);
+
+  const hasUnsent = unsent.length > 0;
+  useEffect(() => {
+    if (!hasUnsent || !guestSessionId) return;
+    const retry = () => void retryUnsent();
+    window.addEventListener("online", retry);
+    const interval = setInterval(retry, RETRY_MS);
+    retry();
+    return () => {
+      window.removeEventListener("online", retry);
+      clearInterval(interval);
+    };
+  }, [hasUnsent, guestSessionId, retryUnsent]);
+
+  // Game rewards (ADR-075) belong to the newest order and this guest session.
+  const latestOrderId = data?.orders?.[0]?.id ?? null;
+  const rewardCtx = useMemo(
+    () =>
+      db && guestSessionId && latestOrderId
+        ? { db: db as unknown as SupabaseClient, guestSessionId, orderId: latestOrderId }
+        : null,
+    [db, guestSessionId, latestOrderId],
+  );
 
   if (phase === "loading") {
     return slow ? (
@@ -548,7 +726,7 @@ export function OrderStatusView({
 
   const [latest, ...earlier] = orders;
   const closed = data?.closed ?? false;
-  const open = new Set((data?.requests ?? []).map((r) => r.kind));
+  const open = new Set((data?.requests ?? []).filter((r) => r.status !== "resolved").map((r) => r.kind));
   const latestStatus = latest ? displayStatus(latest) : null;
   const grand = orders
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
@@ -569,7 +747,69 @@ export function OrderStatusView({
     }
     router.push(menuHref);
   };
+  // One dish from a "can't make" note: into this table's cart, then the menu to confirm.
+  const addDish = (order: Order, itemId: string) => {
+    const newId = () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    addToCart(
+      cartKey(order.location_id, tableId),
+      [{ itemId, modifierIds: [], quantity: 1, note: "" }],
+      newId,
+    );
+    try {
+      window.sessionStorage.setItem(OPEN_CART_KEY, "1");
+    } catch {
+      // storage blocked: the menu shows its cart bar instead
+    }
+    router.push(menuHref);
+  };
+  const cantMake = { db, dishes: cantMakeDishes, onAdd: closed ? undefined : addDish };
   const stepButton = `${STEP} size-12`;
+  // What the guest has asked for and what came of it: a banner above the bottom
+  // bar, so it is never behind it. One live region; its lines change in place.
+  const lines = closed ? [] : serviceLines(data?.requests ?? [], now, sentKinds);
+  const notes: { key: string; text: string; tone: "ok" | "alert" }[] = [
+    ...(hasUnsent ? [{ key: "unsent", text: t("order.notSent"), tone: "alert" as const }] : []),
+    ...(told?.kind === "error"
+      ? [{ key: `error${told.key}`, text: t("order.requestFailed"), tone: "alert" as const }]
+      : []),
+    ...lines.map((l) => ({
+      key: l,
+      text: t(
+        l === "billOpen" ? "order.billTold" : l === "callAnswered" ? "order.waiterOnWay" : "order.waiterTold",
+      ),
+      tone: "ok" as const,
+    })),
+  ];
+  const status = (
+    <div
+      role="status"
+      aria-live="polite"
+      data-testid="service-status"
+      className={
+        notes.length === 0
+          ? "-mb-2"
+          : "bg-surface text-ink shadow-float rounded-card border-line pointer-events-auto grid gap-2 border p-3"
+      }
+    >
+      {notes.map((n) => (
+        <p
+          key={n.key}
+          className={`m-0 flex items-center gap-2 px-1 font-semibold ${n.tone === "ok" ? "text-success" : "text-alert"}`}
+        >
+          {n.tone === "ok" && <CheckIcon />}
+          {n.text}
+        </p>
+      ))}
+      {hasUnsent && (
+        <button type="button" className={`${secondary} w-full`} onClick={() => void retryUnsent()}>
+          {t("order.retryRequest")}
+        </button>
+      )}
+    </div>
+  );
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
   const smooth = (): ScrollBehavior =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -614,7 +854,10 @@ export function OrderStatusView({
     // The whole screen, not a small block: the order on the left, its status and
     // the menu's showcase on the right (above the order on a phone), and the
     // games across the bottom.
-    <main data-order-page="" className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${DOCK_SPACE}`}>
+    <main
+      data-order-page=""
+      className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
+    >
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
         <div
@@ -638,6 +881,7 @@ export function OrderStatusView({
               part="lines"
               details={details}
               onRepeat={closed ? undefined : repeat}
+              cantMake={cantMake}
             />
           )}
       {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[12px]">{t("order.reconnecting")}</p>}
@@ -674,6 +918,7 @@ export function OrderStatusView({
               aria-pressed={open.has("bring_bill")}
               disabled={asking !== null}
               aria-expanded={choosing}
+              ref={billButton}
               onClick={() => setChoosing((x) => !x)}
             >
               {t("order.askBill")}
@@ -684,7 +929,8 @@ export function OrderStatusView({
               role="group"
               aria-label={t("order.payTitle")}
               data-testid="pay-choice"
-              className="mt-3 grid gap-2"
+              ref={payPanel}
+              className="mt-3 grid scroll-mb-[calc(110px+env(safe-area-inset-bottom,0px))] gap-2"
             >
               {grand > 0 && (
                 <div
@@ -737,21 +983,15 @@ export function OrderStatusView({
               <button
                 type="button"
                 className="text-accent-text min-h-12 justify-self-start font-semibold"
-                onClick={() => setChoosing(false)}
+                onClick={() => {
+                  setChoosing(false);
+                  billButton.current?.focus({ preventScroll: true });
+                }}
               >
                 {t("order.payBack")}
               </button>
             </div>
           )}
-          <p className="mt-2 min-h-6 text-[12px]" role="status" aria-live="polite" key={told?.key}>
-            {told?.kind === "error"
-              ? t("order.requestFailed")
-              : told?.kind === "bring_bill" || (!told && open.has("bring_bill"))
-                ? t("order.billTold")
-                : told?.kind === "call_waiter" || open.has("call_waiter")
-                  ? t("order.waiterTold")
-                  : null}
-          </p>
         </>
       )}
 
@@ -767,6 +1007,7 @@ export function OrderStatusView({
               latest={false}
               details={details}
               onRepeat={closed ? undefined : repeat}
+              cantMake={cantMake}
             />
           ))}
           <div className="border-line flex items-baseline justify-between border-t py-4 text-[16px] font-semibold">
@@ -793,11 +1034,11 @@ export function OrderStatusView({
       {showGames && latestStatus !== null && (
         <div className="mt-8">
           <Rise>
-            <GamesCorner ready={latestStatus === "ready"} waiting={waiting.has(latestStatus)} />
+            <GamesCorner ready={latestStatus === "ready"} waiting={waiting.has(latestStatus)} reward={rewardCtx} />
           </Rise>
         </div>
       )}
-      <GuestDock items={dock} />
+      <GuestDock items={dock} above={status} />
     </main>
   );
 }

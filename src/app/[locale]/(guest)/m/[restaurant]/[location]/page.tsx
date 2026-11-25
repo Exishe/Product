@@ -6,8 +6,10 @@ import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
 import { isDemoCafe } from "@/features/guest-theme/demo";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
+import { GuestBusy } from "@/features/menu/guest-menu/guest-busy";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
 import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
+import { PromoBanners } from "@/features/menu/guest-menu/promo-banner";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu } from "@/features/menu/guest-menu/view-model";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
@@ -50,7 +52,10 @@ export default async function GuestMenuPage({
   const token = first((await searchParams).t);
 
   const [published, resolved, hints] = await Promise.all([
-    getPublicMenu(restaurant, location),
+    getPublicMenu(restaurant, location).catch((e: unknown) => {
+      console.error(e instanceof Error ? e.message : e);
+      return "unavailable" as const;
+    }),
     token ? resolveTable(token) : null,
     getMenuHints(restaurant, location),
   ]);
@@ -70,6 +75,13 @@ export default async function GuestMenuPage({
         href: `/${l}/m/${restaurant}/${location}${token ? `?t=${encodeURIComponent(token)}` : ""}`,
       }));
   const messages = (await getMessages()).guest as GuestMessages;
+
+  // The database could not answer even after retries: a calm page that tries
+  // again by itself, never an error screen (ADR-089).
+  if (published === "unavailable") {
+    const t = await getTranslations({ locale, namespace: "guest.entry" });
+    return <GuestBusy title={t("busyTitle")} body={t("busyBody")} retry={t("retry")} />;
+  }
 
   if (!published) {
     // A valid sticker of a café that hasn't published its menu yet.
@@ -97,6 +109,7 @@ export default async function GuestMenuPage({
     locale,
     wordmarkTones(theme, parseBrand(published.restaurant.brand)),
   );
+  const promoText = menu.promos.length ? await getTranslations({ locale, namespace: "guest.menu" }) : null;
   return (
     <GuestThemeScope
       theme={menu.theme}
@@ -110,6 +123,16 @@ export default async function GuestMenuPage({
           table={table}
           languages={languagesFor(menu.locales)}
           hints={hints}
+          promoBanners={
+            promoText && (
+              <PromoBanners
+                promos={menu.promos}
+                locale={locale}
+                label={promoText("promoLabel")}
+                closeLabel={promoText("promoClose")}
+              />
+            )
+          }
           orderHref={
             table.kind === "ok"
               ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`

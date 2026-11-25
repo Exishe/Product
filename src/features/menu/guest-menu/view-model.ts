@@ -1,7 +1,10 @@
 import { guestTheme, type GuestTheme } from "@/features/guest-theme/themes";
 import type { Locale } from "@/i18n/routing";
+import { parseStatus, type MenuStatus } from "@/features/availability/status";
 import { normalizeForSearch } from "@/lib/format/search";
+import { parseSubstitutions, type SubInfo } from "@/features/ordering/substitutions-parse";
 import { ALLERGENS, type Allergen } from "./allergens";
+import { hasDietTags } from "./diet-filter";
 
 // The shape of api.public_menu (published snapshot from api.publish_menu,
 // plus today's stop list and the kitchen-busy notice).
@@ -21,6 +24,10 @@ type SnapshotItem = {
   portion: { amount: number; unit: string } | null;
   tags: string[] | null;
   allergens?: string[] | null;
+  /** The venue reviewed this dish's allergens (ADR-083); missing in menus published before the migration. */
+  allergens_confirmed?: boolean | null;
+  /** Approximate kcal per portion, computed when the menu was published; missing when not every ingredient has calories. */
+  kcal?: number | null;
   groups: SnapshotGroup[] | null;
   image?: string | null;
 };
@@ -37,8 +44,19 @@ export type PublicMenu = {
      */
     brand?: unknown;
   };
-  location: { id: string; name: string; locales: string[]; ordering: boolean };
+  location: {
+    id: string;
+    name: string;
+    locales: string[];
+    ordering: boolean;
+    /** ADR-068; missing until migration 20261123120000_availability_controls. */
+    paused?: { until: string | null } | null;
+    closed?: { until: string | null } | null;
+  };
+  /** Categories outside their daily window right now (ADR-068). */
+  hidden_categories?: string[] | null;
   menu: {
+    version?: number;
     menus:
       | { id: string; name: I18n; categories: { id: string; name: I18n; item_ids: string[] }[] | null }[]
       | null;
@@ -48,6 +66,15 @@ export type PublicMenu = {
   /** Section cover photos by category id (ADR-058). */
   covers?: Record<string, string> | null;
   kitchen_busy: { until: string; expected_wait_minutes: number | null } | null;
+  /** Live promos (ADR-070); missing until migration 20261123165000_promos. */
+  promos?: unknown;
+  /**
+   * Dishes made with a replacement today, by dish id (ADR-076; missing until
+   * migration 20261123250000_ingredients_substitutes); their `price` already
+   * includes the difference.
+   */
+  substitutions?: unknown;
+  outages?: unknown;
 };
 
 /** A piece of menu text and the language it is actually in. */
@@ -67,9 +94,15 @@ export type GuestItem = {
   price: number;
   portion: { amount: number; unit: "g" | "ml" | "pcs" } | null;
   tags: GuestTag[];
-  /** EU allergen codes the café listed; empty means "not listed", not "none". */
+  /** EU allergen codes the café listed; empty means "none" only when allergensConfirmed, else "not listed". */
   allergens: Allergen[];
+  /** The café reviewed this dish's allergens: an empty list then says "none declared" (ADR-083). */
+  allergensConfirmed: boolean;
+  /** Approximate kcal per portion (shown as "≈ N kcal"); null: no number. */
+  kcal: number | null;
   soldOut: boolean;
+  /** Made with a replacement ingredient today (ADR-076); the price already includes the difference. */
+  substitution: SubInfo | null;
   groups: GuestGroup[];
   /** Storage path of the dish photo in the menu-images bucket. */
   image: string | null;
@@ -87,6 +120,7 @@ export type GuestCategory = {
   /** Every language's section name, normalized like a dish's. */
   search: string;
 };
+export type GuestPromo = { id: string; title: Text; text: Text | null; badge: string | null };
 export type GuestMenuData = {
   restaurantName: string;
   /** The café's guest theme preset (ADR-052). */
@@ -101,14 +135,24 @@ export type GuestMenuData = {
   locationId: string;
   locales: string[];
   ordering: boolean;
+  /** Ordering is paused for now; `until` is null when it lasts until the café resumes (ADR-068). */
+  paused: { until: string | null } | null;
+  /** The kitchen is closed for today; `until` is the next opening. */
+  closed: { until: string | null } | null;
+  /** The same facts as api.public_menu_status, to tell when the page is out of date. */
+  status: MenuStatus;
   kitchenBusy: { minutes: number | null } | null;
+  /** The banners to show: promos that are on right now, in the page's language (ADR-070). */
+  promos: GuestPromo[];
   /** Some dish lists its allergens: the "I avoid…" filter is worth offering. */
   hasAllergens: boolean;
+  /** Some dish can be found by a "show only" chip: the filter is worth offering. */
+  hasDietTags: boolean;
   categories: GuestCategory[];
 };
 
 // Diet tags first (they answer "can I eat this?"), then the café's own notes.
-const TAGS = ["vegan", "vegetarian", "gluten_free", "lactose_free", "spicy", "new", "popular"] as const;
+const TAGS = ["vegan", "vegetarian", "gluten_free", "lactose_free", "spicy", "new", "chefs_pick", "popular"] as const;
 export type GuestTag = (typeof TAGS)[number];
 const UNITS = ["g", "ml", "pcs"] as const;
 
@@ -187,6 +231,20 @@ export function sameNameDetails(data: PublicMenu, locale: Locale): Record<string
   return out;
 }
 
+/**
+ * What the order page needs to offer a replacement dish (ADR-081): the name in
+ * the page's language and the price, by dish id. Ids only come from the database's
+ * answer, so a long menu costs nothing until a dish can't be made.
+ */
+export function dishNames(data: PublicMenu, locale: Locale): Record<string, { name: string; price: number }> {
+  const out: Record<string, { name: string; price: number }> = {};
+  for (const [id, raw] of Object.entries(data.menu.items)) {
+    const name = localized(raw.name, locale)?.text;
+    if (name) out[id] = { name, price: raw.price };
+  }
+  return out;
+}
+
 /** Is the background behind the wordmark dark? Worked out on the server (wordmarkTones in brand.ts). */
 export type WordmarkTones = { header: boolean; page: boolean };
 
@@ -207,6 +265,8 @@ export function buildGuestMenu(
   dark: WordmarkTones = { header: false, page: false },
 ): GuestMenuData {
   const soldOut = new Set(data.sold_out ?? []);
+  const subs = parseSubstitutions(data.substitutions, locale);
+  const hidden = new Set(data.hidden_categories ?? []);
   const item = (id: string): GuestItem | null => {
     const raw = data.menu.items[id];
     const name = raw && localized(raw.name, locale);
@@ -221,7 +281,11 @@ export function buildGuestMenu(
       portion: raw.portion && unit ? { amount: raw.portion.amount, unit } : null,
       tags: TAGS.filter((t) => raw.tags?.includes(t)),
       allergens: ALLERGENS.filter((a) => raw.allergens?.includes(a)),
+      // A dish with a list is reviewed by definition (older menus have no flag).
+      allergensConfirmed: raw.allergens_confirmed === true || ALLERGENS.some((a) => raw.allergens?.includes(a)),
+      kcal: typeof raw.kcal === "number" && raw.kcal > 0 ? raw.kcal : null,
       soldOut: soldOut.has(id),
+      substitution: subs[id] ?? null,
       image: typeof raw.image === "string" && raw.image ? raw.image : null,
       groups: (raw.groups ?? []).map((g) => ({
         id: g.id,
@@ -243,6 +307,7 @@ export function buildGuestMenu(
 
   const categories = (data.menu.menus ?? []).flatMap((m) =>
     (m.categories ?? []).flatMap((c) => {
+      if (hidden.has(c.id)) return [];
       const items = c.item_ids.map(item).filter((i): i is GuestItem => i !== null);
       const cover = data.covers?.[c.id];
       return items.length
@@ -259,6 +324,21 @@ export function buildGuestMenu(
     }),
   );
 
+  const status = parseStatus(
+    {
+      version: data.menu.version,
+      ordering: data.location.ordering,
+      paused: data.location.paused,
+      closed: data.location.closed,
+      sold_out: data.sold_out,
+      hidden_categories: data.hidden_categories,
+      kitchen_busy: data.kitchen_busy,
+      promos: data.promos,
+      outages: data.outages,
+    },
+    null,
+  ) as MenuStatus;
+
   return {
     restaurantName: data.restaurant.name,
     theme: guestTheme(data.restaurant.guest_theme),
@@ -269,8 +349,16 @@ export function buildGuestMenu(
     locationId: data.location.id,
     locales: data.location.locales,
     ordering: data.location.ordering,
+    paused: data.location.paused ?? null,
+    closed: data.location.closed ?? null,
+    status,
+    promos: status.promos.flatMap((p) => {
+      const title = localized(p.title, locale);
+      return title ? [{ id: p.id, title, text: localized(p.text, locale), badge: p.badge }] : [];
+    }),
     kitchenBusy: data.kitchen_busy ? { minutes: data.kitchen_busy.expected_wait_minutes } : null,
-    hasAllergens: categories.some((c) => c.items.some((i) => i.allergens.length > 0)),
+    hasAllergens: categories.some((c) => c.items.some((i) => i.allergensConfirmed)),
+    hasDietTags: hasDietTags(categories.flatMap((c) => c.items)),
     categories,
   };
 }

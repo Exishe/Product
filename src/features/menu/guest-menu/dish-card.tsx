@@ -95,6 +95,11 @@ export function DishCard({
       className={`text-muted flex flex-wrap items-center gap-1.5 text-[0.8125rem] ${featured ? "" : "justify-center"}`}
     >
       {item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>}
+      {item.substitution && (
+        <span className="basis-full font-semibold">
+          {t("menu.withSub", { to: item.substitution.to })}
+        </span>
+      )}
       {item.portion && (
         <span className={styles.portion}>
           {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
@@ -188,7 +193,7 @@ export function DishCard({
                 className={`display-face mt-4 block text-[1.25rem] leading-[1.12] ${WRAP} sm:text-[1.375rem] ${muted}`}
               />
               <span className="mt-1 block">{price}</span>
-              {(item.portion || item.tags.length > 0 || item.soldOut || warning) && (
+              {(item.portion || item.tags.length > 0 || item.soldOut || item.substitution || warning) && (
                 <span className="mt-1.5 block">{facts}</span>
               )}
             </>

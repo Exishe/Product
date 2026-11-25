@@ -36,7 +36,8 @@ test("an owner turns a photo of the paper menu into a published menu", async ({ 
   await page.getByRole("button", { name: "Նշել ամբողջը ստուգված" }).click();
   await expect(page.getByText("Ամեն ինչ ստուգված է")).toBeVisible();
   await page.getByRole("button", { name: "Հրապարակել ճաշացանկը" }).click();
-  await expect(page.getByRole("heading", { name: "Ճաշացանկը հրապարակված է" })).toBeVisible();
+  // Saving the draft, adding it to the menu and publishing are three remote writes.
+  await expect(page.getByRole("heading", { name: "Ճաշացանկը հրապարակված է" })).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("link", { name: "Բացել խմբագրիչը" }).click();
   await expect(page.getByTestId("dish-row").filter({ hasText: "Կեսարի աղցան" })).toContainText("2 700 ֏");
@@ -48,10 +49,10 @@ test("an import added without review keeps the menu unpublished", async ({ page 
   await uploadPaperMenu(page);
 
   await page.getByRole("button", { name: "Ավելացնել ճաշացանկին" }).click();
-  await expect(page.getByRole("heading", { name: "Ճաշացանկին ավելացվեց 3 ուտեստ" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ճաշացանկին ավելացվեց 3 ուտեստ" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("link", { name: "Բացել խմբագրիչը" }).click();
   await page.getByRole("button", { name: "Հրապարակել" }).click();
   await expect(
     page.getByText("Հրապարակելուց առաջ ստուգեք «Ստուգեք» նշված ուտեստների թարգմանությունները։"),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15_000 });
 });

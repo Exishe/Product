@@ -13,21 +13,27 @@ export type ResolvedTable = {
   default_locale: string;
 };
 
-export type TableEntry = { kind: "menu"; href: string } | { kind: "invalid" };
+// What the QR route learns from the database: the table, a refusal (null), or
+// that the database could not answer.
+export type TableLookup = ResolvedTable | null | "unavailable";
+
+export type TableEntry = { kind: "menu"; href: string } | { kind: "invalid" } | { kind: "unavailable" };
 
 const SLUG = /^[a-z0-9][a-z0-9-]{1,47}$/;
 
 // The QR entry (/t/<token>): a malformed token never reaches the database;
 // a valid one leads to the café's menu in the guest's language, with the
 // token in the URL for the guest's later writes. `resolve` returns null for
-// anything the database refuses (old sticker, forged or unknown token).
+// anything the database refuses (old sticker, forged or unknown token) and
+// "unavailable" when the database could not answer.
 export async function resolveTableEntry(
   token: string,
   visitor: { acceptLanguage: string | null; chosenLocale?: string | null },
-  resolve: (token: string) => Promise<ResolvedTable | null>,
+  resolve: (token: string) => Promise<TableLookup>,
 ): Promise<TableEntry> {
   if (!isWellFormedToken(token)) return { kind: "invalid" };
   const table = await resolve(token);
+  if (table === "unavailable") return { kind: "unavailable" };
   if (!table || !SLUG.test(table.restaurant_slug) || !SLUG.test(table.location_slug)) return { kind: "invalid" };
   const locale = pickGuestLocale({
     chosen: visitor.chosenLocale,

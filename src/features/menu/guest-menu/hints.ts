@@ -1,5 +1,6 @@
 // Hints from the café's own orders (api.public_menu_hints, ADR-060): dishes
-// guests here order together, and how long a round usually takes. Both are
+// guests here order together (no longer shown: the "Goes well with" strip,
+// ADR-077, carries the learned pairs), and how long a round usually takes. Both are
 // optional: a café without enough orders, or a database without the
 // function yet, gets none and the menu looks as before.
 
@@ -33,21 +34,6 @@ export function parseHints(raw: unknown): MenuHints {
     if (low && high && high >= low) range = { low, high };
   }
   return { pairs: out, wait: range };
-}
-
-/**
- * The dishes to suggest with this one: on today's menu and not sold out,
- * in the café's order of how often they go together.
- */
-export function pairsFor<T extends { id: string; soldOut: boolean }>(
-  itemId: string,
-  hints: MenuHints,
-  items: Readonly<Record<string, T>>,
-  soldOut: readonly string[] = [],
-): T[] {
-  return (hints.pairs[itemId] ?? [])
-    .map((id) => items[id])
-    .filter((i): i is T => Boolean(i) && !i!.soldOut && !soldOut.includes(i!.id));
 }
 
 /**

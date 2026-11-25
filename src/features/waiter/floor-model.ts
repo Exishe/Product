@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/routing";
 import type { Database, Json } from "@/lib/supabase/types";
-import { pickName, type LocalizedText } from "@/features/kitchen/board-model";
+import { pickName, substituteName, type LocalizedText } from "@/features/kitchen/board-model";
 
 // The waiter's view of the floor (screens.md §5–6, design/waiter.html), built
 // from the rows RLS lets a waiter read. Pure functions: the server page, the
@@ -37,6 +37,9 @@ export type OrderRow = {
     sort: number;
     station_id: string | null;
     order_item_modifiers: { name_i18n: Json }[];
+    substitution?: Json | null; // ADR-076: {from, to, price_delta} when an ingredient was replaced
+    cant_make_at?: string | null; // ADR-081: the kitchen could not make it
+    cant_make_ack_at?: string | null; // the waiter told the guest
   }[];
   kitchen_tickets: {
     id: string;
@@ -95,9 +98,13 @@ export type WaiterLine = {
   name: LocalizedText;
   note: string | null;
   modifiers: LocalizedText[];
+  /** "Use this instead" when an ingredient was replaced (ADR-076). */
+  substitute?: LocalizedText | null;
   lineTotal: number;
   stationId: string | null;
   served: boolean;
+  /** The kitchen could not make it and nobody has told the guest yet (ADR-081). */
+  cantMakePending: boolean;
 };
 
 export type WaiterTicket = {
@@ -202,9 +209,11 @@ function toOrder(
       name: pickName(oi.name_i18n, locale),
       note: oi.note?.trim() || null,
       modifiers: oi.order_item_modifiers.map((m) => pickName(m.name_i18n, locale)),
+      substitute: substituteName(oi.substitution, locale),
       lineTotal: oi.line_total,
       stationId: oi.station_id,
       served: oi.station_id !== null && servedAt.has(oi.station_id),
+      cantMakePending: Boolean(oi.cant_make_at) && !oi.cant_make_ack_at,
     }));
   return {
     id: row.id,
@@ -552,6 +561,7 @@ export function applyPending(tables: readonly FloorTable[], overlay: readonly Ov
             lineTotal: l.lineTotal,
             stationId: null,
             served: false,
+            cantMakePending: false,
           })),
           tickets: [],
           pending: waiting,

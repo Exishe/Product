@@ -393,6 +393,33 @@ describe("orders in the panel", () => {
   });
 });
 
+describe("dishes the kitchen could not make (ADR-081)", () => {
+  const pending = (cant: string | null, ack: string | null = null) =>
+    byId(
+      buildFloor(
+        rows({
+          sessions: [
+            session("s1", "t1", [
+              order("o1", { order_items: [item("a", { cant_make_at: cant, cant_make_ack_at: ack })] }),
+            ]),
+          ],
+        }),
+        "en",
+        T0,
+      ),
+      "t1",
+    ).orders[0]?.lines[0]?.cantMakePending;
+  it("marks a line until a waiter says the guest was told", () => {
+    expect(pending(iso(-1))).toBe(true);
+    expect(pending(iso(-1), iso(0))).toBe(false);
+  });
+  it("is false for a normal line and for a database without the columns", () => {
+    expect(pending(null)).toBe(false);
+    const t = byId(buildFloor(rows({ sessions: [session("s1", "t1", [order("o1")])] }), "en", T0), "t1");
+    expect(t.orders[0]?.lines[0]?.cantMakePending).toBe(false);
+  });
+});
+
 describe("closing the table", () => {
   it("is blocked while a QR order waits for acceptance", () => {
     const t = byId(

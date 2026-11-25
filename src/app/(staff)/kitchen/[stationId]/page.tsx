@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -6,6 +7,7 @@ import { toBoardTickets } from "@/features/kitchen/board-model";
 import { KitchenBoard } from "@/features/kitchen/kitchen-board";
 import { sameNameDetails, stationDishes } from "@/features/kitchen/station-dishes";
 import { requireMember } from "@/lib/auth/require-member";
+import { DEFAULT_ORDER_SOUND, isSoundId } from "@/lib/sounds/library";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,7 +31,7 @@ async function loadBoard(stationId: string) {
   if (!station || !location) return null;
 
   const renderedAt = Date.now();
-  const [claims, stations, rows, soldOut, links, menu] = await Promise.all([
+  const [claims, stations, rows, soldOut, links, menu, outages, cantMake, sound] = await Promise.all([
     supabase.auth.getClaims(),
     supabase.from("stations").select("id, name, is_default, sort").eq("location_id", location.id).order("sort").order("name"),
     fetchTicketRows(supabase, station.id),
@@ -38,6 +40,12 @@ async function loadBoard(stationId: string) {
     location.published_menu_version_id
       ? supabase.from("menu_versions").select("snapshot").eq("id", location.published_menu_version_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Before the ingredients migration the table is missing: the button stays hidden.
+    supabase.from("ingredient_outages").select("ingredient_id").eq("location_id", location.id).limit(1),
+    // Before the can't-make migration (ADR-081) the column is missing: that button stays hidden.
+    (supabase as unknown as SupabaseClient).from("order_items").select("cant_make_at").limit(1),
+    // The café's new-order sound (ADR-088); the column is missing before its migration: the plain beeps.
+    (supabase as unknown as SupabaseClient).from("locations").select("order_sound").eq("id", location.id).maybeSingle(),
   ]);
   const userId = claims.data?.claims.sub;
   if (!userId) return null;
@@ -51,6 +59,9 @@ async function loadBoard(stationId: string) {
     snapshot: menu.data?.snapshot ?? null,
     renderedAt,
     userId,
+    ingredientsSupported: !outages.error,
+    cantMakeSupported: !cantMake.error,
+    orderSound: !sound.error && sound.data ? (isSoundId(sound.data.order_sound) ? sound.data.order_sound : DEFAULT_ORDER_SOUND) : null,
   };
 }
 
@@ -71,7 +82,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
   const title = (s: { name: string; is_default: boolean }) => (s.is_default && s.name === SYSTEM_STATION_NAME ? t("title") : s.name);
 
   return (
-    <NextIntlClientProvider locale={locale} timeZone={location.timezone} messages={{ kitchen: messages.kitchen, staffAccount: messages.staffAccount }}>
+    <NextIntlClientProvider locale={locale} timeZone={location.timezone} messages={{ kitchen: messages.kitchen, print: messages.print, staffAccount: messages.staffAccount }}>
       <KitchenBoard
         station={{ id: station.id, title: title(station) }}
         otherStations={board.stations.filter((s) => s.id !== station.id).map((s) => ({ id: s.id, title: title(s) }))}
@@ -84,6 +95,9 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
         initialTickets={toBoardTickets(board.rows, locale, lineDetails)}
         initialBusy={{ until: location.kitchen_busy_until, minutes: location.expected_wait_minutes }}
         initialSoldOut={board.soldOut}
+        ingredientsSupported={board.ingredientsSupported}
+        cantMakeSupported={board.cantMakeSupported}
+        orderSound={board.orderSound}
         lineDetails={lineDetails}
         dishes={stationDishes(board.snapshot, board.links, { id: station.id, isDefault: station.is_default }, locale)}
         renderedAt={board.renderedAt}

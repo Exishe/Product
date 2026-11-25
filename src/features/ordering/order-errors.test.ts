@@ -32,6 +32,9 @@ describe("classifyOrderError", () => {
     for (const m of ["ordering_disabled", "table_unavailable", "invalid_table_token", "plan_required"]) {
       expect(classifyOrderError(pg(m, "", 403))).toEqual({ kind: "ordering_off" });
     }
+    expect(classifyOrderError(pg("ordering_paused", "", 403))).toEqual({ kind: "paused" });
+    expect(classifyOrderError(pg("kitchen_closed", "", 403))).toEqual({ kind: "closed" });
+    expect(classifyOrderError(pg("category_unavailable"))).toEqual({ kind: "menu_changed" });
     expect(classifyOrderError(pg("idempotency_key_reused", "", 409))).toEqual({ kind: "already_sent" });
   });
 
@@ -41,5 +44,9 @@ describe("classifyOrderError", () => {
 
   it("calls anything else a definite failure", () => {
     expect(classifyOrderError(pg("something_new"))).toEqual({ kind: "failed" });
+  });
+  it("tells a replaced ingredient the guest has not accepted from a changed menu (ADR-076)", () => {
+    const details = '[{"item_id":"a","price_delta":300}]';
+    expect(classifyOrderError(pg("substitution_changed", details))).toEqual({ kind: "substitution_changed", details });
   });
 });

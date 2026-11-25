@@ -415,6 +415,8 @@ export type Database = {
       }
       categories: {
         Row: {
+          available_from: string | null
+          available_to: string | null
           created_at: string
           id: string
           image_path: string | null
@@ -426,6 +428,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
@@ -437,6 +441,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_from?: string | null
+          available_to?: string | null
           created_at?: string
           id?: string
           image_path?: string | null
@@ -685,6 +691,47 @@ export type Database = {
           },
         ]
       }
+      guest_events: {
+        Row: {
+          at: string
+          id: number
+          item_id: string | null
+          kind: string
+          location_id: string
+          meta: Json
+          restaurant_id: string
+          session_key: string
+        }
+        Insert: {
+          at?: string
+          id?: never
+          item_id?: string | null
+          kind: string
+          location_id: string
+          meta?: Json
+          restaurant_id: string
+          session_key: string
+        }
+        Update: {
+          at?: string
+          id?: never
+          item_id?: string | null
+          kind?: string
+          location_id?: string
+          meta?: Json
+          restaurant_id?: string
+          session_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_events_restaurant_id_location_id_fkey"
+            columns: ["restaurant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["restaurant_id", "id"]
+          },
+        ]
+      }
       guest_sessions: {
         Row: {
           created_at: string
@@ -752,28 +799,70 @@ export type Database = {
           },
         ]
       }
+      ingredient_outages: {
+        Row: {
+          ingredient_id: string
+          location_id: string
+          out_at: string
+          restaurant_id: string
+          set_by_member: string | null
+          set_by_user: string | null
+          source: string
+          until: string
+        }
+        Insert: {
+          ingredient_id: string
+          location_id: string
+          out_at?: string
+          restaurant_id: string
+          set_by_member?: string | null
+          set_by_user?: string | null
+          source: string
+          until: string
+        }
+        Update: {
+          ingredient_id?: string
+          location_id?: string
+          out_at?: string
+          restaurant_id?: string
+          set_by_member?: string | null
+          set_by_user?: string | null
+          source?: string
+          until?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           cost_per_unit: number
+          grams_per_piece: number | null
           id: string
           is_active: boolean
+          kcal_per_100g: number | null
           name: string
+          name_i18n: Json
           restaurant_id: string
           unit: string
         }
         Insert: {
           cost_per_unit?: number
+          grams_per_piece?: number | null
           id?: string
           is_active?: boolean
+          kcal_per_100g?: number | null
           name: string
+          name_i18n?: Json
           restaurant_id: string
           unit: string
         }
         Update: {
           cost_per_unit?: number
+          grams_per_piece?: number | null
           id?: string
           is_active?: boolean
+          kcal_per_100g?: number | null
           name?: string
+          name_i18n?: Json
           restaurant_id?: string
           unit?: string
         }
@@ -950,6 +1039,7 @@ export type Database = {
       items: {
         Row: {
           allergens: string[]
+          allergens_confirmed: boolean
           category_id: string
           created_at: string
           id: string
@@ -967,6 +1057,7 @@ export type Database = {
         }
         Insert: {
           allergens?: string[]
+          allergens_confirmed?: boolean
           category_id: string
           created_at?: string
           id?: string
@@ -984,6 +1075,7 @@ export type Database = {
         }
         Update: {
           allergens?: string[]
+          allergens_confirmed?: boolean
           category_id?: string
           created_at?: string
           id?: string
@@ -1021,18 +1113,21 @@ export type Database = {
           order_item_id: string
           quantity: number
           restaurant_id: string
+          struck_at: string | null
           ticket_id: string
         }
         Insert: {
           order_item_id: string
           quantity: number
           restaurant_id: string
+          struck_at?: string | null
           ticket_id: string
         }
         Update: {
           order_item_id?: string
           quantity?: number
           restaurant_id?: string
+          struck_at?: string | null
           ticket_id?: string
         }
         Relationships: [
@@ -1214,9 +1309,13 @@ export type Database = {
           guest_locales: Database["public"]["Enums"]["app_locale"][]
           id: string
           kitchen_busy_until: string | null
+          kitchen_closed_until: string | null
           kitchen_locale: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total: number
           name: string
+          out_ingredient_display: string
+          ordering_paused: boolean
+          ordering_paused_until: string | null
           phone: string | null
           published_menu_version_id: string | null
           qr_ordering_enabled: boolean
@@ -1235,9 +1334,13 @@ export type Database = {
           guest_locales?: Database["public"]["Enums"]["app_locale"][]
           id?: string
           kitchen_busy_until?: string | null
+          kitchen_closed_until?: string | null
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name: string
+          out_ingredient_display?: string
+          ordering_paused?: boolean
+          ordering_paused_until?: string | null
           phone?: string | null
           published_menu_version_id?: string | null
           qr_ordering_enabled?: boolean
@@ -1256,9 +1359,13 @@ export type Database = {
           guest_locales?: Database["public"]["Enums"]["app_locale"][]
           id?: string
           kitchen_busy_until?: string | null
+          kitchen_closed_until?: string | null
           kitchen_locale?: Database["public"]["Enums"]["app_locale"]
           max_auto_accept_total?: number
           name?: string
+          out_ingredient_display?: string
+          ordering_paused?: boolean
+          ordering_paused_until?: string | null
           phone?: string | null
           published_menu_version_id?: string | null
           qr_ordering_enabled?: boolean
@@ -2134,6 +2241,7 @@ export type Database = {
           restaurant_id: string
           sort: number
           station_id: string | null
+          substitution: Json | null
           unit_price: number
         }
         Insert: {
@@ -2151,6 +2259,7 @@ export type Database = {
           restaurant_id: string
           sort?: number
           station_id?: string | null
+          substitution?: Json | null
           unit_price: number
         }
         Update: {
@@ -2168,6 +2277,7 @@ export type Database = {
           restaurant_id?: string
           sort?: number
           station_id?: string | null
+          substitution?: Json | null
           unit_price?: number
         }
         Relationships: [
@@ -2670,6 +2780,59 @@ export type Database = {
           },
         ]
       }
+      promos: {
+        Row: {
+          badge: string | null
+          body: Json
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_on: boolean
+          location_id: string
+          restaurant_id: string
+          starts_at: string | null
+          title: Json
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          body?: Json
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_on?: boolean
+          location_id: string
+          restaurant_id: string
+          starts_at?: string | null
+          title: Json
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          body?: Json
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_on?: boolean
+          location_id?: string
+          restaurant_id?: string
+          starts_at?: string | null
+          title?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promos_restaurant_id_location_id_fkey"
+            columns: ["restaurant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["restaurant_id", "id"]
+          },
+        ]
+      }
       printers: {
         Row: {
           address: string | null
@@ -2733,24 +2896,33 @@ export type Database = {
           ingredient_id: string
           item_id: string | null
           modifier_id: string | null
+          is_key: boolean
           quantity: number
           restaurant_id: string
+          substitute_ingredient_id: string | null
+          substitute_price_delta: number | null
         }
         Insert: {
           id?: string
           ingredient_id: string
           item_id?: string | null
           modifier_id?: string | null
+          is_key?: boolean
           quantity: number
           restaurant_id: string
+          substitute_ingredient_id?: string | null
+          substitute_price_delta?: number | null
         }
         Update: {
           id?: string
           ingredient_id?: string
           item_id?: string | null
           modifier_id?: string | null
+          is_key?: boolean
           quantity?: number
           restaurant_id?: string
+          substitute_ingredient_id?: string | null
+          substitute_price_delta?: number | null
         }
         Relationships: [
           {

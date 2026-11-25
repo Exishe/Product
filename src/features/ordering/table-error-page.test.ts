@@ -18,4 +18,17 @@ describe("tableErrorHtml", () => {
     expect(html).toContain("<h1>&lt;b&gt;&amp;</h1>");
     expect(html).toContain("<p>&quot;x&quot;</p>");
   });
+
+  it("has no reload or button unless asked to retry", () => {
+    const html = tableErrorHtml("en", { title: "t", body: "b" });
+    expect(html).not.toContain("http-equiv");
+    expect(html).not.toContain('class="retry"');
+  });
+
+  it("reloads itself and offers a retry link on the busy page", () => {
+    const html = tableErrorHtml("hy", { title: "t", body: "b" }, { label: "Փորձել նորից", seconds: 5 });
+    expect(html).toContain('<meta http-equiv="refresh" content="5">');
+    expect(html).toContain('<a class="retry" href="">Փորձել նորից</a>');
+    expect(html).not.toContain("<script");
+  });
 });

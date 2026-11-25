@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "@/lib/format/search";
-import { buildGuestMenu, localized, type PublicMenu } from "./view-model";
+import { buildGuestMenu, dishNames, localized, type PublicMenu } from "./view-model";
 
 const item = (
   over: Partial<PublicMenu["menu"]["items"][string]> = {},
@@ -192,5 +192,130 @@ describe("buildGuestMenu", () => {
       { id: "1", item_ids: ["a", "b"] },
     ]);
     expect(buildGuestMenu(m, "hy").hasAllergens).toBe(false);
+  });
+
+  it("reads \"reviewed, none\" apart from \"not listed\" (ADR-083)", () => {
+    const m = menu(
+      {
+        none: item({ allergens: [], allergens_confirmed: true }),
+        unknown: item({ allergens: [], allergens_confirmed: false }),
+        old: item({ allergens: null }),
+        listed: item({ allergens: ["milk"] }),
+      },
+      [{ id: "1", item_ids: ["none", "unknown", "old", "listed"] }],
+    );
+    const built = buildGuestMenu(m, "en");
+    expect(built.categories[0]!.items.map((i) => i.allergensConfirmed)).toEqual([true, false, false, true]);
+    expect(built.hasAllergens).toBe(true);
+  });
+});
+
+describe("calories and diet chips (ADR-082)", () => {
+  it("carries the published kcal, and none when the snapshot has no number", () => {
+    const m = menu({ a: item({ kcal: 620 }), b: item(), c: item({ kcal: null }), d: item({ kcal: 0 }) }, [
+      { id: "1", item_ids: ["a", "b", "c", "d"] },
+    ]);
+    const items = buildGuestMenu(m, "en").categories[0]!.items;
+    expect(items.map((i) => i.kcal)).toEqual([620, null, null, null]);
+  });
+
+  it("knows the chef's pick tag and offers the chips only when a dish can be found by one", () => {
+    const m = menu({ a: item({ tags: ["chefs_pick", "popular"] }), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    const built = buildGuestMenu(m, "en");
+    expect(built.categories[0]!.items[0]!.tags).toEqual(["chefs_pick", "popular"]);
+    expect(built.hasDietTags).toBe(true);
+    const none = menu({ a: item({ tags: ["popular"] }), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    expect(buildGuestMenu(none, "en").hasDietTags).toBe(false);
+  });
+});
+
+describe("availability (ADR-068)", () => {
+  it("hides a section outside its window instead of greying it", () => {
+    const m = menu({ a: item(), b: item() }, [
+      { id: "bk", item_ids: ["a"] },
+      { id: "all", item_ids: ["b"] },
+    ]);
+    m.hidden_categories = ["bk"];
+    expect(buildGuestMenu(m, "en").categories.map((c) => c.id)).toEqual(["all"]);
+  });
+
+  it("carries a pause with and without an end, and a closed kitchen", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    expect(buildGuestMenu(m, "en").paused).toBeNull();
+    m.location.paused = { until: "2026-11-23T10:00:00Z" };
+    expect(buildGuestMenu(m, "en").paused).toEqual({ until: "2026-11-23T10:00:00Z" });
+    m.location.paused = { until: null };
+    expect(buildGuestMenu(m, "en").paused).toEqual({ until: null });
+    m.location.paused = null;
+    m.location.closed = { until: "2026-11-24T01:00:00Z" };
+    expect(buildGuestMenu(m, "en").closed?.until).toBe("2026-11-24T01:00:00Z");
+  });
+
+  it("builds the same status the polling endpoint answers with", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    m.sold_out = ["a"];
+    m.hidden_categories = ["x"];
+    m.menu.version = 4;
+    expect(buildGuestMenu(m, "en").status).toEqual({
+      version: 4,
+      ordering: true,
+      paused: null,
+      closed: null,
+      soldOut: ["a"],
+      hidden: ["x"],
+      busy: null,
+      promos: [],
+      outages: "",
+    });
+  });
+
+  it("shows live promos in the page's language, falling back to Armenian (ADR-070)", () => {
+    const m = menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]);
+    m.promos = [
+      { id: "p1", title: { hy: "Երջանիկ ժամեր", ru: "Счастливые часы" }, text: { hy: "Սուրճը՝ կես գնով" }, badge: "-50%" },
+    ];
+    const ru = buildGuestMenu(m, "ru").promos[0];
+    expect(ru?.title).toEqual({ text: "Счастливые часы", lang: "ru" });
+    expect(ru?.text).toEqual({ text: "Սուրճը՝ կես գնով", lang: "hy" });
+    expect(buildGuestMenu(m, "en").promos[0]?.title.lang).toBe("hy");
+    expect(buildGuestMenu(m, "en").status.promos).toHaveLength(1);
+    delete m.promos;
+    expect(buildGuestMenu(m, "en").promos).toEqual([]);
+  });
+});
+
+describe("buildGuestMenu: substitutes (ADR-076)", () => {
+  it("puts the substitution on the dish, in the page's language, and keeps the outage version", () => {
+    const m = menu({ a: item(), b: item() }, [{ id: "1", item_ids: ["a", "b"] }]);
+    m.substitutions = {
+      a: {
+        from: { id: "i1", name: { hy: "Իշխան", en: "Trout" } },
+        to: { id: "i2", name: { hy: "Սաղմոն", en: "Salmon" } },
+        price_delta: 500,
+      },
+    };
+    m.outages = "abc123";
+    const built = buildGuestMenu(m, "en");
+    const [a, b] = built.categories[0]!.items;
+    expect(a?.substitution).toMatchObject({ itemId: "a", fromId: "i1", from: "Trout", to: "Salmon", delta: 500 });
+    expect(b?.substitution).toBeNull();
+    expect(built.status.outages).toBe("abc123");
+    expect(buildGuestMenu(m, "ru").categories[0]?.items[0]?.substitution?.to).toBe("Սաղմոն");
+  });
+  it("is unchanged when the answer has none (before the migration)", () => {
+    const built = buildGuestMenu(menu({ a: item() }, [{ id: "1", item_ids: ["a"] }]), "en");
+    expect(built.categories[0]?.items[0]?.substitution).toBeNull();
+    expect(built.status.outages).toBe("");
+  });
+});
+
+describe("dishNames (replacement dishes on the order page, ADR-081)", () => {
+  it("gives the name in the page's language and the price, by dish id", () => {
+    const m = menu({ a: item(), b: item({ name: { ru: "Хинкали" }, price: 2500 }) }, [{ id: "c1", item_ids: ["a", "b"] }]);
+    expect(dishNames(m, "en")).toEqual({ a: { name: "Tolma", price: 3200 }, b: { name: "Хинкали", price: 2500 } });
+  });
+  it("leaves out a dish with no name in any language", () => {
+    const m = menu({ a: item({ name: {} }) }, [{ id: "c1", item_ids: ["a"] }]);
+    expect(dishNames(m, "hy")).toEqual({});
   });
 });

@@ -12,6 +12,7 @@ import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel, type LocationMessage } from "@/lib/realtime/use-location-channel";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import {
+  cantMakeItem,
   heartbeat,
   kitchenActionKey,
   kitchenSender,
@@ -21,17 +22,19 @@ import {
   setSoldOut,
 } from "./actions";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
-import { NewOrderAlert, type IncomingOrder } from "./new-order-alert";
 import { OldestWait } from "./oldest-wait";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
 import { AllDayStrip } from "./all-day";
+import { mergeAlert, pruneAlert, type NewOrderAlert } from "./new-order-alert";
+import { NewOrderBanner } from "./new-order-banner";
 import {
   allDay,
   allLinesStruck,
   applyPending,
   groupTickets,
   lineKey,
-  pruneStruck,
+  serverSharesStrikes,
+  struckLines,
   toBoardTickets,
   type LineDetail,
   type BoardTicket,
@@ -42,12 +45,15 @@ import {
 import { ChangePassword } from "@/features/staff/change-password";
 import { BusySwitch } from "./busy-switch";
 import { nextBusinessDayStart } from "./business-day";
+import type { SoundId } from "@/lib/sounds/library";
 import { connectionState, troubleSince } from "./connection";
 import { StartShiftOverlay, useShift } from "./start-shift";
 import type { DishSection } from "./station-dishes";
+import { IngredientOut } from "./ingredient-out";
 import { StopList } from "./stop-list";
 import { OrderTicketCard, VoidTicketCard, type Column } from "./ticket-card";
 import { useServerClock } from "./use-server-clock";
+import { useStruckLines } from "./use-struck-lines";
 
 export type KitchenBoardProps = {
   station: { id: string; title: string };
@@ -56,6 +62,12 @@ export type KitchenBoardProps = {
   initialTickets: BoardTicket[];
   initialBusy: BusyState;
   initialSoldOut: string[];
+  /** The café's sound for a new order (ADR-088); null until its migration is applied: the plain beeps. */
+  orderSound?: SoundId | null;
+  /** False until the ingredients migration is applied (ADR-076): the button stays hidden. */
+  ingredientsSupported: boolean;
+  /** False until the can't-make migration is applied (ADR-081): the button stays hidden. */
+  cantMakeSupported?: boolean;
   dishes: DishSection[];
   lineDetails: Record<string, LineDetail>; // same-named dishes, by dish id
   renderedAt: number;
@@ -69,8 +81,6 @@ const POLL_MS = 10_000; // safety poll under the live channel (realtime.md)
 const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
-// How long the big «Նոր պատվեր» card stays before it closes by itself.
-const ALERT_MS = 7_000;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
 const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = {
   new: Inbox,
@@ -106,49 +116,11 @@ const subscribeOnline = (cb: () => void) => {
   };
 };
 
-// Struck lines (item-level bump) are kept per tab in sessionStorage, or in
-// memory when storage is blocked; the raw JSON string is the store's value.
-const BUMPED_EVENT = "pativ-kitchen-bumped";
-const bumpedMemory = new Map<string, string>();
-
-function readBumped(key: string): string {
-  try {
-    return window.sessionStorage.getItem(key) ?? bumpedMemory.get(key) ?? "[]";
-  } catch {
-    return bumpedMemory.get(key) ?? "[]";
-  }
-}
-
-function writeBumped(key: string, keys: ReadonlySet<string>) {
-  const raw = JSON.stringify([...keys]);
-  bumpedMemory.set(key, raw);
-  try {
-    window.sessionStorage.setItem(key, raw);
-  } catch {
-    // Storage is blocked: the strikes last until the page reloads.
-  }
-  window.dispatchEvent(new Event(BUMPED_EVENT));
-}
-
-function parseBumped(raw: string): Set<string> {
-  try {
-    const saved = JSON.parse(raw) as unknown;
-    return new Set(Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
-
-const subscribeBumped = (cb: () => void) => {
-  window.addEventListener(BUMPED_EVENT, cb);
-  return () => window.removeEventListener(BUMPED_EVENT, cb);
-};
-
 function Board(p: KitchenBoardProps) {
   const t = useTranslations("kitchen");
   const locale = useLocale() as Locale;
   const now = useServerClock(p.renderedAt);
-  const shift = useShift(p.station.id);
+  const shift = useShift(p.station.id, p.orderSound ?? null);
   const outbox = useOutbox<KitchenAction>();
   const browserOnline = useSyncExternalStore(
     subscribeOnline,
@@ -163,7 +135,7 @@ function Board(p: KitchenBoardProps) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(p.renderedAt);
   const [sent, setSent] = useState<{ action: KitchenAction; at: number }[]>([]);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
-  const [incoming, setIncoming] = useState<{ key: number; orders: IncomingOrder[] } | null>(null);
+  const [alert, setAlert] = useState<NewOrderAlert | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [revoked, setRevoked] = useState(false);
   const [trouble, setTrouble] = useState<number | null>(null);
@@ -176,6 +148,28 @@ function Board(p: KitchenBoardProps) {
     ticketsRef.current = tickets;
     notifyRef.current = shift.notify;
   });
+
+  const pushToast = useCallback((toast: Omit<Toast, "id">) => {
+    const id = Date.now() + Math.random();
+    setToasts((list) => [...list.slice(-2), { ...toast, id }]);
+    window.setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), TOAST_MS);
+  }, []);
+  const act = useCallback((action: KitchenAction) => void outbox.enqueue(action), [outbox]);
+
+  // Struck lines (item-level bump, ADR-087): the server's rows are shared by
+  // every screen; this screen's own unconfirmed taps sit on top of them.
+  const strikes = useStruckLines({
+    storageKey: `pativ-kitchen-bumped-${p.station.id}`,
+    serverStrikes: serverSharesStrikes(tickets),
+    // Another screen struck the other lines a moment ago: this tap finished the ticket.
+    onComplete: (ticketId) => {
+      if (ticketsRef.current.find((x) => x.id === ticketId)?.status === "cooking") {
+        act({ kind: "set_ticket_status", ticketId, expected: "cooking", next: "ready" });
+      }
+    },
+    onFailed: () => pushToast({ tone: "error", title: t("actionFailed") }),
+  });
+  const { reconcile: reconcileStrikes, flush: flushStrikes } = strikes;
 
   // --- Reading -------------------------------------------------------------
   const known = useRef(new Set(p.initialTickets.map((x) => x.id)));
@@ -202,26 +196,18 @@ function Board(p: KitchenBoardProps) {
         const arrived = next.filter((x) => !known.current.has(x.id));
         for (const x of next) known.current.add(x.id);
         setTickets(next);
+        reconcileStrikes(next, startedAt);
         setFetchFailed(false);
         setLastSyncAt(nowRef.current);
         // Taps already sent are confirmed by any refresh that started after them.
         setSent((list) => list.filter((s) => s.at > startedAt));
         if (arrived.length > 0) {
           setFresh(new Set(arrived.map((x) => x.id)));
+          // The big banner stays until a cook taps it; later arrivals join it.
+          setAlert((cur) => mergeAlert(pruneAlert(cur, next), arrived));
           // One sound per refresh, the most urgent one: allergy, then a
           // cancellation, then a plain new order.
           const orders = arrived.filter((x) => x.kind === "order" && x.status === "new");
-          if (orders.length > 0)
-            setIncoming({
-              key: Date.now(),
-              orders: orders.map((x) => ({
-                id: x.id,
-                number: x.number,
-                table: x.table,
-                allergy: x.allergy,
-                dishes: x.lines.length,
-              })),
-            });
           if (orders.some((x) => x.allergy)) notifyRef.current("allergy");
           else if (arrived.some((x) => x.kind === "void")) notifyRef.current("void");
           else if (orders.length > 0) notifyRef.current("new");
@@ -230,7 +216,7 @@ function Board(p: KitchenBoardProps) {
     } finally {
       inFlight.current = false;
     }
-  }, [p.station.id, p.lineDetails, locale]);
+  }, [p.station.id, p.lineDetails, locale, reconcileStrikes]);
 
   const refreshExtras = useCallback(async () => {
     const sb = getBrowserClient();
@@ -243,10 +229,12 @@ function Board(p: KitchenBoardProps) {
     if (s.ok) setSoldOutIds(new Set(s.data));
   }, [p.location.id]);
 
+  // Also sends the taps on struck lines the server has not confirmed yet.
   const refreshAll = useCallback(() => {
+    flushStrikes();
     void refreshTickets();
     void refreshExtras();
-  }, [refreshTickets, refreshExtras]);
+  }, [flushStrikes, refreshTickets, refreshExtras]);
 
   // Broadcast hints: patch at once, then refetch the truth.
   const onMessage = useCallback(
@@ -310,12 +298,6 @@ function Board(p: KitchenBoardProps) {
   });
 
   // --- Taps ----------------------------------------------------------------
-  const pushToast = useCallback((toast: Omit<Toast, "id">) => {
-    const id = Date.now() + Math.random();
-    setToasts((list) => [...list.slice(-2), { ...toast, id }]);
-    window.setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), TOAST_MS);
-  }, []);
-
   useEffect(
     () =>
       outbox.subscribe((e) => {
@@ -338,8 +320,6 @@ function Board(p: KitchenBoardProps) {
     [outbox, refreshTickets, pushToast, t],
   );
 
-  const act = useCallback((action: KitchenAction) => void outbox.enqueue(action), [outbox]);
-
   const shown = useMemo(
     () =>
       applyPending(tickets, [
@@ -356,37 +336,30 @@ function Board(p: KitchenBoardProps) {
   const pickedRow = allDayRows.find((r) => r.key === picked) ?? null;
   const highlighted = useMemo(() => new Set(pickedRow?.ticketIds ?? []), [pickedRow]);
 
-  // Struck lines live on this screen only (sessionStorage survives a reload);
-  // the ticket moves to Ready through the usual action once all are struck.
-  const bumpKey = `pativ-kitchen-bumped-${p.station.id}`;
-  const bumpedRaw = useSyncExternalStore(
-    subscribeBumped,
-    () => readBumped(bumpKey),
-    () => "[]",
-  );
-  const live = useMemo(() => pruneStruck(parseBumped(bumpedRaw), shown), [bumpedRaw, shown]);
+  // The ticket moves to Ready through the usual action once every line is struck.
+  const struck = useMemo(() => struckLines(shown, strikes.local), [shown, strikes.local]);
+  const setStruck = strikes.set;
 
   const toggleLine = useCallback(
     (ticket: ShownTicket, lineId: string) => {
       const key = lineKey(ticket.id, lineId);
-      const next = new Set(live);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      writeBumped(bumpKey, next);
-      if (allLinesStruck(ticket, next)) {
+      const want = !struck.has(key);
+      const next = new Set(struck);
+      if (want) next.add(key);
+      else next.delete(key);
+      if (want && allLinesStruck(ticket, next)) {
+        // This tap finishes the ticket: it goes to Ready, and the server forgets
+        // its strikes then. The last strike is not sent: it could arrive after
+        // the move and be refused.
         act({ kind: "set_ticket_status", ticketId: ticket.id, expected: "cooking", next: "ready" });
+      } else {
+        setStruck(key, want);
       }
     },
-    [live, act, bumpKey],
+    [struck, setStruck, act],
   );
 
   // --- Bookkeeping ---------------------------------------------------------
-  useEffect(() => {
-    if (!incoming) return;
-    const timer = window.setTimeout(() => setIncoming(null), ALERT_MS);
-    return () => window.clearTimeout(timer);
-  }, [incoming]);
-
   useEffect(() => {
     if (fresh.size === 0) return;
     const timer = window.setTimeout(() => setFresh(new Set()), FRESH_MS);
@@ -436,6 +409,22 @@ function Board(p: KitchenBoardProps) {
     [p.location.id],
   );
 
+  // "Can't make" on one line (ADR-081): needs a connection, says so when it fails.
+  const onCantMake = useCallback(
+    async (lineId: string) => {
+      const res = await cantMakeItem(getBrowserClient(), lineId);
+      if (res !== "ok") {
+        pushToast({
+          tone: res === "stale" ? "conflict" : "error",
+          title: t(res === "stale" ? "conflict" : "ticket.cantMakeFailed"),
+          detail: res === "paid" ? t("ticket.cantMakePaid") : res === "forbidden" ? t("ticket.cantMakeForbidden") : undefined,
+        });
+      }
+      await refreshTickets();
+    },
+    [pushToast, refreshTickets, t],
+  );
+
   const onToggleSoldOut = useCallback(
     async (itemId: string, out: boolean) => {
       const until = nextBusinessDayStart(
@@ -461,12 +450,18 @@ function Board(p: KitchenBoardProps) {
     [p.location, p.userId],
   );
 
+  // Orders another screen started or a waiter cancelled leave the banner.
+  const shownAlert = useMemo(() => pruneAlert(alert, tickets), [alert, tickets]);
+
   const clock = formatTime(new Date(now), p.location.timeZone);
 
   return (
     <div
       lang={locale}
-      className="kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden"
+      className={clsx(
+        "kitchen-light staff-shell bg-basalt text-slip grid h-dvh overflow-hidden",
+        shownAlert ? "grid-rows-[auto_auto_auto_minmax(0,1fr)]" : "grid-rows-[auto_auto_minmax(0,1fr)]",
+      )}
     >
       <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
         <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
@@ -491,6 +486,7 @@ function Board(p: KitchenBoardProps) {
         />
         <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
         <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
+        {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
         <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
         <div className="ml-auto flex items-center gap-3">
           <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
@@ -523,7 +519,9 @@ function Board(p: KitchenBoardProps) {
         onSelect={setPicked}
       />
 
-      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
+      {shownAlert && <NewOrderBanner alert={shownAlert} onAck={() => setAlert(null)} />}
+
+      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-none sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}
@@ -534,8 +532,9 @@ function Board(p: KitchenBoardProps) {
             now={now}
             fresh={fresh}
             highlighted={highlighted}
-            bumped={live}
+            bumped={struck}
             onToggleLine={toggleLine}
+            onCantMake={p.cantMakeSupported ? onCantMake : undefined}
             onAction={act}
           />
         ))}
@@ -550,9 +549,6 @@ function Board(p: KitchenBoardProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
-      {incoming && shift.on && !revoked && (
-        <NewOrderAlert key={incoming.key} orders={incoming.orders} onClose={() => setIncoming(null)} />
-      )}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );
@@ -568,6 +564,7 @@ function BoardColumn({
   highlighted,
   bumped,
   onToggleLine,
+  onCantMake,
   onAction,
 }: {
   column: Column;
@@ -579,6 +576,7 @@ function BoardColumn({
   highlighted: ReadonlySet<string>;
   bumped: ReadonlySet<string>;
   onToggleLine: (ticket: ShownTicket, lineId: string) => void;
+  onCantMake?: (lineId: string) => Promise<void>;
   onAction: (action: KitchenAction) => void;
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
@@ -588,7 +586,8 @@ function BoardColumn({
       aria-labelledby={`column-${column}`}
       data-testid={`column-${column}`}
       className={clsx(
-        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl",
+        // On a portrait tablet the board scrolls as a whole: a column is as tall as its tickets.
+        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl sm:portrait:max-lg:min-h-fit",
         strip && "sm:col-span-2 lg:col-span-1",
       )}
     >
@@ -615,7 +614,7 @@ function BoardColumn({
       </h2>
       <div
         className={clsx(
-          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto",
+          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
           strip &&
             "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
         )}
@@ -641,6 +640,7 @@ function BoardColumn({
                 highlighted={highlighted.has(ticket.id)}
                 done={bumped}
                 onToggleLine={onToggleLine}
+                onCantMake={onCantMake}
                 onAction={onAction}
               />
             ),

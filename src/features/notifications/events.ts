@@ -6,6 +6,8 @@ export const ALERT_EVENTS = [
   "station.offline",
   "order.comped",
   "day.summary",
+  "table.alert",
+  "weekly.digest",
 ] as const;
 export type AlertEvent = (typeof ALERT_EVENTS)[number];
 

@@ -179,14 +179,14 @@ test.describe("guest menu edge cases at a fresh café", () => {
 
   test("the allergy filter marks what the guest avoids and never calls a dish safe", async ({ page }) => {
     await page.goto(`/en/m/${cafe.slug}/main?t=${cafe.tables["1"]!.token}`);
-    const chooser = page.getByRole("dialog", { name: "What do you avoid?" });
+    const chooser = page.getByRole("dialog", { name: "Filters" });
     // A tap before hydration does nothing: retry until the chooser opens.
     const openChooser = (name: string) =>
       expect(async () => {
         await page.getByRole("button", { name }).click();
         await expect(chooser).toBeVisible({ timeout: 1_000 });
       }).toPass({ timeout: 15_000 });
-    await openChooser("Allergies");
+    await openChooser("Filters");
     await chooser.getByRole("button", { name: "milk" }).click();
     await expect(chooser.getByRole("button", { name: "milk" })).toHaveAttribute("aria-pressed", "true");
     await chooser.getByRole("button", { name: "Done" }).click();
@@ -194,7 +194,7 @@ test.describe("guest menu edge cases at a fresh café", () => {
 
     await expect(dish(page, "Բորանի")).toContainText("Contains milk");
     await expect(dish(page, "Tolma")).toContainText("Allergens not listed. Ask your waiter.");
-    await expect(page.getByRole("button", { name: "Allergies: 1" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Filters: 1" })).toHaveAttribute("aria-pressed", "true");
 
     // The choice belongs to the guest: it is still there after a reload.
     await page.reload();
@@ -203,8 +203,8 @@ test.describe("guest menu edge cases at a fresh café", () => {
     await expect(page.getByRole("dialog", { name: "Բորանի" }).getByTestId("allergens")).toContainText("Contains milk");
     await page.keyboard.press("Escape");
 
-    await openChooser("Allergies: 1");
-    await chooser.getByRole("button", { name: "Clear" }).click();
+    await openChooser("Filters: 1");
+    await chooser.getByRole("button", { name: "Show all" }).click();
     await page.keyboard.press("Escape");
     await expect(dish(page, "Tolma")).not.toContainText("Allergens not listed");
   });

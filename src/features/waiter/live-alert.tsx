@@ -43,9 +43,12 @@ const CHIME: Record<"urgent" | "plain", readonly (readonly [number, number, numb
 export function WaiterAlert({
   tables,
   onOpen,
+  kinds,
 }: {
   tables: readonly FloorTable[];
   onOpen: (tableId: string) => void;
+  /** Only these events; calls and bills have their own banners that ring until answered (ADR-088). */
+  kinds?: readonly AlertKind[];
 }) {
   const t = useTranslations("waiter.alert");
   const seen = useRef<Set<string> | null>(null);
@@ -71,7 +74,7 @@ export function WaiterAlert({
   }, []);
 
   useEffect(() => {
-    const events = alertEvents(tables);
+    const events = alertEvents(tables).filter((e) => !kinds || kinds.includes(e.kind));
     if (seen.current === null) {
       seen.current = new Set(events.map((e) => e.key));
       return;
@@ -87,7 +90,7 @@ export function WaiterAlert({
     } catch {
       // Not every browser can buzz.
     }
-  }, [tables]);
+  }, [tables, kinds]);
 
   useEffect(() => {
     if (!shown) return;

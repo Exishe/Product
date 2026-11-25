@@ -36,7 +36,7 @@ The report goes to our Telegram as a message with a link to the café in the pla
 |---|---|---|
 | Health endpoint down for 2 minutes | Uptime check every minute | Us, by Telegram alert |
 | Kitchen or bar screen offline for 2 minutes during opening hours | Device heartbeat | The café owner and us |
-| Ticket cooking longer than the café's limit (default 20 min) | `order.overdue` job | The café owner |
+| Ticket cooking longer than 20 min (chats that also get table alerts get the owner-set limit instead, ADR-084) | `order.overdue` job | The café owner |
 | Spike in client or server errors | Sentry alert | Us |
 | Telegram messages in the dead-letter queue | Platform admin | Us, daily check |
 | No orders by 14:00 at a café that usually has them by 12:00 | Daily job | Us: maybe the QR codes are gone, or the café is closed |

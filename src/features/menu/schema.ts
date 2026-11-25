@@ -10,6 +10,7 @@ export const DISH_TAGS = [
   "lactose_free",
   "spicy",
   "new",
+  "chefs_pick",
   "popular",
 ] as const;
 
@@ -32,8 +33,12 @@ export const dishInput = z.object({
   prepAreaId: z.uuid().nullable(),
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length),
   allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length),
+  // The owner has reviewed the allergens; with an empty list this says "none" (ADR-083). Undefined keeps the stored value.
+  allergensConfirmed: z.boolean().optional(),
   modifierGroupIds: z.array(z.uuid()).max(20),
   markReviewed: z.boolean(),
+  // Undefined leaves the flag as it is.
+  isActive: z.boolean().optional(),
   // Owner only; null clears it, undefined leaves it as it is.
   cost: z.number().int().min(0).max(10_000_000).nullable().optional(),
 });
@@ -43,6 +48,8 @@ export const categoryInput = z.object({
   id: z.uuid().optional(),
   names: perLocale(80).refine((n) => n.hy.length > 0, { path: ["hy"], message: "name_required" }),
   prepAreaId: z.uuid().nullable(),
+  /** Left out: keep the stored value. */
+  isActive: z.boolean().optional(),
 });
 export type CategoryInput = z.infer<typeof categoryInput>;
 

@@ -2,13 +2,20 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { STAFF_LOCALE_COOKIE } from "@/i18n/request";
+import { retryTransient } from "@/lib/async/retry";
 import { safeNext } from "@/lib/auth/safe-next";
 import { loginIdentity } from "@/lib/auth/staff-login";
 import { createClient } from "@/lib/supabase/server";
 
-export type SignInState = { error: "invalid" | null };
+// `login` comes back after a refusal so the form keeps what was typed (React
+// resets an action's form); the password never does.
+export type SignInState = { error: "invalid" | "busy" | null; login?: string };
+
+// A gateway timeout or an unreachable auth server is not a wrong password.
+const authUnavailable = (error: AuthError) => isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500;
 
 const credentials = z.object({
   login: z.string().max(200),
@@ -19,22 +26,32 @@ const credentials = z.object({
 // staff username (ADR-067): a value without "@" is a username.
 export async function signIn(_prev: SignInState, form: FormData): Promise<SignInState> {
   const parsed = credentials.safeParse({ login: form.get("email"), password: form.get("password") });
+  const typed = typeof form.get("email") === "string" ? String(form.get("email")).slice(0, 200) : "";
   const identity = parsed.success ? loginIdentity(parsed.data.login) : null;
-  if (!parsed.success || !identity) return { error: "invalid" };
-  if (identity.kind === "email" && !z.email().safeParse(identity.email).success) return { error: "invalid" };
+  if (!parsed.success || !identity) return { error: "invalid", login: typed };
+  if (identity.kind === "email" && !z.email().safeParse(identity.email).success) return { error: "invalid", login: typed };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: identity.email,
-    password: parsed.data.password,
-  });
-  if (error || !data.user) return { error: "invalid" };
+  const attempt = await retryTransient(
+    async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: identity.email,
+        password: parsed.data.password,
+      });
+      if (error && authUnavailable(error)) return { ok: false, transient: true };
+      return { ok: true, value: error ? null : data.user };
+    },
+    [800],
+  );
+  if (!attempt.ok) return { error: "busy", login: typed };
+  const user = attempt.value;
+  if (!user) return { error: "invalid", login: typed };
 
   // Staff pages read the member's language from a cookie (no locale in the URL).
   const { data: member } = await supabase
     .from("members")
     .select("locale")
-    .eq("user_id", data.user.id)
+    .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at")
     .limit(1)

@@ -21,3 +21,9 @@ export function formatAmd(amount: number, locale: Locale): string {
   const digits = formatInteger(amount, locale);
   return locale === "en" ? `AMD${NBSP}${digits}` : `${digits}${NBSP}֏`;
 }
+
+/** A price change that may be negative: "+500 ֏" or "−1 400 ֏". */
+export function formatAmdChange(amount: number, locale: Locale): string {
+  if (!Number.isInteger(amount)) throw new RangeError(`Not a whole AMD amount: ${amount}`);
+  return `${amount < 0 ? "−" : "+"}${formatAmd(Math.abs(amount), locale)}`;
+}

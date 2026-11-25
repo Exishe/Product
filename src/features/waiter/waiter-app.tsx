@@ -2,10 +2,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Wallet, WifiOff } from "lucide-react";
+import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Megaphone, Wallet, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { WaiterAlerts } from "@/features/alerts/waiter-alerts";
 import { heartbeat } from "@/features/kitchen/actions";
 import { connectionState, troubleSince } from "@/features/kitchen/connection";
 import { useServerClock } from "@/features/kitchen/use-server-clock";
@@ -16,8 +17,10 @@ import type { MemberRole } from "@/lib/auth/membership";
 import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel } from "@/lib/realtime/use-location-channel";
+import { DEFAULT_CALL_SOUND, soundOr } from "@/lib/sounds/library";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import {
+  ackCantMake,
   cancelLine,
   sameWaiterAction,
   seatWaitingGuests,
@@ -26,10 +29,15 @@ import {
   waiterSender,
   type DirectResult,
 } from "./actions";
+import { openRequests, type AlertRequest } from "./call-alerts";
+import { CallBanners, SoundButton } from "./call-banners";
 import { fetchFloor } from "./floor-data";
+import { fetchLivePromoTitles } from "./promos";
+import { fetchRewards, resolveReward, type WaiterReward } from "./rewards";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
 import { WaiterAlert } from "./live-alert";
+import type { AlertKind } from "./live-alert-model";
 import {
   applyPending,
   areaOf,
@@ -49,7 +57,11 @@ import { SettleSheet } from "./settle";
 import { ShiftSheet } from "./shift-sheet";
 import { TablePanel } from "./table-panel";
 import { TabBar } from "./tab-bar";
+import { useCallAlerts } from "./use-call-alerts";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
+
+// The live card announces plates and new orders; calls and bills ring in their own banners.
+const LIVE_ALERT_KINDS: readonly AlertKind[] = ["ready", "new"];
 
 export type WaiterAppProps = {
   cafeName: string;
@@ -65,6 +77,10 @@ export type WaiterAppProps = {
   isDevice: boolean;
   canChangePassword?: boolean; // a staff login (ADR-067)
   canManageTables: boolean;
+  /** Titles of the promos guests see now (ADR-070); the waiter applies the discount. */
+  initialPromos?: string[];
+  /** The café's sound for a guest call (ADR-088); null before its migration: the default. */
+  callSound?: string | null;
 };
 
 const POLL_MS = 15_000; // safety poll under the live channel (realtime.md: 15 s on the waiter app)
@@ -123,6 +139,8 @@ function App(p: WaiterAppProps) {
   );
 
   const [rows, setRows] = useState(p.initialRows);
+  const [promos, setPromos] = useState(p.initialPromos ?? []);
+  const [rewards, setRewards] = useState<WaiterReward[]>([]);
   const [fetchFailed, setFetchFailed] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState(p.renderedAt);
   const [sent, setSent] = useState<{ action: WaiterAction; at: number }[]>([]);
@@ -134,6 +152,21 @@ function App(p: WaiterAppProps) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState<Tab>("tables");
   const [recent, setRecent] = useState<SentTap[]>([]);
+
+  // Promos switch on and off during service: look again every 30 s while visible.
+  useEffect(() => {
+    const look = async () => {
+      if (document.hidden) return;
+      const titles = await fetchLivePromoTitles(client(), p.location.id, locale);
+      if (titles) setPromos((old) => (JSON.stringify(old) === JSON.stringify(titles) ? old : titles));
+    };
+    const timer = setInterval(() => void look(), 30_000);
+    document.addEventListener("visibilitychange", look);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", look);
+    };
+  }, [p.location.id, locale]);
 
   const nowRef = useRef(now);
   useEffect(() => {
@@ -163,6 +196,8 @@ function App(p: WaiterAppProps) {
           return;
         }
         setRows(res.data);
+        // Open game rewards (ADR-075): a failed read keeps what is shown.
+        void fetchRewards(getBrowserClient(), p.location.id).then((r) => r && setRewards(r));
         setFetchFailed(false);
         setLastSyncAt(nowRef.current);
         // Taps already sent are confirmed by any refresh that started after them.
@@ -232,6 +267,21 @@ function App(p: WaiterAppProps) {
       ]),
     [floor.tables, sent, outbox.entries],
   );
+  // Calls and bill requests: sound, vibration, banners (ADR-088). The list is
+  // the one the tiles show, so an answered call leaves it at once.
+  const requests = useMemo(() => openRequests(tables, now), [tables, now]);
+  const alertText = useCallback(
+    (r: AlertRequest) => ({
+      title: t(r.kind === "call" ? "alerts.call" : "alerts.bill", { label: r.label }),
+      body: t("alerts.notificationBody"),
+    }),
+    [t],
+  );
+  const alerts = useCallAlerts({
+    requests,
+    callSound: soundOr(p.callSound, DEFAULT_CALL_SOUND),
+    texts: alertText,
+  });
   const tablesRef = useRef(tables);
   const floorTablesRef = useRef(floor.tables);
   useEffect(() => {
@@ -345,6 +395,24 @@ function App(p: WaiterAppProps) {
     return direct(res);
   };
 
+  // "Applied" or "Dismiss" on a game reward: gone from the list at once, back
+  // if the database refuses.
+  const onReward = async (id: string, action: "applied" | "dismissed") => {
+    const before = rewards;
+    setRewards((list) => list.filter((r) => r.id !== id));
+    const res = await resolveReward(getBrowserClient(), id, action);
+    if (!res.ok && res.reason !== "stale") setRewards(before);
+    if (res.ok || res.reason === "stale") void refresh();
+    return res;
+  };
+
+  // "Told the guest": the alert goes at once on the next read; a failure shows the usual message.
+  const onAckCantMake = async (lineId: string) => {
+    const res = await ackCantMake(getBrowserClient(), lineId);
+    if (!res.ok && (res.reason === "forbidden" || res.reason === "network")) return res;
+    return direct(res);
+  };
+
   const onSeatWaiting = async (waitingSessionId: string) => {
     await direct(await seatWaitingGuests(getBrowserClient(), waitingSessionId));
   };
@@ -397,6 +465,7 @@ function App(p: WaiterAppProps) {
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
         <p className="m-0 min-w-0 flex-1 text-[0.9375rem] leading-tight font-semibold [overflow-wrap:anywhere]">{p.cafeName}</p>
+        <SoundButton on={alerts.soundOn} onTap={alerts.enableSound} />
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         {/* The outbox stays visible until it is empty, online or not: a waiter
             who can't see a queued order enters it again. */}
@@ -431,6 +500,35 @@ function App(p: WaiterAppProps) {
         <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold">
           {formatTime(new Date(now), p.location.timeZone)}
         </span>
+        {promos.length > 0 && (
+          <p
+            data-testid="promo-line"
+            className="bg-tarragon-tint text-tarragon m-0 flex basis-full items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
+          >
+            <Megaphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
+          </p>
+        )}
+        <div className="basis-full empty:hidden">
+          <CallBanners
+            requests={requests}
+            state={alerts.state}
+            played={alerts.played}
+            onGoing={(r) => {
+              act({ kind: "resolve", requestId: r.id });
+              alerts.close(r.id);
+            }}
+            onOpenTable={(r) => {
+              setTab("tables");
+              openTable(r.tableId);
+              alerts.close(r.id);
+            }}
+            onClose={alerts.close}
+          />
+        </div>
+        <div className="basis-full empty:hidden">
+          <WaiterAlerts locationId={p.location.id} />
+        </div>
       </header>
       {connection === "offline" ? (
         <p
@@ -543,6 +641,9 @@ function App(p: WaiterAppProps) {
               onSettle={(sessionId) => openSettle(table.id, sessionId)}
               onSeatWaiting={(id) => void onSeatWaiting(id)}
               onCancelLine={onCancelLine}
+              rewards={rewards.filter((r) => r.tableId === table.id)}
+              onReward={onReward}
+              onAckCantMake={onAckCantMake}
               now={now}
               timeZone={p.location.timeZone}
             />
@@ -570,6 +671,8 @@ function App(p: WaiterAppProps) {
           oldBill={sheetTable.waiting !== null}
           preferred={sheetTable.bill?.payment ?? null}
           online={online}
+          rewards={rewards.filter((r) => r.tableId === sheetTable.id)}
+          onReward={onReward}
           onClose={() => setSheet(null)}
           onConfirm={(payments) => onSettle(sheetTable, sheet.sessionId, sheet.key, payments)}
         />
@@ -595,7 +698,8 @@ function App(p: WaiterAppProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
-      {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} />}
+      {/* Calls and bills ring in the banners above until answered; this card adds plates and new orders. */}
+      {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );

@@ -1,15 +1,27 @@
+import { NextIntlClientProvider } from "next-intl";
 import { CircleCheck, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AdminPage, Notice, Section } from "@/features/admin-ui/page";
+import { AlertSettingsForm } from "@/features/alerts/alert-settings";
+import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
+import { soundOr, DEFAULT_CALL_SOUND, DEFAULT_ORDER_SOUND } from "@/lib/sounds/library";
+import { AttentionPanel } from "@/features/alerts/attention-panel";
+import { parseAlerts, type AlertSettings, type TableAlert } from "@/features/alerts/model";
+import { VenueControls, type VenueState } from "@/features/availability/venue-controls";
 import { PlanBanner } from "@/features/billing/plan-banner";
 import { deltaPercent, parseDashboard, type Dashboard } from "@/features/dashboard/model";
 import { businessDate } from "@/features/dashboard/range";
+import { RewardsForm } from "@/features/game-rewards/rewards-form";
+import { settingsFromRow, type RewardSettings } from "@/features/game-rewards/model";
+import { PromoManager } from "@/features/promos/promo-manager";
+import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { formatAmd, formatInteger } from "@/lib/format/money";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Locale } from "@/i18n/routing";
 
 type Todo = { key: string; href: string; text: string };
@@ -74,6 +86,81 @@ export default async function AdminHome() {
     supabase.from("categories").select("updated_at").eq("restaurant_id", rid),
     supabase.from("modifier_groups").select("updated_at").eq("restaurant_id", rid),
   ]);
+
+  // Pause and closed-kitchen state (ADR-068). Read on its own so the page still
+  // works before the migration has reached this database: no columns, no section.
+  let venue: VenueState | null = null;
+  if (location) {
+    const { data: v, error } = await supabase
+      .from("locations")
+      .select("ordering_paused, ordering_paused_until, kitchen_closed_until")
+      .eq("id", location.id)
+      .maybeSingle();
+    if (v && !error)
+      venue = {
+        paused: v.ordering_paused,
+        pausedUntil: v.ordering_paused_until,
+        closedUntil: v.kitchen_closed_until,
+      };
+  }
+
+  // Problem tables (ADR-071): the limits and the live list. Read on their own, so
+  // a database without the migration shows no panel and no settings.
+  let alertSettings: AlertSettings | null = null;
+  let alerts: TableAlert[] | null = null;
+  if (location) {
+    const loose = supabase as unknown as SupabaseClient;
+    const [{ data: a, error: aError }, list] = await Promise.all([
+      loose
+        .from("locations")
+        .select("overdue_minutes, repeat_call_threshold")
+        .eq("id", location.id)
+        .maybeSingle(),
+      loose.schema("api").rpc("table_alerts", { p_location_id: location.id }),
+    ]);
+    if (a && !aError && !list.error) {
+      alertSettings = { overdueMinutes: a.overdue_minutes, repeatCalls: a.repeat_call_threshold };
+      alerts = parseAlerts(list.data);
+    }
+  }
+
+  // Staff sounds (ADR-088): read on their own, so a database without the migration hides the section.
+  let staffSounds: StaffSounds | null = null;
+  if (location) {
+    const { data: row, error } = await (supabase as unknown as SupabaseClient)
+      .from("locations")
+      .select("order_sound, call_sound")
+      .eq("id", location.id)
+      .maybeSingle();
+    if (row && !error)
+      staffSounds = {
+        orderSound: soundOr(row.order_sound, DEFAULT_ORDER_SOUND),
+        callSound: soundOr(row.call_sound, DEFAULT_CALL_SOUND),
+      };
+  }
+
+  // Promotions (ADR-070): also read on its own, so a database without the table hides the section.
+  let promos: Promo[] | null = null;
+  if (location) {
+    const { data: rows, error } = await supabase
+      .from("promos")
+      .select("id, title, body, badge, is_on, starts_at, ends_at")
+      .eq("location_id", location.id)
+      .order("created_at")
+      .order("id");
+    if (rows && !error) promos = rows.map(promoFromRow);
+  }
+
+  // Game rewards (ADR-075): no row means off; an error (no table yet) hides the section.
+  let rewards: RewardSettings | null = null;
+  if (location) {
+    const { data: row, error } = await (supabase as unknown as SupabaseClient)
+      .from("game_reward_settings")
+      .select("game_rewards_on, reward_kind, reward_level, reward_percent, reward_text, reward_game")
+      .eq("location_id", location.id)
+      .maybeSingle();
+    if (!error) rewards = settingsFromRow(row);
+  }
 
   let data: Dashboard | null = null;
   try {
@@ -167,6 +254,49 @@ export default async function AdminHome() {
           <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("noSales")}</p>
         )}
       </Section>
+
+      <NextIntlClientProvider>
+        {location && alerts && (
+          <Section title={t("attention")} id="home-attention" testId="home-attention">
+            <AttentionPanel locationId={location.id} initial={alerts} />
+          </Section>
+        )}
+
+        {location && venue && (
+          <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">
+            <VenueControls initial={venue} timeZone={location.timezone} />
+          </Section>
+        )}
+
+        {location && alertSettings && (
+          <Section
+            title={t("alertSettings")}
+            hint={t("alertSettingsHint")}
+            id="home-alerts"
+            testId="home-alerts"
+          >
+            <AlertSettingsForm initial={alertSettings} />
+          </Section>
+        )}
+
+        {location && staffSounds && (
+          <Section title={t("sounds")} hint={t("soundsHint")} id="home-sounds" testId="home-sounds">
+            <SoundSettingsForm initial={staffSounds} />
+          </Section>
+        )}
+
+        {location && promos && (
+          <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
+            <PromoManager initial={promos} timeZone={location.timezone} />
+          </Section>
+        )}
+
+        {location && rewards && (
+          <Section title={t("rewards")} hint={t("rewardsHint")} id="home-rewards" testId="home-rewards">
+            <RewardsForm initial={rewards} />
+          </Section>
+        )}
+      </NextIntlClientProvider>
 
       <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
         {todos.length === 0 ? (

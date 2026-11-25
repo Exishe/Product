@@ -14,7 +14,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { lineKey, type BoardLine, type KitchenAction, type ShownTicket } from "./board-model";
 import { ageLabel, classifyLateness, type Lateness } from "./lateness";
 
@@ -50,7 +51,6 @@ function Root({
   label,
   kind,
   lateness,
-  fresh,
   pending,
   allergy,
   highlighted,
@@ -61,7 +61,6 @@ function Root({
   label: string;
   kind: "order" | "void";
   lateness: Lateness;
-  fresh: boolean;
   pending: boolean;
   allergy: boolean;
   highlighted: boolean;
@@ -84,8 +83,6 @@ function Root({
         pending && "border-dashed",
         // A dish picked in «Ընդհանուր» outlines every ticket that has it.
         highlighted && "outline-slip outline-4 outline-offset-2",
-        // A new ticket rises in (200 ms) so the cook sees what changed.
-        fresh && "kds-in",
       )}
     >
       {children}
@@ -182,6 +179,7 @@ function Lines({
   struck,
   done,
   onToggle,
+  onCantMake,
 }: {
   ticketId: string;
   lines: readonly BoardLine[];
@@ -189,9 +187,14 @@ function Lines({
   struck: boolean; // a cancellation slip: every line is crossed out
   done?: ReadonlySet<string>; // lines a cook has bumped (Cooking only)
   onToggle?: (lineId: string) => void;
+  /** "Can't make" (ADR-081): present only where the button may show. Resolves when the database answered. */
+  onCantMake?: (lineId: string) => Promise<void>;
 }) {
   const t = useTranslations("kitchen.ticket");
   const boardLocale = useLocale();
+  // One line at a time asks "are you sure?"; a sent one waits for the board to refresh.
+  const [asking, setAsking] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   return (
     <ul className="m-0 grid list-none gap-3 p-0">
       {lines.map((l) => {
@@ -254,6 +257,15 @@ function Lines({
                 {t("lineCancelled")}
               </span>
             )}
+            {l.substitute && (
+              <span
+                data-testid="line-substitute"
+                lang={l.substitute.locale === boardLocale ? undefined : l.substitute.locale}
+                className={clsx("text-slip col-start-2 font-bold", compact ? "text-lg" : "text-2xl")}
+              >
+                {t("useInstead", { name: l.substitute.text })}
+              </span>
+            )}
             {l.modifiers.length > 0 && (
               <span
                 data-testid="line-modifiers"
@@ -298,6 +310,57 @@ function Lines({
             ) : (
               <div className={grid}>{body}</div>
             )}
+            {onCantMake && !gone && (
+              asking === l.id ? (
+                <div
+                  role="group"
+                  aria-label={t("cantMakeAsk", { name: l.name })}
+                  data-testid="cant-make-confirm"
+                  className="border-late-on-dark mt-2 grid gap-2 rounded-xl border-2 p-3"
+                >
+                  <p className="m-0 text-xl leading-tight font-bold [overflow-wrap:anywhere]">
+                    {t("cantMakeAsk", { name: l.name })}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={sending}
+                      data-testid="cant-make-yes"
+                      className="bg-late-on-dark inline-flex min-h-[72px] items-center justify-center rounded-xl px-3 text-xl font-bold text-white disabled:opacity-60"
+                      onClick={async () => {
+                        setSending(true);
+                        try {
+                          await onCantMake(l.id);
+                        } finally {
+                          setSending(false);
+                          setAsking(null);
+                        }
+                      }}
+                    >
+                      {t("cantMakeYes")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sending}
+                      className="border-(--kds-frame) text-slip inline-flex min-h-[72px] items-center justify-center rounded-xl border-2 px-3 text-xl font-bold"
+                      onClick={() => setAsking(null)}
+                    >
+                      {t("cantMakeNo")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="cant-make"
+                  className="border-(--kds-frame) text-slip mt-2 inline-flex min-h-14 items-center gap-2 rounded-xl border-2 px-4 text-lg font-bold"
+                  onClick={() => setAsking(l.id)}
+                >
+                  <Ban aria-hidden="true" className="size-5 shrink-0" />
+                  {t("cantMake")}
+                </button>
+              )
+            )}
           </li>
         );
       })}
@@ -322,10 +385,10 @@ export function OrderTicketCard({
   ticket,
   column,
   now,
-  fresh,
   highlighted = false,
   done,
   onToggleLine,
+  onCantMake,
   onAction,
 }: {
   ticket: ShownTicket;
@@ -335,6 +398,8 @@ export function OrderTicketCard({
   highlighted?: boolean;
   done?: ReadonlySet<string>;
   onToggleLine?: (ticket: ShownTicket, lineId: string) => void;
+  /** Undefined while the database has no "can't make" yet (ADR-081): the button stays hidden. */
+  onCantMake?: (lineId: string) => Promise<void>;
   onAction: (action: KitchenAction) => void;
 }) {
   const t = useTranslations("kitchen.ticket");
@@ -347,6 +412,8 @@ export function OrderTicketCard({
   const compact = column === "ready";
   const move = (next: "cooking" | "ready") =>
     onAction({ kind: "set_ticket_status", ticketId: ticket.id, expected: ticket.status, next });
+  const locale = useLocale();
+  const tPrint = useTranslations("print");
   const TimerIcon = lateness === "late" ? CircleAlert : lateness === "hurry" ? Hourglass : Clock;
 
   return (
@@ -356,7 +423,6 @@ export function OrderTicketCard({
       label={t("tableLabel", { table: ticket.table ?? ticket.number })}
       kind="order"
       lateness={lateness}
-      fresh={fresh}
       pending={ticket.pending}
       allergy={ticket.allergy}
       highlighted={highlighted}
@@ -433,6 +499,7 @@ export function OrderTicketCard({
               ? (lineId) => onToggleLine(ticket, lineId)
               : undefined
           }
+          onCantMake={(column === "new" || column === "cooking") && !ticket.pending ? onCantMake : undefined}
         />
         {ticket.orderNote && (
           <TicketCard.Note
@@ -476,6 +543,20 @@ export function OrderTicketCard({
               </button>
             </div>
           )}
+          <PrintTicketButton
+            label={tPrint("button")}
+            className="border-(--kds-frame) text-slip inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border-2 px-3 text-lg font-bold"
+          >
+            <TicketSheet
+              table={ticket.table}
+              orderNumber={ticket.number}
+              time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+              lines={ticket.lines
+                .filter((l) => l.quantity > 0)
+                .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
+              note={ticket.orderNote}
+            />
+          </PrintTicketButton>
         </TicketCard.Actions>
       </TicketCard.Body>
     </TicketCard.Root>
@@ -486,7 +567,6 @@ export function OrderTicketCard({
 // cook taps «Հասկացա» (R7).
 export function VoidTicketCard({
   ticket,
-  fresh,
   onAction,
 }: {
   ticket: ShownTicket;
@@ -501,7 +581,6 @@ export function VoidTicketCard({
       label={t("voidLabel", { table: ticket.table ?? ticket.number })}
       kind="void"
       lateness="normal"
-      fresh={fresh}
       pending={ticket.pending}
       allergy={false}
       highlighted={false}

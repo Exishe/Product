@@ -83,6 +83,11 @@ export async function cancelLine(supabase: Client, orderItemId: string, quantity
   );
 }
 
+// "Told the guest" on a can't-make dish (ADR-081). Safe to repeat.
+export async function ackCantMake(supabase: Client, orderItemId: string): Promise<DirectResult> {
+  return direct(await supabase.schema("api").rpc("ack_cant_make", { p_order_item_id: orderItemId }));
+}
+
 // Money never sits in a queue (realtime.md): settling is online only. The key
 // makes a double tap or a lost answer return the same bill.
 export async function settleTable(supabase: Client, sessionId: string, payments: Payment[], key: string): Promise<DirectResult> {

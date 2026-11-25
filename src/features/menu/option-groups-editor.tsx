@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 import type { Locale } from "@/i18n/routing";
 import { Sheet, useMediaQuery } from "@/features/admin-ui/sheet";
 import { button, check, fieldLabel, input } from "@/features/admin-ui/styles";
-import { formatAmd } from "@/lib/format/money";
+import { formatAmdChange } from "@/lib/format/money";
 import { saveOptionGroup } from "./actions";
 import { parsePriceInput } from "./schema";
 import { emptyNames, type EditorGroup, type Names } from "./types";
@@ -258,7 +258,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
                       {g.options
                         .map(
                           (o) =>
-                            `${o.names[locale] || o.names.hy}${o.priceDelta ? ` +${formatAmd(o.priceDelta, locale)}` : ""}`,
+                            `${o.names[locale] || o.names.hy}${o.priceDelta ? ` ${formatAmdChange(o.priceDelta, locale)}` : ""}`,
                         )
                         .join(", ")}
                     </span>
