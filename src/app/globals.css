@@ -843,6 +843,44 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   font-size: 13px;
 }
 
+/* The demo café's own colours (owner, Nov 2026: colour battle entry Y, "Lake Sevan"):
+   the same layout on light sand with a deep petrol blue for actions and brick for
+   prices. The demo is the café on the light Pure theme, so the palette hangs on it. */
+.guest-lux[data-guest-theme="soft"] {
+  --guest-page: #f6f3ec !important;
+  --guest-surface: #fdfcf9 !important;
+  --guest-band: #ece8dc;
+  --guest-chip: #ece8dc !important;
+  --guest-plate: #e1ddd0 !important;
+  --guest-ink: #1b2a33 !important;
+  --guest-muted: #475862 !important;
+  --guest-soft: #53646e !important;
+  --guest-line: #e1ddd0 !important;
+  --guest-line-strong: #cdc8b8 !important;
+  --guest-card-border: #e1ddd0 !important;
+  --guest-accent: #1f4e5f !important;
+  --guest-on-accent: #ffffff !important;
+  --guest-accent-text: #a5452d !important;
+  --guest-title: #1b2a33 !important;
+  --guest-tab: #1f4e5f !important;
+  --guest-badge: #a5452d !important;
+  --guest-on-badge: #ffffff !important;
+  --guest-glow: #a5452d !important;
+  --guest-flourish: #a5452d !important;
+  --guest-dock: #fdfcf9 !important;
+  --guest-dock-ink: #1b2a33 !important;
+  --guest-dock-muted: #53646e !important;
+  --guest-add: #1f4e5f !important;
+  --guest-on-add: #ffffff !important;
+  --brand-tool-ink: #1b2a33 !important;
+}
+
+body:has(.guest-lux[data-guest-theme="soft"]:not([data-guest-preview])),
+.guest-lux[data-guest-theme="soft"]:has([data-order-page]),
+body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
+  background: #f6f3ec !important;
+}
+
 .guest-lux:not([data-guest-theme="wine"]) .display-face {
   letter-spacing: 0;
 }
