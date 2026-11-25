@@ -717,3 +717,11 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - Before the migration reaches a database, /admin/staff leaves the section out and the sign-in form works as before for e-mail addresses.
   - A "We do it for you" add-on is proposed in `docs/05-business/pricing.md`, not decided.
   - If Supabase changes the `auth.users` columns, `private.make_staff_login` and `supabase/seed.sql` must change together.
+
+### ADR-068: Cloudflare Workers as the production host is to be tested before the first paying café
+
+- Status: Deferred (owner, 25 Nov 2026): decide after Stage 1 is finished.
+- Context: ADR-001 picked Vercel as the default for Next.js; ADR-025 noted that Vercel Hobby forbids commercial use but did not compare paid hosts. Cloudflare Workers allows commercial use on its free plan, and its paid plan is about $5 a month against $20 for Vercel Pro.
+- Proposal: keep Vercel Hobby for development and previews. Before the first paying café, try the app on Cloudflare Workers (OpenNext adapter) on a branch and move production there if it passes. Supabase stays; Cloudflare's D1, Durable Objects and auth would mean rewriting the backend, which isn't worth it.
+- What a move touches: the deploy config and preview builds, the per-IP rate-limit rule (Vercel Firewall to Cloudflare), `app_base_url` in Vault for web push, and the CSP check. Estimate 1–3 days, mostly the Playwright flows against the Cloudflare build. Main risk: the free plan's worker size and CPU limits; Workers Paid covers that.
+- Timing: before QR cards are printed for a paying café, on our own domain, so printed codes never change.
