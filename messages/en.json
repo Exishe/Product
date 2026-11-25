@@ -1715,7 +1715,7 @@
     },
     "upsell": {
       "title": "Suggestions",
-      "hint": "The dishes shown as \"often added together\" in a dish card.",
+      "hint": "The dishes guests saw under \"You might also like\" after adding a dish.",
       "empty": "No suggestions were shown in this period yet.",
       "shown": "Shown",
       "accepted": "Accepted",

@@ -262,7 +262,7 @@ function GameLayer({
           </svg>
         </button>
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate font-semibold">{t(`games.${id}.name`)}</span>
+          <span className="block line-clamp-2 font-semibold text-balance">{t(`games.${id}.name`)}</span>
           {/* A quiet line that the kitchen is still on it: the game yields to the real wait. */}
           {waiting && !ready && (
             <span
