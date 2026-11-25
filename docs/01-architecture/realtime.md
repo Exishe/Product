@@ -90,6 +90,7 @@ type OutboxEntry = {
 - If it answers `forbidden` (device deactivated), we stop replaying and show "This device was signed out".
 - The UI shows the number of pending actions, and a per-card "waiting to send" mark.
 - Never queued: settling a table, payments, publishing the menu, cancelling lines after they're served.
+- Also not queued: striking a line of a cooking ticket (`api.set_line_struck`, ADR-086). It is idempotent and last-write-wins per line, so the kitchen board keeps the tap on screen and resends the latest one per line itself; queuing it would merge a strike and its undo and could drop the ticket's move to Ready.
 
 The service worker caches the app shell, the last published menu snapshot and fonts, so a staff device that reloads while offline still opens.
 
