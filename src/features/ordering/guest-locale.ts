@@ -5,6 +5,8 @@ import { routing, type Locale } from "@/i18n/routing";
 // table QR (NEXT_LOCALE) still land in the language the guest chose.
 
 export const LOCALE_COOKIE = "NEXT_LOCALE";
+/** The choice made in this tab (sessionStorage): a page loaded again from an old address resets the cookie. */
+export const LOCALE_TAB_KEY = "pativ:locale";
 
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === "string" && (routing.locales as readonly string[]).includes(value);

@@ -13,7 +13,50 @@ import {
 } from "react";
 import type { Locale } from "@/i18n/routing";
 import { createT, type GuestT } from "./guest-i18n";
-import { chosenLocale, localeCookie, localeOfPath, withLocale } from "./guest-locale";
+import {
+  LOCALE_TAB_KEY,
+  chosenLocale,
+  isLocale,
+  localeCookie,
+  localeOfPath,
+  withLocale,
+} from "./guest-locale";
+
+// The guest's latest choice. Normally the cookie (next-intl's middleware keeps
+// it equal to the address of every page loaded). Back/Forward is different: a
+// page loaded again from an old /hy address makes the middleware reset the
+// cookie to hy before the page runs, so there this tab's own record wins. A
+// new tab starts from a copy of the opener's record, so only Back/Forward
+// reads it.
+function latestChoice(backForward: boolean): Locale | null {
+  if (backForward) {
+    try {
+      const tab = window.sessionStorage.getItem(LOCALE_TAB_KEY);
+      if (isLocale(tab)) return tab;
+    } catch {
+      // storage blocked: the cookie is all there is
+    }
+  }
+  return chosenLocale(document.cookie);
+}
+
+function rememberInTab(l: Locale) {
+  try {
+    window.sessionStorage.setItem(LOCALE_TAB_KEY, l);
+  } catch {
+    // storage blocked: the cookie and the address still carry it
+  }
+}
+
+// This document was opened with Back or Forward.
+function openedBackForward(): boolean {
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === "back_forward";
+  } catch {
+    return false;
+  }
+}
 
 type Value = {
   t: GuestT;
@@ -73,6 +116,7 @@ export function GuestI18nProvider({
     } catch {
       // cookies blocked: the address still carries the language
     }
+    rememberInTab(l);
     const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const there = withLocale(here, l);
     // Replace, not push: Back leaves the page instead of undoing the language.
@@ -82,27 +126,47 @@ export function GuestI18nProvider({
   const switchLocale = useCallback(
     (l: Locale) => {
       if (l === current.current) return true;
-      if (!textsFor(l)) return false;
+      if (!textsFor(l)) {
+        // The link loads the page in that language; Back to here keeps it.
+        rememberInTab(l);
+        return false;
+      }
       apply(l);
       return true;
     },
     [apply, textsFor],
   );
 
-  // Back/Forward and a page shown again from the router's cache can carry an
-  // address in the language the guest had before switching: keep their latest
-  // choice (the cookie). Before paint, so the old language never flashes.
+  // Back/Forward, a page shown again from the router's or the browser's cache,
+  // or one loaded again from an old address can carry the language the guest
+  // had before switching: keep their latest choice (this tab's, else the
+  // cookie). Before paint, so the old language never flashes.
   useLayoutEffect(() => {
-    const follow = () => {
-      const chosen = chosenLocale(document.cookie);
-      if (!chosen || !textsFor(chosen)) return;
-      if (chosen !== current.current || localeOfPath(window.location.pathname) !== chosen) apply(chosen);
+    const follow = (backForward: boolean) => {
+      const chosen = latestChoice(backForward);
+      if (
+        chosen &&
+        textsFor(chosen) &&
+        (chosen !== current.current || localeOfPath(window.location.pathname) !== chosen)
+      ) {
+        apply(chosen);
+      } else {
+        rememberInTab(current.current);
+      }
     };
-    follow();
+    follow(openedBackForward());
     // After the router has handled the same popstate.
-    const onPop = () => window.setTimeout(follow, 0);
+    const onPop = () => window.setTimeout(() => follow(true), 0);
+    // A page shown again from the back/forward cache runs no effects.
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) follow(true);
+    };
     window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    window.addEventListener("pageshow", onShow);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("pageshow", onShow);
+    };
   }, [apply, textsFor]);
 
   const shown = textsFor(locale) ?? messages;

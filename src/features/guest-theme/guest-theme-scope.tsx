@@ -3,6 +3,7 @@ import { preconnect, preload } from "react-dom";
 import { BrandFonts } from "./brand-fonts";
 import { brandPage, brandTokens, googleFontsHref, parseBrand } from "./brand";
 import { DEMO_PALETTE_KEY } from "./demo";
+import { DemoPaletteSync } from "./demo-palette-sync";
 import type { GuestTheme } from "./themes";
 
 // Overscroll beyond the page shows the brand's page colour; `page` is a
@@ -58,6 +59,7 @@ export function GuestThemeScope({
           }}
         />
       )}
+      {demo && <DemoPaletteSync />}
       {page && <style dangerouslySetInnerHTML={{ __html: overscroll(page) }} />}
       {children}
       {fonts && <BrandFonts href={fonts} />}

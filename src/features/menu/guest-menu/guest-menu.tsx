@@ -131,6 +131,7 @@ export function GuestMenu({
   languages,
   hints = NO_HINTS,
   promoBanners = null,
+  reloadMenu,
 }: {
   menu: GuestMenuData;
   table: TableState;
@@ -141,6 +142,8 @@ export function GuestMenu({
   hints?: MenuHints;
   /** The promo banners in the language on screen (promo-banner.tsx). */
   promoBanners?: ReactNode;
+  /** Reloads the menu data in place when the café's status changes (ADR-068, ADR-092). */
+  reloadMenu?: () => void;
 }) {
   const { t, locale } = useGuestI18n();
   const tableId = table.kind === "ok" ? table.id : null;
@@ -170,7 +173,7 @@ export function GuestMenu({
   const search = useRef<HTMLInputElement>(null);
   const canOrder = menu.ordering && !menu.paused && !menu.closed && table.kind === "ok";
   // Sold-out, pause, closed kitchen and section hours change while the menu is open (ADR-068).
-  useMenuStatus(menu.locationId, menu.status);
+  useMenuStatus(menu.locationId, menu.status, reloadMenu);
   const waiter = useCallWaiter();
   // The question is mounted once it has shown, or at once when this table has a
   // request left unsent (checked after hydration: storage is browser-only).

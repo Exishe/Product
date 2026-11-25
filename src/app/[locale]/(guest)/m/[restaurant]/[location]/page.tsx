@@ -133,7 +133,8 @@ export default async function GuestMenuPage({
           table={table}
           languages={languagesFor(published.location.locales)}
           hints={hints}
-          path={`/m/${restaurant}/${location}`}
+          restaurant={restaurant}
+          location={location}
         />
       </GuestI18nProvider>
     </GuestThemeScope>

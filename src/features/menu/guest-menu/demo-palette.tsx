@@ -17,8 +17,14 @@ export function DemoPalette() {
 
   useEffect(() => {
     const root = ref.current?.closest(".guest-lux[data-demo]");
-    // The page may have opened in blue (the inline script); show that.
-    if (root?.getAttribute("data-demo-palette") === "blue") setPalette("blue");
+    // The page may have opened in blue (the inline script or DemoPaletteSync); show that.
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(DEMO_PALETTE_KEY);
+    } catch {
+      // storage blocked: fall back to what the page shows
+    }
+    if (saved === "blue" || root?.getAttribute("data-demo-palette") === "blue") setPalette("blue");
   }, []);
 
   const pick = (next: Palette) => {

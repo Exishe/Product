@@ -11,12 +11,23 @@ import type { MenuStatus } from "./status";
 const LOAD_AFTER_MS = 3_000;
 const FIRST_POLL_MS = 10_000;
 
-export function useMenuStatus(locationId: string, shown: MenuStatus) {
+export function useMenuStatus(
+  locationId: string,
+  shown: MenuStatus,
+  /**
+   * Reloads the menu data in place. Without it the page's server data is
+   * refreshed; the guest menu passes its own, so a refresh after an in-place
+   * language switch (ADR-092) never rebuilds the page and closes what is open.
+   */
+  reload?: () => void,
+) {
   const router = useRouter();
   const last = useRef(shown);
+  const reloadRef = useRef(reload);
   useEffect(() => {
     last.current = shown;
-  }, [shown]);
+    reloadRef.current = reload;
+  }, [shown, reload]);
 
   useEffect(() => {
     let stop = () => {};
@@ -28,7 +39,7 @@ export function useMenuStatus(locationId: string, shown: MenuStatus) {
           stop = m.startMenuStatusPoll({
             locationId,
             shown: () => last.current,
-            onChange: () => router.refresh(),
+            onChange: () => (reloadRef.current ? reloadRef.current() : router.refresh()),
             firstDelayMs: FIRST_POLL_MS - LOAD_AFTER_MS,
           });
         })
