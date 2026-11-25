@@ -5,6 +5,7 @@ import { createFreshCafe, ownerEmail, ownerPassword } from "./helpers";
 import { runOwner, signInAsRunOwner } from "./run-owner";
 import {
   allowConsoleErrors,
+  ackNewOrders,
   column,
   instrumentShift,
   loadCafe,
@@ -329,6 +330,15 @@ test.describe("kitchen board", () => {
       await expect
         .poll(() => page.evaluate(() => (window as unknown as { __beeps: number }).__beeps))
         .toBe(beepsAtStart + 4);
+
+      // The order that arrived live raised the big banner: its table and number,
+      // and the allergy in red. It stays until a cook taps «Տեսա».
+      const banner = page.getByTestId("new-order-alert");
+      await expect(banner).toContainText("Նոր պատվեր");
+      await expect(banner).toContainText(`Սեղան 6 · #${c.number}`);
+      await expect(banner.getByTestId("new-order-allergy")).toHaveText("Ալերգիա");
+      await ackNewOrders(page);
+      await expect(slip(page, c.ticketId)).toBeVisible();
 
       // All day: 3 of the dish over two tickets; tapping it outlines both.
       const dishName = dish!.name.hy as string;

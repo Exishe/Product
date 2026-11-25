@@ -232,6 +232,15 @@
   }
 }
 
+/* The kitchen's "New order" banner: its frame breathes once per 1.6 s
+   (0.6 Hz, far under the 3 flashes a second limit); it is applied with
+   motion-safe, so nobody who asked for less motion gets it. */
+@keyframes new-order-pulse {
+  50% {
+    box-shadow: inset 0 0 0 10px var(--color-apricot), 0 0 0 4px var(--color-apricot);
+  }
+}
+
 /* The one motion on the import page: a line reading down each photo. */
 .import-scan {
   position: absolute;

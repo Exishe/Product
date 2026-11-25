@@ -193,6 +193,17 @@ export async function startShift(page: Page): Promise<void> {
   await expect(page.getByRole("button", { name: "Սկսել հերթափոխը" })).toBeHidden();
 }
 
+// The big «Նոր պատվեր» banner stays on the board until a cook taps «Տեսա».
+// A spec that works the board after an order arrived live taps it away first,
+// the way a cook would. Nothing to do if no banner is up.
+export async function ackNewOrders(page: Page): Promise<void> {
+  const ack = page.getByTestId("new-order-ack");
+  if (await ack.isVisible()) {
+    await ack.click();
+    await expect(page.getByTestId("new-order-alert")).toBeHidden();
+  }
+}
+
 export const slip = (page: Page, ticketId: string) => page.locator(`[data-ticket-id="${ticketId}"]`);
 export const column = (page: Page, name: "new" | "cooking" | "ready") => page.getByTestId(`column-${name}`);
 

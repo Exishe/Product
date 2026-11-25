@@ -285,6 +285,13 @@
       "cooking": "Готовятся",
       "ready": "Готово"
     },
+    "newOrder": {
+      "title": "Новый заказ",
+      "titleMany": "{count, plural, one {# новый заказ} few {# новых заказа} many {# новых заказов} other {# новых заказа}}",
+      "allergy": "Аллергия",
+      "ack": "Принято",
+      "more": "+{count}"
+    },
     "empty": "Здесь пока ничего нет.",
     "ticket": {
       "table": "Стол",

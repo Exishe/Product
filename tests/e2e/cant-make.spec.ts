@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import { createCafeWithMenu } from "./guest-helpers";
-import { loadCafe, pairKitchenDevice, revokeDevice, startShift } from "./kitchen-helpers";
+import { ackNewOrders, loadCafe, pairKitchenDevice, revokeDevice, startShift } from "./kitchen-helpers";
 import { pairWaiterDevice, panel, tableButton } from "./waiter-helpers";
 
 // "Can't make" (ADR-081): the guest orders ribs, the kitchen cannot make them
@@ -53,6 +53,7 @@ test.describe("can't make", () => {
       await startShift(board);
       const line = board.getByTestId("ticket-line").filter({ hasText: "Խոզի կողիկներ" });
       await expect(line).toBeVisible({ timeout: 30_000 });
+      await ackNewOrders(board); // the order may have arrived live: tap the banner away like a cook
       await line.getByTestId("cant-make").click();
       await expect(board.getByTestId("cant-make-confirm")).toContainText("Խոզի կողիկներ");
       await board.screenshot({ path: `${SHOTS}/kitchen-confirm.png` });

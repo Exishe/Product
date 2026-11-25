@@ -285,6 +285,13 @@
       "cooking": "Պատրաստվում է",
       "ready": "Պատրաստ"
     },
+    "newOrder": {
+      "title": "Նոր պատվեր",
+      "titleMany": "{count} նոր պատվեր",
+      "allergy": "Ալերգիա",
+      "ack": "Տեսա",
+      "more": "+{count}"
+    },
     "empty": "Այստեղ դեռ ոչինչ չկա։",
     "ticket": {
       "table": "Սեղան",

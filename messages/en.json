@@ -285,6 +285,13 @@
       "cooking": "Cooking",
       "ready": "Ready"
     },
+    "newOrder": {
+      "title": "New order",
+      "titleMany": "{count} new orders",
+      "allergy": "Allergy",
+      "ack": "Got it",
+      "more": "+{count}"
+    },
     "empty": "Nothing here yet.",
     "ticket": {
       "table": "Table",

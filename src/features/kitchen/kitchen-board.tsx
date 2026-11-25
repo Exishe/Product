@@ -24,6 +24,8 @@ import {
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
 import { AllDayStrip } from "./all-day";
+import { mergeAlert, pruneAlert, type NewOrderAlert } from "./new-order-alert";
+import { NewOrderBanner } from "./new-order-banner";
 import {
   allDay,
   allLinesStruck,
@@ -132,6 +134,7 @@ function Board(p: KitchenBoardProps) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(p.renderedAt);
   const [sent, setSent] = useState<{ action: KitchenAction; at: number }[]>([]);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
+  const [alert, setAlert] = useState<NewOrderAlert | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [revoked, setRevoked] = useState(false);
   const [trouble, setTrouble] = useState<number | null>(null);
@@ -199,6 +202,8 @@ function Board(p: KitchenBoardProps) {
         setSent((list) => list.filter((s) => s.at > startedAt));
         if (arrived.length > 0) {
           setFresh(new Set(arrived.map((x) => x.id)));
+          // The big banner stays until a cook taps it; later arrivals join it.
+          setAlert((cur) => mergeAlert(pruneAlert(cur, next), arrived));
           // One sound per refresh, the most urgent one: allergy, then a
           // cancellation, then a plain new order.
           const orders = arrived.filter((x) => x.kind === "order" && x.status === "new");
@@ -444,12 +449,18 @@ function Board(p: KitchenBoardProps) {
     [p.location, p.userId],
   );
 
+  // Orders another screen started or a waiter cancelled leave the banner.
+  const shownAlert = useMemo(() => pruneAlert(alert, tickets), [alert, tickets]);
+
   const clock = formatTime(new Date(now), p.location.timeZone);
 
   return (
     <div
       lang={locale}
-      className="kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden"
+      className={clsx(
+        "kitchen-light staff-shell bg-basalt text-slip grid h-dvh overflow-hidden",
+        shownAlert ? "grid-rows-[auto_auto_auto_minmax(0,1fr)]" : "grid-rows-[auto_auto_minmax(0,1fr)]",
+      )}
     >
       <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
         <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
@@ -505,6 +516,8 @@ function Board(p: KitchenBoardProps) {
         selected={pickedRow?.key ?? null}
         onSelect={setPicked}
       />
+
+      {shownAlert && <NewOrderBanner alert={shownAlert} onAck={() => setAlert(null)} />}
 
       <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-[auto_auto] sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
