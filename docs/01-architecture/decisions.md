@@ -981,7 +981,7 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Status: Accepted, 2026-11-25 (follow-up to ADR-071; free only, no new dependency).
 - Context: the kitchen's fixed `order.overdue` ("ticket cooking longer than 20 minutes") and the owner-set `table.alert` ("table waiting N minutes", default 25) describe the same late order. Chats that had both on received two messages for it.
 - Decision: `private.enqueue_notification` no longer queues `order.overdue` for a chat whose events include `table.alert`. The owner-set limit replaces the fixed one for that chat. A chat with only `order.overdue` behaves as before; both events stay in the Telegram settings and either can be switched off.
-- Consequences: no data is deleted and no setting changes. The kitchen's earlier 20-minute warning is no longer sent to chats that also receive table alerts; an owner who wants it back switches `table.alert` off for that chat, or lowers the limit (5 to 180 minutes). Migration `20261124100000_overdue_replaced_by_table_alert.sql`, test in `problem_table_alerts.sql`.
+- Consequences: no data is deleted and no setting changes. The kitchen's earlier 20-minute warning is no longer sent to chats that also receive table alerts; an owner who wants it back switches `table.alert` off for that chat, or lowers the limit (5 to 180 minutes). Migration `20261124100000_overdue_replaced_by_table_alert.sql`, test in `problem_table_alerts.sql`. Correction (`20261124150000_overdue_suppress_unpaid_only.sql`): the replacement applies only to unpaid orders, because `table.alert` does not report paid ones; a paid order stuck in the kitchen still sends `order.overdue`.
 
 ## ADR-085: Room for PostgREST to read the schema
 

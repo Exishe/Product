@@ -254,3 +254,10 @@ select test.ok(exists (select 1 from public.notification_outbox where channel_id
                'a chat with only order.overdue still gets the late ticket alert');
 select test.ok(not exists (select 1 from public.notification_outbox where channel_id = :'ch' and event = 'order.overdue'),
                'a chat that receives table.alert does not get the same late order twice');
+
+-- ...but a paid order stuck in the kitchen is not a table alert, so the late ticket alert still goes out
+update public.orders set paid_at = now() where id = :'o2';
+delete from public.notification_outbox where dedupe_key = 'order.overdue:' || :'o2';
+select private.enqueue_overdue_alerts();
+select test.ok(exists (select 1 from public.notification_outbox where channel_id = :'ch' and dedupe_key = 'order.overdue:' || :'o2'),
+               'a paid order stuck in the kitchen still reaches a chat that receives table.alert');

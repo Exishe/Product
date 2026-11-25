@@ -1782,7 +1782,7 @@
     },
     "timeRules": {
       "title": "By time of day",
-      "hint": "Suggest something at certain hours, whatever the guest ordered. For example coffee in the morning or a dessert in the evening. Times are in your café's time. Up to {max} rules.",
+      "hint": "Suggest something at certain hours, when it suits what the guest ordered (the kinds table below still applies). For example coffee in the morning or a dessert in the evening. Times are in your café's time. Up to {max} rules.",
       "add": "Add a rule",
       "empty": "No rules yet.",
       "unavailable": "The rules by time of day could not be loaded. Please try again a little later.",
