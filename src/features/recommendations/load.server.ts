@@ -1,6 +1,7 @@
 import "server-only";
 import { isMissing, untypedClient } from "./db.server";
 import { isItemType, type Category, type Dish, type MatrixCell, type Names } from "./model";
+import { ruleFromRow, sortRules, type TimeRule } from "./time-rules";
 
 export type PairingsData =
   | { supported: false }
@@ -11,6 +12,8 @@ export type PairingsData =
       dishes: Dish[];
       pairings: { itemId: string; suggestId: string }[];
       matrix: MatrixCell[];
+      /** The café's "by time of day" rules; null when they could not be read. */
+      timeRules: TimeRule[] | null;
     };
 
 type Tr = { locale: "hy" | "ru" | "en"; name: string };
@@ -28,7 +31,7 @@ export async function loadPairings(restaurantId: string): Promise<PairingsData> 
   const locationId = ((loc.data as { id: string }[] | null) ?? [])[0]?.id;
   if (!locationId) return { supported: false };
 
-  const [cats, items, pairs, matrix] = await Promise.all([
+  const [cats, items, pairs, matrix, rules] = await Promise.all([
     db.from("categories").select("id, sort, is_active, category_translations(locale, name)").eq("restaurant_id", restaurantId),
     db
       .from("items")
@@ -36,6 +39,10 @@ export async function loadPairings(restaurantId: string): Promise<PairingsData> 
       .eq("restaurant_id", restaurantId),
     db.from("item_pairings").select("item_id, suggest_item_id, sort").eq("restaurant_id", restaurantId),
     db.schema("api").rpc("compat_matrix", { p_location_id: locationId }),
+    db
+      .from("suggestion_time_rules")
+      .select("id, from_time, to_time, weekdays, to_type, to_item_id, sort")
+      .eq("location_id", locationId),
   ]);
   if (isMissing(items.error) || isMissing(pairs.error) || isMissing(matrix.error)) return { supported: false };
 
@@ -66,5 +73,8 @@ export async function loadPairings(restaurantId: string): Promise<PairingsData> 
       )
     ).map((p) => ({ itemId: p.item_id, suggestId: p.suggest_item_id })),
     matrix: (matrix.data as MatrixCell[] | null) ?? [],
+    timeRules: rules.error
+      ? null
+      : sortRules(((rules.data as unknown[] | null) ?? []).flatMap((row) => ruleFromRow(row) ?? [])),
   };
 }
