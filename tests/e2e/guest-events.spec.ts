@@ -22,7 +22,7 @@ test("opening a dish and adding it records anonymous events", async ({ page }) =
   page.on("request", (req) => {
     if (req.url().includes("/rpc/record_guest_events")) bodies.push(req.postData() ?? "");
   });
-  await page.goto(`/en/m/${cafe.slug}/main`);
+  await page.goto(`/en/m/${cafe.slug}/main?t=${encodeURIComponent(cafe.tables["1"]!.token)}`);   // adding needs a table
   await page
     .getByTestId("dish")
     .filter({ hasText: "Armenian coffee" })
