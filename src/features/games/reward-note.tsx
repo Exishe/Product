@@ -51,8 +51,8 @@ export default function RewardNote({ ctx }: { ctx: RewardCtx }) {
   }
   if (!offer.on) return null;
   return (
-    <p className="text-slip-dim mt-4 flex items-center gap-2 text-sm" data-testid="reward-offer">
-      <Gift size={18} strokeWidth={1.75} aria-hidden className="text-apricot-on-dark flex-none" />
+    <p className="text-muted mt-3 flex items-center gap-2 text-[12px]" data-testid="reward-offer">
+      <Gift size={18} strokeWidth={1.75} aria-hidden className="text-accent-text flex-none" />
       <span>
         {t(offer.game ? "games.reward.offerGame" : "games.reward.offer", {
           level: offer.level,

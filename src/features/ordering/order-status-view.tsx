@@ -273,14 +273,13 @@ function RecommendedCard({
   const list = (photos.length >= 4 ? photos : all).slice(0, 9);
   if (list.length < 3) return null;
   return (
-    <section aria-labelledby="rec-title" className={guestStyles.sheet}>
-      <div className={guestStyles.sheetHead}>
-        <Sparkles size={20} aria-hidden />
-        <h2 id="rec-title" className="text-[13px]">
-          {t("order.recommended")}
-        </h2>
-      </div>
-      <div className="px-3 pt-4 pb-6 md:px-6">
+    // Part of the page, not a card on it: the page colour, the menu's heading style.
+    <section aria-labelledby="rec-title">
+      <h2 id="rec-title" className="flex items-center gap-2 text-[14px] font-semibold">
+        <Sparkles size={18} aria-hidden className="text-accent-text" />
+        {t("order.recommended")}
+      </h2>
+      <div className="pt-2">
         <DishOrbit dishes={list} menuHref={menuHref} />
       </div>
     </section>

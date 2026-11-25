@@ -34,10 +34,10 @@ const HIDE_1 = "inset(0% 0% 0% 100%)"; // the thin line wipes in from the right
 const HIDE_2 = "inset(0% 100% 0% 0%)"; // the heavy line from the left
 const SHOW = "inset(0% 0% 0% 0%)";
 const TINTS = [
-  "var(--guest-badge)",
-  "color-mix(in srgb, var(--guest-accent) 45%, #ffffff)",
-  "color-mix(in srgb, var(--guest-badge) 50%, #ffffff)",
-  "color-mix(in srgb, var(--guest-line) 85%, var(--guest-badge))",
+  "var(--guest-band)",
+  "var(--guest-chip)",
+  "color-mix(in srgb, var(--guest-add) 14%, var(--guest-page))",
+  "color-mix(in srgb, var(--guest-accent-text) 12%, var(--guest-page))",
 ];
 
 const wrap = (i: number, n: number) => ((i % n) + n) % n;

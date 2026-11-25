@@ -46,29 +46,30 @@ export function GamesCorner({
     <>
       <section
         id="games"
-        className="rounded-feature bg-basalt text-slip shadow-plate mt-2 mb-4 scroll-mt-4 overflow-hidden px-4 pt-6 pb-5 md:px-6"
+        // On the page like the sections above it, with the menu's white cards.
+        className="text-ink mt-2 mb-4 scroll-mt-4"
         aria-labelledby="games-title"
         data-testid="games"
       >
         <div className="flex items-center gap-3">
-          <Gamepad2 size={34} strokeWidth={1.75} className="text-apricot-on-dark flex-none" aria-hidden />
+          <Gamepad2 size={26} strokeWidth={1.75} className="text-accent-text flex-none" aria-hidden />
           <div>
-            <h3 id="games-title" className="display-face text-2xl leading-tight">
+            <h3 id="games-title" className="text-[14px] leading-tight font-semibold">
               {t("games.title")}
             </h3>
-            <p className="text-slip-dim text-sm">{t("games.subtitle")}</p>
+            <p className="text-muted text-[12px]">{t("games.subtitle")}</p>
           </div>
         </div>
-        <ul className="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:-mx-6 md:scroll-px-6 md:px-6 [&::-webkit-scrollbar]:hidden">
+        <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden">
           {GAMES.map((g) => (
             <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[12.5rem]">
               <button
                 type="button"
                 onClick={() => setOpen(g.id)}
                 data-testid={`game-${g.id}`}
-                className="group rounded-sheet bg-basalt-2 ring-basalt-3 hover:ring-apricot-on-dark block w-full overflow-hidden text-left ring-1 transition-transform active:scale-[0.97]"
+                className="group bg-surface hover:border-line-strong block w-full overflow-hidden rounded-[14px] border [border-color:var(--guest-card-border)] text-left transition-transform active:scale-[0.97]"
               >
-                <span className="bg-basalt-3 relative block aspect-[4/3] overflow-hidden">
+                <span className="bg-plate relative block aspect-[4/3] overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element -- small static thumbnails, no optimizer needed */}
                   <img
                     src={`/games/${g.id}.webp`}
@@ -81,8 +82,8 @@ export function GamesCorner({
                   />
                 </span>
                 <span className="flex items-center justify-between gap-2 p-3">
-                  <span className="min-w-0 leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-                  <span className="rounded-pill bg-deep-accent text-on-deep-accent flex-none px-3 py-1 text-sm font-semibold">
+                  <span className="min-w-0 text-[13px] leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
+                  <span className="rounded-pill bg-add text-on-add flex-none px-3 py-1 text-[12px] font-semibold">
                     {t("games.play")}
                   </span>
                 </span>
