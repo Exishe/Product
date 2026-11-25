@@ -47,7 +47,7 @@ export function CartView({
         >
           <BackIcon />
         </button>
-        <h2 className="display-face text-[1.125rem] leading-[1.2]">{t("cart.title")}</h2>
+        <h2 className="display-face text-[1.25rem] leading-[1.2]">{t("cart.title")}</h2>
       </div>
       <ul className="bg-surface rounded-card mt-2 border [border-color:var(--guest-card-border)] px-3.5">
         {summary.lines.map((p) => (
@@ -63,11 +63,11 @@ export function CartView({
       </ul>
       <div className="flex items-baseline justify-between px-1 pt-4 pb-3">
         <span className="text-[14px]">{t("cart.total")}</span>
-        <span className="num text-[18px] font-semibold" data-testid="cart-total">
+        <span className="num text-[20px] font-semibold" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>
       </div>
-      <div className="bg-chip text-muted mb-4 grid gap-1.5 rounded-[12px] px-3.5 py-3 text-[12px] leading-snug">
+      <div className="bg-chip text-muted rounded-guest-md mb-4 grid gap-1 px-4 py-3 text-[14px] leading-[1.45]">
         {wait && (
           <span className="text-ink block font-semibold" data-testid="cart-wait">
             {t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}

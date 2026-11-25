@@ -66,7 +66,7 @@ export function OrderAgain({
         ))}
       </span>
       <div className="min-w-0 flex-1 basis-48">
-        <h2 id="again-title" className="text-muted text-[0.8125rem] font-semibold">
+        <h2 id="again-title" className="text-muted text-[14px] font-semibold">
           {t("again.title")}
         </h2>
         <p className="leading-snug break-words">

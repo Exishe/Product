@@ -1050,7 +1050,11 @@
       "closedToday": "The kitchen is closed for today.",
       "promoLabel": "Offer",
       "promoClose": "Close this offer",
-      "kcal": "≈ {value} kcal"
+      "kcal": "≈ {value} kcal",
+      "loadFailedTitle": "The menu didn't open",
+      "loadFailedBody": "Check your connection and reload the page. If that doesn't help, ask your waiter.",
+      "reload": "Reload",
+      "loading": "Opening the menu…"
     },
     "sheet": {
       "required": "Required",
@@ -1254,12 +1258,12 @@
       "hint": "We'll mark dishes that list these allergens, and dishes whose allergens aren't listed.",
       "done": "Done",
       "clear": "Clear",
-      "contains": "Contains {list}",
+      "contains": "Contains {list}.",
       "unknown": "Allergens not listed. Ask your waiter.",
       "active": "Marking dishes with {list}.",
-      "tellWaiter": "Tell your waiter about any allergy so the kitchen can check.",
-      "sheetNone": "Allergens aren't listed for this dish. If you have an allergy, tell your waiter.",
-      "sheetNoneDeclared": "No allergens declared by the venue.",
+      "tellWaiter": "Have an allergy? Tell your waiter.",
+      "sheetNone": "Allergens aren't listed. If you have an allergy, tell your waiter.",
+      "sheetNoneDeclared": "No allergens declared.",
       "filtersTitle": "Filters",
       "showOnly": "Show only",
       "chip": {

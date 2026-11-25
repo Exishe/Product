@@ -132,9 +132,9 @@ export function Suggestions({
     <section
       aria-label={t("suggest.title")}
       data-testid="suggestions"
-      className={`bg-surface text-ink shadow-float rounded-card pointer-events-auto border px-3 pt-2 pb-1 [border-color:var(--guest-card-border)] ${styles.suggest}`}
+      className={`bg-surface text-ink shadow-float rounded-card pointer-events-auto border [border-color:var(--guest-card-border)] px-3 pt-2 pb-1 ${styles.suggest}`}
     >
-      <h2 className="text-muted px-1 text-[0.8125rem] font-semibold">{t("suggest.title")}</h2>
+      <h2 className="text-muted px-1 text-[14px] font-semibold">{t("suggest.title")}</h2>
       <ul>
         {cards.map(({ item, suggestion }) => {
           const reason = reasonText(suggestion, items, trigger.id);
@@ -149,10 +149,12 @@ export function Suggestions({
               {item.image && <Plate src={dishPhotoUrl(item.image)} size={44} className="size-11 flex-none" />}
               <span className="flex min-w-0 flex-1 flex-col leading-tight">
                 <Txt value={item.name} locale={locale} className="font-semibold break-words" />
-                <span className="text-muted text-[0.8125rem]" data-testid="suggestion-reason">
+                <span className="text-muted text-[12px]" data-testid="suggestion-reason">
                   {t(reason.key, reason.vars)}
                 </span>
-                <span className="num text-accent-text text-sm font-semibold">{formatAmd(item.price, locale)}</span>
+                <span className="num text-accent-text text-sm font-semibold">
+                  {formatAmd(item.price, locale)}
+                </span>
               </span>
               <button
                 type="button"

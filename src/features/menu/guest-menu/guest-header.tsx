@@ -120,7 +120,7 @@ export function TableChip({ label }: { label: string }) {
       data-testid="table-chip"
     >
       <Flip>
-        <span className="bg-chip inline-flex h-8 items-center gap-1.5 rounded-[10px] px-2.5">
+        <span className="bg-chip rounded-guest-sm inline-flex h-8 items-center gap-1.5 px-2.5">
           <svg
             width="13"
             height="13"
@@ -155,10 +155,10 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[12px] aria-[current=true]:font-semibold ${styles.flip}`}
+          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[14px] aria-[current=true]:font-semibold ${styles.flip}`}
         >
           <Flip>
-            <span className="group-aria-[current=true]:bg-chip rounded-[8px] px-2 py-1">
+            <span className="group-aria-[current=true]:bg-chip rounded-guest-sm px-2 py-1">
               {t(`language.${l}`)}
             </span>
           </Flip>

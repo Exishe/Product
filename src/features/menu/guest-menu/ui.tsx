@@ -82,7 +82,7 @@ export function Stepper({
       >
         <MinusIcon />
       </button>
-      <output className="num min-w-7 text-center text-lg font-semibold" aria-label={labels.quantity}>
+      <output className="num min-w-7 text-center text-[16px] font-semibold" aria-label={labels.quantity}>
         {value}
       </output>
       <button
@@ -98,22 +98,45 @@ export function Stepper({
   );
 }
 
-const DIET = "bg-success-tint text-success";
-const TAG_STYLES: Record<GuestTag, string> = {
-  popular: "bg-chip text-ink",
-  spicy: "bg-alert-tint text-alert",
-  vegan: DIET,
-  vegetarian: DIET,
-  gluten_free: DIET,
-  lactose_free: DIET,
-  new: "bg-badge text-on-badge",
-  chefs_pick: "bg-badge text-on-badge",
-};
+// Tags (owner, Nov 2026: no pill badges everywhere). Only two are a badge,
+// one style for both: «սիրված» and the chef's pick, on the photo's corner or
+// in the meta line of a card without one. The rest (diet, spicy, new) are
+// plain words in the muted meta line, joined with « · », so they follow the
+// café's palette instead of fixed hues.
+export const BADGE_TAGS: readonly GuestTag[] = ["popular", "chefs_pick"];
+export const isBadgeTag = (tag: GuestTag) => BADGE_TAGS.includes(tag);
 
-export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
+export function TagBadge({ label, onPhoto = false }: { label: string; onPhoto?: boolean }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs leading-5 font-semibold ${TAG_STYLES[tag]}`}>
+    <span
+      className={`rounded-guest-sm text-ink inline-block px-2 py-1 text-[12px] leading-none font-semibold whitespace-nowrap ${
+        onPhoto ? "bg-surface" : "bg-chip"
+      }`}
+    >
       {label}
+    </span>
+  );
+}
+
+/** A tag in a meta line: a badge for the two badge tags, a plain word otherwise. */
+export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
+  return isBadgeTag(tag) ? <TagBadge label={label} /> : <span>{label}</span>;
+}
+
+/** Short facts in one muted 12 px line, joined with « · » (portion, tags, sold out). */
+export function MetaLine({ parts, className = "" }: { parts: ReactNode[]; className?: string }) {
+  const shown = parts.filter(Boolean);
+  if (shown.length === 0) return null;
+  return (
+    <span
+      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] leading-[1.4] ${className}`}
+    >
+      {shown.map((part, i) => (
+        <span key={i} className="contents">
+          {i > 0 && <span aria-hidden="true">·</span>}
+          {part}
+        </span>
+      ))}
     </span>
   );
 }
@@ -134,7 +157,7 @@ export function Notice({
     alert: "border-alert bg-alert-tint text-ink",
   };
   return (
-    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>
+    <p className={`rounded-card border px-4 py-3 text-[14px] leading-[1.45] ${tones[tone]}`}>
       {tone === "info" && <QrCode size={22} strokeWidth={1.75} aria-hidden className="flex-none" />}
       {tone === "info" ? <span>{children}</span> : children}
     </p>

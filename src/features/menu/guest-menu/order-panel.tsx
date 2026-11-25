@@ -34,7 +34,7 @@ export function CartBar({
     <button
       type="button"
       onClick={onOpen}
-      className={`${styles.cta} ${styles.ready} pointer-events-auto flex min-h-12 w-full items-center gap-3 rounded-[16px] py-1.5 pr-4 text-left text-[13px] font-semibold ${plates.length ? "pl-2" : "pl-4"} ${className}`}
+      className={`${styles.cta} ${styles.ready} rounded-guest-lg pointer-events-auto flex min-h-12 w-full items-center gap-3 py-1.5 pr-4 text-left text-[14px] font-semibold ${plates.length ? "pl-2" : "pl-4"} ${className}`}
     >
       <span aria-hidden="true" className="flex flex-none -space-x-3">
         {plates.map((i) => (
@@ -48,7 +48,9 @@ export function CartBar({
       </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
         {t("menu.viewOrder")}
-        <small className="text-[12px] font-normal opacity-80">{t("menu.items", { count: summary.count })}</small>
+        <small className="text-[12px] font-normal opacity-80">
+          {t("menu.items", { count: summary.count })}
+        </small>
       </span>
       <span className="num text-[14px] whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
     </button>

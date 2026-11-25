@@ -91,8 +91,15 @@ const warmSheet = () => {
 
 const CART_HASH = "#cart";
 
-/** The guest pages' content column: full width on a phone, centred on a desktop. */
-const COLUMN = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
+// The guest pages' content column: full width on a phone, centred on a desktop
+// and as wide as the menu bar (menu-bar.tsx, 1240 px), so they line up. From
+// 1024 px it holds three columns: the section list, the dishes and the order
+// rail; the notices above the dishes sit in the middle one too.
+const COLUMN = "mx-auto w-full max-w-[1240px] px-4 md:px-8";
+const THREE_UP =
+  "lg:grid lg:grid-cols-[11rem_minmax(0,1fr)_16rem] lg:gap-6 xl:grid-cols-[12rem_minmax(0,1fr)_17rem] xl:gap-8";
+/** Where the desktop's side columns stick: just under the menu bar, level with the first heading. */
+const SIDE_TOP = "top-[calc(117px+1.25rem)]"; // the desktop menu bar is 117 px tall
 
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -348,10 +355,18 @@ export function GuestMenu({
     via?: "suggest",
   ) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
-    track("item_add", item.id, via ? { qty: Math.min(add.quantity, 99), via } : { qty: Math.min(add.quantity, 99) });
+    track(
+      "item_add",
+      item.id,
+      via ? { qty: Math.min(add.quantity, 99), via } : { qty: Math.min(add.quantity, 99) },
+    );
     // A dish added from a suggestion does not start another round of ideas.
     if (!via && canOrder) {
-      setSuggest({ id: item.id, cart: [...new Set([...lines.map((l) => l.itemId), item.id])], n: Date.now() });
+      setSuggest({
+        id: item.id,
+        cart: [...new Set([...lines.map((l) => l.itemId), item.id])],
+        n: Date.now(),
+      });
     }
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
@@ -437,7 +452,7 @@ export function GuestMenu({
     </span>
   );
   const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-10 items-center gap-2 border border-line px-3 text-[13px] font-semibold";
+    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 border border-line px-3 text-[14px] font-semibold";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -455,7 +470,9 @@ export function GuestMenu({
       home={home}
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-      wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
+      wordmarkUrl={
+        menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
+      }
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
@@ -571,7 +588,7 @@ export function GuestMenu({
           placeholder={t("menu.searchPlaceholder")}
           autoComplete="off"
           enterKeyHint="search"
-          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border pr-4 pl-10 text-[14px] [border-color:var(--guest-line-strong)]"
+          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border [border-color:var(--guest-line-strong)] pr-4 pl-10 text-base"
         />
       </div>
       {offerFilter && (
@@ -581,7 +598,7 @@ export function GuestMenu({
           aria-pressed={filterCount > 0}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border px-3.5 text-[13px] font-semibold [border-color:var(--guest-line-strong)]"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 text-[14px] font-semibold"
         >
           <ShieldAlert size={15} aria-hidden />
           {filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
@@ -595,7 +612,11 @@ export function GuestMenu({
         cafeName={menu.restaurantName}
         logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
         wordmarkUrl={
-          menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
+          menu.wordmarkBar
+            ? dishPhotoUrl(menu.wordmarkBar)
+            : menu.wordmark
+              ? dishPhotoUrl(menu.wordmark)
+              : null
         }
         home={home}
         tableLabel={table.kind === "ok" ? table.label : null}
@@ -605,39 +626,47 @@ export function GuestMenu({
         search={searchRow}
       />
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
-        {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
-          <div className="grid gap-2 pt-4">
-            {promoBanners}
-            {orderingNotice}
-            {menu.kitchenBusy && canOrder && (
-              <Notice tone="busy">
-                {menu.kitchenBusy.minutes
-                  ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
-                  : t("menu.kitchenBusyNoTime")}
-              </Notice>
+        <div className={THREE_UP}>
+          <div className="lg:col-start-2">
+            {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
+              <div className="grid gap-2 pt-4">
+                {promoBanners}
+                {orderingNotice}
+                {menu.kitchenBusy && canOrder && (
+                  <Notice tone="busy">
+                    {menu.kitchenBusy.minutes
+                      ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
+                      : t("menu.kitchenBusyNoTime")}
+                  </Notice>
+                )}
+              </div>
+            )}
+            {canOrder && hasLast && lines.length === 0 && (
+              <Suspense fallback={null}>
+                <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
+              </Suspense>
+            )}
+            {avoid.length > 0 && (
+              <p className="text-muted pb-1 text-sm" role="status">
+                {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
+              </p>
+            )}
+            {diet.length > 0 && (
+              <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-sm" role="status">
+                <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
+                <button
+                  type="button"
+                  onClick={() => setDiet([])}
+                  className="min-h-11 font-semibold underline"
+                >
+                  {t("diet.showAll")}
+                </button>
+              </p>
             )}
           </div>
-        )}
-        {canOrder && hasLast && lines.length === 0 && (
-          <Suspense fallback={null}>
-            <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
-          </Suspense>
-        )}
-        {avoid.length > 0 && (
-          <p className="text-muted pb-1 text-sm" role="status">
-            {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
-          </p>
-        )}
-        {diet.length > 0 && (
-          <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-sm" role="status">
-            <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
-            <button type="button" onClick={() => setDiet([])} className="min-h-11 font-semibold underline">
-              {t("diet.showAll")}
-            </button>
-          </p>
-        )}
-        <div className="lg:grid lg:grid-cols-[11.5rem_minmax(0,1fr)_16rem] lg:gap-6 xl:grid-cols-[12.5rem_minmax(0,1fr)_17rem]">
-          <SectionList categories={shown} />
+        </div>
+        <div className={THREE_UP}>
+          <SectionList categories={shown} stick={SIDE_TOP} />
           <main className="min-w-0">
             {shown.length === 0 ? (
               <p className="text-muted py-12 text-center" role="status">
@@ -651,22 +680,39 @@ export function GuestMenu({
                 const clusters = groupSections(shown);
                 // In a longer section the first pictured dish leads as a large card
                 // on a phone, so the list of rows changes pace (design merge from A).
+                // The pictured dishes come first as photo cards (two across, three
+                // from 1280 px), then the dishes without a photo as a compact list
+                // of text cards, so one grid never mixes a tall photo card with a
+                // short text one. Within each, the café's own order stays.
                 const rows = (list: GuestItem[]) => {
                   const lead = list.length >= 3 ? list.find((i) => i.image && !i.soldOut)?.id : undefined;
-                  return [...list]
-                    .sort((a, b) => Number(b.id === lead) - Number(a.id === lead))
-                    .map((item, i) => (
-                      <DishRow
-                        key={item.id}
-                        item={item}
-                        canOrder={canOrder}
-                        warning={warningFor(item)}
-                        index={i}
-                        feature={item.id === lead}
-                        onOpen={setSheet}
-                        onQuickAdd={quickAdd}
-                      />
-                    ));
+                  const pictured = list.filter((i) => i.image);
+                  const plain = list.filter((i) => !i.image);
+                  pictured.sort((a, b) => Number(b.id === lead) - Number(a.id === lead));
+                  const card = (item: GuestItem, i: number) => (
+                    <DishRow
+                      key={item.id}
+                      item={item}
+                      canOrder={canOrder}
+                      warning={warningFor(item)}
+                      index={i}
+                      feature={item.id === lead}
+                      onOpen={setSheet}
+                      onQuickAdd={quickAdd}
+                    />
+                  );
+                  return (
+                    <>
+                      {pictured.length > 0 && (
+                        <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{pictured.map(card)}</ul>
+                      )}
+                      {plain.length > 0 && (
+                        <ul className={`grid gap-3 md:grid-cols-2 ${pictured.length > 0 ? "mt-3" : ""}`}>
+                          {plain.map((item, i) => card(item, pictured.length + i))}
+                        </ul>
+                      )}
+                    </>
+                  );
                 };
                 return clusters.map(({ group, sections }) => (
                   <div key={group} id={`group-${group}`} className="scroll-mt-48 pt-5" data-group={group}>
@@ -686,13 +732,13 @@ export function GuestMenu({
                           <h3
                             id={`h-${c.id}`}
                             lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-2.5 flex items-baseline gap-2 text-[15px] leading-[1.25] font-semibold"
+                            className="text-ink mb-3 flex items-baseline gap-2 text-[16px] leading-[1.25] font-semibold"
                           >
                             {c.name.text}
                             <span className="num text-soft text-[12px] font-normal">{c.items.length}</span>
                           </h3>
                         )}
-                        <ul className="grid items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>
+                        {rows(c.items)}
                       </section>
                     ))}
                   </div>
@@ -701,7 +747,7 @@ export function GuestMenu({
             )}
           </main>
           <div className="hidden pt-5 lg:block">
-            <div className="sticky top-44">
+            <div className={`sticky ${SIDE_TOP}`}>
               {/* Only where the rail is on screen: a phone sends from the order view. */}
               {wide && (
                 <Suspense fallback={null}>

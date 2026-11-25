@@ -119,7 +119,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       }}
       onPointerEnter={() => window.clearTimeout(closeTimer.current)}
     >
-      <div className="flex gap-1.5 overflow-x-auto pb-2.5 lg:mb-2 lg:w-fit lg:gap-0.5 lg:rounded-[12px] lg:bg-[var(--guest-plate)] lg:p-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="lg:rounded-guest-md -mx-4 flex scroll-px-4 [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-3 md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:mb-2 lg:w-fit lg:gap-0.5 lg:bg-[var(--guest-plate)] lg:p-1 [&::-webkit-scrollbar]:hidden">
         {buckets.map((b) => {
           const isOpen = open === b.key;
           const here = currentBucket?.key === b.key;
@@ -142,7 +142,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                 setOpen(b.key);
               }}
               aria-current={here ? "true" : undefined}
-              className={`${styles.navlink} flex min-h-11 flex-none items-center gap-1.5 rounded-full border py-1 pr-3.5 pl-1 text-[13px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:rounded-[10px] lg:border-0 lg:px-3.5 ${
+              className={`${styles.navlink} rounded-guest-md lg:rounded-guest-sm flex min-h-11 flex-none items-center gap-2 border py-1 pr-3.5 pl-1 text-[14px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:border-0 lg:px-3.5 ${
                 here
                   ? "bg-accent text-on-accent lg:bg-surface lg:text-ink border-transparent font-semibold lg:shadow-[0_1px_2px_rgb(30_28_25/0.08)]"
                   : `bg-surface text-muted hover:text-ink border-line lg:bg-transparent ${isOpen ? "lg:bg-surface/70 lg:text-ink" : "lg:hover:bg-surface/60"}`
@@ -156,7 +156,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                   width={28}
                   height={28}
                   loading="lazy"
-                  className="size-7 flex-none rounded-full object-cover lg:hidden"
+                  className="rounded-guest-sm size-8 flex-none object-cover lg:hidden"
                 />
               )}
               <span>{label(b)}</span>
@@ -174,7 +174,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
           key={openBucket.key}
           id={`sections-${openBucket.key}`}
           data-testid="section-panel"
-          className={`bg-surface/85 text-ink shadow-float rounded-feature absolute inset-x-4 top-full mt-1 max-h-[min(62dvh,28rem)] overflow-y-auto overscroll-contain border [border-color:var(--guest-card-border)] p-2 backdrop-blur-md md:inset-x-8 ${styles.navPanel}`}
+          className={`bg-surface text-ink shadow-float rounded-feature absolute inset-x-4 top-full mt-1 max-h-[min(62dvh,28rem)] overflow-y-auto overscroll-contain border [border-color:var(--guest-card-border)] p-2 md:inset-x-8 ${styles.navPanel}`}
         >
           <ul className="grid gap-x-2 sm:grid-cols-2 md:grid-cols-3">
             {openBucket.sections.map((c) => (
@@ -187,7 +187,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                     e.preventDefault();
                     go(c.id);
                   }}
-                  className="hover:bg-chip aria-[current=true]:bg-chip aria-[current=true]:text-accent-text rounded-card flex min-h-12 items-center justify-between gap-3 px-3 py-2 font-semibold"
+                  className="hover:bg-chip aria-[current=true]:bg-chip aria-[current=true]:text-accent-text rounded-guest-md flex min-h-12 items-center justify-between gap-3 px-3 py-2 font-semibold"
                 >
                   {c.name ? <Txt value={c.name} locale={locale} className="min-w-0 break-words" /> : null}
                   <span className="num text-muted flex-none text-sm font-normal">{c.items.length}</span>
