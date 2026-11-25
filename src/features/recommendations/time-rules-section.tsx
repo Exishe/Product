@@ -91,8 +91,12 @@ export function TimeRules({
     });
   }
 
+  // Deleting asks once, in the row (as promos do).
+  const [confirming, setConfirming] = useState<string | null>(null);
+
   function remove(rule: TimeRule) {
     setError(null);
+    setConfirming(null);
     startTransition(async () => {
       const r = await removeTimeRule(rule.id);
       if (!r.ok) return setError(t("failed"));
@@ -331,12 +335,37 @@ export function TimeRules({
                       data-testid="time-rule-remove"
                       className={iconButton()}
                       aria-label={t("timeRules.removeRule", { from: r.from, to: r.to })}
+                      aria-expanded={confirming === r.id}
                       disabled={pending}
-                      onClick={() => remove(r)}
+                      onClick={() => setConfirming(r.id)}
                     >
                       <Trash2 aria-hidden="true" />
                     </button>
                   </div>
+                  {confirming === r.id && (
+                    <div role="group" className="flex w-full flex-wrap items-center gap-2 pt-1">
+                      <p className="m-0 flex-1 basis-48 text-[1.0625rem]">
+                        {t("timeRules.removeConfirm", { from: r.from, to: r.to })}
+                      </p>
+                      <button
+                        type="button"
+                        data-testid="time-rule-remove-yes"
+                        disabled={pending}
+                        onClick={() => remove(r)}
+                        className={button("destructive", "flex-1 sm:flex-none")}
+                      >
+                        {t("timeRules.removeYes")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => setConfirming(null)}
+                        className={button("tinted", "flex-1 sm:flex-none")}
+                      >
+                        {t("timeRules.removeNo")}
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

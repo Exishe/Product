@@ -131,6 +131,7 @@ test("the owner sets a section's hours and a rule by time of day, and finds both
 
   // Delete the night rule.
   await rows.filter({ hasText: "22:00–02:00" }).getByTestId("time-rule-remove").click();
+  await rows.filter({ hasText: "22:00–02:00" }).getByTestId("time-rule-remove-yes").click();
   await expect(rows).toHaveCount(1);
   await openPairings(page);
   await expect(rows).toHaveCount(1);
