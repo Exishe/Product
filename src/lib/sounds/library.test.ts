@@ -13,7 +13,7 @@ import {
 
 describe("sound library", () => {
   it("has eight sounds with unique ids that match their descriptors", () => {
-    expect(SOUND_IDS).toHaveLength(8);
+    expect(SOUND_IDS).toHaveLength(14);
     expect(new Set(SOUND_IDS).size).toBe(SOUND_IDS.length);
     for (const id of SOUND_IDS) expect(SOUNDS[id].id).toBe(id);
   });

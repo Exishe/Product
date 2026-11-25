@@ -3,7 +3,22 @@
 // description (voices with a start, a pitch and a length) so it can be unit
 // tested; `play` turns the description into oscillators and gain envelopes.
 
-export const SOUND_IDS = ["bell", "chime", "doorbell", "marimba", "triple", "pop", "alarm", "gong"] as const;
+export const SOUND_IDS = [
+  "bell",
+  "chime",
+  "doorbell",
+  "marimba",
+  "triple",
+  "pop",
+  "alarm",
+  "gong",
+  "service",
+  "timer",
+  "xylophone",
+  "harp",
+  "ship",
+  "coin",
+] as const;
 export type SoundId = (typeof SOUND_IDS)[number];
 
 export const DEFAULT_ORDER_SOUND: SoundId = "bell";
@@ -83,6 +98,36 @@ export const SOUNDS: Readonly<Record<SoundId, SoundDescriptor>> = {
   },
   // A low, long bell.
   gong: { id: "gong", voices: [v(0, 262, 1.6, 0.6, "sine", { ratio: 1.41, index: 2 }), v(0, 392, 1.0, 0.25)] },
+  // The bell on a restaurant counter: one bright, ringing "ding".
+  service: {
+    id: "service",
+    voices: [v(0, 2093, 1.5, 0.45, "sine", { ratio: 2.76, index: 0.8 }), v(0, 4000, 0.3, 0.06)],
+  },
+  // A kitchen timer going off: quick bursts of the same short beep.
+  timer: {
+    id: "timer",
+    voices: [0, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8].map((at) => v(at, 1400, 0.07, 0.45, "triangle")),
+  },
+  // Four bright notes going up.
+  xylophone: {
+    id: "xylophone",
+    voices: [v(0, 1047, 0.3, 0.45), v(0.12, 1319, 0.3, 0.45), v(0.24, 1568, 0.3, 0.45), v(0.36, 2093, 0.6, 0.45)],
+  },
+  // A soft rising arpeggio.
+  harp: {
+    id: "harp",
+    voices: [523, 659, 784, 1047, 1319, 1568].map((freq, i) => v(i * 0.07, freq, 0.8, 0.3, "triangle")),
+  },
+  // Two strokes of a ship's bell.
+  ship: {
+    id: "ship",
+    voices: [
+      v(0, 523, 0.9, 0.5, "sine", { ratio: 2.4, index: 1.2 }),
+      v(0.35, 523, 1.1, 0.5, "sine", { ratio: 2.4, index: 1.2 }),
+    ],
+  },
+  // A quick two-note "coin".
+  coin: { id: "coin", voices: [v(0, 988, 0.08, 0.45, "triangle"), v(0.08, 1319, 0.55, 0.45, "triangle")] },
 };
 
 /** Length of a sound in seconds. */

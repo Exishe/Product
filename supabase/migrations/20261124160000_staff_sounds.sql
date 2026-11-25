@@ -10,9 +10,9 @@ alter table public.locations
   add column order_sound text not null default 'bell',
   add column call_sound text not null default 'doorbell',
   add constraint locations_order_sound_known
-    check (order_sound in ('bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong')),
+    check (order_sound in ('bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong', 'service', 'timer', 'xylophone', 'harp', 'ship', 'coin')),
   add constraint locations_call_sound_known
-    check (call_sound in ('bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong'));
+    check (call_sound in ('bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong', 'service', 'timer', 'xylophone', 'harp', 'ship', 'coin'));
 -- No client write grant on these columns: api.set_staff_sounds changes them.
 
 create function api.set_staff_sounds(p_location_id uuid, p_order_sound text, p_call_sound text)
@@ -20,7 +20,7 @@ returns void
 language plpgsql security definer set search_path = '' as $$
 declare
   v_restaurant uuid;
-  v_ids constant text[] := array['bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong'];
+  v_ids constant text[] := array['bell', 'chime', 'doorbell', 'marimba', 'triple', 'pop', 'alarm', 'gong', 'service', 'timer', 'xylophone', 'harp', 'ship', 'coin'];
 begin
   perform private.assert_location_role(p_location_id, '{owner,manager}');
   if p_order_sound is null or not (p_order_sound = any (v_ids)) then

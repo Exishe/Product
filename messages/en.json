@@ -1865,7 +1865,13 @@
       "triple": "Three beeps",
       "pop": "Soft pop",
       "alarm": "Alarm",
-      "gong": "Gong"
+      "gong": "Gong",
+      "service": "Service bell",
+      "timer": "Kitchen timer",
+      "xylophone": "Xylophone",
+      "harp": "Harp",
+      "ship": "Ship's bell",
+      "coin": "Coin"
     },
     "settings": {
       "orderLabel": "New order in the kitchen",
