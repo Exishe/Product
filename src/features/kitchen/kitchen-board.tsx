@@ -21,6 +21,7 @@ import {
   setSoldOut,
 } from "./actions";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
+import { NewOrderAlert, type IncomingOrder } from "./new-order-alert";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
 import { AllDayStrip } from "./all-day";
 import {
@@ -67,6 +68,8 @@ const POLL_MS = 10_000; // safety poll under the live channel (realtime.md)
 const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
+// How long the big «Նոր պատվեր» card stays before it closes by itself.
+const ALERT_MS = 7_000;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
 const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = {
   new: Inbox,
@@ -159,6 +162,7 @@ function Board(p: KitchenBoardProps) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(p.renderedAt);
   const [sent, setSent] = useState<{ action: KitchenAction; at: number }[]>([]);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
+  const [incoming, setIncoming] = useState<{ key: number; orders: IncomingOrder[] } | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [revoked, setRevoked] = useState(false);
   const [trouble, setTrouble] = useState<number | null>(null);
@@ -206,6 +210,17 @@ function Board(p: KitchenBoardProps) {
           // One sound per refresh, the most urgent one: allergy, then a
           // cancellation, then a plain new order.
           const orders = arrived.filter((x) => x.kind === "order" && x.status === "new");
+          if (orders.length > 0)
+            setIncoming({
+              key: Date.now(),
+              orders: orders.map((x) => ({
+                id: x.id,
+                number: x.number,
+                table: x.table,
+                allergy: x.allergy,
+                dishes: x.lines.length,
+              })),
+            });
           if (orders.some((x) => x.allergy)) notifyRef.current("allergy");
           else if (arrived.some((x) => x.kind === "void")) notifyRef.current("void");
           else if (orders.length > 0) notifyRef.current("new");
@@ -365,6 +380,12 @@ function Board(p: KitchenBoardProps) {
   );
 
   // --- Bookkeeping ---------------------------------------------------------
+  useEffect(() => {
+    if (!incoming) return;
+    const timer = window.setTimeout(() => setIncoming(null), ALERT_MS);
+    return () => window.clearTimeout(timer);
+  }, [incoming]);
+
   useEffect(() => {
     if (fresh.size === 0) return;
     const timer = window.setTimeout(() => setFresh(new Set()), FRESH_MS);
@@ -527,6 +548,9 @@ function Board(p: KitchenBoardProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
+      {incoming && shift.on && !revoked && (
+        <NewOrderAlert key={incoming.key} orders={incoming.orders} onClose={() => setIncoming(null)} />
+      )}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );

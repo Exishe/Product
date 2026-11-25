@@ -274,7 +274,9 @@
       "quantity": "{quantity}×",
       "plain": "{quantity} plain",
       "empty": "Nothing to cook."
-    }
+    },
+    "newOrder": "New order",
+    "newOrders": "{count} new orders"
   },
   "waiter": {
     "title": "Tables",

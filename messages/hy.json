@@ -274,7 +274,9 @@
       "quantity": "{quantity}×",
       "plain": "{quantity} առանց հավելման",
       "empty": "Պատրաստելու բան չկա։"
-    }
+    },
+    "newOrder": "Նոր պատվեր",
+    "newOrders": "{count} նոր պատվեր"
   },
   "waiter": {
     "title": "Սեղաններ",

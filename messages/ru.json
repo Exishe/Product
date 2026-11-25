@@ -274,7 +274,9 @@
       "quantity": "{quantity}×",
       "plain": "{quantity} без добавок",
       "empty": "Готовить нечего."
-    }
+    },
+    "newOrder": "Новый заказ",
+    "newOrders": "Новых заказов: {count}"
   },
   "waiter": {
     "title": "Столы",
