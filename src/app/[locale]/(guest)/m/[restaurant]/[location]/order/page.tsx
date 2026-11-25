@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
+import { isDemoCafe } from "@/features/guest-theme/demo";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
@@ -119,7 +120,12 @@ export default async function OrderStatusPage({
   );
 
   return (
-    <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>
+    <GuestThemeScope
+      theme={theme}
+      brandColor={look?.brand_color}
+      brand={look?.brand}
+      demo={isDemoCafe(restaurant)}
+    >
       {table ? (
         <GuestI18nProvider
           locale={locale}

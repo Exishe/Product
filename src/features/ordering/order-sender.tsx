@@ -199,7 +199,7 @@ export function OrderSender({
       />
     </Suspense>
   );
-  const primary = `${styles.cta} flex min-h-12 w-full items-center justify-center rounded-[12px] px-6 text-[13px] font-semibold`;
+  const primary = `${styles.cta} flex min-h-12 w-full items-center justify-center rounded-[16px] px-6 text-[14px] font-semibold`;
   return (
     <div className="grid gap-3">
       {dialog}

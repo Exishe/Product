@@ -44,7 +44,7 @@ export function LineRow({
       data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
-        <span className={`bg-plate row-span-5 block overflow-hidden rounded-[10px] ${dense ? "size-11" : "size-14"}`}>
+        <span className={`bg-plate row-span-5 block overflow-hidden rounded-[12px] ${dense ? "size-11" : "size-14"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
           <img
             src={photo}
@@ -59,19 +59,19 @@ export function LineRow({
         <Txt
           value={item.name}
           locale={locale}
-          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-[12px]" : "text-[13px]"} ${available ? "" : "text-muted line-through"}`}
+          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-[13px]" : "text-[14px]"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
       )}
-      <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
+      <span className="num text-right text-[13px] font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {detail && item?.description && (
-        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-[11px] break-words`} />
+        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-[12px] break-words`} />
       )}
       {options.length > 0 && (
-        <span className={`text-muted ${col} text-[11px]`}>
+        <span className={`text-muted ${col} text-[12px]`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -81,14 +81,14 @@ export function LineRow({
         </span>
       )}
       {line.note && (
-        <span className={`text-muted ${col} text-[11px] break-words`}>
+        <span className={`text-muted ${col} text-[12px] break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className={`text-alert ${col} text-[11px] font-semibold`} role="status">
+        <span className={`text-alert ${col} text-[12px] font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}
@@ -104,7 +104,7 @@ export function LineRow({
             >
               <MinusIcon />
             </button>
-            <output className="num min-w-6 text-center text-[13px] font-semibold">{line.quantity}</output>
+            <output className="num min-w-6 text-center text-[14px] font-semibold">{line.quantity}</output>
             <button
               type="button"
               className={step}
@@ -119,7 +119,7 @@ export function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-[12px] font-semibold"
+            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-[13px] font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}

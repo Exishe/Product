@@ -62,12 +62,12 @@ export function CartView({
         ))}
       </ul>
       <div className="flex items-baseline justify-between px-1 pt-4 pb-3">
-        <span className="text-[13px]">{t("cart.total")}</span>
+        <span className="text-[14px]">{t("cart.total")}</span>
         <span className="num text-[18px] font-semibold" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>
       </div>
-      <div className="bg-chip text-muted mb-4 grid gap-1.5 rounded-[10px] px-3.5 py-3 text-[11px] leading-snug">
+      <div className="bg-chip text-muted mb-4 grid gap-1.5 rounded-[12px] px-3.5 py-3 text-[12px] leading-snug">
         {wait && (
           <span className="text-ink block font-semibold" data-testid="cart-wait">
             {t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}

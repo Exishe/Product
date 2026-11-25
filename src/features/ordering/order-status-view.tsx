@@ -202,15 +202,15 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
               ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
-              <div className={`flex items-center gap-2 text-[12px] leading-5 ${done ? "font-semibold" : "text-muted"}`}>
+              <div className={`flex items-center gap-2 text-[13px] leading-5 ${done ? "font-semibold" : "text-muted"}`}>
                 {t(`order.steps.${step}`)}
                 {current && status !== "served" && status !== "paid" && (
-                  <span className="text-accent-text bg-[#fbe9e0] rounded-[5px] px-1.5 py-px text-[10px] font-semibold">
+                  <span className="text-accent-text bg-[#fbe9e0] rounded-[6px] px-1.5 py-px text-[11px] font-semibold">
                     {t("order.now")}
                   </span>
                 )}
               </div>
-              {current && <p className="text-muted text-[11px] leading-snug">{note}</p>}
+              {current && <p className="text-muted text-[12px] leading-snug">{note}</p>}
             </div>
           </li>
         );
@@ -231,7 +231,7 @@ function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
   }, []);
   const late = waitState(wait, placedAt, now) === "late";
   return (
-    <p className="text-muted -mt-1 mb-3 text-[11px]" data-testid="order-wait" data-late={late}>
+    <p className="text-muted -mt-1 mb-3 text-[12px]" data-testid="order-wait" data-late={late}>
       {late ? t("wait.late") : t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
     </p>
   );
@@ -275,7 +275,7 @@ function RecommendedCard({
   return (
     // Part of the page, not a card on it: the page colour, the menu's heading style.
     <section aria-labelledby="rec-title">
-      <h2 id="rec-title" className="flex items-center gap-2 text-[14px] font-semibold">
+      <h2 id="rec-title" className="flex items-center gap-2 text-[15px] font-semibold">
         <Sparkles size={18} aria-hidden className="text-accent-text" />
         {t("order.recommended")}
       </h2>
@@ -337,14 +337,14 @@ function OrderCard({
       >
         <div className={guestStyles.sheetHead}>
           <Timer size={16} aria-hidden />
-          <p className="text-[12px]">
+          <p className="text-[13px]">
             {t("order.title", { number: order.number })} ·{" "}
             <span className="font-normal">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</span>
           </p>
         </div>
         <div className={`${guestStyles.sheetBody} pb-2`}>
           {status !== "rejected" && status !== "cancelled" && (
-            <h2 className="text-[14px] leading-[1.25] font-semibold" data-testid="order-phase">
+            <h2 className="text-[15px] leading-[1.25] font-semibold" data-testid="order-phase">
               {t(`order.steps.${status}`)}
             </h2>
           )}
@@ -370,12 +370,12 @@ function OrderCard({
           {t("order.title", { number: order.number })}
         </Title>
         {!latest && (
-          <span className="text-muted text-[11px] font-semibold">
+          <span className="text-muted text-[12px] font-semibold">
             {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
           </span>
         )}
       </div>
-      <p className="text-muted text-[11px]">
+      <p className="text-muted text-[12px]">
         {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
       </p>
       {part === "all" && statusBlock}
@@ -392,7 +392,7 @@ function OrderCard({
               className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-2.5 last:border-b-0"
             >
               <span
-                className={`text-[12px] leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
+                className={`text-[13px] leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
               >
                 <span className="num">
                   {l.cancelled_quantity > 0 && left > 0 ? (
@@ -403,11 +403,11 @@ function OrderCard({
                 {" × "}
                 {name ? <Txt value={name} locale={locale as Locale} /> : null}
               </span>
-              <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
+              <span className="num text-right text-[13px] font-semibold whitespace-nowrap">
                 {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
               </span>
               {l.item_id && details?.[l.item_id] && (
-                <span className="text-soft col-start-1 text-[11px] break-words" data-testid="line-detail">
+                <span className="text-soft col-start-1 text-[12px] break-words" data-testid="line-detail">
                   {details[l.item_id]}
                 </span>
               )}
@@ -417,7 +417,7 @@ function OrderCard({
                 </span>
               )}
               {mods.length > 0 && (
-                <span className="text-muted col-start-1 text-[11px]">
+                <span className="text-muted col-start-1 text-[12px]">
                   {mods.map((m, i) => (
                     <span key={i}>
                       {i > 0 ? ", " : null}
@@ -426,7 +426,7 @@ function OrderCard({
                   ))}
                 </span>
               )}
-              {l.note && <span className="text-muted col-start-1 text-[11px] break-words">{l.note}</span>}
+              {l.note && <span className="text-muted col-start-1 text-[12px] break-words">{l.note}</span>}
               {l.cant_make_at && cantMake?.db && (
                 <CantMakeNote
                   db={cantMake.db}
@@ -439,7 +439,7 @@ function OrderCard({
           );
         })}
       </ul>
-      <div className="flex items-baseline justify-between py-4 text-[15px] font-semibold">
+      <div className="flex items-baseline justify-between py-4 text-[16px] font-semibold">
         <span>{t("order.total")}</span>
         <span className="num">
           {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
@@ -450,7 +450,7 @@ function OrderCard({
           <button
             type="button"
             onClick={() => onRepeat(order)}
-            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[11px] font-semibold"
+            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[12px] font-semibold"
           >
             <RotateCcw size={16} aria-hidden />
             {t("order.sameAgain")}
@@ -732,7 +732,7 @@ export function OrderStatusView({
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-11 rounded-pill border border-[var(--guest-line-strong)] bg-white px-4 text-[12px] font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
+    "min-h-11 rounded-pill border border-[var(--guest-line-strong)] bg-white px-4 text-[13px] font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
   // Back to the menu with an earlier round in the cart (this table's cart).
   const repeat = (order: Order) => {
     const newId = () =>
@@ -884,7 +884,7 @@ export function OrderStatusView({
               cantMake={cantMake}
             />
           )}
-      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[11px]">{t("order.reconnecting")}</p>}
+      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[12px]">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {latestStatus
           ? t(
@@ -964,11 +964,11 @@ export function OrderStatusView({
                     </span>
                   </div>
                   {people > 1 && (
-                    <p className="num text-accent-text text-[15px] font-semibold" data-testid="split-share">
+                    <p className="num text-accent-text text-[16px] font-semibold" data-testid="split-share">
                       {t("order.splitEach", { amount: formatAmd(shareOf(grand, people), locale as Locale) })}
                     </p>
                   )}
-                  <p className="text-muted text-[11px]">{t("order.splitNote")}</p>
+                  <p className="text-muted text-[12px]">{t("order.splitNote")}</p>
                 </div>
               )}
               <p className="m-0 font-semibold">{t("order.payTitle")}</p>
@@ -997,7 +997,7 @@ export function OrderStatusView({
 
       {earlier.length > 0 && (
         <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
-          <h2 id="earlier-orders" className="text-[14px] font-semibold">
+          <h2 id="earlier-orders" className="text-[15px] font-semibold">
             {t("order.earlier")}
           </h2>
           {earlier.map((o) => (
@@ -1010,7 +1010,7 @@ export function OrderStatusView({
               cantMake={cantMake}
             />
           ))}
-          <div className="border-line flex items-baseline justify-between border-t py-4 text-[15px] font-semibold">
+          <div className="border-line flex items-baseline justify-between border-t py-4 text-[16px] font-semibold">
             <span>{t("order.allRounds")}</span>
             <span className="num">{formatAmd(grand, locale as Locale)}</span>
           </div>
