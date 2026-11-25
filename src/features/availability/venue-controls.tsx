@@ -140,7 +140,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
                 type="button"
                 disabled={pending || !customOk}
                 onClick={() => customMinutes !== null && pause(customMinutes)}
-                className={button("secondary")}
+                className={button("tinted")}
               >
                 {t("pause")}
               </button>
@@ -163,7 +163,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               type="button"
               disabled={pending}
               onClick={() => setChoosing(true)}
-              className={button("secondary", "w-full sm:w-auto")}
+              className={button("tinted", "w-full sm:w-auto")}
             >
               <CirclePause aria-hidden="true" />
               {t("pauseOrdering")}
@@ -241,7 +241,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               type="button"
               disabled={pending}
               onClick={() => setConfirmClose(true)}
-              className={button("secondary", "w-full sm:w-auto")}
+              className={button("tinted", "w-full sm:w-auto")}
             >
               <ChefHat aria-hidden="true" />
               {t("closeKitchen")}

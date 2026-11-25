@@ -178,7 +178,7 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
                         setError(null);
                         setDraft(draftOf(p));
                       }}
-                      className={button("secondary", "flex-1 sm:flex-none")}
+                      className={button("tinted", "flex-1 sm:flex-none")}
                     >
                       <Pencil aria-hidden="true" />
                       {t("edit")}
@@ -314,7 +314,7 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
                 setError(null);
                 setDraft(blank());
               }}
-              className={button("secondary", "w-full sm:w-auto")}
+              className={button("tinted", "w-full sm:w-auto")}
               data-testid="promo-add"
             >
               <Plus aria-hidden="true" />

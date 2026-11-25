@@ -98,7 +98,12 @@
       "rewards": "Game rewards",
       "rewardsHint": "A guest who reaches a level in a game while waiting earns a reward. Your waiter sees it at the table and gives it. Prices don't change.",
       "sounds": "Sounds",
-      "soundsHint": "Choose the sound for new kitchen orders and for guest calls. Press Listen to hear it."
+      "soundsHint": "Choose the sound for new kitchen orders and for guest calls. Press Listen to hear it.",
+      "settings": "Settings",
+      "alertsValue": "{minutes} min wait or {calls, plural, one {# call} other {# calls}}",
+      "soundsValue": "Kitchen: {order} · Waiter: {call}",
+      "rewardsOn": "On",
+      "rewardsOff": "Off"
     },
     "controls": {
       "orderingOn": "Guests can order.",
