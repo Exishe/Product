@@ -4,6 +4,41 @@
     "tagline": "Orders go from the guest's phone straight to the kitchen",
     "staffApp": "Kitchen screen and waiter tablet"
   },
+  "landing": {
+    "metaTitle": "Pativ: QR menu and ordering for cafés",
+    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "title": "Orders go from the guest's phone straight to the kitchen",
+    "lead": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "ctaDemo": "Open the demo menu",
+    "ctaSignup": "Add your café",
+    "signIn": "Sign in",
+    "heroAlt": "The demo café's menu on a guest's phone",
+    "features": {
+      "title": "What's in Pativ",
+      "menu": {
+        "title": "QR menu",
+        "text": "A menu with photos in three languages. Guests order from their own phone.",
+        "alt": "A section of the guest menu with a dish photo"
+      },
+      "waiter": {
+        "title": "Waiter app",
+        "text": "New orders, calls and bill requests, table by table.",
+        "alt": "Table calls in the waiter app"
+      },
+      "kitchen": {
+        "title": "Kitchen screen",
+        "text": "Tickets arrive in order, and late ones are marked in red.",
+        "alt": "The kitchen screen with new and in-progress tickets"
+      },
+      "admin": {
+        "title": "Owner admin",
+        "text": "Menu, tables, staff and the day's reports."
+      }
+    },
+    "footer": {
+      "copyright": "© 2026 Pativ · Yerevan"
+    }
+  },
   "common": {
     "notFound": "This page doesn't exist.",
     "backHome": "Home"

@@ -57,6 +57,13 @@
   --radius-soft: 24px;
   --color-amber: #e0a33a; /* the one warm accent: fills and badges (black on it 7.6:1) */
   --color-amber-tint: #fdf0dc; /* warnings and notices: ink 15.0:1, amber-text 5.6:1 */
+  /* Public landing page: a warm band under the product cards (the owner's
+     Foodly and Ember references) and a neutral grey for secondary text that
+     matches the page grey's undertone (5.8:1 on matsoni, 5.9:1 on sand,
+     6.7:1 on white). */
+  --color-sand: #f5f0e8;
+  --color-sand-line: #e4dccd;
+  --color-slate: #575c63;
 }
 
 /* Guest colour names for utilities (bg-page, text-accent-text, …). The values
