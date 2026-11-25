@@ -64,6 +64,9 @@ jobs:
     name: Browser tests (${{ matrix.project }})
     strategy:
       fail-fast: false
+      # One screen size at a time: the free dev database timed out under three suites at once
+      # (phone alone: 9 minutes, 2 failures; tablet and desktop together: 19 minutes, 8 to 12).
+      max-parallel: 1
       matrix:
         project: [phone, tablet, desktop]
     # Runs after the cloud database is up to date (or when migrate is skipped,
