@@ -46,6 +46,12 @@ describe("groupByCategory", () => {
     expect(g.map((x) => x.category.id)).toEqual(["a", "b"]);
     expect(g[0]!.dishes.map((d) => d.id)).toEqual(["1", "3"]);
   });
+
+  it("leaves out dishes of a section that isn't listed, so the first listed dish is from a shown section", () => {
+    const g = groupByCategory([{ ...dishes[1]!, id: "9", categoryId: "off" }, ...dishes], cats);
+    expect(g.flatMap((x) => x.dishes.map((d) => d.id))).toEqual(["1", "3", "2"]);
+    expect(g[0]?.dishes[0]?.id).toBe("1");
+  });
 });
 
 describe("searchDishes", () => {

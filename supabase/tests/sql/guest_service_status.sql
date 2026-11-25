@@ -77,6 +77,16 @@ select test.ok((select count(*) = 0 from api.guest_service_status(:'g2') s where
                'an older answer is not');
 reset role;
 
+-- A guest session that was revoked (the table was closed) or has expired may not read either.
+update public.guest_sessions set revoked_at = now() where id = :'g2';
+select test.act_as('a5c50000-0000-0000-0000-000000000003', true);
+select test.fails(format('select * from api.guest_service_status(%L)', :'g2'), 'forbidden', 'a revoked guest session is refused');
+reset role;
+update public.guest_sessions set expires_at = now() - interval '1 minute' where id = :'g1';
+select test.act_as('a5c50000-0000-0000-0000-000000000002', true);
+select test.fails(format('select * from api.guest_service_status(%L)', :'g1'), 'forbidden', 'an expired guest session is refused');
+reset role;
+
 -- Grants
 select test.ok(not has_function_privilege('anon', 'api.guest_service_status(uuid)', 'execute'), 'anon cannot execute it');
 select test.ok(has_function_privilege('authenticated', 'api.guest_service_status(uuid)', 'execute'), 'authenticated can');
