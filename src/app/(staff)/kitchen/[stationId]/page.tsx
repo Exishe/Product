@@ -7,6 +7,7 @@ import { toBoardTickets } from "@/features/kitchen/board-model";
 import { KitchenBoard } from "@/features/kitchen/kitchen-board";
 import { sameNameDetails, stationDishes } from "@/features/kitchen/station-dishes";
 import { requireMember } from "@/lib/auth/require-member";
+import { DEFAULT_ORDER_SOUND, isSoundId } from "@/lib/sounds/library";
 import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,7 +31,7 @@ async function loadBoard(stationId: string) {
   if (!station || !location) return null;
 
   const renderedAt = Date.now();
-  const [claims, stations, rows, soldOut, links, menu, outages, cantMake] = await Promise.all([
+  const [claims, stations, rows, soldOut, links, menu, outages, cantMake, sound] = await Promise.all([
     supabase.auth.getClaims(),
     supabase.from("stations").select("id, name, is_default, sort").eq("location_id", location.id).order("sort").order("name"),
     fetchTicketRows(supabase, station.id),
@@ -43,6 +44,8 @@ async function loadBoard(stationId: string) {
     supabase.from("ingredient_outages").select("ingredient_id").eq("location_id", location.id).limit(1),
     // Before the can't-make migration (ADR-081) the column is missing: that button stays hidden.
     (supabase as unknown as SupabaseClient).from("order_items").select("cant_make_at").limit(1),
+    // The café's new-order sound (ADR-088); the column is missing before its migration: the plain beeps.
+    (supabase as unknown as SupabaseClient).from("locations").select("order_sound").eq("id", location.id).maybeSingle(),
   ]);
   const userId = claims.data?.claims.sub;
   if (!userId) return null;
@@ -58,6 +61,7 @@ async function loadBoard(stationId: string) {
     userId,
     ingredientsSupported: !outages.error,
     cantMakeSupported: !cantMake.error,
+    orderSound: !sound.error && sound.data ? (isSoundId(sound.data.order_sound) ? sound.data.order_sound : DEFAULT_ORDER_SOUND) : null,
   };
 }
 
@@ -93,6 +97,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ statio
         initialSoldOut={board.soldOut}
         ingredientsSupported={board.ingredientsSupported}
         cantMakeSupported={board.cantMakeSupported}
+        orderSound={board.orderSound}
         lineDetails={lineDetails}
         dishes={stationDishes(board.snapshot, board.links, { id: station.id, isDefault: station.is_default }, locale)}
         renderedAt={board.renderedAt}

@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { Power, Volume2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { play as playLibrarySound, type SoundId } from "@/lib/sounds/library";
 
 type WakeLock = { release: () => Promise<void>; released: boolean };
 type WakeLockNavigator = Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeLock> } };
@@ -62,7 +63,7 @@ function subscribeTone(cb: () => void) {
 // (R17). «Սկսել հերթափոխը» is that first tap: it unlocks the sound, plays the
 // new-order beep once so the cook hears the volume, and asks for a screen wake
 // lock (again whenever the screen comes back into view).
-export function useShift(stationId: string) {
+export function useShift(stationId: string, orderSound: SoundId | null = null) {
   const [on, setOn] = useState(false);
   const audio = useRef<AudioContext | null>(null);
   const lock = useRef<WakeLock | null>(null);
@@ -72,8 +73,11 @@ export function useShift(stationId: string) {
     () => "mid" as Tone,
   );
   const toneRef = useRef(tone);
+  // The café's own new-order sound (ADR-088); null before its migration: the plain beeps.
+  const orderSoundRef = useRef(orderSound);
   useEffect(() => {
     toneRef.current = tone;
+    orderSoundRef.current = orderSound;
   });
 
   const requestWakeLock = useCallback(async () => {
@@ -104,6 +108,11 @@ export function useShift(stationId: string) {
   const play = useCallback((sound: Sound, pitch: Tone = toneRef.current) => {
     const ctx = audio.current;
     if (!ctx) return;
+    if (sound === "new" && orderSoundRef.current) {
+      // The device's high / mid / low is a pitch multiplier of the chosen sound.
+      playLibrarySound(ctx, orderSoundRef.current, { pitch: PITCH[pitch] / PITCH.mid });
+      return;
+    }
     for (const [offset, multiplier, length] of PATTERN[sound]) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();

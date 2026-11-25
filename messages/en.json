@@ -54,7 +54,9 @@
       "alertSettings": "Alerts for slow tables",
       "alertSettingsHint": "You and your team get a message in Telegram, and it shows here, when a table waits too long.",
       "rewards": "Game rewards",
-      "rewardsHint": "A guest who reaches a level in a game while waiting earns a reward. Your waiter sees it at the table and gives it. Prices don't change."
+      "rewardsHint": "A guest who reaches a level in a game while waiting earns a reward. Your waiter sees it at the table and gives it. Prices don't change.",
+      "sounds": "Sounds",
+      "soundsHint": "Choose the sound for new kitchen orders and for guest calls. Press Listen to hear it."
     },
     "controls": {
       "orderingOn": "Guests can order.",
@@ -647,6 +649,19 @@
       "hint": "Speak to the guest, then tap the button.",
       "told": "Told the guest",
       "failed": "Couldn't save that. Try again."
+    },
+    "alerts": {
+      "region": "Calls from tables",
+      "call": "Table {label} is calling the waiter",
+      "bill": "Table {label} asks for the bill",
+      "more": "and {count} more",
+      "close": "Close",
+      "open": "Open the table",
+      "soundHint": "Tap to turn sound on",
+      "soundOff": "Turn on sound",
+      "soundOn": "Sound on",
+      "soundOnTest": "Sound on. Tap to hear it.",
+      "notificationBody": "Open the waiter app"
     }
   },
   "menu": {
@@ -1839,6 +1854,30 @@
         "order": "Enter a whole number from -1000 to 1000, or leave it empty.",
         "limit": "You can have up to {max} rules."
       }
+    }
+  },
+  "sounds": {
+    "names": {
+      "bell": "Bell",
+      "chime": "Chime",
+      "doorbell": "Doorbell",
+      "marimba": "Marimba",
+      "triple": "Three beeps",
+      "pop": "Soft pop",
+      "alarm": "Alarm",
+      "gong": "Gong"
+    },
+    "settings": {
+      "orderLabel": "New order in the kitchen",
+      "orderHint": "The kitchen plays this when a new order arrives.",
+      "callLabel": "Waiter call",
+      "callHint": "Waiters hear this when a guest calls or asks for the bill. It repeats every 20 seconds until someone answers.",
+      "listen": "Listen",
+      "listenTo": "Listen to {name}",
+      "save": "Save",
+      "saved": "Saved.",
+      "failed": "Couldn't save. Please try again.",
+      "note": "Each screen plays its sound after the staff member taps “Sound on” once."
     }
   }
 }

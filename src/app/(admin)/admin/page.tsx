@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AdminPage, Notice, Section } from "@/features/admin-ui/page";
 import { AlertSettingsForm } from "@/features/alerts/alert-settings";
+import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
+import { soundOr, DEFAULT_CALL_SOUND, DEFAULT_ORDER_SOUND } from "@/lib/sounds/library";
 import { AttentionPanel } from "@/features/alerts/attention-panel";
 import { parseAlerts, type AlertSettings, type TableAlert } from "@/features/alerts/model";
 import { VenueControls, type VenueState } from "@/features/availability/venue-controls";
@@ -120,6 +122,21 @@ export default async function AdminHome() {
       alertSettings = { overdueMinutes: a.overdue_minutes, repeatCalls: a.repeat_call_threshold };
       alerts = parseAlerts(list.data);
     }
+  }
+
+  // Staff sounds (ADR-088): read on their own, so a database without the migration hides the section.
+  let staffSounds: StaffSounds | null = null;
+  if (location) {
+    const { data: row, error } = await (supabase as unknown as SupabaseClient)
+      .from("locations")
+      .select("order_sound, call_sound")
+      .eq("id", location.id)
+      .maybeSingle();
+    if (row && !error)
+      staffSounds = {
+        orderSound: soundOr(row.order_sound, DEFAULT_ORDER_SOUND),
+        callSound: soundOr(row.call_sound, DEFAULT_CALL_SOUND),
+      };
   }
 
   // Promotions (ADR-070): also read on its own, so a database without the table hides the section.
@@ -259,6 +276,12 @@ export default async function AdminHome() {
             testId="home-alerts"
           >
             <AlertSettingsForm initial={alertSettings} />
+          </Section>
+        )}
+
+        {location && staffSounds && (
+          <Section title={t("sounds")} hint={t("soundsHint")} id="home-sounds" testId="home-sounds">
+            <SoundSettingsForm initial={staffSounds} />
           </Section>
         )}
 

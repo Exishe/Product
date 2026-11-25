@@ -42,6 +42,7 @@ import {
 import { ChangePassword } from "@/features/staff/change-password";
 import { BusySwitch } from "./busy-switch";
 import { nextBusinessDayStart } from "./business-day";
+import type { SoundId } from "@/lib/sounds/library";
 import { connectionState, troubleSince } from "./connection";
 import { StartShiftOverlay, useShift } from "./start-shift";
 import type { DishSection } from "./station-dishes";
@@ -58,6 +59,8 @@ export type KitchenBoardProps = {
   initialTickets: BoardTicket[];
   initialBusy: BusyState;
   initialSoldOut: string[];
+  /** The café's sound for a new order (ADR-088); null until its migration is applied: the plain beeps. */
+  orderSound?: SoundId | null;
   /** False until the ingredients migration is applied (ADR-076): the button stays hidden. */
   ingredientsSupported: boolean;
   /** False until the can't-make migration is applied (ADR-081): the button stays hidden. */
@@ -114,7 +117,7 @@ function Board(p: KitchenBoardProps) {
   const t = useTranslations("kitchen");
   const locale = useLocale() as Locale;
   const now = useServerClock(p.renderedAt);
-  const shift = useShift(p.station.id);
+  const shift = useShift(p.station.id, p.orderSound ?? null);
   const outbox = useOutbox<KitchenAction>();
   const browserOnline = useSyncExternalStore(
     subscribeOnline,
