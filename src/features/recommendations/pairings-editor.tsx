@@ -30,6 +30,8 @@ import {
   type ItemType,
   type MatrixCell,
 } from "./model";
+import { TimeRules } from "./time-rules-section";
+import type { TimeRule } from "./time-rules";
 
 type Pairing = { itemId: string; suggestId: string };
 
@@ -40,11 +42,13 @@ export function PairingsEditor({
   dishes: initialDishes,
   pairings: initialPairings,
   matrix: initialMatrix,
+  timeRules,
 }: {
   categories: Category[];
   dishes: Dish[];
   pairings: Pairing[];
   matrix: MatrixCell[];
+  timeRules: TimeRule[] | null;
 }) {
   const t = useTranslations("recommendations");
   const locale = useLocale();
@@ -325,6 +329,8 @@ export function PairingsEditor({
           </div>
         )}
       </Section>
+
+      <TimeRules rules={timeRules} categories={categories} dishes={dishes} />
 
       <Section
         title={t("matrix.title")}

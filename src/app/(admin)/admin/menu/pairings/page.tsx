@@ -19,6 +19,7 @@ export default async function PairingsPage() {
             dishes={data.dishes}
             pairings={data.pairings}
             matrix={data.matrix}
+            timeRules={data.timeRules}
           />
         </NextIntlClientProvider>
       ) : (
