@@ -10,7 +10,9 @@ import { safeNext } from "@/lib/auth/safe-next";
 import { loginIdentity } from "@/lib/auth/staff-login";
 import { createClient } from "@/lib/supabase/server";
 
-export type SignInState = { error: "invalid" | "busy" | null };
+// `login` comes back after a refusal so the form keeps what was typed (React
+// resets an action's form); the password never does.
+export type SignInState = { error: "invalid" | "busy" | null; login?: string };
 
 // A gateway timeout or an unreachable auth server is not a wrong password.
 const authUnavailable = (error: AuthError) => isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500;
@@ -24,9 +26,10 @@ const credentials = z.object({
 // staff username (ADR-067): a value without "@" is a username.
 export async function signIn(_prev: SignInState, form: FormData): Promise<SignInState> {
   const parsed = credentials.safeParse({ login: form.get("email"), password: form.get("password") });
+  const typed = typeof form.get("email") === "string" ? String(form.get("email")).slice(0, 200) : "";
   const identity = parsed.success ? loginIdentity(parsed.data.login) : null;
-  if (!parsed.success || !identity) return { error: "invalid" };
-  if (identity.kind === "email" && !z.email().safeParse(identity.email).success) return { error: "invalid" };
+  if (!parsed.success || !identity) return { error: "invalid", login: typed };
+  if (identity.kind === "email" && !z.email().safeParse(identity.email).success) return { error: "invalid", login: typed };
 
   const supabase = await createClient();
   const attempt = await retryTransient(
@@ -40,9 +43,9 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
     },
     [800],
   );
-  if (!attempt.ok) return { error: "busy" };
+  if (!attempt.ok) return { error: "busy", login: typed };
   const user = attempt.value;
-  if (!user) return { error: "invalid" };
+  if (!user) return { error: "invalid", login: typed };
 
   // Staff pages read the member's language from a cookie (no locale in the URL).
   const { data: member } = await supabase

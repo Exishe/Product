@@ -103,6 +103,19 @@ async function findGuestSession(db: Db, tableId: string): Promise<string | null>
   return id;
 }
 
+// The table's open requests and the ones answered a moment ago («Գնում եմ»),
+// also those another phone at the table started (ADR-090). Before that
+// migration is applied: this guest's own rows, as before.
+async function loadRequests(db: Db, guestSessionId: string) {
+  const viaTable = await db.schema("api").rpc("guest_service_status", { p_guest_session_id: guestSessionId });
+  if (viaTable.error?.code !== "PGRST202") return viaTable;
+  return db
+    .from("service_requests")
+    .select("id, kind, status, resolved_at")
+    .eq("guest_session_id", guestSessionId)
+    .or(`status.neq.resolved,resolved_at.gte.${answeredSince(Date.now())}`);
+}
+
 async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   const [orders, requests, session] = await Promise.all([
     db
@@ -110,12 +123,7 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
       .select(ORDER_COLUMNS)
       .eq("guest_session_id", guestSessionId)
       .order("placed_at", { ascending: false }),
-    db
-      .from("service_requests")
-      .select("id, kind, status, resolved_at")
-      .eq("guest_session_id", guestSessionId)
-      // Open ones, and ones the waiter answered a moment ago («Գնում եմ»).
-      .or(`status.neq.resolved,resolved_at.gte.${answeredSince(Date.now())}`),
+    loadRequests(db, guestSessionId),
     db.from("guest_sessions").select("revoked_at, expires_at").eq("id", guestSessionId).maybeSingle(),
   ]);
   if (orders.error || requests.error || session.error) return null;

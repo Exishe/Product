@@ -225,6 +225,17 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    guest_service_status: {
+      Args: {
+        p_guest_session_id: string;
+      };
+      Returns: {
+        id: string;
+        kind: Enums["service_request_kind"];
+        status: "open" | "acknowledged" | "resolved";
+        resolved_at: string | null;
+      }[];
+    };
     guest_service_request: {
       Args: {
         p_guest_session_id: string;

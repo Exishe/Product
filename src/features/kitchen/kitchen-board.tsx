@@ -519,7 +519,7 @@ function Board(p: KitchenBoardProps) {
 
       {shownAlert && <NewOrderBanner alert={shownAlert} onAck={() => setAlert(null)} />}
 
-      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-[auto_auto] sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
+      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-none sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}
@@ -584,7 +584,8 @@ function BoardColumn({
       aria-labelledby={`column-${column}`}
       data-testid={`column-${column}`}
       className={clsx(
-        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl",
+        // On a portrait tablet the board scrolls as a whole: a column is as tall as its tickets.
+        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl sm:portrait:max-lg:min-h-fit",
         strip && "sm:col-span-2 lg:col-span-1",
       )}
     >
@@ -611,7 +612,7 @@ function BoardColumn({
       </h2>
       <div
         className={clsx(
-          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:overflow-y-visible",
+          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
           strip &&
             "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
         )}

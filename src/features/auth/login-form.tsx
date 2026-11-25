@@ -25,6 +25,7 @@ export function LoginForm({ next }: { next?: string }) {
           autoCorrect="off"
           spellCheck={false}
           required
+          defaultValue={state.login}
           className={input}
         />
       </label>

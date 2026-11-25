@@ -83,7 +83,7 @@ export default async function WaiterPage() {
     <NextIntlClientProvider
       locale={locale}
       timeZone={location.timezone}
-      messages={{ waiter: messages.waiter, print: messages.print, staffAccount: messages.staffAccount }}
+      messages={{ waiter: messages.waiter, alerts: messages.alerts, print: messages.print, staffAccount: messages.staffAccount }}
     >
       <WaiterApp
         cafeName={restaurant?.name ?? ""}
