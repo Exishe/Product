@@ -69,6 +69,14 @@ export default async function WaiterPage() {
       ).categories
     : [];
 
+  // The café's sound for a guest call (ADR-088); the column is missing before its migration: the default.
+  const { data: soundRow, error: soundError } = await (supabase as unknown as SupabaseClient)
+    .from("locations")
+    .select("call_sound")
+    .eq("id", location.id)
+    .maybeSingle();
+  const callSound = !soundError && typeof soundRow?.call_sound === "string" ? soundRow.call_sound : null;
+
   const promoTitles = await fetchLivePromoTitles(supabase as unknown as SupabaseClient, location.id, locale);
   const messages = await getMessages();
   return (
@@ -95,6 +103,7 @@ export default async function WaiterPage() {
         canChangePassword={me.kind === "person" && me.role === "waiter"}
         canManageTables={me.role === "owner" || me.role === "manager"}
         initialPromos={promoTitles ?? []}
+        callSound={callSound}
       />
     </NextIntlClientProvider>
   );

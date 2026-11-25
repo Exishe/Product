@@ -17,6 +17,7 @@ import type { MemberRole } from "@/lib/auth/membership";
 import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
 import { useLocationChannel } from "@/lib/realtime/use-location-channel";
+import { DEFAULT_CALL_SOUND, soundOr } from "@/lib/sounds/library";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import {
   ackCantMake,
@@ -28,6 +29,8 @@ import {
   waiterSender,
   type DirectResult,
 } from "./actions";
+import { openRequests, type AlertRequest } from "./call-alerts";
+import { CallBanners, SoundButton } from "./call-banners";
 import { fetchFloor } from "./floor-data";
 import { fetchLivePromoTitles } from "./promos";
 import { fetchRewards, resolveReward, type WaiterReward } from "./rewards";
@@ -52,6 +55,7 @@ import { SettleSheet } from "./settle";
 import { ShiftSheet } from "./shift-sheet";
 import { TablePanel } from "./table-panel";
 import { TabBar } from "./tab-bar";
+import { useCallAlerts } from "./use-call-alerts";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
 
 export type WaiterAppProps = {
@@ -70,6 +74,8 @@ export type WaiterAppProps = {
   canManageTables: boolean;
   /** Titles of the promos guests see now (ADR-070); the waiter applies the discount. */
   initialPromos?: string[];
+  /** The café's sound for a guest call (ADR-088); null before its migration: the default. */
+  callSound?: string | null;
 };
 
 const POLL_MS = 15_000; // safety poll under the live channel (realtime.md: 15 s on the waiter app)
@@ -256,6 +262,21 @@ function App(p: WaiterAppProps) {
       ]),
     [floor.tables, sent, outbox.entries],
   );
+  // Calls and bill requests: sound, vibration, banners (ADR-088). The list is
+  // the one the tiles show, so an answered call leaves it at once.
+  const requests = useMemo(() => openRequests(tables), [tables]);
+  const alertText = useCallback(
+    (r: AlertRequest) => ({
+      title: t(r.kind === "call" ? "alerts.call" : "alerts.bill", { label: r.label }),
+      body: t("alerts.notificationBody"),
+    }),
+    [t],
+  );
+  const alerts = useCallAlerts({
+    requests,
+    callSound: soundOr(p.callSound, DEFAULT_CALL_SOUND),
+    texts: alertText,
+  });
   const tablesRef = useRef(tables);
   const floorTablesRef = useRef(floor.tables);
   useEffect(() => {
@@ -439,6 +460,7 @@ function App(p: WaiterAppProps) {
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
         <p className="m-0 min-w-0 flex-1 text-[0.9375rem] leading-tight font-semibold [overflow-wrap:anywhere]">{p.cafeName}</p>
+        <SoundButton on={alerts.soundOn} onTap={alerts.enableSound} />
         <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
         {/* The outbox stays visible until it is empty, online or not: a waiter
             who can't see a queued order enters it again. */}
@@ -482,6 +504,25 @@ function App(p: WaiterAppProps) {
             <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
           </p>
         )}
+        <div className="basis-full empty:hidden">
+          <CallBanners
+            requests={requests}
+            state={alerts.state}
+            soundOn={alerts.soundOn}
+            played={alerts.played}
+            onEnableSound={alerts.enableSound}
+            onGoing={(r) => {
+              act({ kind: "resolve", requestId: r.id });
+              alerts.close(r.id);
+            }}
+            onOpenTable={(r) => {
+              setTab("tables");
+              openTable(r.tableId);
+              alerts.close(r.id);
+            }}
+            onClose={alerts.close}
+          />
+        </div>
         <div className="basis-full empty:hidden">
           <WaiterAlerts locationId={p.location.id} />
         </div>
