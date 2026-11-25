@@ -1,8 +1,8 @@
 import { NextIntlClientProvider } from "next-intl";
-import { CircleCheck, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { AdminPage, Notice, Section } from "@/features/admin-ui/page";
+import { AdminPage, Section, SettingsItem, SettingsList } from "@/features/admin-ui/page";
 import { AlertSettingsForm } from "@/features/alerts/alert-settings";
 import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
 import { soundOr, DEFAULT_CALL_SOUND, DEFAULT_ORDER_SOUND } from "@/lib/sounds/library";
@@ -43,7 +43,11 @@ export default async function AdminHome() {
       .maybeSingle(),
   ]);
   const locale = member.locale as Locale;
-  const [t, d] = await Promise.all([getTranslations("admin.home"), getTranslations("dashboard")]);
+  const [t, d, s] = await Promise.all([
+    getTranslations("admin.home"),
+    getTranslations("dashboard"),
+    getTranslations("sounds"),
+  ]);
 
   const today = location ? businessDate(new Date(), location.timezone, location.business_day_starts) : null;
   const count = { count: "exact", head: true } as const;
@@ -255,6 +259,25 @@ export default async function AdminHome() {
         )}
       </Section>
 
+      {todos.length > 0 && (
+        <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
+          <ul className="m-0 flex list-none flex-col rounded-2xl bg-white p-0">
+            {todos.map((todo) => (
+              <li key={todo.key} className="border-staff-sep border-t first:border-0">
+                <Link
+                  href={todo.href}
+                  data-testid={`todo-${todo.key}`}
+                  className="flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]"
+                >
+                  <span className="min-w-0 flex-1 break-words">{todo.text}</span>
+                  <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
       <NextIntlClientProvider>
         {location && alerts && (
           <Section title={t("attention")} id="home-attention" testId="home-attention">
@@ -268,58 +291,55 @@ export default async function AdminHome() {
           </Section>
         )}
 
-        {location && alertSettings && (
-          <Section
-            title={t("alertSettings")}
-            hint={t("alertSettingsHint")}
-            id="home-alerts"
-            testId="home-alerts"
-          >
-            <AlertSettingsForm initial={alertSettings} />
-          </Section>
-        )}
-
-        {location && staffSounds && (
-          <Section title={t("sounds")} hint={t("soundsHint")} id="home-sounds" testId="home-sounds">
-            <SoundSettingsForm initial={staffSounds} />
-          </Section>
-        )}
-
         {location && promos && (
           <Section title={t("promos")} hint={t("promosHint")} id="home-promos" testId="home-promos">
             <PromoManager initial={promos} timeZone={location.timezone} />
           </Section>
         )}
 
-        {location && rewards && (
-          <Section title={t("rewards")} hint={t("rewardsHint")} id="home-rewards" testId="home-rewards">
-            <RewardsForm initial={rewards} />
+        {location && (alertSettings || staffSounds || rewards) && (
+          <Section title={t("settings")} id="home-settings" bare>
+            <SettingsList>
+              {alertSettings && (
+                <SettingsItem
+                  title={t("alertSettings")}
+                  value={t("alertsValue", {
+                    minutes: alertSettings.overdueMinutes,
+                    calls: alertSettings.repeatCalls,
+                  })}
+                  hint={t("alertSettingsHint")}
+                  testId="home-alerts"
+                >
+                  <AlertSettingsForm initial={alertSettings} />
+                </SettingsItem>
+              )}
+              {staffSounds && (
+                <SettingsItem
+                  title={t("sounds")}
+                  value={t("soundsValue", {
+                    order: s(`names.${staffSounds.orderSound}`),
+                    call: s(`names.${staffSounds.callSound}`),
+                  })}
+                  hint={t("soundsHint")}
+                  testId="home-sounds"
+                >
+                  <SoundSettingsForm initial={staffSounds} />
+                </SettingsItem>
+              )}
+              {rewards && (
+                <SettingsItem
+                  title={t("rewards")}
+                  value={rewards.on ? t("rewardsOn") : t("rewardsOff")}
+                  hint={t("rewardsHint")}
+                  testId="home-rewards"
+                >
+                  <RewardsForm initial={rewards} />
+                </SettingsItem>
+              )}
+            </SettingsList>
           </Section>
         )}
       </NextIntlClientProvider>
-
-      <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
-        {todos.length === 0 ? (
-          <Notice tone="info" icon={<CircleCheck aria-hidden="true" />}>
-            <p className="m-0">{t("allSet")}</p>
-          </Notice>
-        ) : (
-          <ul className="m-0 flex list-none flex-col overflow-hidden rounded-2xl bg-white p-0">
-            {todos.map((todo) => (
-              <li key={todo.key} className="border-staff-sep border-t first:border-0">
-                <Link
-                  href={todo.href}
-                  data-testid={`todo-${todo.key}`}
-                  className="flex min-h-14 items-center gap-3 px-4 py-3 text-[1.0625rem]"
-                >
-                  <span className="min-w-0 flex-1 break-words">{todo.text}</span>
-                  <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
     </AdminPage>
   );
 }

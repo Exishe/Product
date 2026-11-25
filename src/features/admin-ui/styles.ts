@@ -34,6 +34,20 @@ export const field =
 export const input = clsx(field, "h-12");
 export const fieldLabel = "text-[0.9375rem] font-semibold text-staff-label2";
 
+// One heading scale (ADR-055): the page title (h1), a section title above a
+// card (Section, 19 px semibold), and a title inside a card (17 px semibold),
+// so a card never shouts louder than the section it sits in.
+export const sectionTitle = "m-0 text-[1.1875rem] leading-tight font-semibold break-words";
+export const cardTitle = "m-0 text-[1.0625rem] leading-snug font-semibold break-words";
+
+// A quiet text action inside a list row: no fill, no shadow, 44 px tall.
+export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
+  clsx(
+    "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[0.9375rem] font-semibold whitespace-nowrap disabled:cursor-not-allowed disabled:text-staff-label2 [&_svg]:size-4 [&_svg]:shrink-0",
+    tone === "danger" ? "text-pomegranate" : "text-ink",
+    extra,
+  );
+
 // Grouped content on the grey page: white, rounded, no border (iOS inset grouped).
 export const card = "rounded-2xl bg-white p-4 sm:p-5"; // floats on --shadow-soft (globals.css, ADR-056)
 
@@ -47,6 +61,22 @@ export const chip = {
 
 // Checkboxes and radios: native, tinted, 24 px.
 export const check = "size-6 shrink-0 accent-ink";
+
+// White grouped lists (people, devices, logins, tables): 64 px rows split by
+// hairlines. The three columns line up across every list on a page: who,
+// status, actions.
+export const list = {
+  wrap: "m-0 flex list-none flex-col rounded-2xl bg-white p-0",
+  item: "border-staff-sep flex flex-col gap-3 border-b px-4 py-3 last:border-0",
+  row: "flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 sm:grid sm:grid-cols-[minmax(0,1fr)_13rem_minmax(0,16rem)] sm:gap-x-4",
+  who: "flex min-w-0 flex-1 items-center gap-3",
+  avatar:
+    "bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-[0.9375rem] font-semibold [&_svg]:size-5",
+  name: "text-[1.0625rem] leading-snug font-semibold break-words",
+  sub: "text-staff-label2 text-[0.9375rem] leading-snug",
+  status: "text-staff-label2 flex min-w-0 flex-col gap-0.5 text-[0.9375rem]",
+  actions: "ml-auto flex flex-wrap items-center justify-end gap-1 sm:ml-0",
+};
 
 // Shared table styles (a shadcn/ui-style data table in our tokens).
 export const table = {
