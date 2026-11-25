@@ -29,6 +29,36 @@ export const kitchenActionKey = (a: KitchenAction): string => a.ticketId;
 
 // Not queued: these need a connection and say so when it's missing.
 
+// Item-level bump (ADR-087): strike a line off a ticket in Cooking, or take it
+// back. Sent outside the outbox on purpose: the board keeps the tap on screen
+// and retries it itself (a strike and its undo on one line would otherwise be
+// merged as "the same action"), and a refused strike must not drop the ticket's
+// other queued moves.
+export type StrikeResult =
+  | { kind: "ok"; complete: boolean } // complete: every line still wanted is struck, on every screen
+  | { kind: "retry" } // network or server trouble: keep the tap, try again
+  | { kind: "gone" } // the ticket left Cooking or the line is gone: the server's word wins
+  | { kind: "unsupported" } // the database has no api.set_line_struck yet: this screen keeps its own strikes
+  | { kind: "failed" };
+
+export async function setLineStruck(
+  supabase: Client,
+  ticketId: string,
+  orderItemId: string,
+  struck: boolean,
+): Promise<StrikeResult> {
+  const res = await supabase
+    .schema("api")
+    .rpc("set_line_struck", { p_ticket_id: ticketId, p_order_item_id: orderItemId, p_struck: struck });
+  if (!res.error) return { kind: "ok", complete: res.data === true };
+  // PostgREST: no such function in its schema cache (404), Postgres: undefined function.
+  if (res.error.code === "PGRST202" || res.error.code === "42883") return { kind: "unsupported" };
+  const c = classifyRpcResult(res);
+  if (c.kind === "retry") return { kind: "retry" };
+  if (c.kind === "stale") return { kind: "gone" }; // stale_status or ticket/line not found
+  return { kind: "failed" }; // forbidden, bad input
+}
+
 export async function setKitchenBusy(supabase: Client, locationId: string, minutes: 20 | 30 | 45 | null) {
   // The type generator doesn't mark nullable arguments; null switches it off.
   const { data, error } = await supabase

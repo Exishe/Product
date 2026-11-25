@@ -26,6 +26,7 @@ export type TicketRow = {
   } | null;
   kitchen_ticket_items: {
     quantity: number;
+    struck_at?: string | null; // ADR-087; the column exists once that migration has run
     order_items: {
       id: string;
       item_id: string | null;
@@ -53,6 +54,7 @@ export type BoardLine = {
   allergy: boolean; // the line's note mentions an allergy
   substitute?: LocalizedText | null; // "use <this>" when an ingredient was replaced (ADR-076)
   detail?: LineDetail | null; // tells a dish apart from a same-named one
+  struck?: boolean; // a cook struck it off on some screen (the server's row, ADR-087); undefined: the database has no such column yet
 };
 
 // Section and portion of a dish that shares its name with another one.
@@ -189,6 +191,8 @@ export function toBoardTickets(
         allergy: mentionsAllergy(oi.note),
         substitute: substituteName(oi.substitution, locale),
         detail: (oi.item_id && details[oi.item_id]) || null,
+        // undefined: the database has no struck_at yet, so no strike can be shared
+        struck: k.struck_at === undefined ? undefined : r.kind === "order" && k.struck_at !== null,
       });
     }
     if (r.kind === "order" && lines.every((l) => l.quantity === 0)) continue;
@@ -316,19 +320,63 @@ export function allDay(tickets: readonly BoardTicket[]): AllDayRow[] {
   return out.sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name));
 }
 
-// Item-level bump: the lines a cook has struck on tickets in Cooking. A ticket
-// is done when every line still wanted is struck.
+// Item-level bump (ADR-087): the lines a cook has struck on tickets in Cooking.
+// The struck state lives on the server, so every kitchen screen shows the same;
+// a screen puts its own taps on top until the server has confirmed them.
 export const lineKey = (ticketId: string, lineId: string) => `${ticketId}/${lineId}`;
+export const ticketOfLineKey = (key: string) => key.slice(0, key.indexOf("/"));
+export const lineOfLineKey = (key: string) => key.slice(key.indexOf("/") + 1);
 
+// A ticket is done when every line still wanted is struck.
 export function allLinesStruck(ticket: BoardTicket, struck: ReadonlySet<string>): boolean {
   const wanted = ticket.lines.filter((l) => l.quantity > 0);
   return wanted.length > 0 && wanted.every((l) => struck.has(lineKey(ticket.id, l.id)));
 }
 
-// Keeps only the strikes of tickets still cooking on the board.
-export function pruneStruck(struck: ReadonlySet<string>, tickets: readonly BoardTicket[]): Set<string> {
+// Whether the server's rows carry struck lines at all (a database without the
+// ADR-087 migration sends no struck_at). Then taps stay on this screen.
+export const serverSharesStrikes = (tickets: readonly BoardTicket[]): boolean =>
+  tickets.some((t) => t.lines.some((l) => l.struck !== undefined));
+
+// A tap of this screen that the server may not have yet. `ackedAt` is set once
+// the server accepted it (performance.now()); the tap then stays on top only
+// until a refresh that started after that moment has shown the server's row.
+export type LocalStrike = { want: boolean; ackedAt: number | null };
+export type LocalStrikes = ReadonlyMap<string, LocalStrike>;
+
+// The struck lines to draw: the server's rows with this screen's own taps on
+// top (a tap says struck or not struck, whatever the server says). Only
+// tickets in Cooking count; a ticket that moved on shows nothing struck.
+export function struckLines(tickets: readonly BoardTicket[], local: LocalStrikes): Set<string> {
+  const out = new Set<string>();
+  for (const t of tickets) {
+    if (t.kind !== "order" || t.status !== "cooking") continue;
+    for (const l of t.lines) {
+      const key = lineKey(t.id, l.id);
+      if (local.get(key)?.want ?? l.struck) out.add(key);
+    }
+  }
+  return out;
+}
+
+// After a refresh (`serverTickets` is what the server said, `startedAt` when the
+// request began): the server's word wins again for taps it has confirmed, and
+// taps on tickets that are no longer in Cooking are forgotten. A tap the server
+// has not confirmed yet stays, even if the rows happen to agree: it may still be
+// on its way, and the last tap on a line must be the one that sticks.
+export function reconcileStrikes(
+  local: LocalStrikes,
+  serverTickets: readonly BoardTicket[],
+  startedAt: number,
+): LocalStrikes {
   const cooking = new Set(
-    tickets.filter((t) => t.kind === "order" && t.status === "cooking").map((t) => t.id),
+    serverTickets.filter((t) => t.kind === "order" && t.status === "cooking").map((t) => t.id),
   );
-  return new Set([...struck].filter((k) => cooking.has(k.slice(0, k.indexOf("/")))));
+  const keep = new Map<string, LocalStrike>();
+  for (const [key, s] of local) {
+    if (!cooking.has(ticketOfLineKey(key))) continue;
+    if (s.ackedAt !== null && s.ackedAt < startedAt) continue;
+    keep.set(key, s);
+  }
+  return keep.size === local.size ? local : keep;
 }

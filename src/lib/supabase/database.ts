@@ -613,6 +613,14 @@ export type ApiSchema = {
       };
       Returns: string;
     };
+    set_line_struck: {
+      Args: {
+        p_ticket_id: string;
+        p_order_item_id: string;
+        p_struck: boolean;
+      };
+      Returns: boolean;
+    };
     set_ordering_pause: {
       Args: {
         p_location_id: string;

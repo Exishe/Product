@@ -30,7 +30,8 @@ import {
   applyPending,
   groupTickets,
   lineKey,
-  pruneStruck,
+  serverSharesStrikes,
+  struckLines,
   toBoardTickets,
   type LineDetail,
   type BoardTicket,
@@ -48,6 +49,7 @@ import { IngredientOut } from "./ingredient-out";
 import { StopList } from "./stop-list";
 import { OrderTicketCard, VoidTicketCard, type Column } from "./ticket-card";
 import { useServerClock } from "./use-server-clock";
+import { useStruckLines } from "./use-struck-lines";
 
 export type KitchenBoardProps = {
   station: { id: string; title: string };
@@ -108,44 +110,6 @@ const subscribeOnline = (cb: () => void) => {
   };
 };
 
-// Struck lines (item-level bump) are kept per tab in sessionStorage, or in
-// memory when storage is blocked; the raw JSON string is the store's value.
-const BUMPED_EVENT = "pativ-kitchen-bumped";
-const bumpedMemory = new Map<string, string>();
-
-function readBumped(key: string): string {
-  try {
-    return window.sessionStorage.getItem(key) ?? bumpedMemory.get(key) ?? "[]";
-  } catch {
-    return bumpedMemory.get(key) ?? "[]";
-  }
-}
-
-function writeBumped(key: string, keys: ReadonlySet<string>) {
-  const raw = JSON.stringify([...keys]);
-  bumpedMemory.set(key, raw);
-  try {
-    window.sessionStorage.setItem(key, raw);
-  } catch {
-    // Storage is blocked: the strikes last until the page reloads.
-  }
-  window.dispatchEvent(new Event(BUMPED_EVENT));
-}
-
-function parseBumped(raw: string): Set<string> {
-  try {
-    const saved = JSON.parse(raw) as unknown;
-    return new Set(Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
-
-const subscribeBumped = (cb: () => void) => {
-  window.addEventListener(BUMPED_EVENT, cb);
-  return () => window.removeEventListener(BUMPED_EVENT, cb);
-};
-
 function Board(p: KitchenBoardProps) {
   const t = useTranslations("kitchen");
   const locale = useLocale() as Locale;
@@ -178,6 +142,28 @@ function Board(p: KitchenBoardProps) {
     notifyRef.current = shift.notify;
   });
 
+  const pushToast = useCallback((toast: Omit<Toast, "id">) => {
+    const id = Date.now() + Math.random();
+    setToasts((list) => [...list.slice(-2), { ...toast, id }]);
+    window.setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), TOAST_MS);
+  }, []);
+  const act = useCallback((action: KitchenAction) => void outbox.enqueue(action), [outbox]);
+
+  // Struck lines (item-level bump, ADR-087): the server's rows are shared by
+  // every screen; this screen's own unconfirmed taps sit on top of them.
+  const strikes = useStruckLines({
+    storageKey: `pativ-kitchen-bumped-${p.station.id}`,
+    serverStrikes: serverSharesStrikes(tickets),
+    // Another screen struck the other lines a moment ago: this tap finished the ticket.
+    onComplete: (ticketId) => {
+      if (ticketsRef.current.find((x) => x.id === ticketId)?.status === "cooking") {
+        act({ kind: "set_ticket_status", ticketId, expected: "cooking", next: "ready" });
+      }
+    },
+    onFailed: () => pushToast({ tone: "error", title: t("actionFailed") }),
+  });
+  const { reconcile: reconcileStrikes, flush: flushStrikes } = strikes;
+
   // --- Reading -------------------------------------------------------------
   const known = useRef(new Set(p.initialTickets.map((x) => x.id)));
   const inFlight = useRef(false);
@@ -203,6 +189,7 @@ function Board(p: KitchenBoardProps) {
         const arrived = next.filter((x) => !known.current.has(x.id));
         for (const x of next) known.current.add(x.id);
         setTickets(next);
+        reconcileStrikes(next, startedAt);
         setFetchFailed(false);
         setLastSyncAt(nowRef.current);
         // Taps already sent are confirmed by any refresh that started after them.
@@ -220,7 +207,7 @@ function Board(p: KitchenBoardProps) {
     } finally {
       inFlight.current = false;
     }
-  }, [p.station.id, p.lineDetails, locale]);
+  }, [p.station.id, p.lineDetails, locale, reconcileStrikes]);
 
   const refreshExtras = useCallback(async () => {
     const sb = getBrowserClient();
@@ -233,10 +220,12 @@ function Board(p: KitchenBoardProps) {
     if (s.ok) setSoldOutIds(new Set(s.data));
   }, [p.location.id]);
 
+  // Also sends the taps on struck lines the server has not confirmed yet.
   const refreshAll = useCallback(() => {
+    flushStrikes();
     void refreshTickets();
     void refreshExtras();
-  }, [refreshTickets, refreshExtras]);
+  }, [flushStrikes, refreshTickets, refreshExtras]);
 
   // Broadcast hints: patch at once, then refetch the truth.
   const onMessage = useCallback(
@@ -300,12 +289,6 @@ function Board(p: KitchenBoardProps) {
   });
 
   // --- Taps ----------------------------------------------------------------
-  const pushToast = useCallback((toast: Omit<Toast, "id">) => {
-    const id = Date.now() + Math.random();
-    setToasts((list) => [...list.slice(-2), { ...toast, id }]);
-    window.setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), TOAST_MS);
-  }, []);
-
   useEffect(
     () =>
       outbox.subscribe((e) => {
@@ -328,8 +311,6 @@ function Board(p: KitchenBoardProps) {
     [outbox, refreshTickets, pushToast, t],
   );
 
-  const act = useCallback((action: KitchenAction) => void outbox.enqueue(action), [outbox]);
-
   const shown = useMemo(
     () =>
       applyPending(tickets, [
@@ -346,28 +327,27 @@ function Board(p: KitchenBoardProps) {
   const pickedRow = allDayRows.find((r) => r.key === picked) ?? null;
   const highlighted = useMemo(() => new Set(pickedRow?.ticketIds ?? []), [pickedRow]);
 
-  // Struck lines live on this screen only (sessionStorage survives a reload);
-  // the ticket moves to Ready through the usual action once all are struck.
-  const bumpKey = `pativ-kitchen-bumped-${p.station.id}`;
-  const bumpedRaw = useSyncExternalStore(
-    subscribeBumped,
-    () => readBumped(bumpKey),
-    () => "[]",
-  );
-  const live = useMemo(() => pruneStruck(parseBumped(bumpedRaw), shown), [bumpedRaw, shown]);
+  // The ticket moves to Ready through the usual action once every line is struck.
+  const struck = useMemo(() => struckLines(shown, strikes.local), [shown, strikes.local]);
+  const setStruck = strikes.set;
 
   const toggleLine = useCallback(
     (ticket: ShownTicket, lineId: string) => {
       const key = lineKey(ticket.id, lineId);
-      const next = new Set(live);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      writeBumped(bumpKey, next);
-      if (allLinesStruck(ticket, next)) {
+      const want = !struck.has(key);
+      const next = new Set(struck);
+      if (want) next.add(key);
+      else next.delete(key);
+      if (want && allLinesStruck(ticket, next)) {
+        // This tap finishes the ticket: it goes to Ready, and the server forgets
+        // its strikes then. The last strike is not sent: it could arrive after
+        // the move and be refused.
         act({ kind: "set_ticket_status", ticketId: ticket.id, expected: "cooking", next: "ready" });
+      } else {
+        setStruck(key, want);
       }
     },
-    [live, act, bumpKey],
+    [struck, setStruck, act],
   );
 
   // --- Bookkeeping ---------------------------------------------------------
@@ -534,7 +514,7 @@ function Board(p: KitchenBoardProps) {
             now={now}
             fresh={fresh}
             highlighted={highlighted}
-            bumped={live}
+            bumped={struck}
             onToggleLine={toggleLine}
             onCantMake={p.cantMakeSupported ? onCantMake : undefined}
             onAction={act}

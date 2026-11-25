@@ -1113,18 +1113,21 @@ export type Database = {
           order_item_id: string
           quantity: number
           restaurant_id: string
+          struck_at: string | null
           ticket_id: string
         }
         Insert: {
           order_item_id: string
           quantity: number
           restaurant_id: string
+          struck_at?: string | null
           ticket_id: string
         }
         Update: {
           order_item_id?: string
           quantity?: number
           restaurant_id?: string
+          struck_at?: string | null
           ticket_id?: string
         }
         Relationships: [
