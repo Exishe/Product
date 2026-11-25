@@ -280,6 +280,14 @@
     "newOrders": "Новых заказов: {count}"
   },
   "waiter": {
+    "alert": {
+      "call": "Стол {label}: зовут официанта",
+      "ready": "Стол {label}: блюдо готово",
+      "new": "Стол {label}: новый заказ",
+      "bill": "Стол {label}: просят счёт",
+      "more": "Ещё {count}",
+      "close": "Закрыть"
+    },
     "title": "Столы",
     "floorMap": "Карта зала",
     "areas": "Зоны",

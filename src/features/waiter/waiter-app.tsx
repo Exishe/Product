@@ -29,6 +29,7 @@ import {
 import { fetchFloor } from "./floor-data";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
+import { WaiterAlert } from "./live-alert";
 import {
   applyPending,
   areaOf,
@@ -594,6 +595,7 @@ function App(p: WaiterAppProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
+      {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );

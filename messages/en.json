@@ -280,6 +280,14 @@
     "newOrders": "{count} new orders"
   },
   "waiter": {
+    "alert": {
+      "call": "Table {label} is calling",
+      "ready": "Table {label}: food is ready",
+      "new": "Table {label}: new order",
+      "bill": "Table {label} wants the bill",
+      "more": "{count} more",
+      "close": "Close"
+    },
     "title": "Tables",
     "floorMap": "Floor map",
     "areas": "Areas",
