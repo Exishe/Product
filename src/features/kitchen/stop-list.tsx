@@ -43,16 +43,16 @@ export function StopList({
           dialog.current?.showModal();
         }}
         className={clsx(
-          "bg-basalt-3 text-slip inline-flex min-h-14 items-center gap-2 rounded-full px-5 text-lg font-semibold",
+          "bg-basalt-3 text-slip inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
           count > 0 && "ring-pom-on-dark ring-2",
         )}
       >
         <Ban aria-hidden="true" className="size-5 shrink-0" />
-        {t("button")}
+        <span className="max-sm:sr-only">{t("button")}</span>
         {count > 0 && (
           <span
             data-testid="stop-list-count"
-            className="num bg-pom-on-dark grid h-7 min-w-7 place-items-center rounded-full px-2 text-base font-bold text-white"
+            className="num bg-pom-on-dark grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-sm font-bold text-white"
           >
             {count}
           </span>
@@ -66,18 +66,19 @@ export function StopList({
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
-              <h2 id="stop-list-title" className="text-2xl font-bold">
+              <h2 id="stop-list-title" className="text-2xl font-semibold">
                 {t("title")}
               </h2>
-              <p className="text-slip-dim mt-1 text-base">{t("hint")}</p>
+              <p className="text-slip-dim mt-1 text-[1.0625rem] leading-snug">{t("hint")}</p>
             </div>
             <button
               type="button"
+              aria-label={t("close")}
+              title={t("close")}
               onClick={() => dialog.current?.close()}
-              className="bg-slip inline-flex min-h-14 shrink-0 items-center gap-2 rounded-xl px-4 text-lg font-bold text-white"
+              className="bg-basalt-3 text-slip grid size-12 shrink-0 place-items-center rounded-full"
             >
-              <X aria-hidden="true" className="size-5 shrink-0" />
-              {t("close")}
+              <X aria-hidden="true" className="size-6" />
             </button>
           </div>
           {failed && (

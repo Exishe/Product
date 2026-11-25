@@ -18,24 +18,25 @@ import { useId, useState } from "react";
 import { areaLayout, tileAge, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
 // Every table state has a colour, an icon and a word (ADR-054), so it never
-// relies on colour alone. A free table is an empty outline on the floor; a
-// seated one a white card with a green edge (5.6:1 on the staff grey); amber
-// is a new order (ADR-056's one warm accent), red a call, ink the bill.
+// relies on colour alone. A free table is an empty dashed outline; every other
+// table is the same white tile, and its state is the small round badge the
+// legend and the lists use (amber a new order, green a plate, ink the bill).
+// Only a call, the one thing that cannot wait, fills the whole tile red.
 const STATE_CLASS: Record<TableState, string> = {
   free: "border-dashed border-line-strong bg-transparent text-staff-label2 shadow-none",
-  busy: "border-tarragon bg-white text-tarragon shadow-[var(--shadow-soft)]",
-  new: "border-amber-text bg-amber text-ink shadow-[var(--shadow-soft)]",
-  ready: "border-tarragon bg-tarragon text-white shadow-[var(--shadow-soft)]",
-  call: "border-[3px] border-pomegranate bg-pom-tint text-pomegranate shadow-[var(--shadow-soft)]",
-  bill: "border-ink bg-ink text-white shadow-[var(--shadow-soft)]",
+  busy: "border-transparent bg-white text-staff-label2 shadow-[var(--shadow-soft)]",
+  new: "border-transparent bg-white text-ink shadow-[var(--shadow-soft)]",
+  ready: "border-transparent bg-white text-tarragon shadow-[var(--shadow-soft)]",
+  call: "border-pomegranate bg-pomegranate text-white shadow-[var(--shadow-soft)]",
+  bill: "border-transparent bg-white text-ink shadow-[var(--shadow-soft)]",
 };
 const NUMBER_CLASS: Record<TableState, string> = {
   free: "text-ink",
   busy: "text-ink",
   new: "text-ink",
-  ready: "text-white",
-  call: "text-ink",
-  bill: "text-white",
+  ready: "text-ink",
+  call: "text-white",
+  bill: "text-ink",
 };
 export const STATE_ICON: Record<TableState, LucideIcon> = {
   free: CircleDashed,
@@ -88,7 +89,7 @@ export function AreaTabs({
     <div
       role="group"
       aria-label={t("areas")}
-      className="bg-staff-fill flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-0.5"
+      className="bg-staff-fill flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-0.5 md:justify-self-start"
     >
       {areas.map((a) => (
         <button
@@ -96,7 +97,7 @@ export function AreaTabs({
           type="button"
           aria-pressed={current === a.id}
           onClick={() => onPick(a.id)}
-          className="text-staff-label2 aria-pressed:text-ink min-h-11 min-w-0 flex-1 rounded-[10px] px-4 text-[0.9375rem] font-semibold whitespace-nowrap aria-pressed:bg-white aria-pressed:shadow-sm"
+          className="text-staff-label2 aria-pressed:text-ink min-h-11 min-w-0 flex-1 rounded-[10px] px-4 md:flex-none md:px-5 text-[0.9375rem] font-semibold whitespace-nowrap aria-pressed:bg-white aria-pressed:shadow-sm"
         >
           {a.name ?? t("otherArea")}
         </button>
@@ -227,15 +228,25 @@ function TableButton({
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 pt-5 pb-2 text-center transition-colors duration-150 motion-reduce:transition-none",
-        // A true circle only where a column is wide enough for its four lines;
-        // narrower, the round table is an oval that stays inside its column.
-        table.shape === "round" ? "rounded-full xl:aspect-square xl:self-center" : "rounded-2xl",
+        "relative flex min-h-28 min-w-0 flex-col items-center justify-center gap-1 border-2 px-2 py-2.5 text-center transition-colors duration-150 motion-reduce:transition-none",
+        // A round table is a pill as tall as its badge and three lines: a
+        // circle where the column is square enough, an oval where it isn't.
+        table.shape === "round" ? "rounded-full py-4" : "rounded-2xl",
         wide && "col-span-2",
         STATE_CLASS[table.state],
         selected && "outline-ink outline-[3px] outline-offset-[3px] outline-solid",
       )}
     >
+      {/* The state's badge, in the flow above the number so it never covers it. */}
+      <span
+        aria-hidden="true"
+        className={clsx(
+          "grid size-7 shrink-0 place-items-center rounded-full",
+          table.state === "call" ? "text-pomegranate bg-white" : STATE_BADGE[table.state],
+        )}
+      >
+        <StateIcon state={table.state} payment={table.bill?.payment} className="size-4" />
+      </span>
       {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
       <b
         className={clsx(
@@ -249,18 +260,14 @@ function TableButton({
           hidden: (chunks) => <span className="sr-only">{chunks}</span>,
         })}
       </b>
-      {/* The icon sits in the corner (inside the circle on round tables), so the word keeps the whole width. */}
-      <StateIcon
-        state={table.state}
-        payment={table.bill?.payment}
-        className={clsx(
-          "absolute size-5",
-          table.shape === "round" ? "top-3 left-1/2 -translate-x-1/2" : "top-2.5 left-2.5",
-        )}
-      />
       <span className="max-w-full text-[0.8125rem] leading-tight font-semibold break-words">{state}</span>
       {age?.kind === "quiet" ? (
-        <span className="num text-amber-text text-[0.8125rem] leading-tight font-semibold">
+        <span
+          className={clsx(
+            "num text-[0.8125rem] leading-tight font-semibold",
+            table.state === "call" ? "text-white" : "text-amber-text",
+          )}
+        >
           {t("quiet", { time: duration(age.minutes) })}
         </span>
       ) : (
@@ -273,7 +280,7 @@ function TableButton({
           data-testid="pending-dot"
           className={clsx(
             "bg-amber ring-ink absolute size-3 rounded-full ring-2",
-            table.shape === "round" ? "top-[16%] right-[16%]" : "top-2.5 right-2.5",
+            table.shape === "round" ? "top-[14%] right-[18%]" : "top-2.5 right-2.5",
           )}
         />
       )}

@@ -335,7 +335,6 @@
       "ack": "Got it",
       "more": "+{count}"
     },
-    "empty": "Nothing here yet.",
     "ticket": {
       "table": "Table",
       "tableLabel": "Table {table}",
@@ -369,14 +368,17 @@
         "pcs": "{amount} pcs"
       },
       "hours": "{hours} h",
-      "allergy": "Allergy: read the note",
       "cantMake": "Can't make",
       "cantMakeAsk": "Can't make {name}? The guest will be told.",
       "cantMakeYes": "Yes, can't make it",
       "cantMakeNo": "Back",
       "cantMakeFailed": "That didn't work. Try again.",
       "cantMakePaid": "This order is already paid. Tell the waiter.",
-      "cantMakeForbidden": "Food that was served is for a manager to cancel."
+      "cantMakeForbidden": "Food that was served is for a manager to cancel.",
+      "allergyNote": "Allergy: {note}",
+      "allergyLine": "{dish}: {note}",
+      "allergyMark": "Allergy",
+      "cantMakeLabel": "Can't make {name}"
     },
     "connection": {
       "online": "Online",
@@ -431,8 +433,7 @@
     "allDay": {
       "title": "All day",
       "quantity": "{quantity}×",
-      "plain": "{quantity} plain",
-      "empty": "Nothing to cook."
+      "plain": "{quantity} plain"
     },
     "ingredients": {
       "button": "Ingredient out",
@@ -448,7 +449,13 @@
       "failed": "That didn't work. Check the connection and try again.",
       "close": "Close"
     },
-    "oldest": "Waiting longest"
+    "oldest": "Waiting longest",
+    "columnEmpty": {
+      "new": "No new orders",
+      "cooking": "Nothing cooking",
+      "ready": "Nothing ready"
+    },
+    "tools": "Tools"
   },
   "waiter": {
     "alert": {
@@ -494,10 +501,12 @@
       "billCash": "Bill: cash",
       "total": "Total",
       "addOrder": "Add an order",
-      "takeOrder": "Take an order",
+      "takeOrder": "Take order",
       "close": "Close the table",
       "closeBlocked": "Accept or reject the new order first.",
-      "noOrders": "No orders yet."
+      "noOrders": "No orders yet.",
+      "now": "Now",
+      "allClear": "All good."
     },
     "waiting": {
       "title": "Table {label}: new guests?",
@@ -712,15 +721,17 @@
     },
     "alerts": {
       "region": "Calls from tables",
-      "call": "Table {label} is calling the waiter",
-      "bill": "Table {label} asks for the bill",
+      "call": "Table {label} is calling",
+      "bill": "Table {label} wants the bill",
       "more": "and {count} more",
       "close": "Close",
       "open": "Open the table",
       "soundOff": "Turn on sound",
       "soundOn": "Sound on",
       "soundOnTest": "Sound on. Tap to hear it.",
-      "notificationBody": "Open the waiter app"
+      "notificationBody": "Open the waiter app",
+      "sound": "Sound",
+      "summary": "{count, plural, one {# table} other {# tables}} waiting"
     }
   },
   "menu": {

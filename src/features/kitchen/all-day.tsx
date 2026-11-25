@@ -6,9 +6,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useSyncExternalStore } from "react";
 import type { AllDayRow } from "./board-model";
 
-// «Ընդհանուր քանակ» (a kitchen's "all day"): one strip under the header with
-// the total of every dish still to cook in New and Cooking, biggest batch
-// first, and the options under it. Tapping a dish outlines the tickets that
+// «Ընդհանուր քանակ» (a kitchen's "all day"): one strip in the header's tool
+// row with the total of every dish still to cook in New and Cooking, biggest
+// batch first, and the options under it. The board shows it only while there
+// is something to cook. Tapping a dish outlines the tickets that
 // have it; tapping it again clears that. The strip folds away, and each
 // screen remembers whether it was open.
 
@@ -61,20 +62,25 @@ export function AllDayStrip({
     <section
       aria-labelledby="all-day-title"
       data-testid="all-day"
-      className="bg-basalt-2 flex min-w-0 items-start gap-3 px-4 py-2 lg:px-6"
+      // Its toggle and its list sit in the header's tool row as two items;
+      // on a phone the list takes its own line under the tools.
+      className="contents"
     >
       <button
         type="button"
         aria-expanded={open}
         aria-controls="all-day-list"
         onClick={toggle}
-        className="bg-basalt-3 text-slip inline-flex min-h-14 shrink-0 items-center gap-2 rounded-full px-4 text-lg font-semibold"
+        className="bg-basalt-3 text-slip order-1 inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full pr-3 pl-4 text-[1.0625rem] font-semibold"
       >
         <Layers aria-hidden="true" className="size-5 shrink-0" />
-        <span id="all-day-title">{t("title")}</span>
+        {/* Below 1280 px the label is for screen readers: the tools need the row. */}
+        <span id="all-day-title" className="max-sm:sr-only lg:max-xl:sr-only">
+          {t("title")}
+        </span>
         <b
           data-testid="all-day-total"
-          className="num bg-basalt-4 grid h-9 min-w-9 place-items-center rounded-full px-2"
+          className="num bg-basalt-4 grid h-8 min-w-8 place-items-center rounded-full px-2"
         >
           {total}
         </b>
@@ -83,11 +89,13 @@ export function AllDayStrip({
           className={clsx("size-5 shrink-0 transition-transform duration-200", open && "rotate-180")}
         />
       </button>
-      <div id="all-day-list" hidden={!open} className="min-w-0 flex-1">
-        {rows.length === 0 ? (
-          <p className="text-slip-dim m-0 flex min-h-14 items-center text-lg">{t("empty")}</p>
-        ) : (
-          <ul className="m-0 flex [scrollbar-color:var(--color-basalt-4)_transparent] list-none gap-2 overflow-x-auto p-0 pb-1">
+      <div
+        id="all-day-list"
+        hidden={!open}
+        className="order-3 min-w-0 basis-full lg:order-2 lg:flex-1 lg:basis-0"
+      >
+        {rows.length > 0 && (
+          <ul className="m-0 flex [scrollbar-color:var(--color-basalt-4)_transparent] list-none gap-2 overflow-x-auto p-0">
             {rows.map((r) => {
               const on = selected === r.key;
               return (
@@ -98,12 +106,12 @@ export function AllDayStrip({
                     data-testid="all-day-row"
                     onClick={() => onSelect(on ? null : r.key)}
                     className={clsx(
-                      "grid min-h-14 max-w-80 grid-cols-1 content-center rounded-2xl px-4 py-1 text-left",
+                      "grid min-h-12 max-w-80 grid-cols-1 content-center rounded-xl px-3 py-1 text-left",
                       on ? "bg-slip text-white" : "bg-basalt-3 text-slip",
                     )}
                   >
-                    <span className="flex min-w-0 items-baseline gap-2 text-xl leading-tight font-bold">
-                      <span data-testid="all-day-qty" className="num text-2xl">
+                    <span className="flex min-w-0 items-baseline gap-1.5 text-lg leading-tight font-bold">
+                      <span data-testid="all-day-qty" className="num text-xl">
                         {t("quantity", { quantity: r.quantity })}
                       </span>
                       <span
@@ -117,7 +125,7 @@ export function AllDayStrip({
                     {r.variants.length > 0 && (
                       <span
                         className={clsx(
-                          "truncate text-base font-semibold",
+                          "truncate text-sm leading-tight font-semibold",
                           on ? "text-white" : "text-slip-dim",
                         )}
                       >

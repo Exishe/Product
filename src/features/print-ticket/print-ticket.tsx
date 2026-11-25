@@ -11,10 +11,13 @@ import { createPortal } from "react-dom";
 export function PrintTicketButton({
   label,
   className,
+  iconOnly,
   children,
 }: {
   label: string;
   className?: string;
+  /** Only the printer icon; the label becomes the button's name and tooltip. */
+  iconOnly?: boolean;
   children: ReactNode;
 }) {
   const [printing, setPrinting] = useState(false);
@@ -29,9 +32,15 @@ export function PrintTicketButton({
 
   return (
     <>
-      <button type="button" onClick={() => setPrinting(true)} className={className}>
-        <Printer aria-hidden="true" className="size-5 shrink-0" />
-        {label}
+      <button
+        type="button"
+        onClick={() => setPrinting(true)}
+        className={className}
+        aria-label={iconOnly ? label : undefined}
+        title={iconOnly ? label : undefined}
+      >
+        <Printer aria-hidden="true" className={iconOnly ? "size-6 shrink-0" : "size-5 shrink-0"} />
+        {!iconOnly && label}
       </button>
       {printing && createPortal(<div className="print-ticket">{children}</div>, document.body)}
     </>

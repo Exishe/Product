@@ -31,6 +31,8 @@ import { ageLabel, classifyLateness, type Lateness } from "./lateness";
 export type Column = "new" | "cooking" | "ready";
 
 const REMOVAL = /^(առանց|без|no|without)(\s|$)/i;
+// The band says «Ալերգիա» itself unless the guest's note already does.
+const NAMES_ALLERGY = /ալերգ|аллерг|allerg/iu;
 
 const BAND: Record<Lateness | "void", string> = {
   normal: "bg-basalt-4 text-slip",
@@ -147,14 +149,33 @@ function Note({
   testId: string;
   className?: string;
 }) {
-  const Icon = allergy ? ShieldAlert : MessageSquareText;
+  const t = useTranslations("kitchen.ticket");
+  // The allergy itself is spelled out once, in the red band at the top; the
+  // dish it belongs to keeps only a small red mark pointing at it.
+  if (allergy)
+    return (
+      <span
+        data-testid={testId}
+        data-allergy
+        title={text}
+        className={clsx(
+          "text-pom-on-dark inline-flex items-center gap-1.5 justify-self-start font-bold",
+          compact ? "text-base" : "text-lg",
+          className,
+        )}
+      >
+        <ShieldAlert aria-hidden="true" className={clsx("shrink-0", compact ? "size-4" : "size-5")} />
+        {t("allergyMark")}
+      </span>
+    );
+  const Icon = MessageSquareText;
   return (
     <span
       data-testid={testId}
       data-allergy={allergy || undefined}
       className={clsx(
         "text-ink inline-flex items-start gap-2 justify-self-start rounded-lg border-2 px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
-        allergy ? "bg-pom-tint border-late-on-dark" : "border-(--kds-note-edge) bg-(--kds-note)",
+        "border-(--kds-note-edge) bg-(--kds-note)",
         compact ? "text-base" : "text-xl",
         className,
       )}
@@ -164,7 +185,7 @@ function Note({
         className={clsx(
           "shrink-0",
           compact ? "mt-0.5 size-4" : "mt-1 size-5",
-          allergy ? "text-pomegranate" : "text-amber-text",
+          "text-amber-text",
         )}
       />
       <span className="min-w-0">{text}</span>
@@ -295,23 +316,43 @@ function Lines({
           "grid items-baseline gap-x-3 gap-y-1",
           compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[52px_minmax(0,1fr)]",
         );
+        const canAsk = onCantMake !== undefined && !gone;
         return (
           <li key={l.id} data-testid="ticket-line" data-done={bumped || undefined}>
-            {tappable ? (
-              // Item-level bump: tap a dish when it's plated (56 px row).
-              <button
-                type="button"
-                aria-pressed={bumped}
-                onClick={() => onToggle(l.id)}
-                className={clsx(grid, "-mx-2 min-h-14 w-[calc(100%+1rem)] rounded-xl px-2 py-1 text-left")}
-              >
-                {body}
-              </button>
-            ) : (
-              <div className={grid}>{body}</div>
-            )}
-            {onCantMake && !gone && (
-              asking === l.id ? (
+            {/* "Can't make" is a quiet icon at the end of the dish's row, not a second big button. */}
+            <div className={clsx(canAsk && "flex items-start gap-1")}>
+              {tappable ? (
+                // Item-level bump: tap a dish when it's plated (56 px row).
+                <button
+                  type="button"
+                  aria-pressed={bumped}
+                  onClick={() => onToggle(l.id)}
+                  className={clsx(
+                    grid,
+                    "-ml-2 min-h-14 min-w-0 rounded-xl py-1 pl-2 text-left",
+                    canAsk ? "flex-1 pr-1" : "-mr-2 w-[calc(100%+1rem)] pr-2",
+                  )}
+                >
+                  {body}
+                </button>
+              ) : (
+                <div className={clsx(grid, canAsk && "min-w-0 flex-1")}>{body}</div>
+              )}
+              {canAsk && asking !== l.id && (
+                <button
+                  type="button"
+                  data-testid="cant-make"
+                  aria-label={t("cantMakeLabel", { name: l.name })}
+                  title={t("cantMake")}
+                  className="text-slip-dim -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
+                  onClick={() => setAsking(l.id)}
+                >
+                  <Ban aria-hidden="true" className="size-6" />
+                </button>
+              )}
+            </div>
+            {canAsk && onCantMake && (
+              asking === l.id && (
                 <div
                   role="group"
                   aria-label={t("cantMakeAsk", { name: l.name })}
@@ -342,23 +383,13 @@ function Lines({
                     <button
                       type="button"
                       disabled={sending}
-                      className="border-(--kds-frame) text-slip inline-flex min-h-[72px] items-center justify-center rounded-xl border-2 px-3 text-xl font-bold"
+                      className="text-slip inline-flex min-h-[72px] items-center justify-center rounded-xl border-2 border-(--kds-edge) bg-white px-3 text-xl font-bold"
                       onClick={() => setAsking(null)}
                     >
                       {t("cantMakeNo")}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  data-testid="cant-make"
-                  className="border-(--kds-frame) text-slip mt-2 inline-flex min-h-14 items-center gap-2 rounded-xl border-2 px-4 text-lg font-bold"
-                  onClick={() => setAsking(l.id)}
-                >
-                  <Ban aria-hidden="true" className="size-5 shrink-0" />
-                  {t("cantMake")}
-                </button>
               )
             )}
           </li>
@@ -415,6 +446,20 @@ export function OrderTicketCard({
   const locale = useLocale();
   const tPrint = useTranslations("print");
   const TimerIcon = lateness === "late" ? CircleAlert : lateness === "hurry" ? Hourglass : Clock;
+  // The allergy, spelled out once in the red band: the order's note, and each
+  // dish's note with the dish's name in front of it.
+  const allergyText = [
+    ...ticket.lines
+      .filter((l) => l.allergy && l.note && l.quantity > 0)
+      .map((l) => t("allergyLine", { dish: l.name, note: l.note ?? "" })),
+    ...(ticket.orderAllergy && ticket.orderNote ? [ticket.orderNote] : []),
+  ].join(" · ");
+  const allergyBand =
+    allergyText === ""
+      ? t("allergyMark")
+      : NAMES_ALLERGY.test(allergyText)
+        ? allergyText
+        : t("allergyNote", { note: allergyText });
 
   return (
     <TicketCard.Root
@@ -460,8 +505,24 @@ export function OrderTicketCard({
                 {lateness === "late" ? t("late") : t("hurry")}
               </span>
             )}
-            <span className="text-base font-semibold">
+            <span className="flex items-center gap-1 text-base font-semibold">
               {t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}
+              {/* Printing is occasional: an icon in the head, not a second big button. */}
+              <PrintTicketButton
+                label={tPrint("button")}
+                iconOnly
+                className="-my-2.5 -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
+              >
+                <TicketSheet
+                table={ticket.table}
+                orderNumber={ticket.number}
+                time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+                lines={ticket.lines
+                  .filter((l) => l.quantity > 0)
+                  .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
+                note={ticket.orderNote}
+              />
+              </PrintTicketButton>
             </span>
           </>
         }
@@ -470,12 +531,12 @@ export function OrderTicketCard({
         <p
           data-testid="ticket-allergy"
           className={clsx(
-            "bg-late-on-dark m-0 flex items-center gap-2 px-4 py-2 font-bold text-white",
-            compact ? "text-lg" : "text-2xl",
+            "bg-late-on-dark m-0 flex items-start gap-2 px-4 py-2 leading-snug font-bold text-white [overflow-wrap:anywhere]",
+            compact ? "text-lg" : "text-xl",
           )}
         >
-          <ShieldAlert aria-hidden="true" className={clsx("shrink-0", compact ? "size-5" : "size-7")} />
-          {t("allergy")}
+          <ShieldAlert aria-hidden="true" className={clsx("mt-0.5 shrink-0", compact ? "size-5" : "size-6")} />
+          <span className="min-w-0">{allergyBand}</span>
         </p>
       )}
       <TicketCard.Body>
@@ -501,7 +562,7 @@ export function OrderTicketCard({
           }
           onCantMake={(column === "new" || column === "cooking") && !ticket.pending ? onCantMake : undefined}
         />
-        {ticket.orderNote && (
+        {ticket.orderNote && !ticket.orderAllergy && (
           <TicketCard.Note
             text={ticket.orderNote}
             allergy={ticket.orderAllergy}
@@ -531,11 +592,11 @@ export function OrderTicketCard({
             </button>
           )}
           {column === "ready" && (
-            <div className="text-slip-dim flex flex-wrap items-center justify-between gap-2 text-lg font-semibold">
-              <span>{t("waiting")}</span>
+            <div className="grid gap-2">
+              <span className="text-slip-dim text-lg font-semibold">{t("waiting")}</span>
               <button
                 type="button"
-                className="border-slip-dim text-slip inline-flex min-h-14 items-center gap-2 rounded-xl border-2 px-4 text-left text-lg leading-tight font-bold"
+                className="text-slip inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border-2 border-(--kds-edge) bg-white px-4 text-lg leading-tight font-bold"
                 onClick={() => move("cooking")}
               >
                 <Undo2 aria-hidden="true" className="size-5 shrink-0" />
@@ -543,20 +604,6 @@ export function OrderTicketCard({
               </button>
             </div>
           )}
-          <PrintTicketButton
-            label={tPrint("button")}
-            className="border-(--kds-frame) text-slip inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border-2 px-3 text-lg font-bold"
-          >
-            <TicketSheet
-              table={ticket.table}
-              orderNumber={ticket.number}
-              time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-              lines={ticket.lines
-                .filter((l) => l.quantity > 0)
-                .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
-              note={ticket.orderNote}
-            />
-          </PrintTicketButton>
         </TicketCard.Actions>
       </TicketCard.Body>
     </TicketCard.Root>

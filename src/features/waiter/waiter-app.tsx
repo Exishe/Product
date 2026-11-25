@@ -90,6 +90,10 @@ const DEBOUNCE_MS = 300;
 
 const client = getBrowserClient as unknown as () => SupabaseClient;
 
+// Every round control in the header: 44 px, white, a hairline edge.
+const HEADER_ICON =
+  "border-staff-sep text-ink grid size-11 shrink-0 place-items-center rounded-full border bg-white";
+
 // The waiter app (screens.md §5–6, design/waiter.html). Server-rendered with the
 // floor, then kept live: Broadcast hints trigger a debounced refetch, a 15-second
 // poll covers a dead socket, and taps go through the offline outbox.
@@ -463,72 +467,74 @@ function App(p: WaiterAppProps) {
 
   return (
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
-      <header className="bg-staff-bg flex min-h-14 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-1.5 lg:px-6">
-        <p className="m-0 min-w-0 flex-1 text-[0.9375rem] leading-tight font-semibold [overflow-wrap:anywhere]">{p.cafeName}</p>
-        <SoundButton on={alerts.soundOn} onTap={alerts.enableSound} />
-        <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
-        {/* The outbox stays visible until it is empty, online or not: a waiter
-            who can't see a queued order enters it again. */}
-        {outbox.entries.length > 0 && (
-          <button
-            type="button"
-            data-testid="queue-chip"
-            onClick={() => setSheet({ kind: "queue" })}
-            className="bg-amber text-ink inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.8125rem] font-semibold"
-          >
-            <CloudUpload aria-hidden="true" className="size-4 shrink-0" />
-            <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
-          </button>
-        )}
-        <ConnectionPill state={connection} />
-        {p.canChangePassword && (
-          <ChangePassword
-            tone="staff"
-            triggerClassName="text-ink hover:bg-staff-fill grid size-12 shrink-0 place-items-center rounded-full"
-          />
-        )}
-        <button
-          type="button"
-          data-testid="shift-open"
-          aria-label={t("shift.open")}
-          title={t("shift.open")}
-          onClick={() => setSheet({ kind: "shift" })}
-          className="text-ink hover:bg-staff-fill grid size-12 shrink-0 place-items-center rounded-full"
-        >
-          <Wallet aria-hidden="true" className="size-6" />
-        </button>
-        <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold">
-          {formatTime(new Date(now), p.location.timeZone)}
-        </span>
-        {promos.length > 0 && (
-          <p
-            data-testid="promo-line"
-            className="bg-tarragon-tint text-tarragon m-0 flex basis-full items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
-          >
-            <Megaphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
+      {/* Phones: the café and the clock, then the status and the tools on a
+          second row. From 640 px it is one row. The calls ring underneath,
+          one 56 px row on a phone, so a table's screen keeps its room. */}
+      <header className="bg-staff-bg grid gap-2 px-4 pt-2 pb-2 lg:px-6">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="m-0 min-w-[6rem] flex-1 truncate text-[0.9375rem] leading-tight font-semibold">
+            {p.cafeName}
           </p>
-        )}
-        <div className="basis-full empty:hidden">
-          <CallBanners
-            requests={requests}
-            state={alerts.state}
-            played={alerts.played}
-            onGoing={(r) => {
-              act({ kind: "resolve", requestId: r.id });
-              alerts.close(r.id);
-            }}
-            onOpenTable={(r) => {
-              setTab("tables");
-              openTable(r.tableId);
-              alerts.close(r.id);
-            }}
-            onClose={alerts.close}
-          />
+          <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold sm:order-last sm:pl-1">
+            {formatTime(new Date(now), p.location.timeZone)}
+          </span>
+          <div className="flex min-w-0 items-center gap-2 max-sm:basis-full">
+            <ConnectionPill state={connection} />
+            {/* The outbox stays visible until it is empty, online or not: a waiter
+                who can't see a queued order enters it again. */}
+            {outbox.entries.length > 0 && (
+              <button
+                type="button"
+                data-testid="queue-chip"
+                onClick={() => setSheet({ kind: "queue" })}
+                className="bg-amber text-ink inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.875rem] font-semibold"
+              >
+                <CloudUpload aria-hidden="true" className="size-4 shrink-0" />
+                <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
+              </button>
+            )}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <SoundButton
+                on={alerts.soundOn}
+                onTap={alerts.enableSound}
+                warn={requests.length > 0}
+              />
+              <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
+              {p.canChangePassword && (
+                <ChangePassword tone="staff" triggerClassName={HEADER_ICON} />
+              )}
+              <button
+                type="button"
+                data-testid="shift-open"
+                aria-label={t("shift.open")}
+                title={t("shift.open")}
+                onClick={() => setSheet({ kind: "shift" })}
+                className={HEADER_ICON}
+              >
+                <Wallet aria-hidden="true" className="size-5" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="basis-full empty:hidden">
-          <WaiterAlerts locationId={p.location.id} />
-        </div>
+        <CallBanners
+          requests={requests}
+          state={alerts.state}
+          played={alerts.played}
+          onGoing={(r) => {
+            act({ kind: "resolve", requestId: r.id });
+            alerts.close(r.id);
+          }}
+          onOpenTable={(r) => {
+            setTab("tables");
+            openTable(r.tableId);
+            alerts.close(r.id);
+          }}
+          onClose={alerts.close}
+          onOpenCalls={() => {
+            setSelected(null);
+            setTab("calls");
+          }}
+        />
       </header>
       {connection === "offline" ? (
         <p
@@ -546,13 +552,14 @@ function App(p: WaiterAppProps) {
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] lg:grid-cols-[minmax(0,1fr)_26.25rem]">
         <div
           className={clsx(
-            "grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto]",
+            "grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[7rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]",
             table && "max-md:hidden",
           )}
         >
-          <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-4 pb-6 lg:px-6">
-            <div className="grid gap-1">
-              <h1 className="page-title m-0 text-[2.5rem]">{tabTitle}</h1>
+          <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-3 pb-6 lg:col-start-2 lg:row-start-1 lg:px-6">
+            {/* The tab bar names the section; on a phone the title is for screen readers only. */}
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <h1 className="m-0 text-[1.375rem] leading-tight font-semibold max-md:sr-only">{tabTitle}</h1>
               <p
                 data-testid="need"
                 className={clsx(
@@ -568,6 +575,16 @@ function App(p: WaiterAppProps) {
                 {need > 0 ? t("need", { count: need }) : t("allServed")}
               </p>
             </div>
+            {promos.length > 0 && (
+              <p
+                data-testid="promo-line"
+                className="bg-tarragon-tint text-tarragon m-0 flex items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
+              >
+                <Megaphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
+              </p>
+            )}
+            <WaiterAlerts locationId={p.location.id} />
             {tab === "tables" &&
               (tables.length === 0 ? (
                 <div className="grid content-start gap-3 rounded-2xl bg-white p-4">
@@ -625,7 +642,8 @@ function App(p: WaiterAppProps) {
           aria-label={table ? t("panel.table", { label: table.label }) : undefined}
           data-testid="panel"
           className={clsx(
-            "md:border-staff-sep flex min-h-0 min-w-0 flex-col bg-white md:border-l",
+            "md:border-staff-sep flex min-h-0 min-w-0 flex-col md:border-l",
+            table ? "bg-white" : "bg-staff-bg",
             !table && "max-md:hidden",
           )}
         >
@@ -647,11 +665,23 @@ function App(p: WaiterAppProps) {
               now={now}
               timeZone={p.location.timeZone}
             />
+          ) : tab === "tables" ? (
+            // Nothing picked: what needs doing now, the Orders and Calls lists in one.
+            <section aria-labelledby="now-title" className="grid min-h-0 content-start gap-3 overflow-y-auto p-4 lg:p-6">
+              <h2 id="now-title" className="m-0 text-[1.0625rem] font-semibold">
+                {t("panel.now")}
+              </h2>
+              <InboxList
+                rows={[...lists.calls, ...lists.orders]}
+                empty={t("panel.allClear")}
+                selected={selected}
+                onSelect={openTable}
+                onAction={act}
+                onSettle={openSettle}
+              />
+            </section>
           ) : (
-            <div className="text-staff-label2 grid flex-1 place-content-center justify-items-center gap-3 p-6 text-center">
-              <LayoutGrid aria-hidden="true" className="size-10" />
-              <p className="m-0 text-[1.0625rem]">{t("panel.pick")}</p>
-            </div>
+            <p className="text-staff-label2 m-0 p-6 text-[0.9375rem]">{t("panel.pick")}</p>
           )}
         </aside>
       </div>

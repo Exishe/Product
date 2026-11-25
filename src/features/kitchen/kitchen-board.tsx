@@ -82,6 +82,10 @@ const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
+// The header's round tools (password, end of shift): 48 px, white, one edge.
+const TOOL_ICON =
+  "bg-basalt-3 text-slip inline-grid size-12 shrink-0 place-items-center rounded-full";
+
 const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = {
   new: Inbox,
   cooking: Flame,
@@ -459,65 +463,76 @@ function Board(p: KitchenBoardProps) {
     <div
       lang={locale}
       className={clsx(
-        "kitchen-light staff-shell bg-basalt text-slip grid h-dvh overflow-hidden",
-        shownAlert ? "grid-rows-[auto_auto_auto_minmax(0,1fr)]" : "grid-rows-[auto_auto_minmax(0,1fr)]",
+        "kitchen-light staff-shell bg-basalt text-slip grid h-dvh grid-cols-[minmax(0,1fr)] overflow-hidden",
+        shownAlert ? "grid-rows-[auto_auto_minmax(0,1fr)]" : "grid-rows-[auto_minmax(0,1fr)]",
       )}
     >
-      <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
-        <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
-        {p.otherStations.length > 0 && (
-          <nav aria-label={t("stations")} className="flex flex-wrap gap-2">
-            {p.otherStations.map((s) => (
-              <Link
-                key={s.id}
-                href={`/kitchen/${s.id}`}
-                className="bg-basalt-3 text-slip-dim inline-flex min-h-14 items-center rounded-full px-5 text-lg font-semibold"
-              >
-                {s.title}
-              </Link>
-            ))}
-          </nav>
-        )}
-        <ConnectionPill
-          state={connection}
-          waiting={outbox.entries.length}
-          lastSyncAt={lastSyncAt}
-          timeZone={p.location.timeZone}
-        />
-        <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
-        <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
-        {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
-        <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
-        <div className="ml-auto flex items-center gap-3">
-          <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
-            {clock}
-          </span>
-          {p.canChangePassword && (
-            <ChangePassword
-              tone="kitchen"
-              triggerClassName="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center rounded-full px-4"
+      {/* Two quiet rows: what the station is and how it stands (title, the
+          other station, the longest wait, the connection, the clock), then
+          the board's tools with the all-day count beside them. */}
+      <header className="bg-basalt-2 border-b border-(--kds-frame)">
+        <div className="flex min-h-16 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 lg:px-6">
+          <h1 className="m-0 text-[1.75rem] leading-tight font-semibold">{p.station.title}</h1>
+          {p.otherStations.length > 0 && (
+            <nav aria-label={t("stations")} className="flex flex-wrap gap-2">
+              {p.otherStations.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/kitchen/${s.id}`}
+                  className="text-slip-dim inline-flex min-h-12 items-center rounded-xl px-3 text-lg font-semibold underline decoration-(--kds-frame) decoration-2 underline-offset-4"
+                >
+                  {s.title}
+                </Link>
+              ))}
+            </nav>
+          )}
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 max-sm:ml-0 max-sm:justify-start">
+            <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
+            <ConnectionPill
+              state={connection}
+              waiting={outbox.entries.length}
+              lastSyncAt={lastSyncAt}
+              timeZone={p.location.timeZone}
+            />
+            <span data-testid="clock" className="num text-[2rem] leading-none font-bold">
+              {clock}
+            </span>
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 px-4 pb-2 lg:px-6">
+          {allDayRows.length > 0 && (
+            <AllDayStrip
+              stationId={p.station.id}
+              rows={allDayRows}
+              selected={pickedRow?.key ?? null}
+              onSelect={setPicked}
             />
           )}
-          {shift.on && (
-            <button
-              type="button"
-              onClick={shift.end}
-              className="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-full px-4 text-lg font-semibold"
-            >
-              <Power aria-hidden="true" className="size-5 shrink-0" />
-              {/* Icon only below 1280 px, so the bar stays one row on a 1024 px tablet. */}
-              <span className="max-xl:sr-only">{t("shift.end")}</span>
-            </button>
-          )}
+          <div
+            role="toolbar"
+            aria-label={t("tools")}
+            className="order-2 ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2 max-sm:ml-0 max-sm:justify-start lg:order-3"
+          >
+            <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
+            <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
+            {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
+            {p.canChangePassword && (
+              <ChangePassword tone="kitchen" triggerClassName={TOOL_ICON} />
+            )}
+            {shift.on && (
+              <button
+                type="button"
+                onClick={shift.end}
+                aria-label={t("shift.end")}
+                title={t("shift.end")}
+                className={TOOL_ICON}
+              >
+                <Power aria-hidden="true" className="size-5 shrink-0" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
-
-      <AllDayStrip
-        stationId={p.station.id}
-        rows={allDayRows}
-        selected={pickedRow?.key ?? null}
-        onSelect={setPicked}
-      />
 
       {shownAlert && <NewOrderBanner alert={shownAlert} onAck={() => setAlert(null)} />}
 
@@ -527,7 +542,7 @@ function Board(p: KitchenBoardProps) {
             key={col}
             column={col}
             title={t(`columns.${col}`)}
-            empty={t("empty")}
+            empty={t(`columnEmpty.${col}`)}
             tickets={columns[col]}
             now={now}
             fresh={fresh}
@@ -620,7 +635,7 @@ function BoardColumn({
         )}
       >
         {tickets.length === 0 ? (
-          <p className="text-slip-dim m-0 px-2 py-6 text-xl">{empty}</p>
+          <p className="text-slip-dim m-0 grid flex-1 place-items-center px-2 py-6 text-center text-lg">{empty}</p>
         ) : (
           tickets.map((ticket) =>
             ticket.kind === "void" ? (
