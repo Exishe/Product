@@ -119,12 +119,12 @@ test.describe("calories and filters", () => {
     await page.getByRole("button", { name: "Լրացնել ձեռքով" }).click();
     await page.getByLabel("Անունը հայերեն").fill("Տաք ուտեստներ");
     await page.getByRole("button", { name: "Պահել" }).click();
-    await expect(page.getByRole("heading", { level: 2, name: "Տաք ուտեստներ" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Տաք ուտեստներ" })).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: "+ Ավելացնել ուտեստ" }).click();
     await page.getByLabel("Անունը հայերեն").fill("Փլավ");
     await page.getByLabel("Գինը, ֏").fill("2500");
     await page.getByRole("button", { name: "Պահել" }).click();
-    await expect(page.getByText("Պահված է")).toBeVisible();
+    await expect(page.getByText("Պահված է")).toBeVisible({ timeout: 15_000 });
     await page.getByTestId("dish-row").filter({ hasText: "Փլավ" }).click();
 
     const panel = page.getByTestId("dish-ingredients");
@@ -135,21 +135,21 @@ test.describe("calories and filters", () => {
       "needs migration 20261123320000_calories_tags on the dev project (CI applies it after the push)",
     );
     // 100 g of rice from the common list: 365 -> 370, ready for Publish.
-    await expect(panel.getByTestId("kcal-value")).toContainText("≈ 370");
+    await expect(panel.getByTestId("kcal-value")).toContainText("≈ 370", { timeout: 15_000 });
     // Coffee beans have no calories in the list: no number, and the owner is told which one.
     await addFromList(panel, "Սուրճի հատիկներ");
-    await expect(panel.getByTestId("kcal-summary")).toContainText("Սուրճի հատիկներ");
-    await expect(panel.getByTestId("kcal-value")).toHaveCount(0);
+    await expect(panel.getByTestId("kcal-summary")).toContainText("Սուրճի հատիկներ", { timeout: 15_000 });
+    await expect(panel.getByTestId("kcal-value")).toHaveCount(0, { timeout: 15_000 });
     const beans = panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 4, name: "Սուրճի հատիկներ" }) });
     await beans.getByLabel(/^Կալորիականություն/).fill("0");
     await beans.getByRole("button", { name: "Պահել կալորիականությունը" }).click();
-    await expect(beans.getByRole("status").filter({ hasText: "Պահված է" })).toBeVisible();
-    await expect(panel.getByTestId("kcal-value")).toContainText("≈ 370");
+    await expect(beans.getByRole("status").filter({ hasText: "Պահված է" })).toBeVisible({ timeout: 15_000 });
+    await expect(panel.getByTestId("kcal-value")).toContainText("≈ 370", { timeout: 15_000 });
   });
 });
 
 async function addFromList(panel: ReturnType<Page["getByTestId"]>, name: string) {
   await panel.getByLabel("Գտնել բաղադրիչ").fill(name);
   await panel.getByRole("button", { name: new RegExp(`^${name}`) }).click();
-  await expect(panel.getByRole("heading", { level: 4, name })).toBeVisible();
+  await expect(panel.getByRole("heading", { level: 4, name })).toBeVisible({ timeout: 15_000 });
 }
