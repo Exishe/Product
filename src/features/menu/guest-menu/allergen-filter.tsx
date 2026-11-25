@@ -65,7 +65,7 @@ export function AllergenFilter({
     >
       <div className="px-5 pt-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))] md:px-8 md:pt-7 md:pb-8">
         <div className="flex items-start justify-between gap-4">
-          <h2 id="avoid-title" className="display-face text-[2rem] leading-[1.05]">
+          <h2 id="avoid-title" className="display-face text-[1.5rem] leading-[1.15]">
             {t("diet.filtersTitle")}
           </h2>
           <button

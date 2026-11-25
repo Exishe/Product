@@ -42,28 +42,30 @@ test.describe("guest menu at the demo café", () => {
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
     await expect(page.getByTestId("table-chip")).toHaveText("Սեղան 9");
 
-    // Sticky tabs jump to a section and follow the scroll.
-    const tabs = page.getByRole("navigation", { name: "Ճաշացանկի բաժիններ" });
-    await tabs.getByRole("link", { name: "Սուրճ և թեյ" }).click();
-    await expect(page.getByRole("heading", { level: 2, name: "Սուրճ և թեյ" })).toBeInViewport();
-    await expect(tabs.getByRole("link", { name: "Սուրճ և թեյ" })).toHaveAttribute("aria-current", "true");
+    // A section group in the bar opens its sections; one jumps there, and the group is marked.
+    const drinks = page.getByTestId("group-drinks");
+    await drinks.click();
+    await page.getByTestId("section-panel").getByRole("link", { name: /Սուրճ և թեյ/ }).click();
+    await expect(page.getByRole("heading", { level: 3, name: /^Սուրճ և թեյ/ })).toBeInViewport();
+    await expect(drinks).toHaveAttribute("aria-current", "true");
 
     // Cappuccino: size is required with 250 ml preselected; milk is optional, one at most.
     await dish(page, "Կապուչինո").getByRole("button", { name: "Ավելացնել՝ Կապուչինո" }).click();
     const sheet = page.getByRole("dialog", { name: "Կապուչինո" });
-    const add = sheet.getByRole("button", { name: /^Ավելացնել\s+\d/ });
+    const add = sheet.getByRole("button", { name: "Ավելացնել", exact: true });
+    const total = sheet.getByTestId("sheet-total");
     await expect(sheet.getByRole("radio", { name: "250 մլ" })).toBeChecked();
-    await expect(add).toContainText(formatAmd(1300, "hy"));
+    await expect(total).toContainText(formatAmd(1300, "hy"));
     await sheet.getByRole("radio", { name: "350 մլ" }).check();
-    await expect(add).toContainText(formatAmd(1600, "hy"));
+    await expect(total).toContainText(formatAmd(1600, "hy"));
     await sheet.getByRole("checkbox", { name: "Վարսակի կաթ" }).check();
-    await expect(add).toContainText(formatAmd(1900, "hy"));
+    await expect(total).toContainText(formatAmd(1900, "hy"));
     await sheet.getByRole("checkbox", { name: "Առանց լակտոզի կաթ" }).check();
     await expect(sheet.getByRole("checkbox", { name: "Վարսակի կաթ" })).not.toBeChecked();
-    await expect(add).toContainText(formatAmd(1800, "hy"));
+    await expect(total).toContainText(formatAmd(1800, "hy"));
     await sheet.getByRole("checkbox", { name: "Առանց լակտոզի կաթ" }).uncheck();
     await sheet.getByRole("button", { name: "Ավելացնել քանակը" }).click();
-    await expect(add).toContainText(formatAmd(3200, "hy"));
+    await expect(total).toContainText(formatAmd(3200, "hy"));
     await add.click();
     await expect(sheet).toBeHidden();
 
@@ -168,7 +170,7 @@ test.describe("guest menu edge cases at a fresh café", () => {
     await sheet.getByRole("checkbox", { name: "Milk" }).check();
     await sheet.getByRole("checkbox", { name: "Cinnamon" }).check();
     await expect(sheet.getByRole("checkbox", { name: "Honey" })).toBeDisabled();
-    await expect(sheet.getByRole("button", { name: /^Add/ })).toContainText("AMD 1,000");
+    await expect(sheet.getByTestId("sheet-total")).toContainText("AMD 1,000");
     await sheet.getByLabel("Note for the kitchen").fill("x".repeat(170));
     await expect(sheet.getByText("170/200")).toBeVisible();
     await sheet.getByRole("button", { name: "Close" }).click();
@@ -209,7 +211,8 @@ test.describe("guest menu edge cases at a fresh café", () => {
 
   test("without a valid table the menu still shows, without ordering, and says why", async ({ page }) => {
     await page.goto(`/hy/m/${cafe.slug}/main`);
-    await expect(page.getByText("Հեռախոսից պատվիրելու համար սկանավորեք սեղանի QR կոդը։")).toBeVisible();
+    // The menu reads as usual (the owner dropped the "scan the QR" notice); nothing can be added.
+    await expect(page.getByTestId("dish").first()).toBeVisible();
     await expect(page.getByRole("button", { name: /^Ավելացնել՝/ })).toHaveCount(0);
     await expect(page.getByTestId("table-chip")).toHaveCount(0);
 

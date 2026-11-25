@@ -1,19 +1,14 @@
 "use client";
 
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { motionNow, reducedMotion } from "@/features/guest-theme/motion/motion";
-import motionStyles from "@/features/guest-theme/motion/motion.module.css";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import styles from "./guest.module.css";
-import { Txt } from "./ui";
+import { groupSections, type SectionGroup } from "./section-groups";
+import { Txt, dishPhotoUrl } from "./ui";
 import type { GuestCategory } from "./view-model";
 
 export const sectionId = (id: string) => `cat-${id}`;
-
-// Every section on one sheet: fetched on the first tap of «Բաժիններ».
-const SectionList = lazy(() => import("./section-list").then((m) => ({ default: m.SectionList })));
-/** From this many sections the tabs get the "all sections" button. */
-const LIST_FROM = 6;
 
 /** Scrolls to a section; returns until when it stays the current one. */
 function scrollToSection(id: string): number {
@@ -23,36 +18,43 @@ function scrollToSection(id: string): number {
 
 const smooth = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
-// Sticky section tabs. The tab of the section under the bar is highlighted
-// while scrolling and kept in view inside the bar. Its red pill is one
-// element that slides from tab to tab on a spring (by transform, measured
-// from the tabs); without JavaScript or under reduced motion the current
-// tab simply has its own fill.
-//
-// A long menu (six sections or more) leads the tabs with «Բաժիններ», which
-// stays put while the tabs scroll and opens every section on one searchable
-// sheet (section-list.tsx): any section is two taps from anywhere.
-export function CategoryNav({
-  categories,
-  belowBar = false,
-}: {
-  categories: GuestCategory[];
-  /** The slim bar is showing above. */ belowBar?: boolean;
-}) {
+type Bucket = { key: SectionGroup | "all"; sections: GuestCategory[] };
+
+// The sticky section bar: a few big groups (Food, Desserts, Drinks, Wine),
+// each a dropdown with its own sections, so even a 39-section bar list is two
+// taps from any dish and never a long strip to scroll sideways. The group
+// the page is in is filled; opening one shows its sections with the current
+// one marked. On a mouse a group opens on hover as well as on click; touch
+// and keyboard use click, Enter or Space; Escape and a tap outside close it.
+// A menu whose sections fall into one group gets a single «Sections»
+// dropdown.
+export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
   const { t, locale } = useGuestI18n();
-  const nav = useRef<HTMLElement>(null);
+  const wrap = useRef<HTMLElement>(null);
   const [active, setActive] = useState(categories[0]?.id ?? null);
-  // After a tap on a tab, its section stays current while the page scrolls
-  // there, even when the menu ends too soon to bring it to the top (the
-  // last, short sections in two columns).
+  const [open, setOpen] = useState<Bucket["key"] | null>(null);
+  // After a tap, its section stays current while the page scrolls there.
   const holdUntil = useRef(0);
+  const closeTimer = useRef(0);
+  // A mouse opens a group on hover; the click that follows should not close it again.
+  const hoverAt = useRef(0);
   const current = categories.some((c) => c.id === active) ? active : (categories[0]?.id ?? null);
-  const pill = useRef<HTMLSpanElement>(null);
-  const shown = useRef<{ id: string | null; x: number; w: number } | null>(null);
-  const place = useRef<(animate: boolean) => void>(() => {});
-  const [listing, setListing] = useState(false);
+
+  const buckets: Bucket[] = useMemo(() => {
+    const groups = groupSections(categories.map((c) => ({ ...c, name: c.name })));
+    return groups.length < 2
+      ? [{ key: "all", sections: categories }]
+      : groups.map((g) => ({ key: g.group, sections: g.sections as GuestCategory[] }));
+  }, [categories]);
+  // A group's chip on a phone carries a tiny photo of its first pictured dish.
+  const photoOf = (b: Bucket) => b.sections.flatMap((s) => s.items).find((i) => i.image)?.image ?? null;
+  const label = (b: Bucket) => (b.key === "all" ? t("menu.sections") : t(`menu.groups.${b.key}`));
+  const currentBucket = buckets.find((b) => b.sections.some((s) => s.id === current));
+  const openBucket = buckets.find((b) => b.key === open);
+
   const go = (id: string) => {
     setActive(id);
+    setOpen(null);
     holdUntil.current = scrollToSection(id);
   };
 
@@ -60,8 +62,8 @@ export function CategoryNav({
     let frame = 0;
     const update = () => {
       frame = 0;
-      // Sections scroll to just under the slim bar and the tabs.
-      const bar = nav.current;
+      // Sections scroll to just under the menu bar, which holds the groups.
+      const bar = wrap.current?.closest<HTMLElement>("[data-menubar]") ?? wrap.current;
       const offset = (bar ? Math.max(bar.getBoundingClientRect().bottom, 80) : 80) + 24;
       let id = categories[0]?.id ?? null;
       for (const c of categories) {
@@ -87,122 +89,114 @@ export function CategoryNav({
     };
   }, [categories]);
 
-  // The sliding pill: measured again whenever a tab changes size (the
-  // fonts arriving, a narrower screen).
+  // A tap outside or Escape closes the open group.
   useEffect(() => {
-    const bar = nav.current;
-    const ind = pill.current;
-    if (!bar || !ind || reducedMotion()) return;
-    place.current = (animate) => {
-      const id = bar.dataset.current ?? null;
-      const tab = id ? bar.querySelector<HTMLElement>(`[data-cat="${CSS.escape(id)}"]`) : null;
-      if (!tab) return;
-      const x = tab.offsetLeft;
-      const w = tab.offsetWidth;
-      const was = shown.current;
-      if (was && was.id === id && was.x === x && was.w === w) return;
-      ind.style.top = `${tab.offsetTop}px`;
-      ind.style.height = `${tab.offsetHeight}px`;
-      ind.style.width = `${w}px`;
-      const m = motionNow();
-      if (animate && m && was && w > 0) {
-        m.animate(
-          ind,
-          {
-            transform: [
-              `translateX(${was.x}px) scaleX(${(was.w / w).toFixed(4)})`,
-              `translateX(${x}px) scaleX(1)`,
-            ],
-          },
-          { type: m.spring, duration: 0.5, bounce: 0.22 },
-        );
-      } else ind.style.transform = `translateX(${x}px)`;
-      shown.current = { id, x, w };
-      bar.dataset.indicator = "on";
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (wrap.current && e.target instanceof Node && !wrap.current.contains(e.target)) setOpen(null);
     };
-    place.current(false);
-    const resized = new ResizeObserver(() => place.current(false));
-    bar.querySelectorAll("[data-cat]").forEach((t) => resized.observe(t));
-    return () => {
-      resized.disconnect();
-      place.current = () => {};
-    };
-  }, [categories]);
-
-  useEffect(() => {
-    const bar = nav.current;
-    place.current(true);
-    const tab = bar?.querySelector<HTMLElement>(`[data-cat="${current}"]`);
-    if (!bar || !tab) return;
-    // Clear of the «Բաժիններ» button, which stays at the tabs' left edge.
-    const lead = bar.querySelector<HTMLElement>("[data-testid=all-sections]");
-    const left = tab.offsetLeft - 16 - (lead ? lead.offsetWidth + 6 : 0);
-    const right = tab.offsetLeft + tab.offsetWidth + 16 - bar.clientWidth;
-    if (bar.scrollLeft > left) bar.scrollTo({ left, behavior: smooth() });
-    else if (bar.scrollLeft < right) bar.scrollTo({ left: right, behavior: smooth() });
-  }, [current]);
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open]);
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
 
   if (categories.length < 2) return null;
   return (
-    <>
-      <nav
-        ref={nav}
-        aria-label={t("menu.categories")}
-        data-current={current ?? undefined}
-        className={`bg-page/92 sticky z-10 -mx-4 flex gap-1.5 overflow-x-auto px-4 py-2.5 backdrop-blur-md transition-[top] duration-200 motion-reduce:transition-none md:-mx-8 md:px-8 ${belowBar ? "top-16" : "top-0"} ${styles.tabs} ${motionStyles.track}`}
-      >
-        {categories.length >= LIST_FROM && (
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => setListing(true)}
-            data-testid="all-sections"
-            className={`bg-surface text-ink rounded-pill sticky left-0 z-[2] flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 font-semibold whitespace-nowrap ${styles.allSections}`}
-          >
-            {/* Three lines, drawn here: lighter than one more icon in the first load. */}
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4 6h16M4 12h16M4 18h16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
+    <nav
+      ref={wrap}
+      aria-label={t("menu.categories")}
+      data-current={current ?? undefined}
+      className="min-w-0"
+      onKeyDown={(e) => {
+        if (e.key !== "Escape" || !open) return;
+        setOpen(null);
+        wrap.current?.querySelector<HTMLElement>(`[data-group="${open}"]`)?.focus();
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "mouse") return;
+        window.clearTimeout(closeTimer.current);
+        closeTimer.current = window.setTimeout(() => setOpen(null), 220);
+      }}
+      onPointerEnter={() => window.clearTimeout(closeTimer.current)}
+    >
+      <div className="flex gap-1.5 overflow-x-auto pb-2.5 lg:mb-2 lg:w-fit lg:gap-0.5 lg:rounded-[10px] lg:bg-[var(--guest-plate)] lg:p-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        {buckets.map((b) => {
+          const isOpen = open === b.key;
+          const here = currentBucket?.key === b.key;
+          const photo = photoOf(b);
+          return (
+            <button
+              key={b.key}
+              type="button"
+              data-group={b.key}
+              data-testid={`group-${b.key}`}
+              aria-expanded={isOpen}
+              aria-controls={`sections-${b.key}`}
+              onClick={() => {
+                if (isOpen && performance.now() - hoverAt.current < 600) return;
+                setOpen(isOpen ? null : b.key);
+              }}
+              onPointerEnter={(e) => {
+                if (e.pointerType !== "mouse") return;
+                hoverAt.current = performance.now();
+                setOpen(b.key);
+              }}
+              aria-current={here ? "true" : undefined}
+              className={`${styles.navlink} flex min-h-11 flex-none items-center gap-1.5 rounded-full border py-1 pr-3.5 pl-1 text-[12px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:rounded-[8px] lg:border-0 lg:px-3.5 ${
+                here
+                  ? "bg-accent text-on-accent lg:bg-surface lg:text-ink border-transparent font-semibold lg:shadow-[0_1px_2px_rgb(30_28_25/0.08)]"
+                  : `bg-surface text-muted hover:text-ink border-line lg:bg-transparent ${isOpen ? "lg:bg-surface/70 lg:text-ink" : "lg:hover:bg-surface/60"}`
+              } ${photo ? "" : "pl-3.5"}`}
+            >
+              {photo && (
+                // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                <img
+                  src={dishPhotoUrl(photo)}
+                  alt=""
+                  width={28}
+                  height={28}
+                  loading="lazy"
+                  className="size-7 flex-none rounded-full object-cover lg:hidden"
+                />
+              )}
+              <span>{label(b)}</span>
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className={`hidden flex-none transition-transform duration-200 lg:block ${isOpen ? "rotate-180" : ""}`}
               />
-            </svg>
-            {t("menu.sections")}
-          </button>
-        )}
-        <span ref={pill} aria-hidden="true" className={motionStyles.indicator} />
-        {categories.map((c) => (
-          <a
-            key={c.id}
-            href={`#${sectionId(c.id)}`}
-            data-cat={c.id}
-            aria-current={c.id === current ? "true" : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              go(c.id);
-            }}
-            className="text-soft hover:text-ink aria-[current=true]:bg-tab aria-[current=true]:text-on-tab rounded-pill flex min-h-11 flex-none items-center border [border-color:var(--guest-tab-border)] px-4 font-semibold whitespace-nowrap aria-[current=true]:border-transparent"
-          >
-            {c.name ? <Txt value={c.name} locale={locale} /> : null}
-          </a>
-        ))}
-      </nav>
-      {listing && (
-        <Suspense fallback={null}>
-          <SectionList
-            categories={categories}
-            current={current}
-            onClose={() => setListing(false)}
-            onPick={(id) => {
-              setListing(false);
-              // After the sheet has closed and given the page back its scroll.
-              requestAnimationFrame(() => go(id));
-            }}
-          />
-        </Suspense>
+            </button>
+          );
+        })}
+      </div>
+      {openBucket && (
+        <div
+          key={openBucket.key}
+          id={`sections-${openBucket.key}`}
+          data-testid="section-panel"
+          className={`bg-surface/85 text-ink shadow-float rounded-feature absolute inset-x-4 top-full mt-1 max-h-[min(62dvh,28rem)] overflow-y-auto overscroll-contain border [border-color:var(--guest-card-border)] p-2 backdrop-blur-md md:inset-x-8 ${styles.navPanel}`}
+        >
+          <ul className="grid gap-x-2 sm:grid-cols-2 md:grid-cols-3">
+            {openBucket.sections.map((c) => (
+              <li key={c.id}>
+                <a
+                  href={`#${sectionId(c.id)}`}
+                  data-cat={c.id}
+                  aria-current={c.id === current ? "true" : undefined}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    go(c.id);
+                  }}
+                  className="hover:bg-chip aria-[current=true]:bg-chip aria-[current=true]:text-accent-text rounded-card flex min-h-12 items-center justify-between gap-3 px-3 py-2 font-semibold"
+                >
+                  {c.name ? <Txt value={c.name} locale={locale} className="min-w-0 break-words" /> : null}
+                  <span className="num text-muted flex-none text-sm font-normal">{c.items.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-    </>
+    </nav>
   );
 }

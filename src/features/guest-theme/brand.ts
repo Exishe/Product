@@ -170,7 +170,8 @@ export function googleFontsHref(b: Brand | null): string | null {
   return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
 }
 
-const SERIF_STACK = "var(--font-noto-serif-armenian), var(--font-noto-serif), Georgia, serif";
+// Armenian is always Noto Sans Armenian (the owner's choice), even behind a serif or a script.
+const SERIF_STACK = "var(--font-noto-sans-armenian), var(--font-noto-serif), Georgia, serif";
 const SANS_STACK = "var(--font-noto-sans-armenian), var(--font-google-sans), system-ui, sans-serif";
 const stackFor = (f: BrandFont) => `"${f.family}", ${f.kind === "sans" ? SANS_STACK : SERIF_STACK}`;
 
@@ -229,9 +230,10 @@ export function brandTokens(
       facts.dark === contrast("#ffffff", pageColor) > contrast("#000000", pageColor)
     ) {
       page = pageColor;
-      vars["--guest-page"] = pageColor;
-      vars["--guest-dock"] = `color-mix(in srgb, ${pageColor} 96%, transparent)`;
-      vars["--brand-page"] = pageColor;
+      const eased = easedPage(pageColor, facts.dark);
+      vars["--guest-page"] = eased;
+      vars["--guest-dock"] = `color-mix(in srgb, ${eased} 96%, transparent)`;
+      vars["--brand-page"] = eased;
       const muted = [0.62, 0.7, 0.78, 0.86]
         .map((t) => mix(facts.ink, pageColor, t))
         .find((c) => contrast(c, pageColor) >= 4.5 && contrast(c, facts.surface) >= 4.5);
@@ -257,6 +259,10 @@ export function brandTokens(
     vars["--brand-on-header-muted"] =
       [0.8, 0.88].map((t) => mix(onHeader, header, t)).find((c) => contrast(c, header) >= 4.5) ?? onHeader;
     vars["--guest-on-accent"] = onHeader;
+    // The round tool buttons in the band (search, order) sit on the theme's surface and
+    // draw their icons in the header colour; where that would not show against the
+    // surface (a dark header on Wine's dark surface) they use the theme's ink.
+    vars["--brand-tool-ink"] = contrast(header, surface) >= 3 ? header : facts.ink;
     // Large titles in the brand's dark colour when it keeps 3:1 (AA large).
     if (contrast(header, page) >= 3 && contrast(header, surface) >= 3) vars["--guest-title"] = header;
   }
@@ -307,12 +313,10 @@ export function brandTokens(
   }
 
   // Fonts: the brand's family first, then the Armenian and Cyrillic fallbacks.
-  const heading = brand.headingFont ? FONT.get(brand.headingFont) : undefined;
+  // Headings and the script accent stay in the plain text face on the guest page
+  // (owner, Nov 2026: no decorative type); only the body font follows the brand.
   const body = brand.bodyFont ? FONT.get(brand.bodyFont) : undefined;
-  const script = brand.scriptFont ? FONT.get(brand.scriptFont) : undefined;
-  if (heading) vars["--font-display"] = stackFor(heading);
   if (body) vars["--font-ui"] = stackFor(body);
-  if (script) vars["--brand-font-script"] = stackFor(script);
 
   return { style: vars as CSSProperties, check };
 }
@@ -322,9 +326,20 @@ export function ignoredRoles(theme: GuestTheme, brand: Brand): BrandColorRole[] 
   return brandTokens(theme, brand).check.ignored;
 }
 
+/**
+ * The page colour as the guest sees it: the brand's page eased towards white so
+ * the screen is light and easy on the eye (dark pages are left as they are).
+ * Contrast is still checked on the brand's own colour, which is the darker one.
+ */
+export function easedPage(color: string, dark: boolean): string {
+  return dark ? color : mix(color, "#ffffff", 0.35);
+}
+
 /** The body overscroll colour for the brand's page (null: the theme's). */
 export const brandPage = (b: Brand | null, theme: GuestTheme) =>
-  b?.colors.page && !ignoredRoles(theme, b).includes("page") ? b.colors.page : null;
+  b?.colors.page && !ignoredRoles(theme, b).includes("page")
+    ? easedPage(b.colors.page, THEME_FACTS[theme].dark)
+    : null;
 
 /** A background that light ink reads better on than dark ink. */
 export const isDarkBackground = (bg: string) => contrast("#ffffff", bg) > contrast("#000000", bg);

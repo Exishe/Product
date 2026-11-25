@@ -404,9 +404,18 @@
       "moreOut": "{count, plural, one {# more ingredient is out. Search for it to bring it back.} other {# more ingredients are out. Search for them to bring them back.}}",
       "failed": "That didn't work. Check the connection and try again.",
       "close": "Close"
-    }
+    },
+    "oldest": "Waiting longest"
   },
   "waiter": {
+    "alert": {
+      "call": "Table {label} is calling",
+      "ready": "Table {label}: food is ready",
+      "new": "Table {label}: new order",
+      "bill": "Table {label} wants the bill",
+      "more": "{count} more",
+      "close": "Close"
+    },
     "title": "Tables",
     "floorMap": "Floor map",
     "areas": "Areas",
@@ -977,7 +986,6 @@
       "en": "Eng"
     },
     "table": "Table {label}",
-    "payHint": "Pay your waiter",
     "entry": {
       "title": "This QR code no longer works.",
       "body": "Ask your waiter for help.",
@@ -1023,6 +1031,12 @@
       "waiterCalled": "Waiter called",
       "sections": "Sections",
       "sectionSearch": "Find a section",
+      "groups": {
+        "food": "Food",
+        "desserts": "Desserts",
+        "drinks": "Drinks",
+        "wine": "Bar"
+      },
       "noSection": "No section matches that.",
       "searchOpen": "Search",
       "paused": "Ordering is paused for a few minutes.",
@@ -1118,6 +1132,11 @@
       "notSent": "Not sent yet. We keep trying, and the waiter gets it as soon as there is a connection.",
       "retryRequest": "Try again",
       "orderMore": "Order more",
+      "showcase": "From the menu",
+      "recommended": "Recommended for you",
+      "recPrev": "Previous dish",
+      "recNext": "Next dish",
+      "status": "Order status",
       "reconnecting": "Updating…",
       "empty": "No orders yet.",
       "emptyHint": "Choose dishes from the menu and send them to the kitchen.",
@@ -1139,7 +1158,8 @@
       "cantMake": "Sorry, this dish isn't available right now.",
       "cantMakeSuggest": "Our chef suggests:",
       "cantMakeAdd": "Add",
-      "cantMakeAddOne": "Add {name} to your order"
+      "cantMakeAddOne": "Add {name} to your order",
+      "now": "now"
     },
     "games": {
       "title": "Games while you wait",

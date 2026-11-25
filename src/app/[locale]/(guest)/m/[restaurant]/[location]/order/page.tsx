@@ -2,12 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Plus } from "lucide-react";
 import { parseBrand, wordmarkTones } from "@/features/guest-theme/brand";
 import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
-import { dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
+import { buildGuestMenu, dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { OrderStatusView } from "@/features/ordering/order-status-view";
@@ -74,8 +75,30 @@ export default async function OrderStatusPage({
   // The public key goes to the phone for «Notify me when it's ready» (ADR-049).
   const vapidPublicKey = vapidPublicKeyOrNull(process.env);
   const theme = guestTheme(look?.guest_theme);
-  // The wordmark that reads on the header band's colour (ADR-065).
-  const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).header);
+  // The wordmark that reads on the page colour: the bar has no band behind it (ADR-065).
+  const wordmark = wordmarkOf(look?.brand, wordmarkTones(theme, parseBrand(look?.brand)).page);
+
+  // Dishes to recommend while the order cooks: the café's own pairs first (the
+  // browser picks those that go with this table's order), then dishes with a photo.
+  const dishes = published
+    ? buildGuestMenu(published, locale, wordmarkTones(theme, parseBrand(look?.brand)))
+        .categories.flatMap((c) => c.items)
+        .filter((i) => !i.soldOut)
+    : [];
+  const paired = new Set(Object.values(hints.pairs).flat());
+  const recommend = [
+    ...dishes.filter((i) => paired.has(i.id)),
+    ...dishes.filter((i) => i.image && !paired.has(i.id)),
+    ...dishes.filter((i) => !i.image && !paired.has(i.id)),
+  ]
+    .slice(0, 24)
+    .map((i) => ({
+      id: i.id,
+      name: i.name.text,
+      image: i.image,
+      price: i.price,
+      description: i.description?.text.slice(0, 120),
+    }));
 
   return (
     <GuestThemeScope theme={theme} brandColor={look?.brand_color} brand={look?.brand}>
@@ -89,6 +112,18 @@ export default async function OrderStatusPage({
             languages={languages}
             // A short bar: the order starts near the top of the screen.
             compact
+            home={{ href: menuHref }}
+            // Top right: order something new.
+            tools={
+              <a
+                href={menuHref}
+                aria-label={t("order.orderMore")}
+                className="bg-add text-on-add rounded-pill inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 md:px-5"
+              >
+                <Plus size={20} aria-hidden />
+                <span className="hidden md:inline">{t("order.orderMore")}</span>
+              </a>
+            }
           />
           <OrderStatusView
             tableId={table.table_id}
@@ -99,7 +134,9 @@ export default async function OrderStatusPage({
             // Two dishes with one name (blini with jam, blini with caviar) are told apart.
             details={published ? sameNameDetails(published, locale) : undefined}
             // When the kitchen can't make a dish, similar ones are offered (ADR-081).
-            dishes={published ? dishNames(published, locale) : undefined}
+            cantMakeDishes={published ? dishNames(published, locale) : undefined}
+            dishes={recommend}
+            pairs={hints.pairs}
           />
         </GuestI18nProvider>
       ) : (

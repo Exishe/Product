@@ -1,0 +1,400 @@
+/* Dish orbit (dish-orbit.tsx). One 960 x 520 design canvas scaled to the card's
+   width; on a phone (card under 640 px) the same pieces stack in one column. */
+.root {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  color: var(--guest-ink);
+}
+
+.scaler {
+  position: relative;
+  width: 100%;
+  /* 520 / 960 of the width: the canvas's own proportion */
+  aspect-ratio: 960 / 520;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 960px;
+  height: 520px;
+  transform: scale(var(--s, 1));
+  transform-origin: 0 0;
+}
+
+.arc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 960px;
+  height: 520px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.arc path {
+  fill: var(--tint, var(--guest-badge));
+  opacity: 0.34;
+  transition: fill 1100ms ease-in-out;
+}
+
+.plates {
+  position: absolute;
+  top: 96px;
+  left: 124px;
+  width: 245px;
+  height: 245px;
+  touch-action: pan-y;
+}
+
+.orbit {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  transform-origin: 69% -217%;
+  will-change: transform;
+  filter: drop-shadow(0 16px 22px rgb(0 0 0 / 0.2)) drop-shadow(0 3px 5px rgb(0 0 0 / 0.12));
+}
+
+.orbit[data-on] {
+  visibility: visible;
+}
+
+.head {
+  position: absolute;
+  top: 108px;
+  left: 398px;
+  width: 330px;
+  height: 160px;
+}
+
+.hd {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.hd[data-on] {
+  visibility: visible;
+}
+
+.eye {
+  margin: 0 0 4px 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--guest-muted);
+}
+
+.t1,
+.t2 {
+  display: block;
+  margin: 0;
+  line-height: 1.04;
+  white-space: nowrap;
+  font-family: var(--font-display);
+}
+
+.t1 {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.t2 {
+  margin-top: 4px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.acts {
+  position: absolute;
+  top: 292px;
+  left: 404px;
+}
+
+.card {
+  position: absolute;
+  top: 124px;
+  left: 732px;
+  width: 210px;
+  padding: 18px 18px 20px;
+  border: 1px solid var(--guest-card-border, #14110f);
+  border-radius: 18px;
+  background: color-mix(in srgb, #ffffff 78%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.bodies {
+  display: grid;
+}
+
+.body {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.body[data-on] {
+  visibility: visible;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 46px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--tint, var(--guest-badge));
+  color: var(--guest-ink);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 1100ms ease-in-out;
+}
+
+.desc {
+  min-height: 56px;
+  margin: 14px 0 0;
+  color: var(--guest-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.strip {
+  position: absolute;
+  top: 376px;
+  left: 124px;
+  display: flex;
+  align-items: center;
+  width: 560px;
+  height: 122px;
+}
+
+.win {
+  position: relative;
+  width: 472px;
+  height: 122px;
+  margin: 0 2px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, #000 88%, transparent);
+}
+
+.track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  transition: transform 600ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.th {
+  display: flex;
+  justify-content: center;
+  width: 118px;
+  height: 122px;
+  padding-top: 3px;
+}
+
+.thBtn {
+  display: flex;
+  width: 84px;
+  height: 116px;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding-top: 9px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 450ms;
+}
+
+.thBtn[aria-current] {
+  background: color-mix(in srgb, #ffffff 70%, transparent);
+  box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.3);
+}
+
+.thName {
+  max-width: 80px;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.arrow {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.arrow svg {
+  width: 12px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.pager {
+  position: absolute;
+  top: 160px;
+  left: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  display: grid;
+  width: 18px;
+  height: 12px;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: height 450ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.dot i {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--guest-ink);
+  opacity: 0.45;
+  transition:
+    height 450ms cubic-bezier(0.3, 0.7, 0.2, 1),
+    opacity 300ms;
+}
+
+.dot[aria-current] {
+  height: 28px;
+}
+
+.dot[aria-current] i {
+  height: 22px;
+  opacity: 0.9;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* A phone: the pieces stack, no canvas. */
+@container (max-width: 639px) {
+  .scaler {
+    aspect-ratio: auto;
+  }
+
+  .canvas {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px 8px;
+    transform: none;
+  }
+
+  .arc {
+    top: -20px;
+    left: -60%;
+    width: 200%;
+    height: auto;
+  }
+
+  .pager {
+    position: relative;
+    top: auto;
+    left: auto;
+    order: 5;
+    flex-direction: row;
+    margin-top: 10px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 18px;
+  }
+
+  .dot[aria-current] {
+    width: 28px;
+    height: 18px;
+  }
+
+  .dot i {
+    width: 3px;
+    height: 3px;
+  }
+
+  .dot[aria-current] i {
+    width: 22px;
+    height: 3px;
+  }
+
+  .plates {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: min(62vw, 15rem);
+    height: min(62vw, 15rem);
+  }
+
+  .head {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: 132px;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  .acts {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-top: 2px;
+  }
+
+  .card {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-width: 22rem;
+    margin-top: 12px;
+  }
+
+  .strip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .dot,
+  .dot i,
+  .thBtn,
+  .arc path,
+  .badge {
+    transition: none;
+  }
+}

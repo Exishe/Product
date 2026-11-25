@@ -6,10 +6,13 @@ import { useRouter } from "next/navigation";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
+import { useReveal } from "@/features/guest-theme/motion/reveal";
 import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
+import guestStyles from "@/features/menu/guest-menu/guest.module.css";
 import { CheckIcon, MinusIcon, Notice, PlusIcon, STEP, Txt } from "@/features/menu/guest-menu/ui";
+import { DishOrbit, type OrbitDish } from "./dish-orbit";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { formatAmd } from "@/lib/format/money";
@@ -34,7 +37,7 @@ import {
 import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
+import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, Sparkles, Timer, UtensilsCrossed } from "lucide-react";
 import {
   displayStatus,
   isActive,
@@ -159,7 +162,7 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
           : t("order.notes.received")
       : t(`order.notes.${status}`);
   return (
-    <ol className="my-6 grid" data-testid="tracker">
+    <ol className="my-4 grid" data-testid="tracker">
       {steps.map((step, i) => {
         const done = i <= now;
         const current = i === now;
@@ -169,29 +172,29 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
         return (
           <li
             key={step}
-            className="relative grid min-h-[52px] grid-cols-[28px_1fr] items-start gap-3"
+            className="relative grid min-h-[38px] grid-cols-[20px_1fr] items-start gap-2.5"
             aria-current={current ? "step" : undefined}
           >
             {!last && (
               <span
                 aria-hidden="true"
-                className="bg-line absolute top-7 -bottom-1 left-[13px] w-0.5 overflow-hidden"
+                className="bg-line absolute top-5 -bottom-0.5 left-[9px] w-0.5 overflow-hidden"
               >
-                <span className={`bg-tarragon ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
+                <span className={`bg-accent ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
               </span>
             )}
             <span
               aria-hidden="true"
-              className={`relative z-[1] grid size-7 place-items-center rounded-full border-2 ${
-                done ? "border-tarragon bg-matsoni text-white" : "border-line-strong bg-matsoni"
-              } ${current ? "shadow-[0_0_0_5px_var(--color-tarragon-tint)]" : ""}`}
+              className={`relative z-[1] grid size-5 place-items-center rounded-full border-[1.5px] [&_svg]:size-3 ${
+                done ? "border-accent bg-surface text-white" : "border-line-strong bg-surface"
+              } ${current ? "shadow-[0_0_0_4px_color-mix(in_srgb,var(--guest-accent)_16%,transparent)]" : ""}`}
             >
               {current && status !== "served" && status !== "paid" ? (
                 <span className={motionStyles.pulse} />
               ) : null}
               {done ? (
                 <span
-                  className={`bg-tarragon absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
+                  className={`bg-accent absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
                   style={tickAt}
                 >
                   <CheckIcon />
@@ -199,10 +202,15 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
               ) : null}
             </span>
             <div className={current ? "pb-3" : ""}>
-              <div className={`leading-7 ${done ? "font-semibold" : "text-muted"}`}>
+              <div className={`flex items-center gap-2 text-[12px] leading-5 ${done ? "font-semibold" : "text-muted"}`}>
                 {t(`order.steps.${step}`)}
+                {current && status !== "served" && status !== "paid" && (
+                  <span className="text-accent-text bg-[#fbe9e0] rounded-[5px] px-1.5 py-px text-[10px] font-semibold">
+                    {t("order.now")}
+                  </span>
+                )}
               </div>
-              {current && <p className="text-muted text-sm">{note}</p>}
+              {current && <p className="text-muted text-[11px] leading-snug">{note}</p>}
             </div>
           </li>
         );
@@ -223,16 +231,66 @@ function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
   }, []);
   const late = waitState(wait, placedAt, now) === "late";
   return (
-    <p className="text-muted -mt-2 mb-4 text-sm" data-testid="order-wait" data-late={late}>
+    <p className="text-muted -mt-1 mb-3 text-[11px]" data-testid="order-wait" data-late={late}>
       {late ? t("wait.late") : t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
     </p>
+  );
+}
+
+// Pieces of the order page that rise into view as the guest scrolls to them
+// (the games at the bottom): the same entrance the menu's cards use.
+function Rise({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useReveal(ref);
+  return (
+    <div ref={ref} className={motionStyles.reveal}>
+      {children}
+    </div>
+  );
+}
+
+// «Recommended for you» under the order: the dishes the café's own rounds pair
+// with what this table ordered (ADR-060), then the menu's best-looking dishes,
+// turning on an orbit so the page is never an empty block.
+function RecommendedCard({
+  dishes,
+  menuHref,
+  ordered,
+  pairs,
+}: {
+  dishes: OrbitDish[];
+  menuHref: string;
+  ordered: string[];
+  pairs: Record<string, string[]>;
+}) {
+  const { t } = useGuestI18n();
+  const byId = new Map(dishes.map((d) => [d.id, d]));
+  const skip = new Set(ordered);
+  const first = ordered.flatMap((id) => pairs[id] ?? []).flatMap((id) => (byId.get(id) ? [byId.get(id)!] : []));
+  const all = [...new Map([...first, ...dishes].filter((d) => !skip.has(d.id)).map((d) => [d.id, d])).values()];
+  // Plates with a photo only, when there are enough of them; an orbit of empty plates says nothing.
+  const photos = all.filter((d) => d.image);
+  const list = (photos.length >= 4 ? photos : all).slice(0, 9);
+  if (list.length < 3) return null;
+  return (
+    <section aria-labelledby="rec-title" className={guestStyles.sheet}>
+      <div className={guestStyles.sheetHead}>
+        <Sparkles size={20} aria-hidden />
+        <h2 id="rec-title" className="text-[13px]">
+          {t("order.recommended")}
+        </h2>
+      </div>
+      <div className="px-3 pt-4 pb-6 md:px-6">
+        <DishOrbit dishes={list} menuHref={menuHref} />
+      </div>
+    </section>
   );
 }
 
 function OrderCard({
   order,
   latest,
-  below,
+  part = "all",
   wait = null,
   details,
   onRepeat,
@@ -240,10 +298,11 @@ function OrderCard({
 }: {
   order: Order;
   latest: boolean;
+  /** The newest order is shown in two places: its status on the right, its lines on the left. */
+  part?: "all" | "lines" | "status";
   details?: Record<string, string>;
   /** Alternatives for a dish the kitchen could not make (ADR-081). */
   cantMake?: { db: Db | null; dishes: Dishes | undefined; onAdd?: (order: Order, itemId: string) => void };
-  below?: ReactNode;
   wait?: WaitRange | null;
   /** "Order the same again": back to the menu with these dishes in the cart. */
   onRepeat?: (order: Order) => void;
@@ -252,11 +311,53 @@ function OrderCard({
   const status = displayStatus(order);
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
   const Title = latest ? "h2" : "h3";
+  const statusBlock =
+    status === "rejected" ? (
+      <div className="my-4 grid gap-1">
+        <Notice tone="alert">
+          {t("order.rejected")}
+          {order.reject_reason ? ` ${t("order.reason", { reason: order.reject_reason })}` : null}
+        </Notice>
+      </div>
+    ) : status === "cancelled" ? (
+      <div className="my-4">
+        <Notice tone="alert">{t("order.cancelled")}</Notice>
+      </div>
+    ) : latest ? (
+      <>
+        <Tracker order={order} status={status} />
+        {wait && waiting.has(status) && <WaitLine wait={wait} placedAt={order.placed_at} />}
+      </>
+    ) : null;
+  if (part === "status")
+    return (
+      <section
+        aria-label={t("order.title", { number: order.number })}
+        data-status={status}
+        className={guestStyles.sheet}
+      >
+        <div className={guestStyles.sheetHead}>
+          <Timer size={16} aria-hidden />
+          <p className="text-[12px]">
+            {t("order.title", { number: order.number })} ·{" "}
+            <span className="font-normal">{t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}</span>
+          </p>
+        </div>
+        <div className={`${guestStyles.sheetBody} pb-2`}>
+          {status !== "rejected" && status !== "cancelled" && (
+            <h2 className="text-[14px] leading-[1.25] font-semibold" data-testid="order-phase">
+              {t(`order.steps.${status}`)}
+            </h2>
+          )}
+          {statusBlock}
+        </div>
+      </section>
+    );
   return (
     <article
       className={
         latest
-          ? "bg-surface shadow-card rounded-feature mb-5 border [border-color:var(--guest-card-border)] px-5 pt-6 pb-1 md:px-8 md:pt-8"
+          ? `${guestStyles.sheet} ${guestStyles.sheetBody} mb-5 !pb-1`
           : "border-line border-t pt-4"
       }
       data-testid="order"
@@ -265,37 +366,20 @@ function OrderCard({
     >
       <div className="flex items-baseline justify-between gap-3">
         <Title
-          className={`display-face leading-[1.05] ${latest ? "text-[2.75rem] md:text-[3.25rem]" : "text-2xl"}`}
+          className={`display-face leading-[1.15] ${latest ? "text-[1.25rem]" : "text-[1rem]"}`}
         >
           {t("order.title", { number: order.number })}
         </Title>
         {!latest && (
-          <span className="text-muted text-sm font-semibold">
+          <span className="text-muted text-[11px] font-semibold">
             {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
           </span>
         )}
       </div>
-      <p className="text-muted text-sm">
+      <p className="text-muted text-[11px]">
         {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
       </p>
-      {status === "rejected" ? (
-        <div className="my-4 grid gap-1">
-          <Notice tone="alert">
-            {t("order.rejected")}
-            {order.reject_reason ? ` ${t("order.reason", { reason: order.reject_reason })}` : null}
-          </Notice>
-        </div>
-      ) : status === "cancelled" ? (
-        <div className="my-4">
-          <Notice tone="alert">{t("order.cancelled")}</Notice>
-        </div>
-      ) : latest ? (
-        <>
-          <Tracker order={order} status={status} />
-          {wait && waiting.has(status) && <WaitLine wait={wait} placedAt={order.placed_at} />}
-        </>
-      ) : null}
-      {below}
+      {part === "all" && statusBlock}
       <ul className="mt-2">
         {lines.map((l) => {
           const name = localized(l.name_i18n, locale as Locale);
@@ -306,10 +390,10 @@ function OrderCard({
           return (
             <li
               key={l.id}
-              className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-3 last:border-b-0"
+              className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-2.5 last:border-b-0"
             >
               <span
-                className={`display-face text-xl leading-tight [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
+                className={`text-[12px] leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
               >
                 <span className="num">
                   {l.cancelled_quantity > 0 && left > 0 ? (
@@ -320,11 +404,11 @@ function OrderCard({
                 {" × "}
                 {name ? <Txt value={name} locale={locale as Locale} /> : null}
               </span>
-              <span className="num text-right font-semibold whitespace-nowrap">
+              <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
                 {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
               </span>
               {l.item_id && details?.[l.item_id] && (
-                <span className="text-soft col-start-1 text-sm break-words" data-testid="line-detail">
+                <span className="text-soft col-start-1 text-[11px] break-words" data-testid="line-detail">
                   {details[l.item_id]}
                 </span>
               )}
@@ -334,7 +418,7 @@ function OrderCard({
                 </span>
               )}
               {mods.length > 0 && (
-                <span className="text-muted col-start-1 text-sm">
+                <span className="text-muted col-start-1 text-[11px]">
                   {mods.map((m, i) => (
                     <span key={i}>
                       {i > 0 ? ", " : null}
@@ -343,7 +427,7 @@ function OrderCard({
                   ))}
                 </span>
               )}
-              {l.note && <span className="text-muted col-start-1 text-sm break-words">{l.note}</span>}
+              {l.note && <span className="text-muted col-start-1 text-[11px] break-words">{l.note}</span>}
               {l.cant_make_at && cantMake?.db && (
                 <CantMakeNote
                   db={cantMake.db}
@@ -356,7 +440,7 @@ function OrderCard({
           );
         })}
       </ul>
-      <div className="flex items-baseline justify-between py-4 text-xl font-semibold">
+      <div className="flex items-baseline justify-between py-4 text-[15px] font-semibold">
         <span>{t("order.total")}</span>
         <span className="num">
           {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
@@ -367,7 +451,7 @@ function OrderCard({
           <button
             type="button"
             onClick={() => onRepeat(order)}
-            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-sm font-semibold"
+            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[11px] font-semibold"
           >
             <RotateCcw size={16} aria-hidden />
             {t("order.sameAgain")}
@@ -387,17 +471,23 @@ export function OrderStatusView({
   vapidPublicKey = null,
   wait = null,
   details,
-  dishes,
+  dishes = [],
+  pairs = {},
+  cantMakeDishes,
 }: {
   tableId: string;
   menuHref: string;
+  /** Dishes to recommend while the order cooks, best first (photos before none). */
+  dishes?: OrbitDish[];
+  /** The café's own "ordered together" pairs, by dish id (ADR-060). */
+  pairs?: Record<string, string[]>;
   vapidPublicKey?: string | null;
   /** The café's usual wait (ADR-060); null when it can't say, or the kitchen set its own. */
   wait?: WaitRange | null;
   /** Descriptions of same-named dishes by dish id (view-model sameNameDetails). */
   details?: Record<string, string>;
   /** Name and price of every dish, by id: for the replacement dishes of ADR-081. */
-  dishes?: Dishes;
+  cantMakeDishes?: Dishes;
 }) {
   const { t, locale } = useGuestI18n();
   const [db] = useState<Db | null>(() => (typeof window === "undefined" ? null : getBrowserClient()));
@@ -643,7 +733,7 @@ export function OrderStatusView({
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const secondary =
-    "min-h-[52px] rounded-pill border [border-color:var(--guest-field-edge)] bg-surface px-4 font-semibold shadow-card disabled:opacity-60 aria-pressed:border-accent-text aria-pressed:bg-chip";
+    "min-h-11 rounded-pill border border-[var(--guest-line-strong)] bg-white px-4 text-[12px] font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
   // Back to the menu with an earlier round in the cart (this table's cart).
   const repeat = (order: Order) => {
     const newId = () =>
@@ -676,7 +766,7 @@ export function OrderStatusView({
     }
     router.push(menuHref);
   };
-  const cantMake = { db, dishes, onAdd: closed ? undefined : addDish };
+  const cantMake = { db, dishes: cantMakeDishes, onAdd: closed ? undefined : addDish };
   const stepButton = `${STEP} size-12`;
   // What the guest has asked for and what came of it: a banner above the bottom
   // bar, so it is never behind it. One live region; its lines change in place.
@@ -762,8 +852,12 @@ export function OrderStatusView({
   ];
 
   return (
+    // The whole screen, not a small block: the order on the left, its status and
+    // the menu's showcase on the right (above the order on a phone), and the
+    // games across the bottom.
     <main
-      className={`mx-auto w-full max-w-[720px] flex-1 px-4 pt-5 md:px-8 md:pt-10 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
+      data-order-page=""
+      className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
     >
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
@@ -776,31 +870,22 @@ export function OrderStatusView({
           <span className="bg-on-accent text-accent grid size-9 flex-none place-items-center rounded-full">
             <CheckIcon />
           </span>
-          <span className="display-face text-[1.75rem] leading-none">{t("order.steps.ready")}</span>
+          <span className="display-face text-[1.125rem] leading-none">{t("order.steps.ready")}</span>
         </div>
       )}
-      {latest && (
-        <OrderCard
-          order={latest}
-          latest
-          wait={wait}
-          details={details}
-          onRepeat={closed ? undefined : repeat}
-          cantMake={cantMake}
-          // The games sit right under the status while the guest waits: the
-          // moment they have nothing to do but watch the tracker.
-          below={
-            !showGames ? null : (
-              <GamesCorner
-                ready={latestStatus === "ready"}
-                waiting={latestStatus !== null && waiting.has(latestStatus)}
-                reward={rewardCtx}
-              />
-            )
-          }
-        />
-      )}
-      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-sm">{t("order.reconnecting")}</p>}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-8">
+        <div className="order-2 min-w-0 lg:order-1">
+          {latest && (
+            <OrderCard
+              order={latest}
+              latest
+              part="lines"
+              details={details}
+              onRepeat={closed ? undefined : repeat}
+              cantMake={cantMake}
+            />
+          )}
+      {channel === "down" && <p className="text-muted -mt-2 mb-2 text-[11px]">{t("order.reconnecting")}</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {latestStatus
           ? t(
@@ -880,11 +965,11 @@ export function OrderStatusView({
                     </span>
                   </div>
                   {people > 1 && (
-                    <p className="num text-accent-text text-xl font-semibold" data-testid="split-share">
+                    <p className="num text-accent-text text-[15px] font-semibold" data-testid="split-share">
                       {t("order.splitEach", { amount: formatAmd(shareOf(grand, people), locale as Locale) })}
                     </p>
                   )}
-                  <p className="text-muted text-sm">{t("order.splitNote")}</p>
+                  <p className="text-muted text-[11px]">{t("order.splitNote")}</p>
                 </div>
               )}
               <p className="m-0 font-semibold">{t("order.payTitle")}</p>
@@ -908,17 +993,12 @@ export function OrderStatusView({
               </button>
             </div>
           )}
-          <p>
-            <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
-              {t("order.orderMore")}
-            </a>
-          </p>
         </>
       )}
 
       {earlier.length > 0 && (
         <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
-          <h2 id="earlier-orders" className="text-lg font-semibold">
+          <h2 id="earlier-orders" className="text-[14px] font-semibold">
             {t("order.earlier")}
           </h2>
           {earlier.map((o) => (
@@ -931,11 +1011,33 @@ export function OrderStatusView({
               cantMake={cantMake}
             />
           ))}
-          <div className="border-line flex items-baseline justify-between border-t py-4 text-xl font-semibold">
+          <div className="border-line flex items-baseline justify-between border-t py-4 text-[15px] font-semibold">
             <span>{t("order.allRounds")}</span>
             <span className="num">{formatAmd(grand, locale as Locale)}</span>
           </div>
         </section>
+      )}
+        </div>
+        <aside className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2" aria-label={t("order.status")}>
+          {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
+        </aside>
+      </div>
+      <div className="mt-6">
+        <Rise>
+          <RecommendedCard
+            dishes={dishes}
+            menuHref={menuHref}
+            pairs={pairs}
+            ordered={orders.flatMap((o) => o.order_items.flatMap((l) => (l.item_id ? [l.item_id] : [])))}
+          />
+        </Rise>
+      </div>
+      {showGames && latestStatus !== null && (
+        <div className="mt-8">
+          <Rise>
+            <GamesCorner ready={latestStatus === "ready"} waiting={waiting.has(latestStatus)} reward={rewardCtx} />
+          </Rise>
+        </div>
       )}
       <GuestDock items={dock} above={status} />
     </main>

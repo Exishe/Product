@@ -1,4 +1,5 @@
-import { Google_Sans, Noto_Sans_Armenian, Noto_Serif, Noto_Serif_Armenian } from "next/font/google";
+import { Google_Sans, Noto_Serif, Noto_Serif_Armenian } from "next/font/google";
+import localFont from "next/font/local";
 
 // Google Sans covers Armenian, Cyrillic and Latin in one family (UI text).
 export const googleSans = Google_Sans({
@@ -24,10 +25,12 @@ export const notoSerif = Noto_Serif({
 
 export const fontVariables = [googleSans.variable, notoSerifArmenian.variable, notoSerif.variable].join(" ");
 
-// Guest body text in Armenian (the guest layout applies this variable; Switzer
-// covers Latin, Google Sans Cyrillic).
-export const notoSansArmenian = Noto_Sans_Armenian({
-  subsets: ["armenian"],
+// Armenian on the guest pages, in titles and in text: Noto Sans Armenian, the
+// owner's own download (variable, weight and width axes; SIL OFL 1.1, the licence
+// is next to the file). Latin and Cyrillic come from the café's chosen fonts.
+export const notoSansArmenian = localFont({
+  src: "./fonts/NotoSansArmenian-Variable.ttf",
   variable: "--font-noto-sans-armenian",
   display: "swap",
+  weight: "100 900",
 });

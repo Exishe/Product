@@ -22,6 +22,7 @@ import {
   setSoldOut,
 } from "./actions";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./board-chrome";
+import { OldestWait } from "./oldest-wait";
 import { fetchBusy, fetchSoldOut, fetchTicketRows, type BusyState } from "./board-data";
 import { AllDayStrip } from "./all-day";
 import { mergeAlert, pruneAlert, type NewOrderAlert } from "./new-order-alert";
@@ -486,6 +487,7 @@ function Board(p: KitchenBoardProps) {
         <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
         <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
         {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
+        <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
         <div className="ml-auto flex items-center gap-3">
           <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
             {clock}

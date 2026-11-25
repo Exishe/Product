@@ -36,6 +36,8 @@ import { fetchLivePromoTitles } from "./promos";
 import { fetchRewards, resolveReward, type WaiterReward } from "./rewards";
 import { AreaTabs, FloorMap } from "./floor-map";
 import { InboxList } from "./inbox-list";
+import { WaiterAlert } from "./live-alert";
+import type { AlertKind } from "./live-alert-model";
 import {
   applyPending,
   areaOf,
@@ -57,6 +59,9 @@ import { TablePanel } from "./table-panel";
 import { TabBar } from "./tab-bar";
 import { useCallAlerts } from "./use-call-alerts";
 import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
+
+// The live card announces plates and new orders; calls and bills ring in their own banners.
+const LIVE_ALERT_KINDS: readonly AlertKind[] = ["ready", "new"];
 
 export type WaiterAppProps = {
   cafeName: string;
@@ -693,6 +698,8 @@ function App(p: WaiterAppProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
+      {/* Calls and bills ring in the banners above until answered; this card adds plates and new orders. */}
+      {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Check, ChevronRight, Clock, Footprints, HandPlatter, Receipt, type LucideIcon } from "lucide-react";
+import { Check, ChevronRight, CircleAlert, Clock, Footprints, HandPlatter, Receipt, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { STATE_BADGE, StateIcon } from "./floor-map";
 import { quickAction, type InboxRow, type QuickAction, type WaiterAction } from "./floor-model";
@@ -19,6 +19,11 @@ const QUICK_LABEL = {
   going: "panel.going",
   settle: "inbox.closeBill",
 } as const;
+
+// Minutes after which a row's wait turns red with an alert sign: a call or a
+// ready plate after 3, a new order or a bill after 5.
+const OVERDUE_FAST = 3;
+const OVERDUE_SLOW = 5;
 
 // The Orders and Calls tabs (ADR-054): a grouped list, one row per table and
 // request, the longest-waiting first. A row opens the table, as on the map;
@@ -58,6 +63,9 @@ export function InboxList({
             ? t(row.table.bill.payment === "card" ? "state.billCard" : "state.billCash")
             : t(`state.${row.kind}`);
         const quick = quickAction(row);
+        // A guest waving or a plate going cold can't wait like a bill can.
+        const overdue = row.minutes >= (row.kind === "call" || row.kind === "ready" ? OVERDUE_FAST : OVERDUE_SLOW);
+        const TimeIcon = overdue ? CircleAlert : Clock;
         const QuickIcon = quick ? QUICK_ICON[quick.kind] : null;
         const quickText = quick ? t(QUICK_LABEL[quick.kind]) : "";
         const run = () => {
@@ -95,8 +103,11 @@ export function InboxList({
                 </span>
                 <span className="text-staff-label2 flex flex-wrap items-center gap-x-3 text-[0.9375rem] leading-snug">
                   <span>{label}</span>
-                  <span className="num inline-flex items-center gap-1">
-                    <Clock aria-hidden="true" className="size-3.5 shrink-0" />
+                  <span
+                    data-overdue={overdue || undefined}
+                    className={clsx("num inline-flex items-center gap-1", overdue && "text-pomegranate font-bold")}
+                  >
+                    <TimeIcon aria-hidden="true" className="size-3.5 shrink-0" />
                     {row.minutes > 0 ? t("inbox.ago", { minutes: row.minutes }) : t("inbox.now")}
                   </span>
                 </span>

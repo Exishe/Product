@@ -55,18 +55,21 @@ async function expectClearStep(page: Page, button: Locator, card: Locator) {
 
 const scrollDown = async (page: Page, y: number) => {
   await page.evaluate((top) => window.scrollTo(0, top), y);
-  await expect(page.getByTestId("slim-bar")).toHaveAttribute("data-shown", "true");
+  await page.waitForFunction(
+    (top) => window.scrollY >= Math.min(top, document.documentElement.scrollHeight - innerHeight) - 4,
+    y,
+  );
 };
 
 test.describe("guest menu: browsing and ordering at the demo café", () => {
   test.skip(!ownerEmail || !ownerPassword, "needs E2E_OWNER_EMAIL and E2E_OWNER_PASSWORD from .env.local");
 
-  test("the slim bar shows the café's full name, never cut, and stays 64 px high", async ({ page }) => {
+  test("the menu bar stays on top with the café's full name, never cut", async ({ page }) => {
     const { token } = await demoTable("9");
     for (const locale of ["hy", "ru", "en"]) {
       await page.goto(`/${locale}/m/demo-cafe/main?t=${token}`);
       await scrollDown(page, 700);
-      const bar = page.getByTestId("slim-bar");
+      const bar = page.getByTestId("menubar");
       const name = bar.getByText("Դեմո սրճարան");
       await expect(name).toBeInViewport();
       const fit = await name.evaluate((el) => {
@@ -74,36 +77,30 @@ test.describe("guest menu: browsing and ordering at the demo café", () => {
         return { ellipsis: s.textOverflow, clamp: s.webkitLineClamp, overflow: s.overflow };
       });
       expect(fit).toEqual({ ellipsis: "clip", clamp: "none", overflow: "visible" });
-      // Every line of the name is inside the bar.
+      // Every line of the name is inside the bar, which sits at the top of the screen.
       const [box, outer] = [(await name.boundingBox())!, (await bar.boundingBox())!];
-      expect(outer.height).toBeLessThanOrEqual(64.5);
+      expect(outer.y).toBeLessThanOrEqual(0.5);
       expect(box.y).toBeGreaterThanOrEqual(outer.y);
       expect(box.y + box.height).toBeLessThanOrEqual(outer.y + outer.height);
     }
   });
 
-  test("any section is two taps away through the section list", async ({ page }) => {
+  test("any section is two taps away through the section groups", async ({ page }) => {
     const { token } = await demoTable("9");
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
     await scrollDown(page, 900);
-    // Tap one: the button stays with the sticky tabs.
-    const all = page.getByTestId("all-sections");
-    await expect(all).toBeInViewport();
-    await all.click();
-    const list = page.getByRole("dialog", { name: "Ճաշացանկի բաժիններ" });
-    await expect(list.getByRole("link")).toHaveCount(8);
+    // Tap one: the group's button stays with the sticky bar.
+    const drinks = page.getByTestId("group-drinks");
+    await expect(drinks).toBeInViewport();
+    await drinks.click();
+    const panel = page.getByTestId("section-panel");
+    await expect(panel.getByRole("link")).toHaveCount(2);
     // Tap two.
-    await list.getByRole("link", { name: /Ըմպելիքներ/ }).click();
-    await expect(list).toBeHidden();
-    await expect(page.getByRole("heading", { level: 2, name: "Ըմպելիքներ" })).toBeInViewport();
-    const tabs = page.getByRole("navigation", { name: "Ճաշացանկի բաժիններ" });
-    await expect(tabs.getByRole("link", { name: "Ըմպելիքներ" })).toHaveAttribute("aria-current", "true");
-    // The current tab is not hidden under the button.
-    const [tab, lead] = [
-      (await tabs.getByRole("link", { name: "Ըմպելիքներ" }).boundingBox())!,
-      (await all.boundingBox())!,
-    ];
-    expect(tab.x).toBeGreaterThanOrEqual(lead.x + lead.width);
+    await panel.getByRole("link", { name: /Ըմպելիքներ/ }).click();
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole("heading", { level: 3, name: /^Ըմպելիքներ/ })).toBeInViewport();
+    // The group the page is in is marked.
+    await expect(drinks).toHaveCSS("font-weight", "600");
   });
 
   test("a section's name finds the whole section, under its title", async ({ page }) => {
@@ -112,21 +109,17 @@ test.describe("guest menu: browsing and ordering at the demo café", () => {
     const search = page.getByRole("searchbox", { name: "Search the menu" });
     for (const q of ["Drinks", "Напитки", "Ըմպելիքներ"]) {
       await search.fill(q);
-      await expect(page.locator("main h2")).toHaveAccessibleName("Drinks");
+      await expect(page.locator("main h3")).toHaveAccessibleName(/^Drinks/);
       await expect(page.getByTestId("dish")).toHaveCount(5);
     }
   });
 
-  test("the cart's and the featured card's − / + stand out from the card", async ({ page }) => {
+  test("the cart's and the lead card's − / + stand out from the card", async ({ page }) => {
     const { token } = await demoTable("9");
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
-    const featured = page.locator('[data-testid="dish"][data-featured]').first();
+    const featured = page.locator('[data-testid="dish"][data-feature]').first();
     await featured.scrollIntoViewIfNeeded();
-    await expectClearStep(
-      page,
-      featured.getByRole("button", { name: "Ավելացնել քանակը" }),
-      featured.locator("article"),
-    );
+    await expectClearStep(page, featured.getByRole("button", { name: "Ավելացնել քանակը" }), featured);
 
     await dish(page, "Տոլմա").getByRole("button", { name: "Ավելացնել՝ Տոլմա" }).click();
     const wide = page.viewportSize()!.width >= 1024;
@@ -206,15 +199,15 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     test.skip(res?.status() !== 200, "the Blanca demo café is not in this project");
   };
 
-  test("the slim bar shows the wordmark, 64 px high, nothing cut", async ({ page }) => {
+  test("the menu bar keeps the wordmark on top, nothing cut", async ({ page }) => {
     for (const locale of ["hy", "ru", "en"]) {
       await open(page, locale);
       await scrollDown(page, 700);
-      const bar = page.getByTestId("slim-bar");
+      const bar = page.getByTestId("menubar");
       const mark = bar.getByRole("img", { name: "Blanca by Melonpan" });
       await expect(mark).toBeInViewport();
       expect(await mark.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-      expect((await bar.boundingBox())!.height).toBeLessThanOrEqual(64.5);
+      expect((await bar.boundingBox())!.y).toBeLessThanOrEqual(0.5);
       const cut = await bar.evaluate((el) =>
         [...el.querySelectorAll("*")].some((n) => getComputedStyle(n).textOverflow === "ellipsis"),
       );
@@ -226,14 +219,12 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     page,
   }) => {
     await open(page, "hy");
-    await page.getByTestId("all-sections").click();
-    const list = page.getByRole("dialog", { name: "Ճաշացանկի բաժիններ" });
-    await list.getByRole("searchbox", { name: "Գտնել բաժին" }).fill("вино");
-    await expect(list.getByRole("link", { name: /Սպիտակ գինի/ })).toBeVisible();
-    await expect(list.getByRole("link", { name: /Պիցցա/ })).toHaveCount(0);
-    await list.getByRole("searchbox").fill("");
-    await list.getByRole("link", { name: /Գինի բաժակով/ }).click();
-    await expect(page.getByRole("heading", { level: 2, name: "Գինի բաժակով" })).toBeInViewport();
+    await page.getByTestId("group-wine").click();
+    const panel = page.getByTestId("section-panel");
+    await expect(panel.getByRole("link", { name: /Սպիտակ գինի/ })).toBeVisible();
+    await expect(panel.getByRole("link", { name: /Պիցցա/ })).toHaveCount(0);
+    await panel.getByRole("link", { name: /Գինի բաժակով/ }).click();
+    await expect(page.getByRole("heading", { level: 3, name: /^Գինի բաժակով/ })).toBeInViewport();
 
     const search = page.getByRole("searchbox", { name: "Որոնել ճաշացանկում" });
     for (const q of ["Sancerre", "Сансер", "սանսեր"]) {
@@ -241,7 +232,7 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
       const wine = dish(page, "J. de Villebois Sancerre");
       await expect(wine).toBeVisible();
       // Its section is named above it, and its region and grape read like a wine card.
-      await expect(page.locator("main h2")).toHaveAccessibleName("Սպիտակ գինի");
+      await expect(page.locator("main h3")).toHaveAccessibleName(/^Սպիտակ գինի/);
       await expect(wine).toContainText("Loire Valley, France");
       await expect(wine).toContainText("Sauvignon Blanc");
     }
@@ -252,13 +243,14 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     await expect(sizes).toContainText("3 600 ֏");
   });
 
-  test("a section with a cover photo has no featured card under it", async ({ page }) => {
+  test("the menu opens on dishes: small section titles, no cover photos", async ({ page }) => {
     await open(page, "en");
-    const first = page.locator("section").first();
-    await expect(first.locator("img").first()).toBeVisible();
-    await expect(first.locator('[data-testid="dish"][data-featured]')).toHaveCount(0);
-    // The cover keeps the plate in view: never wider than 2.4:1.
-    const cover = (await first.locator("img").first().boundingBox())!;
-    expect(cover.width / cover.height).toBeLessThanOrEqual(2.4);
+    const first = page.locator("main section").first();
+    // The section starts with its small title, straight followed by its dishes.
+    await expect(first.locator(":scope > h3")).toBeVisible();
+    expect(
+      await first.locator(":scope > h3").evaluate((h) => parseFloat(getComputedStyle(h).fontSize)),
+    ).toBeLessThanOrEqual(16);
+    await expect(first.locator(':scope > ul [data-testid="dish"]').first()).toBeInViewport();
   });
 });

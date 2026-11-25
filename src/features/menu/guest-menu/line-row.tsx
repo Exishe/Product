@@ -4,11 +4,11 @@ import type { PricedLine } from "@/features/ordering/cart";
 import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { MinusIcon, Plate, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
+import { MinusIcon, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
-// narrower cut (`dense`: no plate, smaller name, 44 px buttons).
+// narrower cut (`dense`: a smaller photo and name).
 export function LineRow({
   priced,
   item,
@@ -27,7 +27,7 @@ export function LineRow({
 }) {
   const { t, locale } = useGuestI18n();
   const { line, status } = priced;
-  const step = `${STEP} ${dense ? "size-11" : "size-12"}`;
+  const step = `${STEP} size-10`;
   const name = item?.name.text ?? "";
   const options = (item?.groups ?? []).flatMap((g) =>
     g.modifiers.filter((m) => line.modifierIds.includes(m.id)),
@@ -36,40 +36,42 @@ export function LineRow({
   const available = status === "ok";
   // A plate only for a real photo: an empty plate per line tells the guest
   // nothing, so photoless lines read like a receipt.
-  const photo = !dense && item?.image ? dishPhotoUrl(item.image) : null;
+  const photo = item?.image ? dishPhotoUrl(item.image) : null;
   const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className={`border-line grid gap-x-4 gap-y-1 border-b last:border-b-0 ${dense ? "py-3" : "py-5"} ${photo ? "grid-cols-[4rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5" : "py-3.5"} ${photo ? (dense ? "grid-cols-[2.75rem_minmax(0,1fr)_auto]" : "grid-cols-[3.5rem_minmax(0,1fr)_auto]") : "grid-cols-[minmax(0,1fr)_auto]"}`}
       data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
-        <span className="row-span-5">
-          <Plate src={photo} size={64} muted={!available} className="size-16" />
+        <span className={`bg-plate row-span-5 block overflow-hidden rounded-[10px] ${dense ? "size-11" : "size-14"}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
+          <img
+            src={photo}
+            alt=""
+            width={112}
+            height={112}
+            className={`size-full object-cover ${available ? "" : "opacity-50 grayscale"}`}
+          />
         </span>
       )}
       {item ? (
         <Txt
           value={item.name}
           locale={locale}
-          className={`display-face leading-tight break-words hyphens-auto ${dense ? "text-[1.125rem]" : "text-[1.375rem]"} ${available ? "" : "text-muted line-through"}`}
+          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-[12px]" : "text-[13px]"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
       )}
-      <span className="num text-right font-semibold whitespace-nowrap">
+      <span className="num text-right text-[12px] font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {detail && item?.description && (
-        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-sm break-words`} />
-      )}
-      {item?.substitution && available && (
-        <span className={`text-muted ${col} text-sm font-semibold`}>
-          {t("menu.withSub", { to: item.substitution.to })}
-        </span>
+        <Txt value={item.description} locale={locale} className={`text-soft ${col} text-[11px] break-words`} />
       )}
       {options.length > 0 && (
-        <span className={`text-muted ${col} text-sm`}>
+        <span className={`text-muted ${col} text-[11px]`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -79,14 +81,14 @@ export function LineRow({
         </span>
       )}
       {line.note && (
-        <span className={`text-muted ${col} text-sm break-words`}>
+        <span className={`text-muted ${col} text-[11px] break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className={`text-alert ${col} text-sm font-semibold`} role="status">
+        <span className={`text-alert ${col} text-[11px] font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}
@@ -102,7 +104,7 @@ export function LineRow({
             >
               <MinusIcon />
             </button>
-            <output className="num min-w-7 text-center font-semibold">{line.quantity}</output>
+            <output className="num min-w-6 text-center text-[13px] font-semibold">{line.quantity}</output>
             <button
               type="button"
               className={step}
@@ -117,7 +119,7 @@ export function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="rounded-pill border-line-strong bg-surface min-h-12 border px-5 font-semibold"
+            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-[12px] font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}

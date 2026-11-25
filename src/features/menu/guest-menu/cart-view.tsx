@@ -38,23 +38,18 @@ export function CartView({
   const { t, locale } = useGuestI18n();
   return (
     <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-12 md:px-8" data-testid="cart">
-      <div className="pt-3 md:pt-6">
+      <div className="flex items-center gap-2 pt-2 md:pt-5">
         <button
           type="button"
           onClick={onBack}
-          className="text-ink inline-flex min-h-12 items-center gap-3 font-semibold"
+          aria-label={t("cart.back")}
+          className="text-ink hover:bg-chip grid size-11 flex-none place-items-center rounded-full"
         >
-          <span
-            aria-hidden="true"
-            className="bg-surface shadow-card grid size-12 place-items-center rounded-full"
-          >
-            <BackIcon />
-          </span>
-          {t("cart.back")}
+          <BackIcon />
         </button>
+        <h2 className="display-face text-[1.125rem] leading-[1.2]">{t("cart.title")}</h2>
       </div>
-      <h2 className="display-face mt-4 mb-1 text-[3rem] leading-[1.02] md:text-[4rem]">{t("cart.title")}</h2>
-      <ul className="rounded-feature bg-surface shadow-card mt-5 border [border-color:var(--guest-card-border)] px-4 sm:px-6">
+      <ul className="bg-surface rounded-card mt-2 border [border-color:var(--guest-card-border)] px-3.5">
         {summary.lines.map((p) => (
           <LineRow
             key={p.line.id}
@@ -66,20 +61,20 @@ export function CartView({
           />
         ))}
       </ul>
-      <div className="flex items-baseline justify-between px-1 pt-6 pb-4 text-2xl font-semibold">
-        <span className="display-face text-[1.75rem]">{t("cart.total")}</span>
-        <span className="num" data-testid="cart-total">
+      <div className="flex items-baseline justify-between px-1 pt-4 pb-3">
+        <span className="text-[13px]">{t("cart.total")}</span>
+        <span className="num text-[18px] font-semibold" data-testid="cart-total">
           {formatAmd(summary.total, locale)}
         </span>
       </div>
-      <p className="text-muted mb-4 text-sm">
+      <div className="bg-chip text-muted mb-4 grid gap-1.5 rounded-[10px] px-3.5 py-3 text-[11px] leading-snug">
         {wait && (
           <span className="text-ink block font-semibold" data-testid="cart-wait">
             {t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
           </span>
         )}
-        {t("cart.payNote")}
-      </p>
+        <span>{t("cart.payNote")}</span>
+      </div>
       {notice && <div className="mb-4">{notice}</div>}
       {footer}
     </main>
