@@ -24,7 +24,7 @@ export function PromoBanners({
             <span lang={p.title.lang !== locale ? p.title.lang : undefined} data-testid="promo-title">
               {p.title.text}
             </span>
-            {p.badge && (
+            {p.badge && !p.title.text.includes(p.badge) && (
               <span
                 className="bg-badge text-on-badge rounded-pill px-2.5 py-0.5 text-[0.8125rem] leading-5 font-bold whitespace-nowrap"
                 data-testid="promo-badge"
