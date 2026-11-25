@@ -3,8 +3,8 @@ import { PromoShell } from "./promo-shell";
 
 // Promo banners at the top of the guest menu (ADR-070): an announcement the
 // café switched on, in the guest's language (Armenian when it has no text in
-// it). It changes no price. Rendered on the server, so their text costs the
-// page no JavaScript; only the close button runs in the browser (promo-shell.tsx).
+// it). It changes no price. Rendered with the menu, so a language switch
+// (ADR-092) changes their text too; the close button is promo-shell.tsx.
 export function PromoBanners({
   promos,
   locale,

@@ -8,6 +8,8 @@ import { ownerEmail, ownerPassword } from "./helpers";
 const dish = (page: Page, name: string): Locator => page.getByTestId("dish").filter({ hasText: name });
 const visibleDishNames = (page: Page) =>
   page.getByTestId("dish").evaluateAll((els) => els.map((e) => e.getAttribute("data-dish-id")).sort());
+// The chip turns over on hover with a second, aria-hidden copy of its text.
+const tableChip = (page: Page) => page.getByTestId("table-chip").locator(':scope > span:not([aria-hidden="true"])');
 const noHorizontalScroll = async (page: Page) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
@@ -40,7 +42,7 @@ test.describe("guest menu at the demo café", () => {
   test("tabs, the dish sheet's option rules, the cart and its totals; switching language keeps the table", async ({ page }) => {
     const { token } = await demoTable("9");
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
-    await expect(page.getByTestId("table-chip")).toHaveText("Սեղան 9");
+    await expect(tableChip(page)).toHaveText("Սեղան 9");
 
     // A section group in the bar opens its sections; one jumps there, and the group is marked.
     const drinks = page.getByTestId("group-drinks");
@@ -90,11 +92,16 @@ test.describe("guest menu at the demo café", () => {
     await page.goBack();
     await expect(page.getByRole("searchbox")).toBeVisible();
 
-    // Another language: same table, same cart, prices in that language's format.
+    // Another language: same table, same cart, prices in that language's format,
+    // switched in place without loading the page again (ADR-092).
+    await page.evaluate(() => {
+      (window as unknown as { __samePage?: boolean }).__samePage = true;
+    });
     await page.getByRole("link", { name: "Eng" }).click();
     await expect(page).toHaveURL(new RegExp(`/en/m/demo-cafe/main\\?t=${token}$`));
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(page.getByTestId("table-chip")).toHaveText("Table 9");
+    expect(await page.evaluate(() => (window as unknown as { __samePage?: boolean }).__samePage)).toBe(true);
+    await expect(tableChip(page)).toHaveText("Table 9");
     const enBar = page.getByRole("button", { name: /View order/ });
     await expect(enBar).toContainText("4 items");
     expect(await enBar.locator(".num").textContent()).toBe("AMD 9,600");

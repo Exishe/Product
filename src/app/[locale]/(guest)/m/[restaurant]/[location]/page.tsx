@@ -7,11 +7,14 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { DEFAULT_THEME, guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { GuestBusy } from "@/features/menu/guest-menu/guest-busy";
 import { GuestHeader, type LanguageLink } from "@/features/menu/guest-menu/guest-header";
-import { GuestMenu, type TableState } from "@/features/menu/guest-menu/guest-menu";
-import { PromoBanners } from "@/features/menu/guest-menu/promo-banner";
+import { type TableState } from "@/features/menu/guest-menu/guest-menu";
+import { LocalizedGuestMenu } from "@/features/menu/guest-menu/localized-guest-menu";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
-import { buildGuestMenu } from "@/features/menu/guest-menu/view-model";
-import { GuestI18nProvider, type GuestMessages } from "@/features/ordering/guest-i18n-context";
+import {
+  GuestI18nProvider,
+  type GuestCatalog,
+  type GuestMessages,
+} from "@/features/ordering/guest-i18n-context";
 import { resolveTable } from "@/features/ordering/resolve-table.server";
 import { routing, type Locale } from "@/i18n/routing";
 
@@ -103,35 +106,32 @@ export default async function GuestMenuPage({
 
   // Which wordmark each bar shows depends on the colour behind it (ADR-065).
   const theme = guestTheme(published.restaurant.guest_theme);
-  const menu = buildGuestMenu(
-    published,
-    locale,
-    wordmarkTones(theme, parseBrand(published.restaurant.brand)),
+  const brand = parseBrand(published.restaurant.brand);
+  // The menu is built in the browser from the snapshot (it carries every
+  // language), with the guest texts of each offered language, so switching
+  // language keeps everything on screen (ADR-092).
+  const offered = routing.locales.filter((l) => published.location.locales.includes(l));
+  const catalog: GuestCatalog = Object.fromEntries(
+    await Promise.all(
+      offered
+        .filter((l) => l !== locale)
+        .map(async (l) => [l, (await getMessages({ locale: l })).guest as GuestMessages] as const),
+    ),
   );
-  const promoText = menu.promos.length ? await getTranslations({ locale, namespace: "guest.menu" }) : null;
   return (
-    <GuestThemeScope theme={menu.theme} brandColor={menu.brandColor} brand={published.restaurant.brand}>
-      <GuestI18nProvider locale={locale} messages={messages}>
-        <GuestMenu
-          menu={menu}
+    <GuestThemeScope
+      theme={theme}
+      brandColor={published.restaurant.brand_color ?? null}
+      brand={published.restaurant.brand}
+    >
+      <GuestI18nProvider locale={locale} messages={messages} catalog={catalog}>
+        <LocalizedGuestMenu
+          published={published}
+          tones={wordmarkTones(theme, brand)}
           table={table}
-          languages={languagesFor(menu.locales)}
+          languages={languagesFor(published.location.locales)}
           hints={hints}
-          promoBanners={
-            promoText && (
-              <PromoBanners
-                promos={menu.promos}
-                locale={locale}
-                label={promoText("promoLabel")}
-                closeLabel={promoText("promoClose")}
-              />
-            )
-          }
-          orderHref={
-            table.kind === "ok"
-              ? `/${locale}/m/${restaurant}/${location}/order?t=${encodeURIComponent(table.token)}`
-              : null
-          }
+          path={`/m/${restaurant}/${location}`}
         />
       </GuestI18nProvider>
     </GuestThemeScope>

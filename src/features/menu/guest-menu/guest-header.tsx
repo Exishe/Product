@@ -126,7 +126,7 @@ export function TableChip({ label }: { label: string }) {
 
 /** Հայ · Рус · Eng, keeping the table token: a small segmented switch, the current one on beige. */
 export function LanguageNav({ languages }: { languages: readonly LanguageLink[] }) {
-  const { t, locale } = useGuestI18n();
+  const { t, locale, switchLocale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
   if (offered.length <= 1) return null;
   return (
@@ -135,6 +135,13 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
         <a
           key={l}
           href={href}
+          // In place, without a page load (ADR-092): the cart, an open dish or
+          // order view and the scroll position stay. A new tab, or a language
+          // whose texts aren't on the page, follows the link.
+          onClick={(e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            if (switchLocale(l)) e.preventDefault();
+          }}
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
@@ -157,8 +164,8 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
 // low. `compact` is the short header of the order and status views: one bar
 // with the wordmark (or the full name, small), the table and the languages,
 // so the order itself starts near the top of the screen.
-// Switching language is a full page load: <html lang> lives in the root
-// layout, which a client-side navigation would keep.
+// Switching language happens in place (ADR-092): the page swaps its texts,
+// <html lang> and the address, and nothing the guest has open is lost.
 export function GuestHeader({
   cafeName,
   logoUrl,

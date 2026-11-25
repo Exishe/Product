@@ -359,7 +359,7 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Decisions:
   - **JavaScript budget.** The brief's "under 100 KB" for the guest menu can't be met on Next 16: the framework alone is about 148 KB. The menu route adds 9.2 KB of its own (145 KB in total). next-intl's client provider is gone from the guest layout, guest strings use a 1 KB formatter, and the Supabase client loads only when a guest sends an order. A test fails if the route's own code passes 25 KB.
   - **QR entry is a route handler,** so a bad or old sticker gets a real HTTP 404 with a small self-contained page in hy, ru or en; a Next 16 page sends its 404 as an empty shell filled in by JavaScript.
-  - **Language switch** reloads the page, so `<html lang>` always matches.
+  - **Language switch** reloads the page, so `<html lang>` always matches. (Superseded by ADR-092: the switch now happens in place.)
   - **Button wording** follows the guest mockup: «Ուղարկել խոհանոց», «Խնդրել հաշիվը».
   - **Ordering off (Menu plan):** no add buttons and a calm notice; a cart that already has items explains that the waiter takes orders.
   - **Possible duplicates:** the same dishes (same ids, same total quantities, options ignored) from another guest session or the waiter at the same table within 3 minutes wait for the waiter.
@@ -1064,3 +1064,12 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Context (25 Nov final check): sending a guest order took ~30 s on the preview, admin pages 5–9 s and sign-ins 10–13 s, while the database itself answered the order call in ~1 s on average. Every response carried `x-vercel-id: …::iad1::…`: with no region set, Vercel ran the app's server functions in Washington while the database (`restaurant-os-dev`, eu-central-1) is in Frankfurt, so each of a page's many database calls crossed the Atlantic.
 - Decision: `vercel.json` sets `"regions": ["fra1"]`. Hobby allows one function region at no cost. Production gets the same region when it is deployed.
 - Consequences: one region only (fine for Yerevan cafés: Frankfurt is also closer to Armenia than Washington). If the database ever moves, this must move with it.
+
+## ADR-092: The guest switches language in place
+
+- Context (25 Nov, owner report): switching Հայ / Рус / Eng with something ordered "loses the order". The language links were plain links (ADR above: "Language switch reloads the page"), so every switch loaded the page again. The cart itself survived (it is in localStorage), but the open order view, the scroll position and anything typed went, and in a browser that blocks storage (some in-app browsers) the cart went too.
+- Decision:
+  - The guest pages switch language in the browser. `GuestI18nProvider` gets the guest texts of every language the café offers (about 10 KB each) and exposes `switchLocale`; the language links call it and only fall back to a page load when that language's texts are not on the page (a new tab, a modified click, a page without the catalogue).
+  - The menu page passes the published snapshot (it already carries every language) to `LocalizedGuestMenu`, which builds the view for the language on screen; the open dish sheet re-reads its dish from the rebuilt menu and keeps the guest's choices. The order page receives its dish texts (recommendations, same-name details, can't-make names) for each offered language.
+  - A switch replaces the address (`/hy/…` → `/ru/…`, keeping `?t=` and `#cart`), sets `<html lang>` and writes the `NEXT_LOCALE` cookie as next-intl's middleware would. Back, Forward and pages shown again from the router's cache follow the cookie, so they stay in the guest's latest language; a reload or a shared link renders that language on the server as before.
+- Consequences: the menu page carries the multilingual snapshot instead of a one-language view (Blanca: about 127 KB of JSON before compression, for 242 dishes), and the order page carries its dish texts once per language. Server metadata (the tab title) is set again in the browser after a switch.

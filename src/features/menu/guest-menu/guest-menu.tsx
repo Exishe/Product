@@ -139,7 +139,7 @@ export function GuestMenu({
   languages: LanguageLink[];
   /** Pairs and the usual wait from the café's own rounds (ADR-060). */
   hints?: MenuHints;
-  /** The promo banners, rendered on the server (promo-banner.tsx). */
+  /** The promo banners in the language on screen (promo-banner.tsx). */
   promoBanners?: ReactNode;
 }) {
   const { t, locale } = useGuestI18n();
@@ -182,6 +182,9 @@ export function GuestMenu({
     () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
     [menu],
   );
+  // The open dish as the menu on screen has it: after a language switch its
+  // sheet shows the new language and keeps the guest's choices (ADR-092).
+  const openDish = sheet ? (items[sheet.id] ?? sheet) : null;
   const cartMenu: CartMenu = useMemo(
     () =>
       Object.fromEntries(
@@ -776,16 +779,16 @@ export function GuestMenu({
           </>
         }
       />
-      {sheet && (
+      {openDish && (
         <Suspense fallback={null}>
           <DishSheet
-            key={sheet.id}
-            item={sheet}
+            key={openDish.id}
+            item={openDish}
             canOrder={canOrder}
             track={track}
             onClose={() => setSheet(null)}
             onAdd={(a) => {
-              gate(sheet, () => add(sheet, a));
+              gate(openDish, () => add(openDish, a));
               setSheet(null);
             }}
           />
