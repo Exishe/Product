@@ -200,7 +200,7 @@ test.describe("waiter app", () => {
     // Its own table: the bill test seats a guest at table 4.
     await page.goto("/waiter");
     await openTable(page, "9");
-    await panel(page).getByRole("button", { name: "Ընդունել պատվեր" }).click();
+    await panel(page).getByRole("button", { name: "Գրել պատվեր" }).click();
     const pad = page.getByRole("dialog", { name: "Նոր պատվեր՝ սեղան 9" });
     await pad.getByRole("button", { name: "Ավելացնել՝ Տոլմա" }).click();
     await pad.getByRole("button", { name: "Ավելացնել քանակը՝ Տոլմա" }).click();

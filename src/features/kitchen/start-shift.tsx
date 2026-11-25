@@ -201,10 +201,10 @@ export function StartShiftOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="shift-greeting"
-      className="bg-basalt/95 text-slip fixed inset-0 z-40 grid place-items-center overflow-y-auto px-6 py-8 text-center"
+      className="bg-basalt text-slip fixed inset-0 z-40 grid place-items-center overflow-y-auto px-6 py-8 text-center"
     >
       <div className="grid justify-items-center">
-        <h2 id="shift-greeting" className="mb-3 text-5xl font-bold">
+        <h2 id="shift-greeting" className="mb-3 text-5xl font-semibold">
           {t(greetingKey(localHour))}
         </h2>
         <p className="text-slip-dim mx-auto mb-8 max-w-xl text-xl">{t("hint")}</p>
@@ -212,7 +212,7 @@ export function StartShiftOverlay({
           type="button"
           autoFocus
           onClick={onStart}
-          className="bg-slip inline-flex min-h-[88px] items-center gap-3 rounded-2xl px-12 text-[1.875rem] font-bold text-white"
+          className="bg-slip inline-flex min-h-[88px] items-center gap-3 rounded-2xl px-12 text-[1.875rem] font-bold text-white focus-visible:outline-(--kds-edge) focus-visible:outline-offset-4"
         >
           <Power aria-hidden="true" className="size-8 shrink-0" />
           {t("start")}

@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CircleAlert, CircleCheck, RefreshCw, TriangleAlert, Wifi, WifiOff } from "lucide-react";
+import { CircleAlert, CircleCheck, TriangleAlert, WifiOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -122,26 +122,32 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
 }
 
 // The count of waiting taps is not repeated here: the «Չուղարկված» chip next
-// to it shows it, online or not, and opens the list.
+// to it shows it, online or not, and opens the list. A quiet dot and a word
+// while all is well; a red fill only when the connection is gone.
 export function ConnectionPill({ state }: { state: Connection }) {
   const t = useTranslations("waiter.connection");
   const label = state === "online" ? t("online") : state === "connecting" ? t("connecting") : t("offline");
-  const Icon = state === "online" ? Wifi : state === "connecting" ? RefreshCw : WifiOff;
   return (
     <span
       role="status"
       data-testid="connection"
       data-state={state}
       className={clsx(
-        "inline-flex min-h-8 max-w-full shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[0.8125rem] font-semibold",
-        state === "offline"
-          ? "bg-pomegranate text-white"
-          : state === "connecting"
-            ? "bg-amber text-ink"
-            : "bg-staff-fill text-staff-label2",
+        "inline-flex min-h-8 max-w-full shrink-0 items-center gap-2 rounded-full text-[0.875rem] font-semibold",
+        state === "offline" ? "bg-pomegranate px-3 text-white" : "text-staff-label2 px-1",
       )}
     >
-      <Icon aria-hidden="true" className="size-4 shrink-0" />
+      {state === "offline" ? (
+        <WifiOff aria-hidden="true" className="size-4 shrink-0" />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={clsx(
+            "size-2.5 shrink-0 rounded-full",
+            state === "online" ? "bg-tarragon" : "bg-amber",
+          )}
+        />
+      )}
       <span className="min-w-0 truncate">{label}</span>
     </span>
   );

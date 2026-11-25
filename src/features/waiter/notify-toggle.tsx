@@ -112,8 +112,8 @@ export function NotifyToggle({
           disabled={busy}
           onClick={() => void (state === "on" ? turnOff() : turnOn())}
           className={clsx(
-            "inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-full px-3 text-[0.8125rem] font-semibold disabled:opacity-60",
-            state === "on" ? "bg-tarragon-tint text-tarragon" : "bg-staff-fill text-ink",
+            "border-staff-sep text-ink inline-flex size-11 shrink-0 items-center justify-center gap-2 rounded-full border bg-white text-[0.875rem] font-semibold disabled:opacity-60 lg:w-auto lg:px-3.5",
+            state === "on" ? "[&_svg]:text-tarragon" : "[&_svg]:text-staff-label2",
           )}
         >
           {state === "on" ? <Bell aria-hidden="true" className="size-5" /> : <BellOff aria-hidden="true" className="size-5" />}

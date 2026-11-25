@@ -368,11 +368,10 @@ body:has(.admin-shell) {
 .kitchen-light [data-testid="ticket"] {
   box-shadow: var(--shadow-soft);
 }
-/* White controls on the near-white header and drawers (1.07:1 alone). */
+/* White controls on the near-white header and drawers (1.07:1 alone): one
+   2 px edge, no shadow, so a row of them reads as one calm toolbar. */
 .kitchen-light :is(button, a, [role="status"]).bg-basalt-3 {
-  box-shadow:
-    inset 0 0 0 2px var(--kds-edge),
-    var(--shadow-soft);
+  box-shadow: inset 0 0 0 2px var(--kds-edge);
 }
 @media (hover: hover) {
   /* The ink buttons («Սկսել») get lighter on hover, like ink elsewhere. */

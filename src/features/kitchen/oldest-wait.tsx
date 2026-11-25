@@ -32,17 +32,17 @@ export function OldestWait({ tickets, now }: { tickets: readonly ShownTicket[]; 
           ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" })
       }
       className={clsx(
-        "inline-flex min-h-14 items-center gap-2 rounded-full px-4 text-left text-lg font-semibold",
+        "inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-left text-lg font-semibold",
         lateness === "late"
           ? "bg-late-on-dark text-white"
           : lateness === "hurry"
             ? "bg-apricot text-ink"
-            : "bg-basalt-3 text-slip",
+            : "text-slip",
       )}
     >
       <Icon aria-hidden="true" className="size-5 shrink-0" />
       <span className="grid leading-tight">
-        <span className={clsx("text-sm font-semibold", lateness === "normal" && "text-slip-dim")}>
+        <span className={clsx("text-sm font-medium", lateness === "normal" && "text-slip-dim")}>
           {t("oldest")}
         </span>
         <span className="num whitespace-nowrap">
