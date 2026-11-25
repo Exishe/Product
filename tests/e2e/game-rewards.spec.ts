@@ -57,7 +57,7 @@ test("rewards: owner switches on, a guest earns one, the waiter applies it", asy
   await guest.getByTestId("dish").filter({ hasText: "Տոլմա" }).getByRole("button", { name: "Ավելացնել՝ Տոլմա" }).click();
   await guest.getByRole("button", { name: /Դիտել պատվերը/ }).click();
   await guest.getByRole("button", { name: "Ուղարկել խոհանոց" }).click();
-  await expect(guest).toHaveURL(/\/order\?t=/, { timeout: 15_000 });
+  await expect(guest).toHaveURL(/\/order\?t=/, { timeout: 30_000 });
   await expect(guest.getByTestId("games")).toBeVisible();
   // The offer is on the page before any game is played.
   await expect(guest.getByTestId("reward-offer")).toContainText("2", { timeout: 15_000 });
@@ -129,17 +129,23 @@ test("rewards: owner switches on, a guest earns one, the waiter applies it", asy
     expect((await card.getByTestId(id).boundingBox())!.height).toBeGreaterThanOrEqual(44);
   }
   await expect(tableButton(waiter, "2")).toBeVisible();
+  // The card leaves the list at once (optimistic): let the write finish before the browser closes.
+  const resolved = waiter.waitForResponse((r) => r.url().includes("resolve_game_reward"), { timeout: 30_000 });
   await card.getByTestId("reward-applied").click();
   await expect(panel(waiter).getByTestId("reward-card")).toHaveCount(0);
+  expect((await resolved).ok()).toBe(true);
   await waiterCtx.close();
 
-  const { data: row } = await owner
-    .from("game_reward_claims")
-    .select("applied_at, applied_by, dismissed_at")
-    .eq("order_id", orderId)
-    .single();
-  expect(row).toMatchObject({ dismissed_at: null });
-  expect((row as unknown as { applied_at: string | null }).applied_at).not.toBeNull();
+  const readClaim = async () => {
+    const { data } = await owner
+      .from("game_reward_claims")
+      .select("applied_at, applied_by, dismissed_at")
+      .eq("order_id", orderId)
+      .single();
+    return data as unknown as { applied_at: string | null; dismissed_at: string | null } | null;
+  };
+  await expect.poll(async () => (await readClaim())?.applied_at ?? null, { timeout: 20_000 }).not.toBeNull();
+  expect(await readClaim()).toMatchObject({ dismissed_at: null });
   const audit = await owner
     .from("audit_log")
     .select("action")

@@ -53,6 +53,11 @@ test.describe("allergen review", () => {
     await rows.filter({ hasText: "Ջուր" }).click();
     await expect(page.getByTestId("allergens-none").getByRole("checkbox")).toBeChecked();
 
+    // On a tablet the editor is a sheet over the list: close it to reach the filter.
+    const sheetClose = page.getByRole("dialog").getByRole("button", { name: "Փակել" }).first();
+    if (await sheetClose.isVisible()) await sheetClose.click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
     // The filter shows only what is not reviewed.
     await page.getByTestId("filter-unreviewed").click();
     await expect(rows).toHaveCount(1);
