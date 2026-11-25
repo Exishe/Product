@@ -38,7 +38,7 @@ export function LoginForm({ next }: { next?: string }) {
           className="bg-pom-tint text-pomegranate m-0 flex items-start gap-2 rounded-xl px-3 py-2.5"
         >
           <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          {t("error")}
+          {t(state.error === "busy" ? "busy" : "error")}
         </p>
       )}
       <button type="submit" disabled={pending} className={button("primary", "mt-1")}>

@@ -16,6 +16,7 @@
       "submit": "Sign in",
       "pending": "Checking…",
       "error": "Wrong email, username or password.",
+      "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
       "signupLink": "Sign up"
     },
@@ -973,7 +974,10 @@
     "payHint": "Pay your waiter",
     "entry": {
       "title": "This QR code no longer works.",
-      "body": "Ask your waiter for help."
+      "body": "Ask your waiter for help.",
+      "busyTitle": "The menu didn't open just now.",
+      "busyBody": "This page will try again in a few seconds.",
+      "retry": "Try again"
     },
     "menu": {
       "search": "Search the menu",

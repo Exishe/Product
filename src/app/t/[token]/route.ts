@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
-import { resolveTable } from "@/features/ordering/resolve-table.server";
+import { lookupTable } from "@/features/ordering/resolve-table.server";
 import { tableErrorHtml } from "@/features/ordering/table-error-page";
 import { resolveTableEntry } from "@/features/ordering/table-entry";
 import { pickGuestLocale } from "@/lib/i18n/pick-locale";
@@ -9,7 +9,11 @@ import { pickGuestLocale } from "@/lib/i18n/pick-locale";
 // The table QR: /t/<token>. A malformed token is refused before any database
 // call; a valid sticker redirects (307) to the café's menu in the guest's
 // language with the token kept in the URL; an old, tampered or forged one gets
-// a friendly "ask your waiter" page with HTTP 404 (Review focus 2).
+// a friendly "ask your waiter" page with HTTP 404 (Review focus 2). When the
+// database cannot answer, the guest gets a "try again" page (HTTP 503) that
+// reloads itself, never the "no longer works" one.
+const RETRY_SECONDS = 5;
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const visitor = {
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   };
   const noStore = { "cache-control": "private, no-store" };
 
-  const entry = await resolveTableEntry(token, visitor, resolveTable);
+  const entry = await resolveTableEntry(token, visitor, lookupTable);
   if (entry.kind === "menu") return new Response(null, { status: 307, headers: { ...noStore, location: entry.href } });
 
   const locale = pickGuestLocale({
@@ -28,6 +32,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     fallback: routing.defaultLocale,
   });
   const t = await getTranslations({ locale, namespace: "guest.entry" });
+  if (entry.kind === "unavailable") {
+    const html = tableErrorHtml(
+      locale,
+      { title: t("busyTitle"), body: t("busyBody") },
+      { label: t("retry"), seconds: RETRY_SECONDS },
+    );
+    return new Response(html, {
+      status: 503,
+      headers: {
+        ...noStore,
+        "retry-after": String(RETRY_SECONDS),
+        "content-type": "text/html; charset=utf-8",
+        "content-language": locale,
+      },
+    });
+  }
   return new Response(tableErrorHtml(locale, { title: t("title"), body: t("body") }), {
     status: 404,
     headers: { ...noStore, "content-type": "text/html; charset=utf-8", "content-language": locale },

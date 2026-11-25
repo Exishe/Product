@@ -2,13 +2,18 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { STAFF_LOCALE_COOKIE } from "@/i18n/request";
+import { retryTransient } from "@/lib/async/retry";
 import { safeNext } from "@/lib/auth/safe-next";
 import { loginIdentity } from "@/lib/auth/staff-login";
 import { createClient } from "@/lib/supabase/server";
 
-export type SignInState = { error: "invalid" | null };
+export type SignInState = { error: "invalid" | "busy" | null };
+
+// A gateway timeout or an unreachable auth server is not a wrong password.
+const authUnavailable = (error: AuthError) => isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500;
 
 const credentials = z.object({
   login: z.string().max(200),
@@ -24,17 +29,26 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
   if (identity.kind === "email" && !z.email().safeParse(identity.email).success) return { error: "invalid" };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: identity.email,
-    password: parsed.data.password,
-  });
-  if (error || !data.user) return { error: "invalid" };
+  const attempt = await retryTransient(
+    async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: identity.email,
+        password: parsed.data.password,
+      });
+      if (error && authUnavailable(error)) return { ok: false, transient: true };
+      return { ok: true, value: error ? null : data.user };
+    },
+    [800],
+  );
+  if (!attempt.ok) return { error: "busy" };
+  const user = attempt.value;
+  if (!user) return { error: "invalid" };
 
   // Staff pages read the member's language from a cookie (no locale in the URL).
   const { data: member } = await supabase
     .from("members")
     .select("locale")
-    .eq("user_id", data.user.id)
+    .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at")
     .limit(1)
