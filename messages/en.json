@@ -977,6 +977,7 @@
     },
     "menu": {
       "search": "Search the menu",
+      "searchPlaceholder": "Search",
       "categories": "Menu sections",
       "noResults": "No dish matches that. Try another word.",
       "soldOut": "Not today",
@@ -1090,6 +1091,7 @@
       "callWaiter": "Call the waiter",
       "askBill": "Ask for the bill",
       "waiterTold": "Your waiter has been told.",
+      "waiterOnWay": "The waiter is on the way.",
       "billTold": "Your waiter will bring the bill.",
       "payTitle": "How will you pay?",
       "payCard": "Card",

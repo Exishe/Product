@@ -656,10 +656,10 @@ export function GuestMenu({
                 if (!fold)
                   void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
               }}
-              placeholder={t("menu.search")}
+              placeholder={t("menu.searchPlaceholder")}
               autoComplete="off"
               enterKeyHint="search"
-              className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-5 pl-11"
+              className="bg-surface shadow-card placeholder:text-muted focus:border-accent-text rounded-pill min-h-12 w-full border [border-color:var(--guest-field-edge)] pr-4 pl-11 text-ellipsis"
             />
           </div>
           {offerFilter && (

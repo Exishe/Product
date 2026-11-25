@@ -24,9 +24,16 @@ import { loadGuestSession, saveGuestSession } from "./guest-session";
 import { classifyOrderError } from "./order-errors";
 import { beginRequest, clearRequest, loadRequest, RETRY_MS, type PendingRequest } from "./pending-request";
 import { NotifyReady } from "./notify-ready";
+import {
+  answeredSince,
+  nextExpiry,
+  serviceLines,
+  type ServiceKind,
+  type ServiceRequest,
+} from "./service-status";
 import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
-import { DOCK_SPACE, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
+import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
 import { ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
 import {
   displayStatus,
@@ -66,7 +73,7 @@ type Order = OrderState & {
   reject_reason: string | null;
   order_items: Line[];
 };
-type Request = { id: string; kind: "call_waiter" | "bring_bill"; status: string };
+type Request = ServiceRequest;
 type Data = { orders: Order[]; requests: Request[]; closed: boolean };
 
 // The stages before "ready": the only time «Notify me when it's ready» makes sense.
@@ -105,9 +112,10 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
       .order("placed_at", { ascending: false }),
     db
       .from("service_requests")
-      .select("id, kind, status")
+      .select("id, kind, status, resolved_at")
       .eq("guest_session_id", guestSessionId)
-      .neq("status", "resolved"),
+      // Open ones, and ones the waiter answered a moment ago («Գնում եմ»).
+      .or(`status.neq.resolved,resolved_at.gte.${answeredSince(Date.now())}`),
     db.from("guest_sessions").select("revoked_at, expires_at").eq("id", guestSessionId).maybeSingle(),
   ]);
   if (orders.error || requests.error || session.error) return null;
@@ -389,7 +397,12 @@ export function OrderStatusView({
   const [data, setData] = useState<Data | null>(null);
   const [phase, setPhase] = useState<"loading" | "ready" | "none">("loading");
   const [slow, setSlow] = useState(false);
-  const [told, setTold] = useState<{ kind: Request["kind"] | "error" | "unsent"; key: number } | null>(null);
+  const [told, setTold] = useState<{ kind: "error" | "unsent"; key: number } | null>(null);
+  // Just sent, not yet read back: bridges the moment before the next refresh.
+  const [sentKinds, setSentKinds] = useState<ReadonlySet<ServiceKind>>(() => new Set());
+  const [now, setNow] = useState(() => Date.now());
+  const billButton = useRef<HTMLButtonElement>(null);
+  const payPanel = useRef<HTMLDivElement>(null);
   const [asking, setAsking] = useState<Request["kind"] | null>(null);
   const [choosing, setChoosing] = useState(false);
   // Requests with no answer yet: kept in storage, retried, never shown as sent.
@@ -433,13 +446,44 @@ export function OrderStatusView({
 
   const refresh = useCallback(() => {
     if (!db || !guestSessionId) return;
-    void load(db, guestSessionId).then((loaded) => loaded && setData(loaded));
+    void load(db, guestSessionId).then((loaded) => {
+      if (!loaded) return;
+      setData(loaded);
+      setNow(Date.now());
+      setSentKinds(new Set());
+    });
   }, [db, guestSessionId]);
 
   const active = useMemo(
-    () => (data ? data.orders.some(isActive) || data.requests.length > 0 : false),
+    () => (data ? data.orders.some(isActive) || data.requests.some((r) => r.status !== "resolved") : false),
     [data],
   );
+
+  // A failed request's note leaves after a few seconds.
+  useEffect(() => {
+    if (told?.kind !== "error") return;
+    const timer = setTimeout(() => setTold(null), 6000);
+    return () => clearTimeout(timer);
+  }, [told]);
+
+  // The «waiter is on the way» line leaves by itself after a while.
+  const requests = data?.requests;
+  useEffect(() => {
+    if (!requests) return;
+    const at = nextExpiry(requests, Date.now());
+    if (at === null) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, at - Date.now()) + 50);
+    return () => clearTimeout(timer);
+  }, [requests, now]);
+
+  // The bill panel opens below the buttons, often under the fold: bring it in view.
+  useEffect(() => {
+    if (!choosing) return;
+    payPanel.current?.scrollIntoView({
+      block: "nearest",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [choosing]);
 
   // "Ready": a banner slides in, and if it became ready while the guest
   // watched, a big spark bursts from it.
@@ -485,7 +529,11 @@ export function OrderStatusView({
 
   const ask = async (kind: Request["kind"], payment?: "card" | "cash") => {
     if (!db || !guestSessionId) return;
-    setChoosing(false);
+    if (choosing) {
+      setChoosing(false);
+      // The panel with the focused button is going away: keep focus on the opener.
+      billButton.current?.focus({ preventScroll: true });
+    }
     setAsking(kind);
     let req: PendingRequest = { kind, payment: payment ?? null, createdAt: new Date().toISOString() };
     try {
@@ -500,8 +548,12 @@ export function OrderStatusView({
       setTold({ kind: "unsent", key: Date.now() });
       return;
     }
-    setTold({ kind: result === "failed" ? "error" : kind, key: Date.now() });
-    if (result === "sent") refresh();
+    if (result === "failed") setTold({ kind: "error", key: Date.now() });
+    else {
+      setTold(null);
+      setSentKinds((s) => new Set(s).add(kind));
+      refresh();
+    }
   };
 
   const retryUnsent = useCallback(async () => {
@@ -511,7 +563,8 @@ export function OrderStatusView({
       for (const req of unsent) {
         const result = await attemptSend(req);
         if (result === "sent") {
-          setTold({ kind: req.kind, key: Date.now() });
+          setTold(null);
+          setSentKinds((s) => new Set(s).add(req.kind));
           refresh();
         } else if (result === "failed") setTold({ kind: "error", key: Date.now() });
       }
@@ -576,7 +629,7 @@ export function OrderStatusView({
 
   const [latest, ...earlier] = orders;
   const closed = data?.closed ?? false;
-  const open = new Set((data?.requests ?? []).map((r) => r.kind));
+  const open = new Set((data?.requests ?? []).filter((r) => r.status !== "resolved").map((r) => r.kind));
   const latestStatus = latest ? displayStatus(latest) : null;
   const grand = orders
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
@@ -603,7 +656,11 @@ export function OrderStatusView({
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    addToCart(cartKey(order.location_id, tableId), [{ itemId, modifierIds: [], quantity: 1, note: "" }], newId);
+    addToCart(
+      cartKey(order.location_id, tableId),
+      [{ itemId, modifierIds: [], quantity: 1, note: "" }],
+      newId,
+    );
     try {
       window.sessionStorage.setItem(OPEN_CART_KEY, "1");
     } catch {
@@ -613,6 +670,49 @@ export function OrderStatusView({
   };
   const cantMake = { db, dishes, onAdd: closed ? undefined : addDish };
   const stepButton = `${STEP} size-12`;
+  // What the guest has asked for and what came of it: a banner above the bottom
+  // bar, so it is never behind it. One live region; its lines change in place.
+  const lines = closed ? [] : serviceLines(data?.requests ?? [], now, sentKinds);
+  const notes: { key: string; text: string; tone: "ok" | "alert" }[] = [
+    ...(hasUnsent ? [{ key: "unsent", text: t("order.notSent"), tone: "alert" as const }] : []),
+    ...(told?.kind === "error"
+      ? [{ key: `error${told.key}`, text: t("order.requestFailed"), tone: "alert" as const }]
+      : []),
+    ...lines.map((l) => ({
+      key: l,
+      text: t(
+        l === "billOpen" ? "order.billTold" : l === "callAnswered" ? "order.waiterOnWay" : "order.waiterTold",
+      ),
+      tone: "ok" as const,
+    })),
+  ];
+  const status = (
+    <div
+      role="status"
+      aria-live="polite"
+      data-testid="service-status"
+      className={
+        notes.length === 0
+          ? "-mb-2"
+          : "bg-surface text-ink shadow-float rounded-card border-line pointer-events-auto grid gap-2 border p-3"
+      }
+    >
+      {notes.map((n) => (
+        <p
+          key={n.key}
+          className={`m-0 flex items-center gap-2 px-1 font-semibold ${n.tone === "ok" ? "text-success" : "text-alert"}`}
+        >
+          {n.tone === "ok" && <CheckIcon />}
+          {n.text}
+        </p>
+      ))}
+      {hasUnsent && (
+        <button type="button" className={`${secondary} w-full`} onClick={() => void retryUnsent()}>
+          {t("order.retryRequest")}
+        </button>
+      )}
+    </div>
+  );
   const showGames = !closed && latestStatus !== "rejected" && latestStatus !== "cancelled";
   const smooth = (): ScrollBehavior =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -654,7 +754,9 @@ export function OrderStatusView({
   ];
 
   return (
-    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 pt-5 md:px-8 md:pt-10 ${DOCK_SPACE}`}>
+    <main
+      className={`mx-auto w-full max-w-[720px] flex-1 px-4 pt-5 md:px-8 md:pt-10 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
+    >
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.
         <div
@@ -724,6 +826,7 @@ export function OrderStatusView({
               aria-pressed={open.has("bring_bill")}
               disabled={asking !== null}
               aria-expanded={choosing}
+              ref={billButton}
               onClick={() => setChoosing((x) => !x)}
             >
               {t("order.askBill")}
@@ -734,7 +837,8 @@ export function OrderStatusView({
               role="group"
               aria-label={t("order.payTitle")}
               data-testid="pay-choice"
-              className="mt-3 grid gap-2"
+              ref={payPanel}
+              className="mt-3 grid scroll-mb-[calc(110px+env(safe-area-inset-bottom,0px))] gap-2"
             >
               {grand > 0 && (
                 <div
@@ -787,27 +891,14 @@ export function OrderStatusView({
               <button
                 type="button"
                 className="text-accent-text min-h-12 justify-self-start font-semibold"
-                onClick={() => setChoosing(false)}
+                onClick={() => {
+                  setChoosing(false);
+                  billButton.current?.focus({ preventScroll: true });
+                }}
               >
                 {t("order.payBack")}
               </button>
             </div>
-          )}
-          <p className="mt-2 min-h-6 text-sm" role="status" aria-live="polite" key={told?.key}>
-            {hasUnsent
-              ? t("order.notSent")
-              : told?.kind === "error"
-                ? t("order.requestFailed")
-                : told?.kind === "bring_bill" || (!told && open.has("bring_bill"))
-                  ? t("order.billTold")
-                  : told?.kind === "call_waiter" || open.has("call_waiter")
-                    ? t("order.waiterTold")
-                    : null}
-          </p>
-          {hasUnsent && (
-            <button type="button" className={`${secondary} mt-1 w-full`} onClick={() => void retryUnsent()}>
-              {t("order.retryRequest")}
-            </button>
           )}
           <p>
             <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
@@ -838,7 +929,7 @@ export function OrderStatusView({
           </div>
         </section>
       )}
-      <GuestDock items={dock} />
+      <GuestDock items={dock} above={status} />
     </main>
   );
 }
