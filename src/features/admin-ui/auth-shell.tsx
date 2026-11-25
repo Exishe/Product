@@ -1,18 +1,21 @@
 import type { ReactNode } from "react";
 
-// Sign-in, sign-up and "create your café" (ADR-055): the app mark, a large
-// title and one grouped card on the staff grey, centred on every screen.
+// Sign-in, sign-up, device pairing, "create your café" (ADR-055) and the 404:
+// the app mark, a title, one helper line and one grouped card on the staff
+// grey, on one 16 px left edge. `bare` drops the card for a page with no form.
 export function AuthShell({
   brand,
   title,
   subtitle,
   footer,
+  bare,
   children,
 }: {
   brand: string;
   title: string;
   subtitle?: ReactNode;
   footer?: ReactNode;
+  bare?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -27,13 +30,13 @@ export function AuthShell({
             </svg>
             {brand}
           </p>
-          <div className="flex flex-col gap-1">
-            <h1 className="page-title m-0 text-[2.75rem]">{title}</h1>
-            {subtitle && <div className="text-staff-label2 text-[1.0625rem]">{subtitle}</div>}
+          <div className="flex flex-col gap-2">
+            <h1 className="font-display m-0 text-[2rem] leading-[1.15] font-normal">{title}</h1>
+            {subtitle && <div className="text-staff-label2 text-[1.0625rem] text-balance">{subtitle}</div>}
           </div>
         </div>
-        <div className="rounded-2xl bg-white p-4 sm:p-6">{children}</div>
-        {footer && <div className="text-staff-label2 px-1 text-[1.0625rem]">{footer}</div>}
+        {bare ? children : <div className="rounded-2xl bg-white p-4 sm:p-6">{children}</div>}
+        {footer && <div className="text-staff-label2 text-[0.9375rem]">{footer}</div>}
       </main>
     </div>
   );

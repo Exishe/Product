@@ -1,14 +1,27 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { AuthShell } from "@/features/admin-ui/auth-shell";
+import { button } from "@/features/admin-ui/styles";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  // The sentence's own full stop (։ or .) has no place in a tab title.
+  return { title: `${t("common.notFound").replace(/[։.]$/, "")} · ${t("brand.name")}` };
+}
 
 export default async function NotFound() {
-  const t = await getTranslations("common");
+  const t = await getTranslations();
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-4 px-6">
-      <h1 className="display-face text-display-38">{t("notFound")}</h1>
-      <Link href="/" className="text-ink underline underline-offset-4">
-        {t("backHome")}
+    <AuthShell
+      bare
+      brand={t("brand.name")}
+      title={t("common.notFound")}
+      subtitle={<p className="m-0">{t("common.notFoundHint")}</p>}
+    >
+      <Link href="/" className={button("primary", "w-full self-start sm:w-auto")}>
+        {t("common.backHome")}
       </Link>
-    </main>
+    </AuthShell>
   );
 }

@@ -47,7 +47,7 @@ export async function signUpInBrowser(
   const send = async () => {
     await page.getByLabel("Ձեր անունը").fill(name);
     await page.getByLabel("Էլ․ փոստ").fill(email);
-    await page.getByLabel("Գաղտնաբառ (առնվազն 8 նիշ)").fill(password);
+    await page.getByLabel("Գաղտնաբառ").fill(password);
     await page.getByRole("button", { name: "Գրանցվել" }).click();
   };
   await page.goto("/signup");

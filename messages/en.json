@@ -6,7 +6,8 @@
   },
   "common": {
     "notFound": "This page doesn't exist.",
-    "backHome": "Home"
+    "backHome": "Home",
+    "notFoundHint": "The link may be old or mistyped."
   },
   "auth": {
     "login": {
@@ -18,19 +19,24 @@
       "error": "Wrong email, username or password.",
       "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
-      "signupLink": "Sign up"
+      "signupLink": "Sign up",
+      "subtitle": "For owners and staff"
     },
     "signup": {
       "title": "Sign up",
       "name": "Your name",
       "email": "Email",
-      "password": "Password (at least 8 characters)",
+      "password": "Password",
       "submit": "Sign up",
       "pending": "Signing up…",
       "error": "Couldn't sign up. There may already be an account with this email.",
       "haveAccount": "Already have an account?",
-      "loginLink": "Sign in"
-    }
+      "loginLink": "Sign in",
+      "subtitle": "Create an account, then add your café.",
+      "passwordHint": "At least 8 characters"
+    },
+    "required": "Fill in this field.",
+    "emailFormat": "Check the email address."
   },
   "admin": {
     "home": {
@@ -260,10 +266,12 @@
     "disconnected": "This device was disconnected. Enter a new code to connect it again.",
     "errors": {
       "invalid_pairing_code": "The code is wrong or has expired.",
-      "rate_limited": "Too many tries. Try again in 10 minutes.",
-      "anonymous_session_required": "This device is signed in to a personal account. Sign out first.",
-      "failed": "Couldn't connect. Try again."
-    }
+      "rate_limited": "Too many tries. Wait 10 minutes and enter the code again.",
+      "anonymous_session_required": "A personal account is open on this device. Sign out of it first.",
+      "failed": "Couldn't connect. Try again.",
+      "format": "Enter 6 digits."
+    },
+    "hint": "The owner will give you the code. It works for 10 minutes."
   },
   "invite": {
     "title": "Join the team",
