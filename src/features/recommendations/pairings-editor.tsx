@@ -126,17 +126,18 @@ export function PairingsEditor({
   }
 
   function toggle(from: ItemType, to: ItemType, allowed: boolean) {
+    // The tick answers at once; it goes back if the save fails.
+    const before = matrix;
+    setMatrix((all) => {
+      const rest = all.filter((c) => !(c.from_type === from && c.to_type === to));
+      const old = all.find((c) => c.from_type === from && c.to_type === to);
+      // Each tick flips the pair between "as the default" and "changed".
+      const wasCustom = old?.is_custom ?? false;
+      return [...rest, { from_type: from, to_type: to, allowed, is_custom: !wasCustom }];
+    });
     run(async () => {
       const r = await setCompat(from, to, allowed);
-      if (r.ok) {
-        setMatrix((all) => {
-          const rest = all.filter((c) => !(c.from_type === from && c.to_type === to));
-          const old = all.find((c) => c.from_type === from && c.to_type === to);
-          // Each tick flips the pair between "as the default" and "changed".
-          const wasCustom = old?.is_custom ?? false;
-          return [...rest, { from_type: from, to_type: to, allowed, is_custom: !wasCustom }];
-        });
-      }
+      if (!r.ok) setMatrix(before);
       return r.ok;
     });
   }
