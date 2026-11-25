@@ -338,9 +338,13 @@ function Board(p: KitchenBoardProps) {
       const next = new Set(struck);
       if (want) next.add(key);
       else next.delete(key);
-      setStruck(key, want);
-      if (allLinesStruck(ticket, next)) {
+      if (want && allLinesStruck(ticket, next)) {
+        // This tap finishes the ticket: it goes to Ready, and the server forgets
+        // its strikes then. The last strike is not sent: it could arrive after
+        // the move and be refused.
         act({ kind: "set_ticket_status", ticketId: ticket.id, expected: "cooking", next: "ready" });
+      } else {
+        setStruck(key, want);
       }
     },
     [struck, setStruck, act],
