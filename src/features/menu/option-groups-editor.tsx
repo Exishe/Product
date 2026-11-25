@@ -173,7 +173,8 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t("priceDelta")}</span>
             <input
-              inputMode="numeric"
+              // Not "numeric": the phone keypad for it has no minus, and a cheaper option is negative.
+              inputMode="text"
               aria-label={`${t("option")} ${i + 1}: ${t("priceDelta")}`}
               value={o.deltaText}
               onChange={(e) => {
