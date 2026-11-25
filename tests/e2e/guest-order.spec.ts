@@ -123,7 +123,8 @@ test.describe("ordering at a fresh café", () => {
     await expect(page.getByTestId("tracker").getByText("Պատրաստ է, մատուցողը բերում է։")).toBeVisible();
 
     // The cart is empty again; "order more" goes back to the menu at the same table.
-    await page.getByRole("link", { name: "Պատվիրել ևս" }).click();
+    // The header's link (the recommended dishes below have one with the same words).
+    await page.getByRole("link", { name: "Պատվիրել ևս" }).first().click();
     await expect(page).toHaveURL(slugPattern("\\?t="));
     await expect(page.getByRole("button", { name: /Դիտել պատվերը/ })).toHaveCount(0);
   });
