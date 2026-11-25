@@ -10,7 +10,7 @@ import { Sheet, useMediaQuery } from "@/features/admin-ui/sheet";
 import { button, check, fieldLabel, input } from "@/features/admin-ui/styles";
 import { formatAmdChange } from "@/lib/format/money";
 import { saveOptionGroup } from "./actions";
-import { parsePriceInput } from "./schema";
+import { parseDeltaInput } from "./schema";
 import { emptyNames, type EditorGroup, type Names } from "./types";
 
 const LOCALES = ["hy", "ru", "en"] as const;
@@ -52,7 +52,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
 
   function save() {
     if (!draft) return;
-    const options = draft.options.map((o) => ({ ...o, priceDelta: parsePriceInput(o.deltaText) }));
+    const options = draft.options.map((o) => ({ ...o, priceDelta: parseDeltaInput(o.deltaText) }));
     if (!draft.names.hy.trim() || options.some((o) => o.priceDelta === null || !o.names.hy.trim()))
       return setStatus("invalid");
     startTransition(async () => {

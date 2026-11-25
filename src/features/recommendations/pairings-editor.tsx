@@ -59,7 +59,10 @@ export function PairingsEditor({
   const [matrix, setMatrix] = useState(initialMatrix);
   const [error, setError] = useState<string | null>(null);
   const [proposals, setProposals] = useState<(Proposal & { on: boolean })[] | null>(null);
-  const [current, setCurrent] = useState(initialDishes[0]?.id ?? "");
+  // The first dish the select lists (grouped by section), so the pairings shown are the ones saved.
+  const [current, setCurrent] = useState(
+    () => groupByCategory(initialDishes, categories)[0]?.dishes[0]?.id ?? "",
+  );
   const [query, setQuery] = useState("");
 
   const dishName = (id: string) => nameIn(dishes.find((d) => d.id === id)?.names ?? { hy: "", ru: "", en: "" }, locale);

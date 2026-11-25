@@ -21,6 +21,15 @@ export function parsePriceInput(raw: string): number | null {
   return Number(compact);
 }
 
+// Option price changes can be negative ("-200" for a smaller size). Same spacing and ֏ as
+// parsePriceInput, limited to what the database allows (-1,000,000..1,000,000).
+export function parseDeltaInput(raw: string): number | null {
+  const compact = raw.replace(/[\s֏]/g, "");
+  if (!/^-?\d{1,7}$/.test(compact)) return null;
+  const n = Number(compact);
+  return Math.abs(n) <= 1_000_000 ? n : null;
+}
+
 const name = (max: number) => z.string().trim().max(max);
 const perLocale = (max: number) => z.object({ hy: name(max), ru: name(max), en: name(max) });
 

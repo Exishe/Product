@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FloorTable, WaiterOrder } from "./floor-model";
-import { alertEvents, freshEvents } from "./live-alert-model";
+import { alertEvents, freshEvents, mergeEvents } from "./live-alert-model";
 
 const order = (
   id: string,
@@ -76,5 +76,22 @@ describe("waiter live alerts", () => {
       "A:bill",
     ]);
     expect(freshEvents(all, new Set(all.map((e) => e.key)))).toEqual([]);
+  });
+
+  it("adds a second event to the open card instead of replacing what is on it", () => {
+    const first = freshEvents(alertEvents([tables[0]!]), new Set());
+    const second = freshEvents(alertEvents([tables[2]!]), new Set());
+    expect(mergeEvents(second, first).map((e) => `${e.label}:${e.kind}`)).toEqual([
+      "C:call",
+      "C:new",
+      "A:bill",
+    ]);
+  });
+
+  it("keeps one line per table and kind when the same kind comes again", () => {
+    const shown = [{ key: "ready:k1", kind: "ready" as const, tableId: "b", label: "B" }];
+    const fresh = [{ key: "ready:k9", kind: "ready" as const, tableId: "b", label: "B" }];
+    expect(mergeEvents(fresh, shown).map((e) => e.key)).toEqual(["ready:k9"]);
+    expect(mergeEvents(fresh, []).map((e) => e.key)).toEqual(["ready:k9"]);
   });
 });

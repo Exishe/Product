@@ -44,3 +44,9 @@ export function freshEvents(events: readonly AlertEvent[], seen: ReadonlySet<str
   }
   return [...byTableKind.values()].sort((a, b) => RANK[a.kind] - RANK[b.kind]);
 }
+
+// New events while the card is up join the lines already on it instead of
+// replacing them: still one line per table and kind (the newer one), most urgent first.
+export function mergeEvents(fresh: readonly AlertEvent[], shown: readonly AlertEvent[]): AlertEvent[] {
+  return freshEvents([...fresh, ...shown], new Set());
+}

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { STATE_BADGE, StateIcon } from "./floor-map";
 import type { FloorTable } from "./floor-model";
-import { alertEvents, freshEvents, type AlertEvent, type AlertKind } from "./live-alert-model";
+import { alertEvents, freshEvents, mergeEvents, type AlertEvent, type AlertKind } from "./live-alert-model";
 import styles from "./live-alert.module.css";
 
 const SHOW_MS = 8_000;
@@ -55,22 +55,35 @@ export function WaiterAlert({
   const audio = useRef<AudioContext | null>(null);
   const [shown, setShown] = useState<{ id: number; events: AlertEvent[] } | null>(null);
 
-  // Unlock the sound on the first tap.
+  // Unlock the sound on the first tap, click or key. A touch counts as user
+  // activation only when it ends (pointerup, touchend, click), not on pointerdown.
   useEffect(() => {
-    const unlock = () => {
+    const events = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;
+    const detach = () => {
+      for (const name of events) window.removeEventListener(name, unlock);
+    };
+    function unlock() {
       try {
         const Ctx =
           window.AudioContext ??
           (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (!Ctx) return;
+        if (!Ctx) return detach();
         audio.current ??= new Ctx();
-        void audio.current.resume();
+        // Once the context runs, the listeners are not needed any more.
+        void Promise.resolve(audio.current.resume())
+          .then(() => {
+            if (audio.current?.state === "running") detach();
+          })
+          .catch(() => {
+            // Not unlocked by this event; the next one tries again.
+          });
       } catch {
         // No sound on this device; the card and the buzz still come.
+        detach();
       }
-    };
-    window.addEventListener("pointerdown", unlock, { passive: true });
-    return () => window.removeEventListener("pointerdown", unlock);
+    }
+    for (const name of events) window.addEventListener(name, unlock, { passive: true });
+    return detach;
   }, []);
 
   useEffect(() => {
@@ -82,8 +95,9 @@ export function WaiterAlert({
     const fresh = freshEvents(events, seen.current);
     for (const e of events) seen.current.add(e.key);
     if (fresh.length === 0) return;
-    // The event is external (a refetch), so the card is set from this effect.
-    setShown({ id: Date.now(), events: fresh });
+    // The event is external (a refetch), so the card is set from this effect. Lines
+    // already on the card stay on it.
+    setShown((cur) => ({ id: Date.now(), events: mergeEvents(fresh, cur?.events ?? []) }));
     play(audio.current, fresh[0]?.kind === "call" ? "urgent" : "plain");
     try {
       navigator.vibrate?.(fresh[0]?.kind === "call" ? [180, 90, 180, 90, 180] : [180, 90, 180]);

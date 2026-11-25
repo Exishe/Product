@@ -77,7 +77,8 @@ type Status =
   | "costInvalid"
   | "nameRequired"
   | "windowInvalid"
-  | "windowFailed";
+  | "windowFailed"
+  | "deleteFailed";
 
 // Resizes the photo in the browser, stores it and points the dish at it.
 async function storeDishPhoto(restaurantId: string, dishId: string, file: File): Promise<string> {
@@ -118,6 +119,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const [panel, setPanel] = useState<Panel>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
+  // Deleting a dish asks once more, inline, before it happens.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [publishStatus, setPublishStatus] = useState<
     "idle" | "publishing" | "published" | "unreviewed" | "failed"
   >("idle");
@@ -136,6 +139,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
     setPanel(next);
     setCollapsed(false);
     setStatus("idle");
+    setConfirmingDelete(false);
   }
 
   function openDish(d?: EditorDish) {
@@ -231,6 +235,8 @@ export function MenuEditor({ data }: { data: EditorData }) {
           const saved = await saveCategoryWindow(result.id, next?.from ?? null, next?.to ?? null);
           if (!saved) {
             setSelected(result.id);
+            // The section exists now: the next Save must update it, not add a second one.
+            setPanel({ kind: "category", draft: { ...d, id: result.id } });
             return setStatus("windowFailed");
           }
         }
@@ -343,8 +349,10 @@ export function MenuEditor({ data }: { data: EditorData }) {
   }
 
   function remove(id: string) {
+    setConfirmingDelete(false);
     startTransition(async () => {
-      await deleteDish(id);
+      // The dish is still there: keep it open and say so.
+      if (!(await deleteDish(id))) return setStatus("deleteFailed");
       setPanel(null);
       router.refresh();
     });
@@ -443,6 +451,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
       {status === "nameRequired" && t("nameRequired")}
       {status === "windowInvalid" && t("windowInvalid")}
       {status === "windowFailed" && t("windowFailed")}
+      {status === "deleteFailed" && t("deleteFailed")}
     </p>
   );
 
@@ -460,11 +469,34 @@ export function MenuEditor({ data }: { data: EditorData }) {
         <button
           type="button"
           disabled={pending}
-          onClick={() => remove(panel.draft.id as string)}
+          aria-expanded={confirmingDelete}
+          onClick={() => setConfirmingDelete(true)}
           className={button("danger")}
         >
           {t("delete")}
         </button>
+      )}
+      {panel.kind === "dish" && panel.draft.id && confirmingDelete && (
+        <div role="group" className="flex basis-full flex-wrap items-center gap-2">
+          <p className="m-0 flex-1 basis-48 text-[1.0625rem]">{t("deleteConfirm")}</p>
+          <button
+            type="button"
+            data-testid="dish-delete-yes"
+            disabled={pending}
+            onClick={() => remove(panel.draft.id as string)}
+            className={button("destructive", "flex-1 sm:flex-none")}
+          >
+            {t("deleteYes")}
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => setConfirmingDelete(false)}
+            className={button("tinted", "flex-1 sm:flex-none")}
+          >
+            {t("deleteNo")}
+          </button>
+        </div>
       )}
       <div className="basis-full">{message}</div>
     </div>

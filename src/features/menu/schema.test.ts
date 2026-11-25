@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dishInput, parsePriceInput } from "./schema";
+import { dishInput, parseDeltaInput, parsePriceInput } from "./schema";
 
 describe("parsePriceInput", () => {
   it("reads whole drams typed with or without spaces", () => {
@@ -14,6 +14,33 @@ describe("parsePriceInput", () => {
     expect(parsePriceInput("-100")).toBeNull();
     expect(parsePriceInput("երկու հազար")).toBeNull();
     expect(parsePriceInput("")).toBeNull();
+  });
+});
+
+describe("parseDeltaInput", () => {
+  it("reads positive, zero and negative price changes", () => {
+    expect(parseDeltaInput("300")).toBe(300);
+    expect(parseDeltaInput("0")).toBe(0);
+    expect(parseDeltaInput("-200")).toBe(-200);
+    expect(parseDeltaInput("-1 500 ֏")).toBe(-1500);
+    expect(parseDeltaInput("1 000")).toBe(1000);
+  });
+
+  it("stays within the database limits of one million either way", () => {
+    expect(parseDeltaInput("1000000")).toBe(1_000_000);
+    expect(parseDeltaInput("-1000000")).toBe(-1_000_000);
+    expect(parseDeltaInput("1000001")).toBeNull();
+    expect(parseDeltaInput("-1000001")).toBeNull();
+    expect(parseDeltaInput("12345678")).toBeNull();
+  });
+
+  it("refuses fractions, a bare sign and words", () => {
+    expect(parseDeltaInput("-150.5")).toBeNull();
+    expect(parseDeltaInput("-")).toBeNull();
+    expect(parseDeltaInput("+200")).toBeNull();
+    expect(parseDeltaInput("--200")).toBeNull();
+    expect(parseDeltaInput("երկու հարյուր")).toBeNull();
+    expect(parseDeltaInput("")).toBeNull();
   });
 });
 

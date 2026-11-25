@@ -59,7 +59,11 @@ export async function loadPairings(restaurantId: string): Promise<PairingsData> 
     item_translations: Tr[];
   };
   const catRows = ((cats.data as CatRow[] | null) ?? []).filter((c) => c.is_active).sort((a, b) => a.sort - b.sort);
-  const itemRows = ((items.data as ItemRow[] | null) ?? []).filter((i) => i.is_active).sort((a, b) => a.sort - b.sort);
+  // A dish in a switched-off section is hidden too: the page must not offer it.
+  const activeCats = new Set(catRows.map((c) => c.id));
+  const itemRows = ((items.data as ItemRow[] | null) ?? [])
+    .filter((i) => i.is_active && activeCats.has(i.category_id))
+    .sort((a, b) => a.sort - b.sort);
   return {
     supported: true,
     locationId,
