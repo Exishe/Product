@@ -286,7 +286,7 @@ export function TimeRules({
                 <button type="submit" data-testid="time-rule-save" className={button("primary", "min-h-11 text-[0.9375rem]")} disabled={pending}>
                   {t("timeRules.save")}
                 </button>
-                <button type="button" className={button("tinted", "min-h-11 text-[0.9375rem]")} onClick={() => setDraft(null)}>
+                <button type="button" className={button("secondary", "min-h-11 text-[0.9375rem]")} onClick={() => setDraft(null)}>
                   {t("cancel")}
                 </button>
               </div>
@@ -303,7 +303,7 @@ export function TimeRules({
                   data-testid="time-rule"
                   className="border-staff-sep flex flex-wrap items-center gap-x-3 gap-y-1 border-b py-2 last:border-0"
                 >
-                  <div className="flex min-w-0 flex-1 basis-56 flex-col">
+                  <div className="flex min-w-0 flex-1 basis-40 flex-col">
                     <span className="text-[1.0625rem] font-semibold break-words">{t("timeRules.suggest", { what: what(r) })}</span>
                     <span className="text-staff-label2 text-[0.9375rem]">
                       <span className="num">
@@ -318,13 +318,13 @@ export function TimeRules({
                     <button
                       type="button"
                       data-testid="time-rule-edit"
-                      className={button("tinted", "min-h-11 text-[0.9375rem]")}
+                      className={button("tinted", "min-h-11 text-[0.9375rem] max-sm:w-11 max-sm:px-0")}
                       aria-label={t("timeRules.editRule", { from: r.from, to: r.to })}
                       disabled={pending}
                       onClick={() => edit(r)}
                     >
                       <Pencil aria-hidden="true" className="!size-4" />
-                      {t("timeRules.edit")}
+                      <span className="max-sm:sr-only">{t("timeRules.edit")}</span>
                     </button>
                     <button
                       type="button"

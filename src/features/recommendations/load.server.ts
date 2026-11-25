@@ -45,6 +45,9 @@ export async function loadPairings(restaurantId: string): Promise<PairingsData> 
       .eq("location_id", locationId),
   ]);
   if (isMissing(items.error) || isMissing(pairs.error) || isMissing(matrix.error)) return { supported: false };
+  // Any other failed read (a timeout while the database is busy) is "not ready, try again", never an
+  // empty menu: an empty answer would tell the owner to add dishes that are there.
+  if (cats.error || items.error || pairs.error || matrix.error) return { supported: false };
 
   type CatRow = { id: string; sort: number; is_active: boolean; category_translations: Tr[] };
   type ItemRow = {
