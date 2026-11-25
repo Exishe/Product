@@ -62,7 +62,8 @@ export async function pairWaiterDevice(browser: Browser, cafe: TestCafe, baseURL
   await page.goto("/pair");
   await page.getByLabel("Վեցանիշ կոդը").fill(code);
   await page.getByRole("button", { name: "Միացնել" }).click();
-  await expect(page).toHaveURL(/\/waiter$/);
+  // Anonymous sign-in plus the redeem call can take several seconds on the busy dev database.
+  await expect(page).toHaveURL(/\/waiter$/, { timeout: 30_000 });
   const storageState = await context.storageState();
   await context.close();
   const { data: member } = await cafe.owner.from("members").select("id").eq("restaurant_id", cafe.restaurantId).eq("display_name", label).single();

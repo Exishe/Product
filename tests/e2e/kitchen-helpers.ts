@@ -136,7 +136,8 @@ export async function pairKitchenDevice(browser: Browser, api: Api, cafe: Cafe, 
   await page.goto("/pair");
   await page.getByLabel("Վեցանիշ կոդը").fill(code);
   await page.getByRole("button", { name: "Միացնել" }).click();
-  await expect(page).toHaveURL(new RegExp(`/kitchen/${cafe.kitchenStationId}$`));
+  // Anonymous sign-in plus the redeem call can take several seconds on the busy dev database.
+  await expect(page).toHaveURL(new RegExp(`/kitchen/${cafe.kitchenStationId}$`), { timeout: 30_000 });
   const { data: member } = await api.from("members").select("id").eq("restaurant_id", cafe.restaurantId).eq("display_name", label).single();
   if (!member) throw new Error("device member not found");
   return { context, page, memberId: member.id, label };

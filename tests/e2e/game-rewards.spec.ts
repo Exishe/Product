@@ -64,13 +64,20 @@ test("rewards: owner switches on, a guest earns one, the waiter applies it", asy
   await expect(guest.getByTestId("reward-note")).toHaveCount(0);
 
   // 3. "Level 2 reached": the same call the game host makes, with this phone's own session.
-  const claim = await guest.evaluate(async () => {
-    const authKey = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k))!;
-    const token = (JSON.parse(localStorage.getItem(authKey)!) as { access_token: string }).access_token;
+  // The browser client keeps the session in cookies (@supabase/ssr), split into
+  // numbered chunks and base64url-encoded with a "base64-" prefix.
+  const jar = await guest.context().cookies();
+  const authCookies = jar
+    .filter((c) => /^sb-.*-auth-token(\.\d+)?$/.test(c.name))
+    .sort((a, b) => Number(a.name.split(".").pop()) - Number(b.name.split(".").pop()));
+  let raw = authCookies.map((c) => decodeURIComponent(c.value)).join("");
+  if (raw.startsWith("base64-")) raw = Buffer.from(raw.slice(7), "base64url").toString("utf8");
+  const token = (JSON.parse(raw) as { access_token: string }).access_token;
+  const guestSessionId = await guest.evaluate(() => {
     const gsKey = Object.keys(localStorage).find((k) => k.startsWith("pativ:guest:v1:"))!;
-    const guestSessionId = (JSON.parse(localStorage.getItem(gsKey)!) as { id: string }).id;
-    return { token, guestSessionId };
+    return (JSON.parse(localStorage.getItem(gsKey)!) as { id: string }).id;
   });
+  const claim = { token, guestSessionId };
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
   const apikey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string;
   const call = async (fn: string, args: object, method = "POST") => {

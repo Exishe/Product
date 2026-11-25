@@ -110,6 +110,9 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const wide = useMediaQuery("(min-width: 64rem)");
+  // Three columns (sections, dishes, panel) need a big screen; on a laptop the
+  // section list steps aside while the panel is open, so dish names keep room.
+  const roomy = useMediaQuery("(min-width: 90rem)");
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string | null>(data.categories[0]?.id ?? null);
   const [panel, setPanel] = useState<Panel>(null);
@@ -811,11 +814,16 @@ export function MenuEditor({ data }: { data: EditorData }) {
         className={clsx(
           "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5",
           panel && wide
-            ? "lg:grid-cols-[13rem_minmax(0,1fr)_minmax(22rem,26rem)]"
+            ? roomy
+              ? "lg:grid-cols-[13rem_minmax(0,1fr)_minmax(22rem,26rem)]"
+              : "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)]"
             : "lg:grid-cols-[15rem_minmax(0,1fr)]",
         )}
       >
-        <nav aria-label={t("categories")} className="flex min-w-0 flex-col gap-2 lg:self-start">
+        <nav
+          aria-label={t("categories")}
+          className={clsx("flex min-w-0 flex-col gap-2 lg:self-start", panel && wide && !roomy && "hidden")}
+        >
           <h2 className="m-0 px-1 text-[1.1875rem] leading-tight font-semibold">{t("categories")}</h2>
           <ul className="relative flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:bg-white lg:p-2">
             {data.categories.map((c) => {

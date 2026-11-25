@@ -71,7 +71,8 @@ export async function saveCategoryWindow(
   const time = z.string().regex(/^\d{2}:\d{2}$/);
   const parsed = z
     .object({ id: z.uuid(), from: time.nullable(), to: time.nullable() })
-    .refine((v) => (v.from === null) === (v.to === null) && v.from !== v.to)
+    // Both ends or neither; two ends must differ. Both null clears the hours.
+    .refine((v) => (v.from === null) === (v.to === null) && (v.from === null || v.from !== v.to))
     .safeParse({ id: categoryId, from, to });
   if (!parsed.success) return false;
   const supabase = await createClient();

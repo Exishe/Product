@@ -44,7 +44,7 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await egg.getByLabel("Հիմնական բաղադրիչ").check();
   await egg.getByLabel("Կարող է փոխարինվել").selectOption({ label: "Կարագ" });
   await egg.getByLabel("Գնի փոփոխություն, դրամ").fill("-300");
-  await egg.getByRole("button", { name: "Պահել" }).click();
+  await egg.getByRole("button", { name: "Պահել", exact: true }).click();
   await expect(egg.getByRole("status")).toContainText("Պահված է");
 
   await page.reload();

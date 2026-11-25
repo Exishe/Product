@@ -143,7 +143,7 @@ test.describe("calories and filters", () => {
     const beans = panel.getByRole("listitem").filter({ has: page.getByRole("heading", { level: 4, name: "Սուրճի հատիկներ" }) });
     await beans.getByLabel(/^Կալորիականություն/).fill("0");
     await beans.getByRole("button", { name: "Պահել կալորիականությունը" }).click();
-    await expect(beans.getByRole("status").last()).toContainText("Պահված է");
+    await expect(beans.getByRole("status").filter({ hasText: "Պահված է" })).toBeVisible();
     await expect(panel.getByTestId("kcal-value")).toContainText("≈ 370");
   });
 });

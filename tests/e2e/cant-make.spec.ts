@@ -57,7 +57,8 @@ test.describe("can't make", () => {
       await expect(board.getByTestId("cant-make-confirm")).toContainText("Խոզի կողիկներ");
       await board.screenshot({ path: `${SHOTS}/kitchen-confirm.png` });
       await board.getByTestId("cant-make-yes").click();
-      await expect(board.getByTestId("line-cancelled").first()).toBeVisible({ timeout: 30_000 });
+      // The ribs were the only dish, so the whole order is cancelled (ADR-081) and the ticket leaves the board.
+      await expect(board.getByTestId("ticket-line").filter({ hasText: "Խոզի կողիկներ" })).toHaveCount(0, { timeout: 30_000 });
       await board.screenshot({ path: `${SHOTS}/kitchen-done.png` });
 
       // The guest's page tells them, kindly, with up to 3 similar dishes.
