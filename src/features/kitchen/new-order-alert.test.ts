@@ -9,7 +9,11 @@ import {
   type NewOrderAlert,
 } from "./new-order-alert";
 
-const order = (id: string, number: number, extra: Partial<Parameters<typeof alertEntries>[0][number]> = {}) => ({
+const order = (
+  id: string,
+  number: number,
+  extra: Partial<Parameters<typeof alertEntries>[0][number]> = {},
+) => ({
   id,
   kind: "order" as const,
   status: "new" as const,
@@ -21,7 +25,11 @@ const order = (id: string, number: number, extra: Partial<Parameters<typeof aler
 
 describe("alertEntries", () => {
   it("keeps orders in New and leaves out cancellations and started orders", () => {
-    const got = alertEntries([order("a", 1), order("v", 2, { kind: "void" }), order("c", 3, { status: "cooking" })]);
+    const got = alertEntries([
+      order("a", 1),
+      order("v", 2, { kind: "void" }),
+      order("c", 3, { status: "cooking" }),
+    ]);
     expect(got.map((x) => x.id)).toEqual(["a"]);
   });
 
@@ -58,11 +66,19 @@ describe("pruneAlert", () => {
   const open = mergeAlert(null, [order("a", 1), order("b", 2)]) as NewOrderAlert;
 
   it("keeps the banner while its orders still wait in New", () => {
-    expect(pruneAlert(open, [{ id: "a", status: "new" }, { id: "b", status: "new" }])).toBe(open);
+    expect(
+      pruneAlert(open, [
+        { id: "a", status: "new" },
+        { id: "b", status: "new" },
+      ]),
+    ).toBe(open);
   });
 
   it("drops orders that were started or are gone", () => {
-    const got = pruneAlert(open, [{ id: "a", status: "cooking" }, { id: "b", status: "new" }]);
+    const got = pruneAlert(open, [
+      { id: "a", status: "cooking" },
+      { id: "b", status: "new" },
+    ]);
     expect(got?.entries.map((x) => x.id)).toEqual(["b"]);
   });
 

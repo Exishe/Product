@@ -34,7 +34,10 @@ export function mergeAlert(current: NewOrderAlert | null, arrived: readonly Arri
 // Drops orders that left the New column meanwhile (started on another screen,
 // cancelled): the banner never points at a ticket that is not there to find.
 // Returns null when nothing is left.
-export function pruneAlert(current: NewOrderAlert | null, tickets: readonly Pick<BoardTicket, "id" | "status">[]): NewOrderAlert | null {
+export function pruneAlert(
+  current: NewOrderAlert | null,
+  tickets: readonly Pick<BoardTicket, "id" | "status">[],
+): NewOrderAlert | null {
   if (!current) return null;
   const waiting = new Set(tickets.filter((x) => x.status === "new").map((x) => x.id));
   const entries = current.entries.filter((x) => waiting.has(x.id));
