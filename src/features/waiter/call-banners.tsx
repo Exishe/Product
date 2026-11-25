@@ -64,7 +64,7 @@ export function CallBanners({
           key={r.id}
           data-testid="call-banner"
           data-kind={r.kind}
-          className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-4 py-3 motion-safe:animate-[pulse_1.2s_ease-in-out_2] ${
+          className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-4 py-3 admin-rise ${
             r.kind === "call" ? "bg-pomegranate text-white" : "bg-amber text-ink"
           }`}
         >
