@@ -239,3 +239,18 @@ select test.ok(api.table_alerts(:'lb') = '[]'::jsonb, 'café B sees none of caf�
 reset role;
 select test.ok(not exists (select 1 from public.notification_outbox o join public.notification_channels c on c.id = o.channel_id
                            where o.event = 'table.alert' and c.restaurant_id <> :'ra'), 'no alert reaches another café''s chats');
+
+-- ---------------------------------------------------------------------------
+-- One late-order message per chat (ADR-084): a chat that gets the owner-set
+-- table alert does not also get the fixed 20-minute ticket alert
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.notification_channels (restaurant_id, telegram_chat_id, title, locale, events)
+values (:'ra', 9002, 'Old style', 'ru', '{order.overdue}') returning id as ch_old \gset
+update public.orders set status = 'accepted', kitchen_status = 'pending', placed_at = now() - interval '26 minutes' where id = :'o2';
+update public.kitchen_tickets set status = 'new', created_at = now() - interval '25 minutes' where order_id = :'o2';
+select private.enqueue_overdue_alerts();
+select test.ok(exists (select 1 from public.notification_outbox where channel_id = :'ch_old' and dedupe_key = 'order.overdue:' || :'o2'),
+               'a chat with only order.overdue still gets the late ticket alert');
+select test.ok(not exists (select 1 from public.notification_outbox where channel_id = :'ch' and event = 'order.overdue'),
+               'a chat that receives table.alert does not get the same late order twice');

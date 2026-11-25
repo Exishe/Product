@@ -975,3 +975,10 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
 - Tolerates a database without the migration: the editor probes the column (`allergenReviewSupported`) and hides the checkbox, chip and filter; the guest menu has no flag and behaves as before; the key sent to the old `save_item` is ignored.
 - Guest page budget: a boolean in the view model, one extra branch in the matcher and one message key (in the lazy sheet); first-load growth well under 0.1 KB.
 - Not done: bulk review, a per-allergen "may contain traces" level, an expiry on the confirmation.
+
+## ADR-084: One late-order message per chat
+
+- Status: Accepted, 2026-11-25 (follow-up to ADR-071; free only, no new dependency).
+- Context: the kitchen's fixed `order.overdue` ("ticket cooking longer than 20 minutes") and the owner-set `table.alert` ("table waiting N minutes", default 25) describe the same late order. Chats that had both on received two messages for it.
+- Decision: `private.enqueue_notification` no longer queues `order.overdue` for a chat whose events include `table.alert`. The owner-set limit replaces the fixed one for that chat. A chat with only `order.overdue` behaves as before; both events stay in the Telegram settings and either can be switched off.
+- Consequences: no data is deleted and no setting changes. The kitchen's earlier 20-minute warning is no longer sent to chats that also receive table alerts; an owner who wants it back switches `table.alert` off for that chat, or lowers the limit (5 to 180 minutes). Migration `20261124100000_overdue_replaced_by_table_alert.sql`, test in `problem_table_alerts.sql`.
