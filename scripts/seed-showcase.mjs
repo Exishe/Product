@@ -124,7 +124,7 @@ const DISHES = [
     ing: [["chickpeas", 60], ["olive_oil", 10], ["lavash", 40]] },
 
   { key: "khorovats", cat: "mains", price: 4200, type: "main", chef: true, tags: ["gluten_free"], allergens: [],
-    hy: ["Խոզի խորովածք", "Ածխի վրա խորոված խոզի վիզ, թխած լոլիկ և կանաչի։"],
+    hy: ["Խոզի խորոված", "Ածխի վրա խորոված խոզի վիզ, թխած լոլիկ և կանաչի։"],
     ru: ["Хоровац из свинины", "Свиная шейка на углях, запечённый помидор и зелень."],
     en: ["Pork khorovats", "Charcoal-grilled pork neck, baked tomato and herbs."],
     ing: [["pork", 220], ["tomato", 60], ["onion", 40], ["herbs", 5]] },
@@ -187,7 +187,7 @@ const DISHES = [
     en: ["Espresso", "A single shot of freshly ground coffee."],
     ing: [["espresso", 30]] },
   { key: "cappuccino", cat: "drinks", price: 1100, type: "coffee_tea", tags: ["vegetarian"], allergens: ["milk"],
-    hy: ["Կապուչինո", "Էսպրեսսո և շոյված կաթ։"],
+    hy: ["Կապուչինո", "Էսպրեսսո և փրփրացրած կաթ։"],
     ru: ["Капучино", "Эспрессо и взбитое молоко."],
     en: ["Cappuccino", "Espresso with steamed milk."],
     ing: [["espresso", 30], ["milk", 150]] },

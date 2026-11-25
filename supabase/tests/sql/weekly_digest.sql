@@ -286,7 +286,7 @@ select test.ok(:'t_en' like E'📊 Weekly summary: 12 Oct – 18 Oct\nOrders: 38
   'English text, plain, names untouched');
 select test.ok(:'t_ru' like E'%Итоги недели: 12.10–18.10\nЗаказы: 38, выручка: %\n\n1. «Լավաշ»: 60 просмотров, 4 заказа.\n→ Проверьте фото или цену.\n%Самый загруженный час: пт 19:00, 9 заказов.%Подробности: раздел «Отчёты» в админке.',
   'Russian text');
-select test.ok(:'t_hy' like E'%Շաբաթվա ամփոփում՝ 12.10–18.10\nՊատվերներ՝ 38, վաճառք՝ %\n\n1. «Լավաշ»՝ 60 դիտում, 4 պատվեր։\n→ Ստուգեք նկարը կամ գինը։\n%Ամենածանրաբեռնված ժամը՝ Ուրբ 19:00, 9 պատվեր։%Մանրամասները՝ կառավարման էջի «Հաշվետվություններ» բաժնում։',
+select test.ok(:'t_hy' like E'%Շաբաթվա ամփոփում՝ 12.10–18.10\nՊատվերներ՝ 38, վաճառք՝ %\n\n1. «Լավաշ»՝ 60 դիտում, 4 պատվեր։\n→ Ստուգեք լուսանկարը կամ գինը։\n%Ամենամարդաշատ ժամը՝ ուրբ 19:00, 9 պատվեր։%Մանրամասները՝ կառավարման էջի «Հաշվետվություններ» բաժնում։',
   'Armenian text uses the dish''s Armenian name and ։ ՝ « »');
 select test.ok(char_length(:'t_hy') < 1200 and char_length(:'t_ru') < 1200 and char_length(:'t_en') < 1200, 'well under Telegram''s 4096 characters');
 -- every key renders a text in every language
