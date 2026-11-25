@@ -10,7 +10,7 @@ import { BackIcon, MinusIcon, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
-// narrower cut (`dense`: no plate, smaller name, 44 px buttons).
+// narrower cut (`dense`: a smaller photo and name).
 export function LineRow({
   priced,
   item,
@@ -38,15 +38,15 @@ export function LineRow({
   const available = status === "ok";
   // A plate only for a real photo: an empty plate per line tells the guest
   // nothing, so photoless lines read like a receipt.
-  const photo = !dense && item?.image ? dishPhotoUrl(item.image) : null;
+  const photo = item?.image ? dishPhotoUrl(item.image) : null;
   const col = photo ? "col-start-2" : "col-start-1";
   return (
     <li
-      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5" : "py-3.5"} ${photo ? "grid-cols-[3.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5" : "py-3.5"} ${photo ? (dense ? "grid-cols-[2.75rem_minmax(0,1fr)_auto]" : "grid-cols-[3.5rem_minmax(0,1fr)_auto]") : "grid-cols-[minmax(0,1fr)_auto]"}`}
       data-testid={dense ? "rail-line" : "cart-line"}
     >
       {photo && (
-        <span className="bg-plate row-span-5 block size-14 overflow-hidden rounded-[10px]">
+        <span className={`bg-plate row-span-5 block overflow-hidden rounded-[10px] ${dense ? "size-11" : "size-14"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
           <img
             src={photo}

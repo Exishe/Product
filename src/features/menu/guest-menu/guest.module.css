@@ -853,3 +853,56 @@
     transition: none;
   }
 }
+
+/* Sweetco-style add button under a card: outlined, fills with the action colour
+   on hover, and stays filled with a tick for a moment after the dish goes in. */
+.addBtn {
+  border: 1px solid var(--guest-line-strong);
+  background: var(--guest-surface);
+  color: var(--guest-ink);
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    color 180ms ease-out,
+    transform 160ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.addBtn:hover,
+.addBtn[data-added] {
+  border-color: var(--guest-add);
+  background: var(--guest-add);
+  color: var(--guest-on-add);
+}
+
+.addBtn:active {
+  transform: scale(0.97);
+}
+
+.addBtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* First load: the cards of the opening sections rise in one after another
+   (60 ms apart, at most nine steps), once; later sections are already there. */
+.cardRise {
+  animation: cardRise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@keyframes cardRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardRise {
+    animation: none;
+  }
+
+  .addBtn {
+    transition: none;
+  }
+}

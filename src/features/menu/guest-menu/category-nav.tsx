@@ -119,7 +119,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       }}
       onPointerEnter={() => window.clearTimeout(closeTimer.current)}
     >
-      <div className="flex gap-1.5 overflow-x-auto pb-2.5 lg:gap-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="flex gap-1.5 overflow-x-auto pb-2.5 lg:mb-2 lg:w-fit lg:gap-0.5 lg:rounded-[10px] lg:bg-[var(--guest-plate)] lg:p-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {buckets.map((b) => {
           const isOpen = open === b.key;
           const here = currentBucket?.key === b.key;
@@ -142,11 +142,11 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                 setOpen(b.key);
               }}
               aria-current={here ? "true" : undefined}
-              className={`${styles.navlink} flex min-h-11 flex-none items-center gap-1.5 rounded-full border py-1 pr-3.5 pl-1 text-[12px] whitespace-nowrap transition-colors duration-150 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-3 ${
+              className={`${styles.navlink} flex min-h-11 flex-none items-center gap-1.5 rounded-full border py-1 pr-3.5 pl-1 text-[12px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:rounded-[8px] lg:border-0 lg:px-3.5 ${
                 here
-                  ? "bg-accent text-on-accent border-transparent font-semibold lg:text-ink"
-                  : "bg-surface text-muted hover:text-ink border-line"
-              } ${isOpen ? "lg:text-ink" : ""} ${photo ? "" : "pl-3.5"}`}
+                  ? "bg-accent text-on-accent lg:bg-surface lg:text-ink border-transparent font-semibold lg:shadow-[0_1px_2px_rgb(30_28_25/0.08)]"
+                  : `bg-surface text-muted hover:text-ink border-line lg:bg-transparent ${isOpen ? "lg:bg-surface/70 lg:text-ink" : "lg:hover:bg-surface/60"}`
+              } ${photo ? "" : "pl-3.5"}`}
             >
               {photo && (
                 // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp

@@ -490,12 +490,13 @@ export function GuestMenu({
                   const lead = list.length >= 3 ? list.find((i) => i.image && !i.soldOut)?.id : undefined;
                   return [...list]
                     .sort((a, b) => Number(b.id === lead) - Number(a.id === lead))
-                    .map((item) => (
+                    .map((item, i) => (
                       <DishRow
                         key={item.id}
                         item={item}
                         canOrder={canOrder}
                         warning={warningFor(item)}
+                        index={i}
                         feature={item.id === lead}
                         onOpen={setSheet}
                         onQuickAdd={quickAdd}
@@ -526,7 +527,7 @@ export function GuestMenu({
                             <span className="num text-soft text-[11px] font-normal">{c.items.length}</span>
                           </h3>
                         )}
-                        <ul className="grid items-start gap-2.5 md:grid-cols-2 xl:grid-cols-3">{rows(c.items)}</ul>
+                        <ul className="grid items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>
                       </section>
                     ))}
                   </div>
