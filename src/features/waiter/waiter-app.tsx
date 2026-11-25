@@ -508,9 +508,7 @@ function App(p: WaiterAppProps) {
           <CallBanners
             requests={requests}
             state={alerts.state}
-            soundOn={alerts.soundOn}
             played={alerts.played}
-            onEnableSound={alerts.enableSound}
             onGoing={(r) => {
               act({ kind: "resolve", requestId: r.id });
               alerts.close(r.id);

@@ -27,23 +27,20 @@ export function SoundButton({ on, onTap }: { on: boolean; onTap: () => void }) {
   );
 }
 
-// Large banners above the floor: who is calling, with the usual answer. At
-// most three; the rest are counted. Until sound is on, they say so.
+// Compact banners above the floor: who is calling, with the usual answer. At
+// most three, two side by side on a tablet; the rest are counted. The sound
+// switch lives in the header (SoundButton), not in a row of its own.
 export function CallBanners({
   requests,
   state,
-  soundOn,
   played,
-  onEnableSound,
   onGoing,
   onOpenTable,
   onClose,
 }: {
   requests: readonly AlertRequest[];
   state: AlertState;
-  soundOn: boolean;
   played: number;
-  onEnableSound: () => void;
   onGoing: (request: AlertRequest) => void;
   onOpenTable: (request: AlertRequest) => void;
   onClose: (id: string) => void;
@@ -57,30 +54,30 @@ export function CallBanners({
       aria-live="assertive"
       data-testid="call-alerts"
       data-alerts-played={played}
-      className="grid gap-2"
+      className="grid gap-1.5 sm:grid-cols-2"
     >
       {shown.map((r) => (
         <div
           key={r.id}
           data-testid="call-banner"
           data-kind={r.kind}
-          className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-4 py-3 admin-rise ${
+          className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-1.5 admin-rise ${
             r.kind === "call" ? "bg-pomegranate text-white" : "bg-amber text-ink"
           }`}
         >
           {r.kind === "call" ? (
-            <BellRing aria-hidden="true" className="size-7 shrink-0" />
+            <BellRing aria-hidden="true" className="size-6 shrink-0" />
           ) : (
-            <Receipt aria-hidden="true" className="size-7 shrink-0" />
+            <Receipt aria-hidden="true" className="size-6 shrink-0" />
           )}
-          <p className="m-0 min-w-0 flex-1 basis-48 text-[1.25rem] leading-tight font-bold [overflow-wrap:anywhere]">
+          <p className="m-0 min-w-0 flex-1 basis-40 text-[1.0625rem] leading-tight font-bold [overflow-wrap:anywhere]">
             {t(r.kind === "call" ? "alerts.call" : "alerts.bill", { label: r.label })}
           </p>
           <button
             type="button"
             data-testid="call-banner-action"
             onClick={() => (r.kind === "call" ? onGoing(r) : onOpenTable(r))}
-            className={`min-h-12 shrink-0 rounded-full px-5 text-[1.0625rem] font-semibold ${
+            className={`min-h-12 shrink-0 rounded-full px-4 text-[1rem] font-semibold ${
               r.kind === "call" ? "text-ink bg-white" : "bg-ink text-white"
             }`}
           >
@@ -97,19 +94,9 @@ export function CallBanners({
         </div>
       ))}
       {more > 0 && (
-        <p className="m-0 px-1 text-[1.0625rem] font-semibold" data-testid="call-more">
+        <p className="m-0 px-1 text-[1rem] font-semibold sm:col-span-2" data-testid="call-more">
           {t("alerts.more", { count: more })}
         </p>
-      )}
-      {!soundOn && (
-        <button
-          type="button"
-          onClick={onEnableSound}
-          className="bg-staff-fill text-ink flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold"
-        >
-          <VolumeX aria-hidden="true" className="size-5" />
-          {t("alerts.soundHint")}
-        </button>
       )}
     </section>
   );
