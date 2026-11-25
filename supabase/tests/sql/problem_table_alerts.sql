@@ -60,6 +60,13 @@ select test.ok((select 'table.alert' = any (events) from public.notification_cha
 
 \set line '[{"item_id": "' :coffee '", "quantity": 1}]'
 
+-- Earlier test files leave open orders at fixed hours of the day (06:15, 08:05 ...).
+-- Whether those count as "slow" depends on the clock (they only fall inside the
+-- 6-hour window in the morning), and private.enqueue_table_alerts() looks at every
+-- café. Close them so this file only sees its own fixtures at any time of day.
+update public.orders set kitchen_status = 'served'
+where restaurant_id <> :'ra' and status = 'accepted' and kitchen_status <> 'served';
+
 -- ---------------------------------------------------------------------------
 -- Defaults and the setting
 -- ---------------------------------------------------------------------------

@@ -422,7 +422,8 @@ reset role;
 update public.locations set timezone = 'Pacific/Kiritimati' where id = :'la';   -- UTC+14
 select to_char((now() at time zone 'Pacific/Kiritimati') - interval '1 hour', 'HH24:MI') as t_from,
        to_char((now() at time zone 'Pacific/Kiritimati') + interval '1 hour', 'HH24:MI') as t_to,
-       extract(isodow from now() at time zone 'Pacific/Kiritimati')::int as dow \gset
+       -- the weekday is the day the window began: that is the day one hour ago, also when the window passes midnight
+       extract(isodow from (now() at time zone 'Pacific/Kiritimati') - interval '1 hour')::int as dow \gset
 select test.act_as('c5e00000-0000-0000-0000-000000000001');
 select test.fails(format('select api.save_time_rule(%L, null, %L, %L, null, ''coffee_tea'', %L)', :'la', :'t_from', :'t_to', :'latte'), 'invalid_value', 'a time rule has a type or a dish, not both');
 select test.fails(format('select api.save_time_rule(%L, null, ''08:00'', ''08:00'', null, ''coffee_tea'', null)', :'la'), 'invalid_value', 'and a window that is not empty');
