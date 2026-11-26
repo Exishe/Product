@@ -381,7 +381,7 @@
       "cantMakePaid": "Պատվերն արդեն վճարված է։ Ասեք մատուցողին։",
       "cantMakeForbidden": "Մատուցված ուտեստը կարող է չեղարկել միայն կառավարիչը։",
       "allergyNote": "Ալերգիա՝ {note}",
-      "allergyLine": "{dish}՝ {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Ալերգիա",
       "cantMakeLabel": "Չենք կարող պատրաստել՝ {name}",
       "readyFor": "Պատրաստ՝ {time}"
@@ -478,6 +478,7 @@
     "floorMap": "Սեղանների քարտեզ",
     "areas": "Տարածքներ",
     "otherArea": "Այլ սեղաններ",
+    "areaNeeds": "{count} սեղան սպասում է",
     "need": "Սպասում են՝ {count} սեղան",
     "allServed": "Բոլորը սպասարկված են",
     "state": {
@@ -516,6 +517,7 @@
       "now": "Հիմա",
       "allClear": "Ամեն ինչ կարգին է։",
       "pendingTotal": "սպասում է՝ {amount}",
+      "pendingOnly": "Սպասում է հաստատման",
       "acceptOrder": "Ընդունել պատվեր {number}"
     },
     "waiting": {
@@ -596,6 +598,8 @@
       "soldOut": "Չկա",
       "less": "Պակասեցնել՝ {name}",
       "more": "Ավելացնել քանակը՝ {name}",
+      "rowLess": "Մեկով պակաս՝ {name}",
+      "rowMore": "Մեկով ավելի՝ {name}",
       "options": "Ընտրեք",
       "required": "պարտադիր",
       "addWithOptions": "Ավելացնել",
@@ -708,6 +712,8 @@
       "open": "Իմ հերթափոխը",
       "title": "Իմ հերթափոխը",
       "subtitle": "Աշխատանքային օր՝ {date}։ Միայն ձեր գրանցածը։",
+      "money": "Վճարումներ",
+      "work": "Աշխատանք",
       "tables": "Փակված սեղաններ",
       "cash": "Հանձնելու կանխիկ",
       "card": "Վճարված քարտով",

@@ -13,8 +13,10 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useId, useState } from "react";
+import type { Locale } from "@/i18n/routing";
+import { formatAmd, formatInteger } from "@/lib/format/money";
 import { areaLayout, tileAge, type FloorArea, type FloorTable, type TableState } from "./floor-model";
 
 // Every table state has a colour, an icon and a word (ADR-054), so it never
@@ -76,14 +78,20 @@ export function StateIcon({
 }
 
 // Areas as a segmented control (HIG): one row, scrolls sideways when long.
+// An area out of sight with a table that needs someone (a call, the bill, a
+// new order, a plate) carries the tab bar's red count, so the waiter never
+// hunts for the table the call bar counts.
 export function AreaTabs({
   areas,
   current,
   onPick,
+  waiting,
 }: {
   areas: readonly FloorArea[];
   current: string | null;
   onPick: (id: string | null) => void;
+  /** Tables that need someone, per area id. */
+  waiting?: ReadonlyMap<string | null, number>;
 }) {
   const t = useTranslations("waiter");
   if (areas.length < 2) return null;
@@ -93,17 +101,33 @@ export function AreaTabs({
       aria-label={t("areas")}
       className="bg-staff-fill flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-0.5 md:justify-self-start"
     >
-      {areas.map((a) => (
-        <button
-          key={a.id ?? "none"}
-          type="button"
-          aria-pressed={current === a.id}
-          onClick={() => onPick(a.id)}
-          className="text-staff-label2 aria-pressed:text-ink min-h-11 min-w-0 flex-1 rounded-[10px] px-4 text-base font-semibold whitespace-nowrap aria-pressed:bg-white md:flex-none md:px-5"
-        >
-          {a.name ?? t("otherArea")}
-        </button>
-      ))}
+      {areas.map((a) => {
+        const count = current === a.id ? 0 : (waiting?.get(a.id) ?? 0);
+        return (
+          <button
+            key={a.id ?? "none"}
+            type="button"
+            data-testid="area-tab"
+            aria-pressed={current === a.id}
+            onClick={() => onPick(a.id)}
+            className="text-staff-label2 aria-pressed:text-ink inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-[10px] px-4 text-base font-semibold whitespace-nowrap aria-pressed:bg-white md:flex-none md:px-5"
+          >
+            {a.name ?? t("otherArea")}
+            {count > 0 && (
+              <>
+                <span
+                  aria-hidden="true"
+                  data-testid="area-waiting"
+                  className="num bg-pomegranate grid h-5 min-w-5 place-items-center rounded-full px-1 text-[0.8125rem] leading-none font-bold text-white"
+                >
+                  {count}
+                </span>
+                <span className="sr-only">{t("areaNeeds", { count })}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -209,6 +233,7 @@ function TableButton({
   pending: boolean;
 }) {
   const t = useTranslations("waiter");
+  const locale = useLocale() as Locale;
   // The tile shows the state in one short word («Նոր», «Պատրաստ», «Հաշիվ»
   // with the card or cash icon), so it fits one line in a 360 px phone's
   // column; screen readers hear the full words (the panel spells them out too).
@@ -226,6 +251,32 @@ function TableButton({
     m >= 60
       ? t("hoursShort", { hours: Math.floor(m / 60), minutes: m % 60 })
       : t("minutesShort", { minutes: m });
+  // The open bill, as on Toast: «34 ր · 10 100» on one line where the tile
+  // holds it, the money on its own line under the minutes where it does not.
+  // A container query picks the width: «34 ր · 10 100» is 89 px at 15 px, so it
+  // stays on one line even in a 360 px phone's three columns (94 px inside);
+  // a longer pair needs 120 px. No ֏ on the tile; screen readers hear it.
+  const totalText = formatInteger(table.total, locale);
+  const short = minutes === null || duration(minutes).length + totalText.length <= 10;
+  const spokenTotal = ` ${formatAmd(table.total, locale)}`;
+  const money = (inline: boolean) =>
+    table.state !== "free" && table.total > 0 ? (
+      <span
+        className={clsx(
+          "num inline-flex items-baseline justify-center whitespace-nowrap",
+          !inline && "text-[0.9375rem] leading-tight",
+          inline && (short ? "@max-[5.75rem]:basis-full" : "@max-[7.5rem]:basis-full"),
+        )}
+      >
+        {inline && (
+          <span aria-hidden="true" className={short ? "@max-[5.75rem]:hidden" : "@max-[7.5rem]:hidden"}>
+            &nbsp;·&nbsp;
+          </span>
+        )}
+        <span aria-hidden="true">{totalText}</span>
+        <span className="sr-only">{spokenTotal}</span>
+      </span>
+    ) : null;
   return (
     <button
       type="button"
@@ -239,7 +290,7 @@ function TableButton({
       onClick={() => onSelect(table.id)}
       style={table.pos ? { gridColumnStart: table.pos.x + 1, gridRowStart: table.pos.y + 1 } : undefined}
       className={clsx(
-        "relative flex h-28 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden border px-1 text-center transition-colors duration-150 motion-reduce:transition-none",
+        "@container relative flex h-28 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden border px-1 text-center transition-colors duration-150 motion-reduce:transition-none",
         // A round table is a pill of the same height: a circle where the
         // column is square enough, an oval where it isn't.
         table.shape === "round" ? "rounded-full" : "rounded-[1rem]",
@@ -279,9 +330,14 @@ function TableButton({
         </span>
       ) : (
         minutes !== null && (
-          <span className="num text-[0.9375rem] leading-tight">{duration(minutes)}</span>
+          <span className="num flex max-w-full flex-wrap items-baseline justify-center text-[0.9375rem] leading-tight">
+            <span className="whitespace-nowrap">{duration(minutes)}</span>
+            {money(true)}
+          </span>
         )
       )}
+      {/* A quiet table keeps its own line for the money. */}
+      {age?.kind === "quiet" && money(false)}
       {/* A tap on this table still waits in the outbox (header «Չուղարկված»). */}
       {pending && (
         <span

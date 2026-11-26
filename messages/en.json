@@ -381,7 +381,7 @@
       "cantMakePaid": "This order is already paid. Tell the waiter.",
       "cantMakeForbidden": "Food that was served is for a manager to cancel.",
       "allergyNote": "Allergy: {note}",
-      "allergyLine": "{dish}: {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Allergy",
       "cantMakeLabel": "Can't make {name}",
       "readyFor": "Ready: {time}"
@@ -478,6 +478,7 @@
     "floorMap": "Floor map",
     "areas": "Areas",
     "otherArea": "Other tables",
+    "areaNeeds": "{count, plural, one {# table waiting} other {# tables waiting}}",
     "need": "Waiting: {count, plural, one {# table} other {# tables}}",
     "allServed": "Everyone is looked after",
     "state": {
@@ -516,6 +517,7 @@
       "now": "Now",
       "allClear": "All good.",
       "pendingTotal": "waiting: {amount}",
+      "pendingOnly": "Waiting to be accepted",
       "acceptOrder": "Accept order {number}"
     },
     "waiting": {
@@ -596,6 +598,8 @@
       "soldOut": "Sold out",
       "less": "One fewer {name}",
       "more": "One more {name}",
+      "rowLess": "One less: {name}",
+      "rowMore": "One more: {name}",
       "options": "Choose",
       "required": "required",
       "addWithOptions": "Add",
@@ -708,6 +712,8 @@
       "open": "My shift",
       "title": "My shift",
       "subtitle": "Business day {date}. Only what you recorded.",
+      "money": "Payments",
+      "work": "Work",
       "tables": "Tables closed",
       "cash": "Cash to hand over",
       "card": "Paid by card",

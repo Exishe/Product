@@ -16,6 +16,15 @@ import type { AllDayRow } from "./board-model";
 
 const OPEN_EVENT = "pativ-kitchen-all-day";
 
+// Inside the breakdown an option is part of a phrase («2 առանց սոխի»), so it
+// starts in lower case like the «առանց հավելման» beside it.
+// A variant can be several options («Առանց սոխի, Առանց վարունգի»): each one.
+const lowerFirst = (text: string, locale: string) =>
+  text
+    .split(", ")
+    .map((part) => part.charAt(0).toLocaleLowerCase(locale) + part.slice(1))
+    .join(", ");
+
 function readOpen(key: string): boolean {
   try {
     return window.localStorage.getItem(key) !== "closed";
@@ -91,23 +100,28 @@ export function AllDayStrip({
       </button>
       <div id="all-day-list" hidden={!open} className="min-w-0 flex-1">
         {rows.length > 0 && (
-          <ul className="m-0 flex [scrollbar-width:none] snap-x list-none gap-2 overflow-x-auto scroll-px-0 p-0 pr-12 [mask-image:linear-gradient(to_right,#000_92%,transparent)]">
+          // Plain text on the bar, as on Fresh KDS: «6× Լահմաջո» with its
+          // options in grey under it, split by 1 px hairlines, no boxes.
+          <ul className="m-0 flex [scrollbar-width:none] snap-x list-none overflow-x-auto scroll-px-0 p-0 pr-12 [mask-image:linear-gradient(to_right,#000_92%,transparent)]">
             {rows.map((r) => {
               const on = selected === r.key;
               return (
-                <li key={r.key} className="shrink-0 snap-start">
+                <li
+                  key={r.key}
+                  className="flex shrink-0 snap-start items-center before:mx-1 before:h-8 before:w-px before:bg-(--kds-frame) first:before:hidden"
+                >
                   <button
                     type="button"
                     aria-pressed={on}
                     data-testid="all-day-row"
                     onClick={() => onSelect(on ? null : r.key)}
                     className={clsx(
-                      "grid min-h-12 max-w-80 grid-cols-1 content-center rounded-xl px-3 py-1 text-left",
-                      on ? "bg-slip text-white" : "bg-basalt-3 text-slip",
+                      "grid min-h-12 max-w-80 grid-cols-1 content-center rounded-lg px-3 py-1 text-left",
+                      on ? "bg-slip text-white" : "text-slip",
                     )}
                   >
-                    <span className="flex min-w-0 items-baseline gap-1.5 text-lg leading-tight font-bold">
-                      <span data-testid="all-day-qty" className="num text-xl">
+                    <span className="flex min-w-0 items-baseline gap-1.5 text-[1.0625rem] leading-tight font-bold">
+                      <span data-testid="all-day-qty" className="num">
                         {t("quantity", { quantity: r.quantity })}
                       </span>
                       <span
@@ -121,13 +135,15 @@ export function AllDayStrip({
                     {r.variants.length > 0 && (
                       <span
                         className={clsx(
-                          "truncate text-[0.9375rem] leading-tight font-semibold",
+                          "truncate text-[0.9375rem] leading-tight font-medium",
                           on ? "text-white" : "text-slip-dim",
                         )}
                       >
                         {r.variants
                           .map((v) =>
-                            v.text ? `${v.quantity} ${v.text}` : t("plain", { quantity: v.quantity }),
+                            v.text
+                              ? `${v.quantity} ${lowerFirst(v.text, r.nameLocale)}`
+                              : t("plain", { quantity: v.quantity }),
                           )
                           .join(" · ")}
                       </span>

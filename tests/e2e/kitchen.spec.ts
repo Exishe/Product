@@ -315,11 +315,11 @@ test.describe("kitchen board", () => {
       await startShift(page);
       const beepsAtStart = await page.evaluate(() => (window as unknown as { __beeps: number }).__beeps);
 
-      // Allergy: one red band with a shield that spells out the dish and the
-      // guest's note; the dish itself keeps a small red «Ալերգիա» mark.
+      // Allergy: one red band with a shield that spells out the guest's note
+      // with the dish in brackets; the dish itself keeps a small red «Ալերգիա» mark.
       const sa = slip(page, a.ticketId);
       await expect(sa).toHaveAttribute("data-allergy", "true");
-      await expect(sa.getByTestId("ticket-allergy")).toHaveText(`${dish!.name.hy}՝ Ալերգիա ընկույզի նկատմամբ`);
+      await expect(sa.getByTestId("ticket-allergy")).toHaveText(`Ալերգիա ընկույզի նկատմամբ (${dish!.name.hy})`);
       await expect(sa.getByTestId("line-note")).toHaveAttribute("data-allergy", "true");
       await expect(sa.getByTestId("line-note")).toHaveText("Ալերգիա");
       const sb = slip(page, b.ticketId);

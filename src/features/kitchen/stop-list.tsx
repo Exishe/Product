@@ -130,13 +130,16 @@ export function StopList({
                               aria-hidden="true"
                               className={clsx(
                                 "relative h-8 w-14 rounded-full transition-colors duration-150",
-                                out ? "bg-late-on-dark" : "bg-white ring-2 ring-(--kds-edge) ring-inset",
+                                // On sale is an ordinary off switch: a light track
+                                // with a 1 px line and a white knob, never a dark knob
+                                // that reads as disabled.
+                                out ? "bg-late-on-dark" : "bg-basalt-4 ring-1 ring-(--kds-edge) ring-inset",
                               )}
                             >
                               <span
                                 className={clsx(
-                                  "absolute top-1 left-1 size-6 rounded-full transition-transform duration-150 motion-reduce:transition-none",
-                                  out ? "translate-x-6 bg-white" : "bg-slip-dim",
+                                  "absolute top-1 left-1 size-6 rounded-full bg-white transition-transform duration-150 motion-reduce:transition-none",
+                                  out ? "translate-x-6" : "ring-1 ring-(--kds-edge)",
                                 )}
                               />
                             </span>

@@ -305,6 +305,16 @@ function App(p: WaiterAppProps) {
   const currentArea =
     area !== undefined && floor.areas.some((a) => a.id === area) ? area : (floor.areas[0]?.id ?? null);
   const areaTables = tables.filter((x) => areaOf(x, floor.areas) === currentArea);
+  // Tables that need someone, per area, for the dot on the other areas' tabs.
+  const areaWaiting = useMemo(() => {
+    const counts = new Map<string | null, number>();
+    for (const x of tables)
+      if (needCount([x]) > 0) {
+        const a = areaOf(x, floor.areas);
+        counts.set(a, (counts.get(a) ?? 0) + 1);
+      }
+    return counts;
+  }, [tables, floor.areas]);
   const table = tables.find((x) => x.id === selected) ?? null;
 
   // --- Taps ---------------------------------------------------------------------
@@ -545,6 +555,10 @@ function App(p: WaiterAppProps) {
             setSelected(null);
             setTab("calls");
           }}
+          // On a phone the Calls tab is the list the bar opens: the bar would
+          // only repeat it (and the tab's badge) above it. From 768 px the
+          // list sits beside the floor, so the bar stays.
+          className={tab === "calls" && !table ? "max-md:hidden" : undefined}
         />
         {/* Plates and new orders; calls and bills ring in the bar above until answered. */}
         {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
@@ -587,7 +601,13 @@ function App(p: WaiterAppProps) {
                 className="text-ink m-0 flex items-start gap-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
               >
                 <Megaphone aria-hidden="true" className="text-staff-label2 mt-0.5 size-4 shrink-0" />
-                <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
+                {/* A time range never breaks at its dash, and the last line is never one word. */}
+                <span className="[text-wrap:pretty]">
+                  {t("promoOn", {
+                    count: promos.length,
+                    titles: promos.join(" · ").replace(/(\d)\s*–\s*(\d)/g, "$1\u2060–\u2060$2"),
+                  })}
+                </span>
               </p>
             )}
             <WaiterAlerts locationId={p.location.id} />
@@ -603,7 +623,12 @@ function App(p: WaiterAppProps) {
                 </div>
               ) : (
                 <>
-                  <AreaTabs areas={floor.areas} current={currentArea} onPick={(id) => setArea(id)} />
+                  <AreaTabs
+                    areas={floor.areas}
+                    current={currentArea}
+                    onPick={(id) => setArea(id)}
+                    waiting={areaWaiting}
+                  />
                   <FloorMap
                     tables={areaTables}
                     selected={selected}

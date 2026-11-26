@@ -59,9 +59,11 @@ export function BusySwitch({
       <dialog
         ref={dialog}
         aria-labelledby="busy-title"
-        className="bg-basalt-2 text-slip mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l border-(--kds-frame) p-0 backdrop:bg-black/40"
+        // A sheet as tall as what it holds, at the top right under the Busy
+        // button, on the same white as the stop list's drawer.
+        className="text-slip bottom-auto mt-0 mr-0 ml-auto h-auto max-h-dvh w-[min(30rem,100vw)] max-w-none rounded-bl-[1rem] border-b border-l border-(--kds-frame) bg-white p-0 backdrop:bg-black/40"
       >
-        <div className="flex h-full flex-col">
+        <div className="flex flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
               <h2 id="busy-title" className="text-2xl font-semibold">
@@ -79,30 +81,36 @@ export function BusySwitch({
               <X aria-hidden="true" className="size-6" />
             </button>
           </div>
-          <div className="grid content-start gap-4 overflow-y-auto px-6 py-5">
+          <div className="grid content-start gap-4 overflow-y-auto px-6 pt-0 pb-6">
             {on && busy.until && (
               <p className="m-0 text-lg font-semibold">
                 {t("until", { time: formatTime(new Date(busy.until), timeZone) })}
               </p>
             )}
-            <div className="grid grid-cols-3 gap-3">
-              {CHOICES.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  disabled={pending}
-                  aria-pressed={on && busy.minutes === m}
-                  onClick={() => void choose(m)}
-                  className={clsx(
-                    "inline-flex min-h-[72px] items-center justify-center gap-2 rounded-xl text-xl font-bold disabled:opacity-60",
-                    on && busy.minutes === m ? "bg-apricot text-ink" : "bg-basalt-3 text-slip",
-                  )}
-                >
-                  {on && busy.minutes === m && <Check aria-hidden="true" className="size-6 shrink-0" />}
-                  {t("minutes", { minutes: m })}
-                </button>
-              ))}
-            </div>
+            {/* Three 64 px rows on the drawer, split by hairlines, the current
+                one ticked: a list like the stop list, not three boxes. */}
+            <ul className="m-0 grid list-none border-b border-(--kds-frame) p-0">
+              {CHOICES.map((m) => {
+                const current = on && busy.minutes === m;
+                return (
+                  <li key={m} className="border-b border-(--kds-frame) last:border-b-0">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      aria-pressed={current}
+                      onClick={() => void choose(m)}
+                      className={clsx(
+                        "-mx-3 flex min-h-16 w-[calc(100%+1.5rem)] items-center justify-between gap-3 rounded-lg px-3 text-left text-xl font-semibold disabled:opacity-60",
+                        current && "bg-apricot text-ink font-bold",
+                      )}
+                    >
+                      <span className="num">{t("minutes", { minutes: m })}</span>
+                      {current && <Check aria-hidden="true" className="size-6 shrink-0" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
             {failed && (
               <p
                 role="alert"

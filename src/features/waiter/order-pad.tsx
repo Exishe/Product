@@ -109,6 +109,18 @@ export function OrderPad({
       ),
     );
 
+  // How many of each dish are in the order, whatever the options.
+  const picked = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of cart) m.set(l.item.id, (m.get(l.item.id) ?? 0) + l.quantity);
+    return m;
+  }, [cart]);
+  // ± on a menu row works on the dish's last line in the order.
+  const stepItem = (itemId: string, delta: number) => {
+    const last = cart.findLast((l) => l.item.id === itemId);
+    if (last) step(last.key, delta);
+  };
+
   const total = cart.reduce((s, l) => s + l.unit * l.quantity, 0);
 
   const send = () => {
@@ -138,7 +150,9 @@ export function OrderPad({
 
   return (
     <Sheet labelledBy={titleId} onClose={onClose} wide>
-      <div className="grid max-h-[92dvh] grid-rows-[auto_minmax(0,1fr)_auto] bg-white md:grid-cols-[minmax(0,1fr)_20rem] md:grid-rows-[auto_minmax(0,1fr)]">
+      {/* One fixed height from the first frame: the pad never grows when the
+          order bar appears under the menu. */}
+      <div className="grid h-[92dvh] grid-rows-[auto_minmax(0,1fr)_auto] bg-white max-sm:h-[calc(92dvh-env(safe-area-inset-bottom,0px))] md:h-[min(92dvh,50rem)] md:grid-cols-[minmax(0,1fr)_20rem] md:grid-rows-[auto_minmax(0,1fr)]">
         <header className="border-staff-sep flex items-center justify-between gap-3 border-b px-4 py-2 sm:px-6 md:col-span-2">
           {/* «Նոր պատվեր» as a small line over the table: the title never wraps.
               Screen readers hear the one sentence. */}
@@ -217,14 +231,17 @@ export function OrderPad({
             {/* The dishes as 64 px rows on the one white surface, split by hairlines. */}
             <ul className="border-staff-sep m-0 grid list-none content-start overflow-y-auto border-t p-0 pb-4">
               {shown.length === 0 && <li className="text-staff-label2 py-4">{t("empty")}</li>}
-              {shown.map((item) => (
-                <li key={item.id} className="border-staff-sep border-b">
+              {shown.map((item) => {
+                const inCart = picked.get(item.id) ?? 0;
+                return (
+                <li key={item.id} className="border-staff-sep flex items-center gap-2 border-b">
                   <button
                     type="button"
                     data-testid="pad-item"
+                    data-count={inCart || undefined}
                     disabled={item.soldOut}
                     onClick={() => tap(item)}
-                    className="disabled:text-staff-label2 flex min-h-16 w-full items-center justify-between gap-3 py-2 text-left text-[1.0625rem]"
+                    className="disabled:text-staff-label2 flex min-h-16 min-w-0 flex-1 items-center justify-between gap-3 py-2 text-left text-[1.0625rem]"
                   >
                     {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
                     <span className="min-w-0 font-semibold break-words">
@@ -233,23 +250,66 @@ export function OrderPad({
                         hidden: (chunks) => <span className="sr-only">{chunks}</span>,
                         dish: (chunks) => <span lang={nameLang(item.name.lang)}>{chunks}</span>,
                       })}
+                      {inCart > 0 && (
+                        <span aria-hidden="true" className="num text-staff-label2 block text-[0.9375rem] font-normal">
+                          {formatAmd(item.price, locale)}
+                        </span>
+                      )}
                     </span>
-                    <span className="flex flex-none items-center gap-3">
+                    {/* With the stepper beside it the price moves under the
+                        name, so the name keeps the room on a 360 px phone. */}
+                    <span
+                      className={clsx(
+                        "flex flex-none items-center gap-3",
+                        inCart > 0 && "sr-only",
+                      )}
+                    >
                       <span className="num text-[1.0625rem]">
                         {item.soldOut ? t("soldOut") : formatAmd(item.price, locale)}
                       </span>
-                      {!item.soldOut && (
+                      {!item.soldOut && inCart === 0 && (
                         <span
                           aria-hidden="true"
-                          className="text-ink ring-ink grid size-9 place-items-center rounded-full ring-[1.5px] ring-inset"
+                          className="text-ink ring-ink grid size-11 place-items-center rounded-full ring-[1.5px] ring-inset"
                         >
                           <Plus className="size-5" />
                         </span>
                       )}
                     </span>
                   </button>
+                  {/* Once it is in the order the + becomes − N +, as on
+                      iikoWaiter: the row itself shows how many, no summary
+                      needed. A dish with options opens them again on +, and −
+                      takes off the last one added. */}
+                  {inCart > 0 && (
+                    <span data-testid="pad-row-stepper" className="flex flex-none items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label={t("rowLess", { name: item.name.text })}
+                        className={STEPPER}
+                        onClick={() => stepItem(item.id, -1)}
+                      >
+                        <Minus aria-hidden="true" className="size-5" />
+                      </button>
+                      <span
+                        data-testid="pad-row-count"
+                        className="num bg-ink grid h-11 min-w-11 place-items-center rounded-full px-2 text-[1.125rem] font-bold text-white"
+                      >
+                        {inCart}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t("rowMore", { name: item.name.text })}
+                        className={STEPPER}
+                        onClick={() => (item.groups.length > 0 ? tap(item) : stepItem(item.id, 1))}
+                      >
+                        <Plus aria-hidden="true" className="size-5" />
+                      </button>
+                    </span>
+                  )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         )}

@@ -381,7 +381,7 @@
       "cantMakePaid": "Заказ уже оплачен. Скажите официанту.",
       "cantMakeForbidden": "Блюдо уже подано: отменить его может только управляющий.",
       "allergyNote": "Аллергия: {note}",
-      "allergyLine": "{dish}: {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Аллергия",
       "cantMakeLabel": "Не можем приготовить: {name}",
       "readyFor": "Готово: {time}"
@@ -478,6 +478,7 @@
     "floorMap": "Карта зала",
     "areas": "Зоны",
     "otherArea": "Другие столы",
+    "areaNeeds": "{count, plural, one {# стол ждёт} few {# стола ждут} many {# столов ждут} other {# стола ждут}}",
     "need": "Ждут: {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
     "allServed": "Все обслужены",
     "state": {
@@ -516,6 +517,7 @@
       "now": "Сейчас",
       "allClear": "Всё в порядке.",
       "pendingTotal": "ждёт: {amount}",
+      "pendingOnly": "Ждёт подтверждения",
       "acceptOrder": "Принять заказ {number}"
     },
     "waiting": {
@@ -596,6 +598,8 @@
       "soldOut": "Нет",
       "less": "Уменьшить: {name}",
       "more": "Увеличить: {name}",
+      "rowLess": "На одну меньше: {name}",
+      "rowMore": "Ещё одну: {name}",
       "options": "Выберите",
       "required": "обязательно",
       "addWithOptions": "Добавить",
@@ -708,6 +712,8 @@
       "open": "Моя смена",
       "title": "Моя смена",
       "subtitle": "Рабочий день {date}. Только ваши записи.",
+      "money": "Оплаты",
+      "work": "Работа",
       "tables": "Закрыто столов",
       "cash": "Наличные к сдаче",
       "card": "Оплачено картой",

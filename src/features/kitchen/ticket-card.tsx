@@ -128,9 +128,10 @@ function Head({
     >
       <div className="flex flex-nowrap items-center justify-between gap-3">
         <span className="flex min-w-0 items-baseline gap-2">
-          {/* The narrow Ready lane keeps the word for screen readers only, so
-              the number and the time on the pass share one row. */}
-          <small className={clsx("shrink-0 text-[1.0625rem] font-semibold", compact && "sr-only")}>
+          {/* The same head in every lane: «Սեղան» beside the number. The
+              narrow Ready lane sets both a size down so the time on the pass
+              still shares the row. */}
+          <small className={clsx("shrink-0 font-semibold", compact ? "text-[0.9375rem]" : "text-[1.0625rem]")}>
             {table ? t("table") : t("noTable")}
           </small>
           <b
@@ -141,7 +142,7 @@ function Head({
               table !== null && table.length > 4
                 ? "text-4xl leading-[1.05]"
                 : compact
-                  ? "text-5xl leading-[0.95]"
+                  ? "text-[2.75rem] leading-[0.95]"
                   : "text-kds-number leading-[0.95]",
             )}
           >
@@ -202,8 +203,9 @@ function Note({
       data-testid={testId}
       data-allergy={allergy || undefined}
       className={clsx(
-        "text-ink inline-flex items-start gap-2 justify-self-start rounded-lg border-2 px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
-        "border-(--kds-note-edge) bg-(--kds-note)",
+        // A note is a tinted run of text, not a box inside the ticket.
+        "text-ink inline-flex items-start gap-2 justify-self-start rounded-md px-1.5 py-0.5 font-semibold [overflow-wrap:anywhere]",
+        "bg-(--kds-note)",
         compact ? "text-base" : "text-xl",
         className,
       )}

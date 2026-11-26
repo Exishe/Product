@@ -117,6 +117,14 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
   const placed = table.orders.filter((o) => o.status === "placed");
   const pendingOrder = placed.at(-1) ?? null;
   const pendingAmount = placed.reduce((s, o) => s + o.total, 0);
+  // Food on the pass comes before the bill: while a plate waits to be served,
+  // «Նշել մատուցված» is the one filled button and the close steps back.
+  const toServe = table.orders.some(
+    (o) => o.status === "accepted" && o.number !== null && o.tickets.some((k) => k.status === "ready"),
+  );
+  // Nothing confirmed yet, only a guest's order waiting: the waiting amount is
+  // the figure, in amber under its own label, never a big «0 ֏».
+  const onlyPending = table.total === 0 && pendingAmount > 0;
 
   // Requests and notices are rows across the whole panel, tinted, never boxes.
   const BLEED = "-mx-4 px-4 lg:-mx-6 lg:px-6";
@@ -272,23 +280,30 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
       {/* One bar: the total on the left, the one thing to do on the right. */}
       <div className="border-staff-sep grid gap-2 border-t bg-white px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] lg:px-6">
         <div className="flex min-h-14 items-center gap-3">
-          <div className="grid min-w-0 flex-1 leading-tight">
-            <span className="text-staff-label2 text-[0.9375rem] font-semibold">{t("panel.total")}</span>
-            <span className="flex flex-wrap items-baseline gap-x-2">
-              <b data-testid="table-total" className="num text-[1.5rem] font-bold">
-                {formatAmd(table.total, locale)}
-              </b>
-              {pendingAmount > 0 && (
-                <span className="num text-amber-text text-[0.9375rem] font-semibold">
-                  {t("panel.pendingTotal", { amount: formatAmd(pendingAmount, locale) })}
-                </span>
-              )}
-            </span>
-          </div>
+          {onlyPending ? (
+            <div data-testid="table-pending" className="grid min-w-0 flex-1 leading-tight">
+              <span className="text-amber-text text-[0.9375rem] font-semibold">{t("panel.pendingOnly")}</span>
+              <b className="num text-amber-text text-[1.5rem] font-bold">{formatAmd(pendingAmount, locale)}</b>
+            </div>
+          ) : (
+            <div className="grid min-w-0 flex-1 leading-tight">
+              <span className="text-staff-label2 text-[0.9375rem] font-semibold">{t("panel.total")}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <b data-testid="table-total" className="num text-[1.5rem] font-bold">
+                  {formatAmd(table.total, locale)}
+                </b>
+                {pendingAmount > 0 && (
+                  <span className="num text-amber-text text-[0.9375rem] font-semibold">
+                    {t("panel.pendingTotal", { amount: formatAmd(pendingAmount, locale) })}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
           {blocker !== "pending" && (
             <button
               type="button"
-              className={button("primary", "min-h-14 shrink-0")}
+              className={button(toServe ? "outline" : "primary", "min-h-14 shrink-0")}
               disabled={blocker !== null}
               onClick={() => table.sessionId && p.onSettle(table.sessionId)}
             >

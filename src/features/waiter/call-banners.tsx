@@ -48,6 +48,7 @@ export function CallBanners({
   onOpenTable,
   onClose,
   onOpenCalls,
+  className,
 }: {
   requests: readonly AlertRequest[];
   state: AlertState;
@@ -56,6 +57,7 @@ export function CallBanners({
   onOpenTable: (request: AlertRequest) => void;
   onClose: (id: string) => void;
   onOpenCalls: () => void;
+  className?: string;
 }) {
   const t = useTranslations("waiter");
   const { shown: rows, more } = bannerRows(requests, state);
@@ -67,7 +69,7 @@ export function CallBanners({
       aria-live="assertive"
       data-testid="call-alerts"
       data-alerts-played={played}
-      className="grid"
+      className={clsx("grid", className)}
     >
       {many ? (
         <button
