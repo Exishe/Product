@@ -23,9 +23,11 @@ function scrollToSection(id: string): number {
 // 3 px line under the current one that glides to the next as the page
 // scrolls (scroll-spy) and the row turning to keep it in view. One tap jumps
 // to a section. Where the menu has groups (Food, Desserts, Drinks, Wine) each
-// run of tabs starts with the group's name, small and quiet; a tap on it
-// jumps to the group's first section, and it is marked while the page is in
-// that group. A group whose only section carries its name is one tab. The
+// run of tabs starts with the group's name, small, muted and regular, set
+// off from its tabs by a short vertical hairline, so it never reads as a tab
+// or as the current one (ADR-095); a tap on it jumps to the group's first
+// section, and it carries aria-current while the page is in that group. A
+// group whose only section carries its name is one tab. The
 // row fades at its right edge when it scrolls sideways. From 1024 px the
 // section list on the left does this job, so the row is a phone and tablet
 // thing.
@@ -125,11 +127,12 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                   data-testid={`group-${group}`}
                   aria-current={currentGroup === group ? "true" : undefined}
                   onClick={() => go(sections[0]!.id)}
-                  className={`text-soft aria-[current=true]:text-ink flex min-h-12 flex-none items-center pr-1 pl-3 text-meta font-semibold whitespace-nowrap ${
-                    gi > 0 ? "border-line ml-2 border-l" : ""
+                  className={`text-muted hover:text-ink flex min-h-12 flex-none items-center gap-3 pl-3 text-meta font-normal whitespace-nowrap ${
+                    gi > 0 ? "ml-4" : ""
                   }`}
                 >
                   {t(`menu.groups.${group}`)}
+                  <span aria-hidden="true" className="bg-line-strong h-4 w-px flex-none opacity-60" />
                 </button>
               )}
               {sections.map((c) => (
@@ -144,7 +147,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                     e.preventDefault();
                     go(c.id);
                   }}
-                  className={`${tab} ${single && gi > 0 ? "border-line ml-2 border-l" : ""}`}
+                  className={`${tab} ${single && gi > 0 ? "ml-4" : ""}`}
                 >
                   {c.name ? <Txt value={c.name} locale={locale} /> : null}
                 </a>

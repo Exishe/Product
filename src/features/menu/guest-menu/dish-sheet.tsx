@@ -92,43 +92,60 @@ export function DishSheet({
     >
       <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-0 md:max-h-[88dvh] md:px-6">
         {/* A big photo across the top with a round × floating on it; without a photo
-            the × sits on its own above the name. */}
-        <div
-          className={`relative -mx-4 overflow-hidden md:-mx-6 ${item.image ? "bg-plate aspect-[16/10]" : "flex justify-end px-4 pt-3 md:px-6"}`}
-        >
-          {item.image && (
-            // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
-            <img
-              src={dishPhotoUrl(item.image)}
-              alt=""
-              width={800}
-              height={500}
-              className="size-full object-cover"
-            />
-          )}
-          <span
-            aria-hidden="true"
-            className="absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-white/85 md:hidden"
-          />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("sheet.close")}
-            className={`text-ink bg-surface grid size-11 flex-none place-items-center rounded-full [&_svg]:size-4 ${
-              item.image ? "absolute top-3 right-3" : "relative"
-            }`}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-        <div className="mt-4 min-w-0">
-          <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
-            <Txt
-              value={item.name}
-              locale={locale}
-              className="display-face text-headline block leading-[1.2] break-words hyphens-auto"
-            />
-          </h2>
+            the × sits at the end of the name's row (ADR-095), no empty band. */}
+        {(() => {
+          const close = (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("sheet.close")}
+              className={`text-ink grid size-11 flex-none place-items-center rounded-full [&_svg]:size-4 ${
+                item.image ? "bg-surface absolute top-3 right-3" : "bg-chip -mr-1"
+              }`}
+            >
+              <CloseIcon />
+            </button>
+          );
+          return (
+            <>
+              <div
+                className={`relative -mx-4 overflow-hidden md:-mx-6 ${item.image ? "bg-plate aspect-[16/10]" : "h-3"}`}
+              >
+                {item.image && (
+                  // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                  <img
+                    src={dishPhotoUrl(item.image)}
+                    alt=""
+                    width={800}
+                    height={500}
+                    className="size-full object-cover"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full md:hidden ${item.image ? "bg-white/85" : "bg-line"}`}
+                />
+                {item.image && close}
+              </div>
+              <div className={`min-w-0 ${item.image ? "mt-4" : "mt-3 flex items-start gap-3"}`}>
+                <h2
+                  ref={title}
+                  id="dish-sheet-title"
+                  tabIndex={-1}
+                  className={`min-w-0 outline-none ${item.image ? "" : "flex-1 pt-1.5"}`}
+                >
+                  <Txt
+                    value={item.name}
+                    locale={locale}
+                    className="display-face text-headline block leading-[1.2] break-words hyphens-auto"
+                  />
+                </h2>
+                {!item.image && close}
+              </div>
+            </>
+          );
+        })()}
+        <div className="min-w-0">
           <p className="num text-accent-text mt-1 text-name font-semibold" data-testid="sheet-price">
             {formatAmd(unit, locale)}
           </p>

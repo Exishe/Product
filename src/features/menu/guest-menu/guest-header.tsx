@@ -204,7 +204,8 @@ export function GuestBar({
       </div>
       <div className="guest-meta flex min-h-11 flex-wrap items-center gap-x-2 pb-1">
         {tableLabel ? <TableChip label={tableLabel} /> : note}
-        <span aria-hidden="true" className="flex-1" />
+        {/* The note takes the free room itself (it wraps beside the switch). */}
+        {(tableLabel || !note) && <span aria-hidden="true" className="flex-1" />}
         <DemoPalette />
         {tools}
       </div>

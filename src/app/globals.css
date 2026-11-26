@@ -990,21 +990,32 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
   font-weight: 600;
 }
 
-/* One surface on phones (ADR-093): dish rows are not cards. They sit on the
-   page, split by one hairline, and every text starts on the page's 16 px
-   edge (dish-row.tsx drops its inner side padding below 768 px). Wine keeps
-   its burgundy cards. */
+/* One surface (ADR-093, ADR-095): dish rows are not cards. They sit on the
+   page with no box and no inner padding (--dish-pad 0), so the photo, the
+   name, the meta line, the price and the "+" share one left edge. On a phone
+   the rows are split by one hairline; from 768 px the pictured dishes stand
+   in a grid and the dishes without a photo keep a hairline above each. Wine
+   keeps its burgundy cards. */
+.guest-lux:not([data-guest-theme="wine"]) [data-testid="dish"][data-layout="row"] {
+  --dish-pad: 0px;
+  border-width: 0;
+  border-radius: 0;
+  background: transparent;
+}
 @media (width < 48rem) {
   .guest-lux:not([data-guest-theme="wine"]) ul:has(> [data-testid="dish"][data-layout="row"]) {
     row-gap: 0;
   }
-  .guest-lux:not([data-guest-theme="wine"]) [data-testid="dish"][data-layout="row"] {
-    border-width: 0;
-    border-radius: 0;
-    padding-block: 0.5rem;
-  }
   .guest-lux:not([data-guest-theme="wine"])
     :is([data-testid="dish"][data-layout="row"] + [data-testid="dish"][data-layout="row"], ul + ul > [data-testid="dish"][data-layout="row"]:first-child) {
+    border-top: 1px solid var(--guest-line);
+  }
+}
+@media (width >= 48rem) {
+  .guest-lux:not([data-guest-theme="wine"]) ul:has(> [data-testid="dish"][data-layout="row"]:not([data-photo])) {
+    row-gap: 0;
+  }
+  .guest-lux:not([data-guest-theme="wine"]) [data-testid="dish"][data-layout="row"]:not([data-photo]) {
     border-top: 1px solid var(--guest-line);
   }
 }

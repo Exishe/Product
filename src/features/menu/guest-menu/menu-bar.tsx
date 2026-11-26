@@ -3,6 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { BrandMark, GuestBar, type HomeLink, type LanguageLink } from "./guest-header";
 
+/**
+ * The menu's three desktop columns (ADR-095): the section list, the dishes and
+ * the order rail. The band uses it too, so the search sits over the dishes and
+ * all three columns start on one line under it.
+ */
+export const MENU_GRID =
+  "lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_19rem] lg:gap-x-8 xl:grid-cols-[13rem_minmax(0,1fr)_21rem] xl:gap-x-10";
+
 // The menu's top (ADR-093 area pass, benchmark §2.1). The guest bar (the café,
 // the languages, then the table or why there is none) sits on the page and
 // scrolls away; only the band under it stays: the search pill and one row of
@@ -69,6 +77,7 @@ export function MenuBar({
           note={note}
           languages={languages}
           tools={tools}
+          width="max-w-[1440px]"
         />
       </header>
       <div ref={sentinel} aria-hidden="true" className="h-px" />
@@ -79,9 +88,9 @@ export function MenuBar({
         data-stuck={stuck || undefined}
         className="sticky top-0 z-20 -mt-px border-b border-transparent bg-[var(--guest-band)] transition-[border-color] duration-200 data-[stuck]:border-[var(--guest-line)]"
       >
-        <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center gap-x-6 px-4 pt-1 md:px-8 lg:py-2">
-          <div className="w-full lg:w-[26rem] lg:flex-none">{search}</div>
-          <div className="w-full min-w-0 lg:order-1 lg:w-auto lg:flex-1">{nav}</div>
+        <div className={`mx-auto w-full max-w-[1440px] px-4 pt-1 md:px-8 lg:py-3 ${MENU_GRID}`}>
+          <div className="w-full lg:col-start-2 lg:max-w-[40rem]">{search}</div>
+          <div className="w-full min-w-0 lg:hidden">{nav}</div>
         </div>
       </div>
     </>

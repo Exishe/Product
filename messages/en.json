@@ -1076,7 +1076,7 @@
       "viewOrder": "View order",
       "items": "{count, plural, one {# item} other {# items}}",
       "orderingOff": "Right now your waiter takes the orders.",
-      "noTable": "To order from your phone, scan the QR code on your table.",
+      "noTable": "Order with the table’s QR",
       "badTable": "This QR code no longer works. Ask your waiter for help.",
       "kitchenBusy": "The kitchen is busy right now. Your order will take about {minutes} minutes.",
       "kitchenBusyNoTime": "The kitchen is busy right now, so your order may take longer.",
@@ -1300,7 +1300,7 @@
     },
     "panel": {
       "empty": "Add dishes and they appear here.",
-      "sent": "Orders already sent"
+      "sent": "Track your order"
     },
     "allergens": {
       "gluten": "gluten",

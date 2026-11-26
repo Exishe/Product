@@ -101,9 +101,11 @@ test.describe("guest menu: browsing and ordering at the demo café", () => {
     const tab = tabs.getByRole("link", { name: /^Ըմպելիքներ/ });
     await tab.click();
     await expect(page.getByRole("heading", { level: 3, name: /^Ըմպելիքներ/ })).toBeInViewport();
-    // The tab and the group the page is in are marked.
+    // The tab and the group the page is in are marked; the group's name stays
+    // quiet (regular, muted), so it never reads as the current tab (ADR-095).
     await expect(tab).toHaveAttribute("aria-current", "true");
-    await expect(drinks).toHaveCSS("font-weight", "600");
+    await expect(drinks).toHaveAttribute("aria-current", "true");
+    await expect(drinks).toHaveCSS("font-weight", "400");
   });
 
   test("a section's name finds the whole section, under its title", async ({ page }) => {
@@ -246,14 +248,16 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     await expect(sizes).toContainText("3 600 ֏");
   });
 
-  test("the menu opens on dishes: small section titles, no cover photos", async ({ page }) => {
+  test("the menu opens on dishes: section titles above the dish names, no cover photos", async ({ page }) => {
     await open(page, "en");
     const first = page.locator("main section").first();
-    // The section starts with its small title, straight followed by its dishes.
+    // The section starts with its title, straight followed by its dishes. The
+    // title (22 px) stands above the dish names (17 px), so a section start
+    // reads at a glance (ADR-095).
     await expect(first.locator(":scope > h3")).toBeVisible();
     expect(
       await first.locator(":scope > h3").evaluate((h) => parseFloat(getComputedStyle(h).fontSize)),
-    ).toBeLessThanOrEqual(16);
+    ).toBeGreaterThanOrEqual(20);
     await expect(first.locator(':scope > ul [data-testid="dish"]').first()).toBeInViewport();
   });
 });

@@ -21,7 +21,7 @@ import {
 } from "./call-waiter-state";
 import { ChevronRight, ConciergeBell, ReceiptText } from "./icons";
 import styles from "./guest.module.css";
-import { BackIcon, CheckIcon } from "./ui";
+import { BackIcon, CheckIcon, CloseIcon } from "./ui";
 
 const CALLED_FOR_MS = 90_000;
 let busy = false;
@@ -163,7 +163,21 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
             </div>
           </div>
         ) : (
-          <div role="group" aria-label={t("nav.waiter")}>
+          <div role="group" aria-labelledby="waiter-title">
+            {/* A title and a way to close, like any sheet (ADR-095). */}
+            <div className="flex min-h-11 items-center justify-between gap-2">
+              <p id="waiter-title" className="m-0 px-1 font-semibold">
+                {t("nav.waiter")}
+              </p>
+              <button
+                type="button"
+                onClick={cancel}
+                aria-label={t("sheet.close")}
+                className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
+              >
+                <CloseIcon />
+              </button>
+            </div>
             <button
               type="button"
               className={row}

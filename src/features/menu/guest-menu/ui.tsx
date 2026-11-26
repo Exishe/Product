@@ -115,20 +115,28 @@ export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
   return isBadgeTag(tag) ? <TagBadge label={label} /> : <span>{label}</span>;
 }
 
-/** Short facts in one muted 15 px line, joined with « · » (portion, tags, sold out). */
+/**
+ * Short facts in one muted 15 px line, joined with « · » (portion, tags, sold
+ * out). Each fact keeps its words together, and its « · » travels with it: a
+ * fact that wraps takes its dot to the next line, where the line's start
+ * clips it (the row is shifted left by one gap inside a clipping box), so no
+ * line ever ends or starts with a dangling dot.
+ */
 export function MetaLine({ parts, className = "" }: { parts: ReactNode[]; className?: string }) {
   const shown = parts.filter(Boolean);
   if (shown.length === 0) return null;
   return (
-    <span
-      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-label leading-[1.4] ${className}`}
-    >
-      {shown.map((part, i) => (
-        <span key={i} className="contents">
-          {i > 0 && <span aria-hidden="true">·</span>}
-          {part}
-        </span>
-      ))}
+    <span className={`text-muted block overflow-hidden text-label leading-[1.4] ${className}`}>
+      <span className="-ml-[1.125rem] flex flex-wrap gap-y-0.5">
+        {shown.map((part, i) => (
+          <span
+            key={i}
+            className="relative pl-[1.125rem] whitespace-nowrap before:absolute before:left-[0.375rem] before:[content:'·'_/_'']"
+          >
+            {part}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }

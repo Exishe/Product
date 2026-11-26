@@ -305,7 +305,10 @@
   white-space: nowrap;
 }
 
-/* A phone: the pieces stack, no canvas. */
+/* A phone (ADR-095): laid out like a dish row on the page's left edge, under
+   260 px: the name, the price and two lines of description on the left, the
+   plate (no drop shadow) on the right, then the outline «Add · price» and the
+   «‹ n / 9 ›» counter under it, both on the left edge. No canvas. */
 @container (max-width: 639px) {
   .scaler {
     aspect-ratio: auto;
@@ -313,74 +316,111 @@
 
   .canvas {
     position: relative;
-    display: flex;
+    display: grid;
     width: 100%;
     height: auto;
-    flex-direction: column;
-    align-items: center;
-    padding: 12px 8px 8px;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-rows: auto auto 1fr auto auto;
+    column-gap: 12px;
+    align-items: start;
+    padding: 4px 0 0;
     transform: none;
   }
 
-  .arc {
-    top: -20px;
-    left: -60%;
-    width: 200%;
-    height: auto;
-  }
-
-  .pager {
+  .arc,
+  .pager,
+  .strip {
     display: none;
-  }
-
-  .counter {
-    display: flex;
-    order: 5;
-    align-items: center;
-    gap: 16px;
-    margin-top: 16px;
-    color: var(--guest-muted);
-    font-size: 15px;
-    font-weight: 600;
   }
 
   .plates {
     position: relative;
     top: auto;
     left: auto;
-    width: min(46vw, 11rem);
-    height: min(46vw, 11rem);
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    width: 104px;
+    height: 104px;
+  }
+
+  .orbit {
+    filter: none;
+  }
+
+  .plates .orbit > span {
+    box-shadow: none;
+  }
+
+  /* The photo fills the plate: no rim around it. */
+  .plates .orbit img {
+    width: 100%;
+  }
+
+  /* Only the dish on screen takes room, so the price sits right under its name. */
+  .hd:not([data-on]),
+  .body:not([data-on]) {
+    display: none;
   }
 
   .head {
     position: relative;
     top: auto;
     left: auto;
-    order: 2;
-    width: 100%;
-    height: 60px;
-    margin-top: 16px;
-    text-align: center;
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: auto;
+    display: grid;
   }
 
-  /* Name, price, description, then the button. */
+  .hd {
+    position: relative;
+    grid-area: 1 / 1;
+    inset: auto;
+  }
+
+  .hd h3 {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+  }
+
+  .t1,
+  .t2 {
+    display: inline;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit !important;
+    font-weight: inherit;
+    line-height: inherit;
+    white-space: normal;
+  }
+
+  .t1::after {
+    content: " ";
+  }
+
   .card {
     position: relative;
     top: auto;
     left: auto;
-    order: 3;
-    width: 100%;
-    max-width: 22rem;
-    margin-top: 4px;
+    grid-column: 1;
+    grid-row: 2;
+    width: auto;
+    margin-top: 2px;
     padding: 0;
     border: 0;
     background: none;
-    text-align: center;
+  }
+
+  .badge {
+    font-size: 16px;
   }
 
   .desc {
     display: -webkit-box;
     min-height: 0;
+    margin-top: 2px;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -390,12 +430,22 @@
     position: relative;
     top: auto;
     left: auto;
-    order: 4;
-    margin-top: 14px;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 12px;
   }
 
-  .strip {
-    display: none;
+  .counter {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 5;
+    justify-self: start;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--guest-muted);
+    font-size: 15px;
+    font-weight: 600;
   }
 }
 

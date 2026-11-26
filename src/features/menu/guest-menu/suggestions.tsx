@@ -22,7 +22,9 @@ import type { GuestItem } from "./view-model";
 // shadow of its own): a 40 px plate, the name and price at 16 px, a 44 px «+»
 // and a 44 px ×. On a phone it leaves by itself after 6 seconds or 200 px of
 // scrolling, so it never sits over the menu; the next idea shows after one is
-// added or declined. On a desktop it sits in the order rail under the total.
+// added or declined. A phone shows ideas for one add per visit only (the menu
+// asks with `onShown`, ADR-095), so the bottom panel stays the cart bar and the
+// tabs. On a desktop it sits in the order rail under the total.
 export type SuggestTrigger = {
   /** The dish just added. */
   id: string;
@@ -57,6 +59,7 @@ export function Suggestions({
   onAdd,
   onChoose,
   autoHide = false,
+  onShown,
 }: {
   locationId: string;
   trigger: SuggestTrigger;
@@ -71,6 +74,8 @@ export function Suggestions({
   onChoose: (item: GuestItem) => void;
   /** Leaves after 6 s or 200 px of scrolling (the phone's bottom panel). */
   autoHide?: boolean;
+  /** Told once an idea is on screen. */
+  onShown?: () => void;
 }) {
   const { t, locale } = useGuestI18n();
   // The answer belongs to the trigger it was fetched for, so a new add of the
@@ -125,6 +130,10 @@ export function Suggestions({
     };
   }, [autoHide, shown, trigger]);
 
+  useEffect(() => {
+    if (shown) onShown?.();
+  }, [shown, onShown]);
+
   // Counted once per (dish, suggestion) for the visit, not each time it re-renders.
   useEffect(() => {
     const mem = memoryFor(locationId);
@@ -150,10 +159,10 @@ export function Suggestions({
     <section aria-label={t("suggest.title")} data-testid="suggestions" className={`text-ink ${styles.suggest}`}>
       <h2 className="sr-only">{t("suggest.title")}</h2>
       <ul>
-        <li key={item.id} data-testid="suggestion" data-dish={item.id} className="flex min-h-16 items-center gap-3">
+        <li key={item.id} data-testid="suggestion" data-dish={item.id} className="flex min-h-14 items-center gap-3">
           {item.image && <Plate src={dishPhotoUrl(item.image)} size={40} className="size-10 flex-none" />}
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="text-muted text-meta" data-testid="suggestion-reason">
+            <span className="text-muted truncate text-meta" data-testid="suggestion-reason">
               {t(reason.key, reason.vars)}
             </span>
             <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-body">

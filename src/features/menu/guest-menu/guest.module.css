@@ -942,7 +942,7 @@
 }
 
 .addCtl[data-open] {
-  width: 7rem;
+  width: 6.75rem;
   overflow: hidden;
   background: var(--guest-add);
 }
@@ -985,8 +985,13 @@
   height: 18px;
 }
 
-.addStep:active {
+.addStep:active:not(:disabled) {
   transform: scale(0.88);
+}
+
+.addStep:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .addStep:focus-visible {
@@ -995,7 +1000,7 @@
 }
 
 .addCount {
-  min-width: 1.5rem;
+  min-width: 1.25rem;
   flex: 1;
   font-size: 1rem;
   font-weight: 600;

@@ -92,11 +92,11 @@ export function AllergenFilter({
             );
           })}
         </ul>
-        <p className="text-muted mt-2 text-body leading-[1.45]">{t("diet.nutsHint")}</p>
+        <p className="text-muted mt-2 text-label leading-[1.4]">{t("diet.nutsHint")}</p>
         <h3 id="avoid-heading" className="mt-6 text-name font-semibold">
           {t("diet.title")}
         </h3>
-        <p className="text-muted mt-1 text-body leading-[1.45]">{t("diet.hint")}</p>
+        <p className="text-muted mt-1 text-label leading-[1.4]">{t("diet.hint")}</p>
         <ul className="mt-3 flex flex-wrap gap-2">
           {ALLERGENS.map((a) => {
             const on = chosen.includes(a);
@@ -104,7 +104,8 @@ export function AllergenFilter({
               <li key={a}>
                 <button type="button" aria-pressed={on} onClick={() => toggle(a)} className={chipClass}>
                   {on && <CheckIcon />}
-                  {t(`allergens.${a}`)}
+                  {/* The names are lower case for sentences («contains gluten»); a chip starts with a capital. */}
+                  <span className="inline-block first-letter:uppercase">{t(`allergens.${a}`)}</span>
                 </button>
               </li>
             );

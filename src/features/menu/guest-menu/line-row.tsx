@@ -4,11 +4,13 @@ import type { PricedLine } from "@/features/ordering/cart";
 import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
-import { MinusIcon, PlusIcon, STEP, Txt, dishPhotoUrl } from "./ui";
+import { QtyPill } from "./qty-pill";
+import { Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
-// narrower cut (`dense`: a smaller photo and name).
+// narrower cut (`dense`: a smaller photo and name). The name and its price are
+// one size, and the quantity is the menu's own «− n +» pill (ADR-095).
 export function LineRow({
   priced,
   item,
@@ -27,7 +29,6 @@ export function LineRow({
 }) {
   const { t, locale } = useGuestI18n();
   const { line, status } = priced;
-  const step = `${STEP} size-11`;
   const name = item?.name.text ?? "";
   const options = (item?.groups ?? []).flatMap((g) =>
     g.modifiers.filter((m) => line.modifierIds.includes(m.id)),
@@ -66,7 +67,9 @@ export function LineRow({
       ) : (
         <span />
       )}
-      <span className="num text-right text-body leading-[1.45] font-semibold whitespace-nowrap">
+      <span
+        className={`num text-right leading-tight font-semibold whitespace-nowrap ${dense ? "text-body" : "text-name"}`}
+      >
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {detail && item?.description && (
@@ -100,27 +103,15 @@ export function LineRow({
       )}
       <div className={`${col} mt-1 flex items-center gap-3`}>
         {available ? (
-          <span className="inline-flex items-center gap-1">
-            <button
-              type="button"
-              className={step}
-              disabled={locked}
-              aria-label={line.quantity === 1 ? t("cart.remove", { name }) : t("cart.decrease", { name })}
-              onClick={() => onQuantity(line.id, line.quantity - 1)}
-            >
-              <MinusIcon />
-            </button>
-            <output className="num min-w-6 text-center text-body font-semibold">{line.quantity}</output>
-            <button
-              type="button"
-              className={step}
-              disabled={locked || line.quantity >= MAX_QUANTITY}
-              aria-label={t("cart.increase", { name })}
-              onClick={() => onQuantity(line.id, line.quantity + 1)}
-            >
-              <PlusIcon />
-            </button>
-          </span>
+          <QtyPill
+            value={line.quantity}
+            max={MAX_QUANTITY}
+            disabled={locked}
+            decreaseLabel={line.quantity === 1 ? t("cart.remove", { name }) : t("cart.decrease", { name })}
+            increaseLabel={t("cart.increase", { name })}
+            onDecrease={() => onQuantity(line.id, line.quantity - 1)}
+            onIncrease={() => onQuantity(line.id, line.quantity + 1)}
+          />
         ) : (
           <button
             type="button"

@@ -8,7 +8,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu, dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
-import { ChevronLeft, QrCode } from "lucide-react";
+import { QrCode } from "lucide-react";
 import guestStyles from "@/features/menu/guest-menu/guest.module.css";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
@@ -156,8 +156,9 @@ export default async function OrderStatusPage({
           />
         </GuestI18nProvider>
       ) : (
-        // No table (or a dead QR code): the café's bar, a way back, one
-        // headline, one sentence and one 56 px button (benchmark §2.3).
+        // No table (or a dead QR code): the café's bar with its languages, one
+        // headline, one sentence and one 56 px button back to the menu
+        // (benchmark §2.3; ADR-095: no second back link above it).
         <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
           <GuestHeader
             compact
@@ -165,22 +166,17 @@ export default async function OrderStatusPage({
             logoUrl={look?.logo ? dishPhotoUrl(look.logo) : null}
             wordmarkUrl={wordmark ? dishPhotoUrl(wordmark) : null}
             tableLabel={null}
-            languages={[]}
+            languages={routing.locales
+              .filter((l) => published?.location.locales.includes(l))
+              .map((l) => ({ locale: l, href: `/${l}/m/${restaurant}/${location}/order${query}` }))}
             home={{ href: menuHref }}
           />
-          <main className="mx-auto grid w-full max-w-[720px] content-start gap-2 px-4 pt-2 pb-10 md:px-8">
-            <a
-              href={menuHref}
-              className="text-ink hover:bg-chip -ml-3 inline-flex min-h-11 items-center gap-1 justify-self-start rounded-full pr-3 pl-1 text-body font-semibold"
-            >
-              <ChevronLeft size={22} aria-hidden />
-              {t("cart.back")}
-            </a>
+          <main className="mx-auto grid w-full max-w-[1120px] content-start gap-2 px-4 pt-4 pb-10 md:px-8 md:pt-8">
             {token ? (
               <Notice tone="alert">{t("menu.badTable")}</Notice>
             ) : (
               <>
-                <h1 className="display-face text-headline mt-4 leading-[1.2]">{t("order.empty")}</h1>
+                <h1 className="display-face text-headline leading-[1.2]">{t("order.empty")}</h1>
                 <p className="text-muted flex items-start gap-2 text-body">
                   <QrCode size={20} strokeWidth={1.75} aria-hidden className="mt-0.5 flex-none" />
                   {t("menu.noTable")}

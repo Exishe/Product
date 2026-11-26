@@ -1,6 +1,15 @@
 "use client";
 
-import { ConciergeBell, QrCode, Search, ShoppingBag, SlidersHorizontal, UtensilsCrossed } from "./icons";
+import {
+  ChevronRight,
+  ConciergeBell,
+  QrCode,
+  ReceiptText,
+  Search,
+  ShoppingBag,
+  SlidersHorizontal,
+  UtensilsCrossed,
+} from "./icons";
 import {
   Suspense,
   lazy,
@@ -33,11 +42,11 @@ import { DishRow } from "./dish-row";
 import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
-import { MenuBar } from "./menu-bar";
+import { MENU_GRID, MenuBar } from "./menu-bar";
 import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
-import { CheckIcon, CloseIcon, Notice, dishPhotoUrl } from "./ui";
+import { CloseIcon, Notice, dishPhotoUrl } from "./ui";
 import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -91,12 +100,12 @@ const warmSheet = () => {
 const CART_HASH = "#cart";
 
 // The guest pages' content column: full width on a phone, centred on a desktop
-// and as wide as the menu bar (menu-bar.tsx, 1240 px), so they line up. From
-// 1024 px it holds three columns: the section list, the dishes and the order
-// rail; the notices above the dishes sit in the middle one too.
-const COLUMN = "mx-auto w-full max-w-[1240px] px-4 md:px-8";
-const THREE_UP =
-  "lg:grid lg:grid-cols-[13rem_minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[14rem_minmax(0,1fr)_22rem] xl:gap-10";
+// and as wide as the menu bar (menu-bar.tsx, 1440 px), so they line up. From
+// 1024 px it holds three columns that start on one line under the band: the
+// section list, the dishes (the notices and promos at their top) and the order
+// rail. From 1280 px the dishes run three across (ADR-095).
+const COLUMN = "mx-auto w-full max-w-[1440px] px-4 md:px-8";
+const THREE_UP = MENU_GRID;
 /** Where the desktop's side columns stick: just under the sticky band, level with the first heading. */
 const SIDE_TOP = "top-[calc(var(--guest-sticky,4rem)+1.25rem)]";
 
@@ -162,6 +171,8 @@ export function GuestMenu({
   // The dish just added, which asks the server for "goes well with" ideas.
   const [suggest, setSuggest] = useState<{ id: string; cart: string[]; n: number } | null>(null);
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
+  // The add whose idea a phone showed (-1: one showed earlier in this tab).
+  const [ideaShownOn, setIdeaShownOn] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
   // What the guest avoids (kept on this phone for every café) and whether
   // the chooser is open.
@@ -281,6 +292,24 @@ export function GuestMenu({
   }, [callsWaiter]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setAvoidState(loadAvoid(window.localStorage)), []);
+  const ideaKey = `pativ:idea-shown:${menu.locationId}`;
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
+      if (window.sessionStorage.getItem(ideaKey)) setIdeaShownOn(-1);
+    } catch {
+      // storage blocked: one idea per page view instead
+    }
+  }, [ideaKey]);
+  const suggestN = suggest?.n ?? null;
+  const ideaShown = useCallback(() => {
+    setIdeaShownOn((on) => on ?? suggestN);
+    try {
+      window.sessionStorage.setItem(ideaKey, "1");
+    } catch {
+      // storage blocked: one idea per page view instead
+    }
+  }, [ideaKey, suggestN]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setHasLast(hasLastOrder(window.localStorage, menu.locationId)), [menu.locationId]);
   useEffect(() => {
@@ -464,9 +493,10 @@ export function GuestMenu({
       )}
     </span>
   );
-  // The rail's quiet actions: 48 px rows on hairlines, not outlined pills, so they never wrap.
+  // The rail's quiet actions: plain 48 px rows on hairlines (no box, no fill
+  // but the hover's underline), so they never wrap.
   const railAction =
-    "text-ink hover:bg-chip aria-expanded:bg-chip border-line -mx-2 flex min-h-12 items-center gap-3 rounded-guest-md border-b px-2 text-body font-semibold last:border-b-0";
+    "text-ink border-line flex min-h-12 items-center gap-3 border-b text-body font-semibold underline-offset-4 last:border-b-0 hover:underline aria-expanded:underline";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -559,10 +589,16 @@ export function GuestMenu({
       <CallWaiterPrompt token={table.token} tableId={table.id} />
     </Suspense>
   );
+  // A phone shows "goes well with" for one add per visit: the add whose idea
+  // showed first (kept for the tab's session). After that the bottom panel is
+  // the cart bar and the tabs only, about 130 px (ADR-095).
+  const phoneIdea = (autoHide: boolean) =>
+    !autoHide || ideaShownOn === null || ideaShownOn === suggest?.n;
   const suggestions = (autoHide: boolean) =>
     canOrder &&
     suggest &&
-    lines.length > 0 && (
+    lines.length > 0 &&
+    phoneIdea(autoHide) && (
       <Suspense fallback={null}>
         <Suggestions
           locationId={menu.locationId}
@@ -574,6 +610,7 @@ export function GuestMenu({
           onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
           onChoose={setSheet}
           autoHide={autoHide}
+          onShown={autoHide ? ideaShown : undefined}
         />
       </Suspense>
     );
@@ -668,10 +705,10 @@ export function GuestMenu({
   const scanNote =
     table.kind === "none" && menu.ordering ? (
       <span
-        className="text-muted flex min-h-11 min-w-0 flex-1 basis-[20rem] items-center gap-2 py-1 text-label leading-[1.35]"
+        className="text-muted flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 py-1 text-label leading-[1.35]"
         data-testid="scan-note"
       >
-        <QrCode size={20} strokeWidth={1.75} className="flex-none" />
+        <QrCode size={18} strokeWidth={1.75} className="flex-none" />
         <span className="min-w-0">{t("menu.noTable")}</span>
       </span>
     ) : null;
@@ -697,9 +734,10 @@ export function GuestMenu({
       />
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
         <div className={THREE_UP}>
-          <div className="lg:col-start-2">
+          <SectionList categories={shown} stick={SIDE_TOP} />
+          <main className="min-w-0">
             {((menu.promos.length > 0 && !query) || orderingNotice || menu.kitchenBusy) && (
-              <div className="grid gap-2 pt-4">
+              <div className="grid gap-2 pt-4 lg:pt-5">
                 {!query && promoBanners}
                 {orderingNotice}
                 {menu.kitchenBusy && canOrder && (
@@ -717,12 +755,12 @@ export function GuestMenu({
               </Suspense>
             )}
             {avoid.length > 0 && (
-              <p className="text-muted pb-1 text-body" role="status">
+              <p className="text-muted pt-3 pb-1 text-body" role="status">
                 {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
               </p>
             )}
             {diet.length > 0 && (
-              <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-body" role="status">
+              <p className="text-muted flex flex-wrap items-center gap-x-3 pt-2 pb-1 text-body" role="status">
                 <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
                 <button
                   type="button"
@@ -733,11 +771,6 @@ export function GuestMenu({
                 </button>
               </p>
             )}
-          </div>
-        </div>
-        <div className={THREE_UP}>
-          <SectionList categories={shown} stick={SIDE_TOP} />
-          <main className="min-w-0">
             {shown.length === 0 ? (
               // One headline, one sentence, one way out (benchmark §2.3 empty states).
               <div className="grid justify-items-start gap-2 py-10" role="status">
@@ -759,21 +792,20 @@ export function GuestMenu({
               </div>
             ) : (
               // One compact page: the four clusters (food, desserts, drinks, wine) one
-              // after another, each with its sections and their dishes as small cards.
-              // No cover photos and no big titles, so nothing jumps while scrolling.
+              // after another, each with its sections and their dishes. No cover
+              // photos and no lead card: every dish has the same shape, so the
+              // first screen shows names, prices and "+" (ADR-095).
               (() => {
                 const clusters = groupSections(shown);
-                // In a longer section the first pictured dish leads as a large card
-                // on a phone, so the list of rows changes pace (design merge from A).
-                // The pictured dishes come first as photo cards (two across, three
-                // from 1280 px), then the dishes without a photo as a compact list
-                // of text cards, so one grid never mixes a tall photo card with a
-                // short text one. Within each, the café's own order stays.
+                // The pictured dishes come first (a row with a photo on a phone; a
+                // photo card, three across on a tablet, two beside the rail from 1024 px
+                // and three again from 1280 px), then the
+                // dishes without a photo as a list on hairlines, so one grid never
+                // mixes a tall photo card with a short text one. Within each, the
+                // café's own order stays.
                 const rows = (list: GuestItem[]) => {
-                  const lead = list.length >= 3 ? list.find((i) => i.image && !i.soldOut)?.id : undefined;
                   const pictured = list.filter((i) => i.image);
                   const plain = list.filter((i) => !i.image);
-                  pictured.sort((a, b) => Number(b.id === lead) - Number(a.id === lead));
                   const card = (item: GuestItem, i: number) => (
                     <DishRow
                       key={item.id}
@@ -782,7 +814,6 @@ export function GuestMenu({
                       preview={table.kind === "none" && menu.ordering}
                       warning={warningFor(item)}
                       index={i}
-                      feature={item.id === lead}
                       inCart={inCart[item.id] ?? 0}
                       onOpen={setSheet}
                       onQuickAdd={quickAdd}
@@ -792,50 +823,67 @@ export function GuestMenu({
                   return (
                     <>
                       {pictured.length > 0 && (
-                        <ul className="grid gap-3 md:grid-cols-2">{pictured.map(card)}</ul>
+                        <ul className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3">
+                          {pictured.map(card)}
+                        </ul>
                       )}
                       {plain.length > 0 && (
-                        <ul className={`grid gap-3 md:grid-cols-2 ${pictured.length > 0 ? "mt-3" : ""}`}>
+                        <ul className={`grid gap-3 md:grid-cols-2 md:gap-x-8 ${pictured.length > 0 ? "mt-3 md:mt-8" : ""}`}>
                           {plain.map((item, i) => card(item, pictured.length + i))}
                         </ul>
                       )}
                     </>
                   );
                 };
-                return clusters.map(({ group, sections }) => (
-                  <div key={group} id={`group-${group}`} className="scroll-mt-2 pt-5" data-group={group}>
-                    {clusters.length > 1 &&
-                      !(
-                        sections.length === 1 &&
-                        sections[0]!.name?.text.trim().toLocaleLowerCase() ===
-                          t(`menu.groups.${group}`).trim().toLocaleLowerCase()
-                      ) && (
-                      <h2 className="display-face text-title text-[1.25rem] leading-[1.2]">
-                        {t(`menu.groups.${group}`)}
-                      </h2>
-                    )}
-                    {sections.map((c) => (
-                      <section
-                        key={c.id}
-                        id={sectionId(c.id)}
-                        aria-labelledby={`h-${c.id}`}
-                        className="scroll-mt-2 pt-4"
-                      >
-                        {c.name && (
-                          <h3
-                            id={`h-${c.id}`}
-                            lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-3 flex items-baseline gap-2 text-name leading-[1.25] font-semibold"
-                          >
-                            {c.name.text}
-                            <span className="num text-soft text-label font-normal">{c.items.length}</span>
-                          </h3>
-                        )}
-                        {rows(c.items)}
-                      </section>
-                    ))}
-                  </div>
-                ));
+                // Each group after the first, and each section after the first,
+                // starts under one hairline with 32 px of air, so a new section
+                // reads at a glance while scrolling.
+                const rule = "border-line mt-4 border-t pt-8 md:mt-10";
+                return clusters.map(({ group, sections }, gi) => {
+                  const titled =
+                    clusters.length > 1 &&
+                    !(
+                      sections.length === 1 &&
+                      sections[0]!.name?.text.trim().toLocaleLowerCase() ===
+                        t(`menu.groups.${group}`).trim().toLocaleLowerCase()
+                    );
+                  return (
+                    <div
+                      key={group}
+                      id={`group-${group}`}
+                      className={`scroll-mt-2 ${gi > 0 ? rule : "pt-6 lg:pt-5"}`}
+                      data-group={group}
+                    >
+                      {titled && (
+                        <h2 className="display-face text-large mb-2 leading-[1.15]">
+                          {t(`menu.groups.${group}`)}
+                        </h2>
+                      )}
+                      {sections.map((c, si) => (
+                        <section
+                          key={c.id}
+                          id={sectionId(c.id)}
+                          aria-labelledby={`h-${c.id}`}
+                          className={`scroll-mt-2 ${si > 0 ? rule : titled ? "pt-4" : ""}`}
+                        >
+                          {c.name && (
+                            <h3
+                              id={`h-${c.id}`}
+                              lang={c.name.lang === locale ? undefined : c.name.lang}
+                              className="display-face text-ink mb-1 flex items-baseline gap-2.5 text-subtitle leading-[1.25] md:mb-4"
+                            >
+                              {c.name.text}
+                              <span className="num text-muted font-ui text-label font-normal">
+                                {c.items.length}
+                              </span>
+                            </h3>
+                          )}
+                          {rows(c.items)}
+                        </section>
+                      ))}
+                    </div>
+                  );
+                });
               })()
             )}
           </main>
@@ -870,8 +918,9 @@ export function GuestMenu({
                           )}
                           {orderHref && (
                             <a href={orderHref} className={railAction}>
-                              <CheckIcon />
-                              {t("panel.sent")}
+                              <ReceiptText size={20} aria-hidden />
+                              <span className="flex-1">{t("panel.sent")}</span>
+                              <ChevronRight size={18} aria-hidden className="text-muted" />
                             </a>
                           )}
                         </>

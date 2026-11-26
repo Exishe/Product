@@ -13,9 +13,9 @@ import type { GuestItem } from "./view-model";
 // dish as a line (name, what tells it apart, price, − n +), the total, and
 // the send area itself, so a desktop guest orders without leaving the menu.
 // One primary action, «Send to the kitchen · total»; the full order view is
-// a quiet link beside the title. Under the total a "goes well with" idea
+// a quiet link beside the title. On the page, not in a box (ADR-095). Under the total a "goes well with" idea
 // when there is one. Below it the two things the phone keeps on its bottom
-// bar, as 48 px rows on hairlines: the waiter and the orders already sent. A dish added on a desktop flies here (fly.ts)
+// bar, as plain 48 px rows on hairlines: the waiter and «Track your order». A dish added on a desktop flies here (fly.ts)
 // and the heading bounces as it lands. Its own file: fetched only where the
 // rail is on screen (1024 px and up), never on a phone.
 export function OrderRail({
@@ -52,7 +52,7 @@ export function OrderRail({
       aria-labelledby="order-panel-title"
       data-fly-target="1"
       data-testid="order-rail"
-      className="bg-surface rounded-card hidden max-h-[calc(100dvh-8rem)] flex-col border [border-color:var(--guest-card-border)] pt-0 pb-4 lg:flex"
+      className="hidden max-h-[calc(100dvh-8rem)] flex-col pb-4 lg:flex"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="order-panel-title" data-fly-bump="" className="display-face text-heading leading-[1.2]">

@@ -28,9 +28,14 @@ export type DockItem = {
 // with the bar sits inside the same panel, above the tabs: the cart bar on
 // the menu, the waiter's choices, a "goes well with" idea, the notes about a
 // request. One raised object, one shadow. Every item is at least 56 px tall;
-// three items carry 15 px labels, four items 13 px on up to two lines (never
-// cut with an ellipsis). The Order item is where a dish added on a phone
-// flies to (fly.ts), its count bouncing as it lands.
+// three items carry 15 px labels, four items 13 px. The current item (ADR-095)
+// has its label in the ink and a 56 × 32 px tint behind its icon, nothing
+// under the text (an underline would cut through Armenian descenders).
+// Labels are never cut: a label keeps its words whole, the items wrap onto a
+// second row when large text needs it, and under large text (the dock under
+// 16rem wide) the icons step aside so the words get the room (WCAG 1.4.4).
+// The Order item is where a dish added on a phone flies to (fly.ts), its
+// count bouncing as it lands.
 //
 // The panel publishes its height as --guest-bottom on <html>, so focus and
 // scrollIntoView keep controls clear of it (scroll-padding, globals.css).
@@ -67,38 +72,38 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
         }`}
       >
         <div
-          className={`mx-auto grid w-full max-w-[480px] gap-2 px-4 pt-2 empty:hidden lg:pointer-events-auto ${four ? "sm:max-w-[620px]" : ""}`}
+          className={`mx-auto grid w-full max-w-[480px] gap-2 px-4 pt-2 pb-3 empty:hidden lg:pointer-events-auto lg:pb-0 ${four ? "sm:max-w-[620px]" : ""}`}
         >
           {above}
         </div>
         {items.length > 0 && (
           <nav
             aria-label={t("nav.label")}
-            className={`text-dock-ink mx-auto flex w-full max-w-[480px] lg:hidden ${four ? "gap-0 px-0.5 sm:max-w-[620px]" : "gap-1 px-2"}`}
+            className={`text-dock-ink @container mx-auto flex w-full max-w-[480px] flex-wrap lg:hidden ${four ? "gap-0 px-0.5 sm:max-w-[620px]" : "gap-1 px-2"}`}
             data-testid="guest-dock"
           >
             {items.map((item) => {
               const body = (
                 <>
-                  <span className="relative grid flex-none place-items-center">
+                  <span className="group-hover:bg-chip/60 group-aria-expanded:bg-chip group-aria-[current=page]:bg-chip relative grid h-8 w-14 flex-none place-items-center rounded-full transition-colors duration-200 @max-[16rem]:hidden">
                     {item.icon}
                     {item.badge ? (
                       <span
                         data-fly-bump=""
-                        className="num bg-badge text-on-badge absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-meta leading-none font-bold sm:-top-1 sm:-right-2"
+                        className="num bg-badge text-on-badge absolute -top-0.5 left-[calc(50%+3px)] grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-meta leading-none font-bold"
                       >
                         {item.badge}
                       </span>
                     ) : null}
                   </span>
                   <span
-                    className={`line-clamp-2 max-w-full text-center leading-[1.15] whitespace-normal [overflow-wrap:anywhere] ${four ? "text-meta" : "text-label"}`}
+                    className={`max-w-full text-center leading-[1.15] [overflow-wrap:normal] break-normal ${four ? "text-meta" : "text-label"}`}
                   >
                     {item.label}
                   </span>
                 </>
               );
-              const cls = `text-dock-muted hover:text-dock-ink aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink aria-expanded:text-dock-ink after:bg-accent-text relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 font-semibold transition-colors duration-150 after:absolute after:bottom-1 after:h-0.5 after:w-0 after:rounded-full after:transition-all after:duration-200 after:content-[''] disabled:opacity-50 hover:after:w-6 focus-visible:after:w-6 aria-[current=page]:after:w-6 aria-expanded:after:w-6 sm:flex-row sm:gap-3 sm:[&>span:last-child]:text-body ${four ? "px-0.5" : "px-1"}`;
+              const cls = `group text-dock-muted hover:text-dock-ink aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink aria-expanded:text-dock-ink relative flex min-h-[56px] min-w-max flex-1 basis-0 flex-col @max-[16rem]:aria-expanded:bg-chip @max-[16rem]:aria-[current=page]:bg-chip items-center justify-center gap-0.5 rounded-xl py-1 font-semibold transition-colors duration-150 disabled:opacity-50 ${four ? "px-0.5" : "px-1"}`;
               return item.href ? (
                 <a
                   key={item.key}

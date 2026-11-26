@@ -351,7 +351,7 @@ function OrderCard({
     );
   return (
     <article
-      className={latest ? "border-line border-t pt-4 lg:border-t-0 lg:pt-0" : "border-line border-t pt-4"}
+      className="border-line border-t pt-4"
       data-testid="order"
       data-order-number={order.number}
       data-status={status}
@@ -916,9 +916,9 @@ export function OrderStatusView({
   );
 
   return (
-    // The whole screen, not a small block: the order on the left, its status and
-    // the menu's showcase on the right (above the order on a phone), and the
-    // games across the bottom.
+    // One column on one left edge at every width (ADR-095): the state, its bar
+    // and the wait first, then the order and the waiter, then the showcase and
+    // the games across the page.
     <main
       data-order-page=""
       className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
@@ -929,7 +929,7 @@ export function OrderStatusView({
           ref={banner}
           aria-hidden="true"
           data-testid="ready-banner"
-          className={`bg-accent text-on-accent rounded-card mb-5 flex items-center gap-3 px-5 py-4 ${motionStyles.banner}`}
+          className={`bg-accent text-on-accent rounded-card mb-5 flex max-w-[44rem] items-center gap-3 px-5 py-4 ${motionStyles.banner}`}
         >
           <span className="bg-on-accent text-accent grid size-9 flex-none place-items-center rounded-full">
             <CheckIcon />
@@ -937,8 +937,8 @@ export function OrderStatusView({
           <span className="display-face text-[1.125rem] leading-none">{t("order.steps.ready")}</span>
         </div>
       )}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-12">
-        <div className="order-2 min-w-0 lg:order-1">
+      <div className="grid max-w-[44rem] gap-6 lg:gap-8">
+        <div className="order-2 min-w-0">
           {latest && (
             <OrderCard
               order={latest}
@@ -1093,7 +1093,7 @@ export function OrderStatusView({
           )}
         </div>
         <aside
-          className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-8 lg:order-2"
+          className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5"
           aria-label={t("order.status")}
         >
           {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
