@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { BellRing, CircleCheck, ClipboardList, CloudUpload, LayoutGrid, Megaphone, Wallet, WifiOff } from "lucide-react";
+import { BellRing, ClipboardList, CloudUpload, LayoutGrid, Megaphone, Wallet, WifiOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -11,6 +11,7 @@ import { heartbeat } from "@/features/kitchen/actions";
 import { connectionState, troubleSince } from "@/features/kitchen/connection";
 import { useServerClock } from "@/features/kitchen/use-server-clock";
 import { ChangePassword } from "@/features/staff/change-password";
+import { HeaderMenu } from "@/features/staff/header-menu";
 import type { GuestCategory } from "@/features/menu/guest-menu/view-model";
 import type { Locale } from "@/i18n/routing";
 import type { MemberRole } from "@/lib/auth/membership";
@@ -58,7 +59,7 @@ import { ShiftSheet } from "./shift-sheet";
 import { TablePanel } from "./table-panel";
 import { TabBar } from "./tab-bar";
 import { useCallAlerts } from "./use-call-alerts";
-import { ConnectionPill, DisconnectedScreen, Toasts, type Toast } from "./ui";
+import { ConnectionPill, DisconnectedScreen, HEADER_ICON, MENU_ROW, Toasts, type Toast } from "./ui";
 
 // The live card announces plates and new orders; calls and bills ring in their own banners.
 const LIVE_ALERT_KINDS: readonly AlertKind[] = ["ready", "new"];
@@ -89,10 +90,6 @@ const TOAST_MS = 5_000;
 const DEBOUNCE_MS = 300;
 
 const client = getBrowserClient as unknown as () => SupabaseClient;
-
-// Every round control in the header: 44 px, white, a hairline edge.
-const HEADER_ICON =
-  "border-staff-sep text-ink grid size-11 shrink-0 place-items-center rounded-full border bg-white";
 
 // The waiter app (screens.md §5–6, design/waiter.html). Server-rendered with the
 // floor, then kept live: Broadcast hints trigger a debounced refetch, a 15-second
@@ -464,60 +461,74 @@ function App(p: WaiterAppProps) {
   };
 
   const tabTitle = t(`tabs.${tab}`);
+  // The open table's own call is answered in its panel; the bar stays for the others.
+  const barRequests =
+    selected !== null && requests.every((r) => r.tableId === selected) ? [] : requests;
 
   return (
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
-      {/* Phones: the café and the clock, then the status and the tools on a
-          second row. From 640 px it is one row. The calls ring underneath,
-          one 56 px row on a phone, so a table's screen keeps its room. */}
-      <header className="bg-staff-bg grid gap-2 px-4 pt-2 pb-2 lg:px-6">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="m-0 min-w-[6rem] flex-1 truncate text-[0.9375rem] leading-tight font-semibold">
-            {p.cafeName}
-          </p>
-          <span data-testid="clock" className="num shrink-0 text-[1.0625rem] font-semibold sm:order-last sm:pl-1">
+      {/* One 56 px row at every width: the café and the connection dot on the
+          left; the clock, the sound and «…» (my shift, notifications, the
+          password) on the right. The one call bar rings underneath, then the
+          live card for plates and new orders, both in the flow so neither
+          covers the other. */}
+      <header className="bg-staff-bg grid gap-2 px-4 pt-1.5 pb-2 lg:px-6">
+        <div className="flex min-h-11 items-center gap-2">
+          <p className="m-0 min-w-0 truncate text-[1.0625rem] leading-tight font-semibold">{p.cafeName}</p>
+          <ConnectionPill state={connection} />
+          {/* The outbox stays visible until it is empty, online or not: a waiter
+              who can't see a queued order enters it again. */}
+          {outbox.entries.length > 0 && (
+            <button
+              type="button"
+              data-testid="queue-chip"
+              onClick={() => setSheet({ kind: "queue" })}
+              className="bg-amber text-ink inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.9375rem] font-semibold"
+            >
+              <CloudUpload aria-hidden="true" className="size-4 shrink-0" />
+              <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
+            </button>
+          )}
+          <span
+            data-testid="clock"
+            className="num ml-auto shrink-0 pr-1 text-[1.0625rem] font-semibold"
+          >
             {formatTime(new Date(now), p.location.timeZone)}
           </span>
-          <div className="flex min-w-0 items-center gap-2 max-sm:basis-full">
-            <ConnectionPill state={connection} />
-            {/* The outbox stays visible until it is empty, online or not: a waiter
-                who can't see a queued order enters it again. */}
-            {outbox.entries.length > 0 && (
-              <button
-                type="button"
-                data-testid="queue-chip"
-                onClick={() => setSheet({ kind: "queue" })}
-                className="bg-amber text-ink inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.875rem] font-semibold"
-              >
-                <CloudUpload aria-hidden="true" className="size-4 shrink-0" />
-                <span className="num">{t("queue.chip", { count: outbox.entries.length })}</span>
-              </button>
+          <SoundButton on={alerts.soundOn} onTap={alerts.enableSound} warn={requests.length > 0} />
+          <HeaderMenu
+            label={t("more")}
+            testId="waiter-more"
+            buttonClassName={HEADER_ICON}
+            panelClassName="border-staff-sep text-ink bg-white"
+          >
+            {(close) => (
+              <>
+                <button
+                  type="button"
+                  data-testid="shift-open"
+                  onClick={() => {
+                    close();
+                    setSheet({ kind: "shift" });
+                  }}
+                  className={MENU_ROW}
+                >
+                  <Wallet aria-hidden="true" />
+                  {t("shift.open")}
+                </button>
+                <NotifyToggle
+                  restaurantId={p.restaurantId}
+                  vapidPublicKey={p.vapidPublicKey}
+                  locale={locale}
+                  rowClassName={MENU_ROW}
+                />
+                {p.canChangePassword && <ChangePassword tone="staff" triggerClassName={MENU_ROW} withLabel />}
+              </>
             )}
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <SoundButton
-                on={alerts.soundOn}
-                onTap={alerts.enableSound}
-                warn={requests.length > 0}
-              />
-              <NotifyToggle restaurantId={p.restaurantId} vapidPublicKey={p.vapidPublicKey} locale={locale} />
-              {p.canChangePassword && (
-                <ChangePassword tone="staff" triggerClassName={HEADER_ICON} />
-              )}
-              <button
-                type="button"
-                data-testid="shift-open"
-                aria-label={t("shift.open")}
-                title={t("shift.open")}
-                onClick={() => setSheet({ kind: "shift" })}
-                className={HEADER_ICON}
-              >
-                <Wallet aria-hidden="true" className="size-5" />
-              </button>
-            </div>
-          </div>
+          </HeaderMenu>
         </div>
         <CallBanners
-          requests={requests}
+          requests={barRequests}
           state={alerts.state}
           played={alerts.played}
           onGoing={(r) => {
@@ -535,6 +546,8 @@ function App(p: WaiterAppProps) {
             setTab("calls");
           }}
         />
+        {/* Plates and new orders; calls and bills ring in the bar above until answered. */}
+        {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
       </header>
       {connection === "offline" ? (
         <p
@@ -557,30 +570,23 @@ function App(p: WaiterAppProps) {
           )}
         >
           <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-3 pb-6 lg:col-start-2 lg:row-start-1 lg:px-6">
-            {/* The tab bar names the section; on a phone the title is for screen readers only. */}
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <h1 className="m-0 text-[1.375rem] leading-tight font-semibold max-md:sr-only">{tabTitle}</h1>
-              <p
-                data-testid="need"
-                className={clsx(
-                  "m-0 flex items-center gap-1.5 text-[0.9375rem] font-semibold",
-                  need > 0 ? "text-amber-text" : "text-tarragon",
-                )}
-              >
-                {need > 0 ? (
-                  <BellRing aria-hidden="true" className="size-4 shrink-0" />
-                ) : (
-                  <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
-                )}
+            {/* The tab bar names the section; on a phone the title is for
+                screen readers only. How many tables need someone is read out,
+                not drawn: the call bar, the tiles and the tab counts show it,
+                and a second number on screen only competed with the bar's. */}
+            <div className="max-md:sr-only">
+              <h1 className="m-0 text-[1.375rem] leading-tight font-semibold">{tabTitle}</h1>
+              <p data-testid="need" className="sr-only">
                 {need > 0 ? t("need", { count: need }) : t("allServed")}
               </p>
             </div>
-            {promos.length > 0 && (
+            {/* Promos matter when an order is taken: one plain line at the top of Orders. */}
+            {tab === "orders" && promos.length > 0 && (
               <p
                 data-testid="promo-line"
-                className="bg-tarragon-tint text-tarragon m-0 flex items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
+                className="text-ink m-0 flex items-start gap-2 text-[0.9375rem] leading-snug font-semibold [overflow-wrap:anywhere]"
               >
-                <Megaphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <Megaphone aria-hidden="true" className="text-staff-label2 mt-0.5 size-4 shrink-0" />
                 <span>{t("promoOn", { count: promos.length, titles: promos.join(" · ") })}</span>
               </p>
             )}
@@ -728,8 +734,6 @@ function App(p: WaiterAppProps) {
         />
       )}
       {revoked && <DisconnectedScreen />}
-      {/* Calls and bills ring in the banners above until answered; this card adds plates and new orders. */}
-      {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((list) => list.filter((x) => x.id !== id))} />
     </div>
   );

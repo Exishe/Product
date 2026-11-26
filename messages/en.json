@@ -383,7 +383,8 @@
       "allergyNote": "Allergy: {note}",
       "allergyLine": "{dish}: {note}",
       "allergyMark": "Allergy",
-      "cantMakeLabel": "Can't make {name}"
+      "cantMakeLabel": "Can't make {name}",
+      "readyFor": "Ready: {time}"
     },
     "connection": {
       "online": "Online",
@@ -405,7 +406,8 @@
         "mid": "Middle",
         "low": "Low"
       },
-      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound."
+      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound.",
+      "confirmEnd": "End shift?"
     },
     "conflict": "Already changed",
     "actionFailed": "That didn't work. The screen has been refreshed.",
@@ -460,7 +462,8 @@
       "cooking": "Nothing cooking",
       "ready": "Nothing ready"
     },
-    "tools": "Tools"
+    "tools": "Tools",
+    "more": "More tools"
   },
   "waiter": {
     "alert": {
@@ -511,7 +514,9 @@
       "closeBlocked": "Accept or reject the new order first.",
       "noOrders": "No orders yet.",
       "now": "Now",
-      "allClear": "All good."
+      "allClear": "All good.",
+      "pendingTotal": "waiting: {amount}",
+      "acceptOrder": "Accept order {number}"
     },
     "waiting": {
       "title": "Table {label}: new guests?",
@@ -601,7 +606,9 @@
       "close": "Close",
       "sent": "Table {label}: order sent.",
       "queued": "No connection. The order will go out when it's back.",
-      "addItem": "<hidden>Add </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Add </hidden><dish>{name}</dish>",
+      "overline": "New order",
+      "items": "{count, plural, one {# dish} other {# dishes}}"
     },
     "settle": {
       "title": "How did they pay?",
@@ -653,7 +660,13 @@
       "ago": "{minutes} min ago",
       "now": "just now",
       "action": "{action}, table {label}",
-      "closeBill": "Close the bill"
+      "closeBill": "Close the bill",
+      "quick": {
+        "accept": "Accept",
+        "serve": "Served",
+        "going": "On my way",
+        "settle": "Close"
+      }
     },
     "quiet": "quiet {time}",
     "timeline": {
@@ -736,7 +749,17 @@
       "soundOnTest": "Sound on. Tap to hear it.",
       "notificationBody": "Open the waiter app",
       "sound": "Sound",
-      "summary": "{count, plural, one {# table} other {# tables}} waiting"
+      "summary": "{count, plural, one {# table} other {# tables}} waiting",
+      "openShort": "Open"
+    },
+    "more": "More",
+    "stateShort": {
+      "free": "Free",
+      "busy": "Seated",
+      "new": "New",
+      "ready": "Ready",
+      "call": "Calling",
+      "bill": "Bill"
     }
   },
   "menu": {

@@ -35,7 +35,7 @@ export function CantMakeCards({
         <div
           key={i.id}
           data-testid="cant-make-alert"
-          className="border-apricot-deep bg-amber-tint grid gap-3 rounded-2xl border-2 px-4 py-3"
+          className="bg-amber-tint -mx-4 grid gap-3 px-4 py-3 lg:-mx-6 lg:px-6"
         >
           <p className="text-ink m-0 flex items-start gap-2 font-semibold">
             <Ban aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />

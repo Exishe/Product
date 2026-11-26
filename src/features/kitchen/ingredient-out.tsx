@@ -16,7 +16,17 @@ const DEBOUNCE_MS = 250;
 
 type Found = { id: string; name: string };
 
-export function IngredientOut({ locationId }: { locationId: string }) {
+export function IngredientOut({
+  locationId,
+  rowClassName,
+  onCount,
+}: {
+  locationId: string;
+  /** Drawn as a row of the header's «…» menu instead of a pill. */
+  rowClassName?: string;
+  /** How many ingredients are out, for a badge on the menu button. */
+  onCount?: (count: number) => void;
+}) {
   const t = useTranslations("kitchen.ingredients");
   const locale = useLocale() as Locale;
   const dialog = useRef<HTMLDialogElement>(null);
@@ -56,6 +66,10 @@ export function IngredientOut({ locationId }: { locationId: string }) {
       .gt("until", new Date().toISOString());
     if (!res.error) setOutIds(new Set((res.data ?? []).map((r) => r.ingredient_id)));
   }, [locationId, locale]);
+
+  useEffect(() => {
+    onCount?.(outIds.size);
+  }, [outIds, onCount]);
 
   // Opening the list reads what is out now.
   useEffect(() => {
@@ -116,17 +130,20 @@ export function IngredientOut({ locationId }: { locationId: string }) {
           setIsOpen(true);
           dialog.current?.showModal();
         }}
-        className={clsx(
-          "bg-basalt-3 text-slip inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
-          outIds.size > 0 && "ring-pom-on-dark ring-2",
-        )}
+        className={
+          rowClassName ??
+          clsx(
+            "bg-basalt-3 text-slip inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
+            outIds.size > 0 && "ring-pom-on-dark ring-2",
+          )
+        }
       >
         <PackageX aria-hidden="true" className="size-5 shrink-0" />
-        <span className="max-sm:sr-only">{t("button")}</span>
+        <span className={rowClassName ? "min-w-0 flex-1" : "max-sm:sr-only"}>{t("button")}</span>
         {outIds.size > 0 && (
           <span
             data-testid="ingredient-out-count"
-            className="num bg-pom-on-dark grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-sm font-bold text-white"
+            className="num bg-pom-on-dark grid h-6 min-w-6 shrink-0 place-items-center rounded-full px-1.5 text-sm font-bold text-white"
           >
             {outIds.size}
           </span>

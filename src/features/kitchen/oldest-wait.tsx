@@ -32,7 +32,7 @@ export function OldestWait({ tickets, now }: { tickets: readonly ShownTicket[]; 
           ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" })
       }
       className={clsx(
-        "inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-left text-lg font-semibold",
+        "inline-flex min-h-12 items-center gap-2 self-center rounded-xl px-3 py-1 text-left text-lg font-semibold",
         lateness === "late"
           ? "bg-late-on-dark text-white"
           : lateness === "hurry"

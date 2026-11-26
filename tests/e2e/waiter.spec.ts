@@ -50,6 +50,9 @@ const test = base.extend<object, { cafe: TestCafe; device: WaiterDevice; migrati
 const OFFLINE_NOISE =
   /ERR_INTERNET_DISCONNECTED|ERR_NETWORK_CHANGED|WebSocket connection to .* failed|Failed to fetch/;
 
+// A guest's order waiting for the waiter is accepted from the panel's bottom bar.
+const ACCEPT_IN_BAR = /^Ընդունել պատվեր \d+$/;
+
 const shot = (page: Page, name: string, project: string) =>
   page.screenshot({ path: `${SCREENSHOTS}/${project}-${name}.png`, fullPage: false });
 
@@ -77,16 +80,17 @@ test.describe("waiter app", () => {
     await openTable(page, "1");
     await expect(panel(page).locator(`[data-order-id="${small}"]`)).toContainText("Խոհանոցում նոր է");
 
-    // A large one waits for the waiter: «Նոր պատվեր», and closing is blocked.
-    const large = await guestOrder(cafe, guest, [{ dish: "tolma", quantity: 2 }]);
+    // A large one waits for the waiter: «Նոր պատվեր», and the bar offers accepting it instead of closing.
+    await guestOrder(cafe, guest, [{ dish: "tolma", quantity: 2 }]);
     await expect(tableButton(page, "1")).toHaveAttribute("data-state", "new");
     await expect(page.getByTestId("need")).toHaveText("Սպասում են՝ 1 սեղան");
-    await expect(panel(page).getByText("Նախ ընդունեք կամ մերժեք նոր պատվերը։")).toBeVisible();
-    await expect(panel(page).getByRole("button", { name: "Փակել սեղանը" })).toBeDisabled();
+    // The bottom bar offers the one job, accepting it, in place of the close.
+    await expect(panel(page).getByRole("button", { name: ACCEPT_IN_BAR })).toBeVisible();
+    await expect(panel(page).getByRole("button", { name: "Փակել սեղանը" })).toHaveCount(0);
     await shot(page, "71-new-order", info.project.name);
 
     // Accepted, then ready in the kitchen: «Պատրաստ է» in tarragon.
-    await panel(page).locator(`[data-order-id="${large}"]`).getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     await expect(tableButton(page, "1")).toHaveAttribute("data-state", "busy");
     await kitchenReady(cafe, small);
     await expect(tableButton(page, "1")).toHaveAttribute("data-state", "ready");
@@ -172,7 +176,7 @@ test.describe("waiter app", () => {
     expect(overflow).toBeLessThanOrEqual(0);
     await shot(page, "72-pending", info.project.name);
 
-    await card.getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     await expect(page.getByTestId("toast").first()).toContainText("ուղարկվեց խոհանոց");
     await expect.poll(async () => (await tickets(cafe, order)).length).toBe(1);
     await expect(card).toContainText("Խոհանոցում նոր է");
@@ -240,7 +244,7 @@ test.describe("waiter app", () => {
     ]);
     await page.goto("/waiter");
     await openTable(page, "5");
-    await panel(page).getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     await expect.poll(async () => (await tickets(cafe, order)).length).toBe(1);
     await kitchenReady(cafe, order);
     await expect(tableButton(page, "5")).toHaveAttribute("data-state", "ready");
@@ -284,6 +288,7 @@ test.describe("waiter app", () => {
     await shot(page, "73-free", info.project.name);
 
     // «Իմ հերթափոխը»: this device closed the table, so the card money is on it.
+    await page.getByTestId("waiter-more").click();
     await page.getByTestId("shift-open").click();
     const shift = page.getByRole("dialog", { name: "Իմ հերթափոխը" });
     await expect(shift.getByTestId("shift-work")).toContainText("Փակված սեղաններ");
@@ -350,7 +355,7 @@ test.describe("waiter app", () => {
 
     // The new party now has the table; their coffee waits for «Ընդունել».
     await expect(panel(page).getByTestId("waiting-party")).toHaveCount(0);
-    await panel(page).locator(`[data-order-id="${fresh}"]`).getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     await expect.poll(async () => (await tickets(cafe, fresh)).length).toBe(1);
   });
 
@@ -365,7 +370,7 @@ test.describe("waiter app", () => {
     await page.goto("/waiter");
     await openTable(page, "7");
     await context.setOffline(true);
-    await panel(page).getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     await expect(panel(page).getByTestId("unsent")).toBeVisible();
     await expect(page.getByTestId("connection")).toContainText(/Միանում է|Կապ չկա/);
     expect((await orderStatus(cafe, order))?.status).toBe("placed");
@@ -398,7 +403,7 @@ test.describe("waiter app", () => {
     await page.goto("/waiter");
     await openTable(page, "8");
     await context.setOffline(true);
-    await panel(page).getByRole("button", { name: "Ընդունել" }).click();
+    await panel(page).getByRole("button", { name: ACCEPT_IN_BAR }).click();
     // Meanwhile the owner rejects it from another device.
     const { error } = await cafe.owner
       .schema("api")

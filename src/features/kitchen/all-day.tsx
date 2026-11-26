@@ -6,9 +6,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useSyncExternalStore } from "react";
 import type { AllDayRow } from "./board-model";
 
-// «Ընդհանուր քանակ» (a kitchen's "all day"): one strip in the header's tool
-// row with the total of every dish still to cook in New and Cooking, biggest
-// batch first, and the options under it. The board shows it only while there
+// «Ընդհանուր քանակ» (a kitchen's "all day"): one bar along the bottom of the
+// board with the total of every dish still to cook in New and Cooking, biggest
+// batch first, and the options under it. The dishes scroll sideways behind a
+// fade and snap to a whole chip, so none looks cut. The board shows it only while there
 // is something to cook. Tapping a dish outlines the tickets that
 // have it; tapping it again clears that. The strip folds away, and each
 // screen remembers whether it was open.
@@ -62,20 +63,19 @@ export function AllDayStrip({
     <section
       aria-labelledby="all-day-title"
       data-testid="all-day"
-      // Its toggle and its list sit in the header's tool row as two items;
-      // on a phone the list takes its own line under the tools.
-      className="contents"
+      // A 56 px bar along the bottom of the board: the toggle with its name and
+      // total, then the dishes, scrolling sideways behind a fade.
+      className="bg-basalt-2 flex min-h-14 items-center gap-3 border-t border-(--kds-frame) py-1 pr-0 pl-4 lg:pl-6"
     >
       <button
         type="button"
         aria-expanded={open}
         aria-controls="all-day-list"
         onClick={toggle}
-        className="bg-basalt-3 text-slip order-1 inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full pr-3 pl-4 text-[1.0625rem] font-semibold"
+        className="bg-basalt-3 text-slip inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full pr-3 pl-4 text-[1.0625rem] font-semibold"
       >
         <Layers aria-hidden="true" className="size-5 shrink-0" />
-        {/* Below 1280 px the label is for screen readers: the tools need the row. */}
-        <span id="all-day-title" className="max-sm:sr-only lg:max-xl:sr-only">
+        <span id="all-day-title" className="max-sm:sr-only">
           {t("title")}
         </span>
         <b
@@ -86,20 +86,16 @@ export function AllDayStrip({
         </b>
         <ChevronDown
           aria-hidden="true"
-          className={clsx("size-5 shrink-0 transition-transform duration-200", open && "rotate-180")}
+          className={clsx("size-5 shrink-0 transition-transform duration-200", !open && "rotate-180")}
         />
       </button>
-      <div
-        id="all-day-list"
-        hidden={!open}
-        className="order-3 min-w-0 basis-full lg:order-2 lg:flex-1 lg:basis-0"
-      >
+      <div id="all-day-list" hidden={!open} className="min-w-0 flex-1">
         {rows.length > 0 && (
-          <ul className="m-0 flex [scrollbar-color:var(--color-basalt-4)_transparent] list-none gap-2 overflow-x-auto p-0">
+          <ul className="m-0 flex [scrollbar-width:none] snap-x list-none gap-2 overflow-x-auto scroll-px-0 p-0 pr-12 [mask-image:linear-gradient(to_right,#000_92%,transparent)]">
             {rows.map((r) => {
               const on = selected === r.key;
               return (
-                <li key={r.key} className="shrink-0">
+                <li key={r.key} className="shrink-0 snap-start">
                   <button
                     type="button"
                     aria-pressed={on}
@@ -125,7 +121,7 @@ export function AllDayStrip({
                     {r.variants.length > 0 && (
                       <span
                         className={clsx(
-                          "truncate text-sm leading-tight font-semibold",
+                          "truncate text-[0.9375rem] leading-tight font-semibold",
                           on ? "text-white" : "text-slip-dim",
                         )}
                       >

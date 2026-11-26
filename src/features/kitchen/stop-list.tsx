@@ -61,7 +61,7 @@ export function StopList({
       <dialog
         ref={dialog}
         aria-labelledby="stop-list-title"
-        className="bg-basalt-2 text-slip mt-0 mr-0 ml-auto h-dvh max-h-none w-[min(30rem,100vw)] max-w-none border-l border-(--kds-frame) p-0 backdrop:bg-black/40"
+        className="text-slip mt-0 mr-0 ml-auto h-dvh bg-white max-h-none w-[min(30rem,100vw)] max-w-none border-l border-(--kds-frame) p-0 backdrop:bg-black/40"
       >
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
@@ -92,14 +92,17 @@ export function StopList({
           )}
           <div className="flex-1 overflow-y-auto px-6 pb-6">
             {sections.length === 0 && <p className="text-slip-dim mt-6 text-lg">{t("empty")}</p>}
+            {/* One list on the drawer's white, split by hairlines. A dish on
+                sale is the quiet default; only one that is out gets the red
+                word and a red tint, so the drawer shows at a glance what is off. */}
             {sections.map((section) => (
-              <section key={section.category} className="mt-5">
-                <h3 className="text-slip-dim mb-2 text-base font-bold">{section.category}</h3>
-                <ul className="m-0 grid list-none gap-2 p-0">
+              <section key={section.category} className="mt-6">
+                <h3 className="text-slip-dim m-0 mb-1 text-[0.9375rem] font-semibold">{section.category}</h3>
+                <ul className="m-0 grid list-none p-0">
                   {section.dishes.map((dish) => {
                     const out = soldOut.has(dish.id);
                     return (
-                      <li key={dish.id}>
+                      <li key={dish.id} className="border-b border-(--kds-frame) last:border-b-0">
                         <button
                           type="button"
                           role="switch"
@@ -108,8 +111,8 @@ export function StopList({
                           data-testid="stop-list-dish"
                           onClick={() => void toggle(dish.id)}
                           className={clsx(
-                            "flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-2 text-left disabled:cursor-wait",
-                            out ? "border-pom-on-dark bg-basalt-3" : "bg-basalt-3 border-transparent",
+                            "-mx-3 flex min-h-14 w-[calc(100%+1.5rem)] items-center justify-between gap-3 px-3 py-2 text-left disabled:cursor-wait",
+                            out && "bg-pom-tint",
                           )}
                         >
                           <span
@@ -121,21 +124,19 @@ export function StopList({
                           >
                             {dish.name}
                           </span>
-                          <span className="flex shrink-0 items-center gap-2 text-base font-bold">
-                            <span className={out ? "text-pom-on-dark" : "text-tarragon-on-dark"}>
-                              {out ? t("soldOut") : t("available")}
-                            </span>
+                          <span className="flex shrink-0 items-center gap-3 text-base font-bold">
+                            {out && <span className="text-pom-on-dark">{t("soldOut")}</span>}
                             <span
                               aria-hidden="true"
                               className={clsx(
                                 "relative h-8 w-14 rounded-full transition-colors duration-150",
-                                out ? "bg-late-on-dark" : "bg-tarragon",
+                                out ? "bg-late-on-dark" : "bg-white ring-2 ring-(--kds-edge) ring-inset",
                               )}
                             >
                               <span
                                 className={clsx(
-                                  "absolute top-1 left-1 size-6 rounded-full bg-white transition-transform duration-150 motion-reduce:transition-none",
-                                  out && "translate-x-6",
+                                  "absolute top-1 left-1 size-6 rounded-full transition-transform duration-150 motion-reduce:transition-none",
+                                  out ? "translate-x-6 bg-white" : "bg-slip-dim",
                                 )}
                               />
                             </span>

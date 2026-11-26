@@ -110,6 +110,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await expect(back.page).toHaveURL(/\/waiter$/, { timeout: 30_000 });
 
   // The waiter changes their own password from the waiter screen.
+  await back.page.getByTestId("waiter-more").click();
   await back.page.getByTestId("change-password-open").click();
   const dialog = back.page.getByRole("dialog");
   await dialog.getByLabel("Նոր գաղտնաբառ (առնվազն 8 նիշ)").fill("Nine-Plums-42");

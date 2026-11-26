@@ -383,7 +383,8 @@
       "allergyNote": "Аллергия: {note}",
       "allergyLine": "{dish}: {note}",
       "allergyMark": "Аллергия",
-      "cantMakeLabel": "Не можем приготовить: {name}"
+      "cantMakeLabel": "Не можем приготовить: {name}",
+      "readyFor": "Готово: {time}"
     },
     "connection": {
       "online": "На связи",
@@ -405,7 +406,8 @@
         "mid": "Средний",
         "low": "Низкий"
       },
-      "toneHint": "Экранам, которые стоят рядом, дайте разные звуки. У заказа с аллергией и у отмены свой звук."
+      "toneHint": "Экранам, которые стоят рядом, дайте разные звуки. У заказа с аллергией и у отмены свой звук.",
+      "confirmEnd": "Закончить?"
     },
     "conflict": "Уже изменено",
     "actionFailed": "Не получилось. Экран обновлён.",
@@ -460,7 +462,8 @@
       "cooking": "Ничего не готовится",
       "ready": "Готовых блюд нет"
     },
-    "tools": "Инструменты"
+    "tools": "Инструменты",
+    "more": "Другие инструменты"
   },
   "waiter": {
     "alert": {
@@ -511,7 +514,9 @@
       "closeBlocked": "Сначала примите или отклоните новый заказ.",
       "noOrders": "Заказов пока нет.",
       "now": "Сейчас",
-      "allClear": "Всё в порядке."
+      "allClear": "Всё в порядке.",
+      "pendingTotal": "ждёт: {amount}",
+      "acceptOrder": "Принять заказ {number}"
     },
     "waiting": {
       "title": "Стол {label}: новые гости?",
@@ -601,7 +606,9 @@
       "close": "Закрыть",
       "sent": "Стол {label}: заказ отправлен.",
       "queued": "Нет связи. Отправим заказ, когда связь восстановится.",
-      "addItem": "<hidden>Добавить: </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Добавить: </hidden><dish>{name}</dish>",
+      "overline": "Новый заказ",
+      "items": "{count, plural, one {# блюдо} few {# блюда} many {# блюд} other {# блюда}}"
     },
     "settle": {
       "title": "Как оплатили?",
@@ -653,7 +660,13 @@
       "ago": "{minutes} мин назад",
       "now": "только что",
       "action": "{action}, стол {label}",
-      "closeBill": "Закрыть счёт"
+      "closeBill": "Закрыть счёт",
+      "quick": {
+        "accept": "Принять",
+        "serve": "Подано",
+        "going": "Иду",
+        "settle": "Закрыть"
+      }
     },
     "quiet": "тихо {time}",
     "timeline": {
@@ -736,7 +749,17 @@
       "soundOnTest": "Звук включён. Нажмите, чтобы услышать.",
       "notificationBody": "Откройте приложение официанта",
       "sound": "Звук",
-      "summary": "Ждут {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}"
+      "summary": "Ждут {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
+      "openShort": "Открыть"
+    },
+    "more": "Ещё",
+    "stateShort": {
+      "free": "Свободен",
+      "busy": "Занят",
+      "new": "Новый",
+      "ready": "Готово",
+      "call": "Зовут",
+      "bill": "Счёт"
     }
   },
   "menu": {

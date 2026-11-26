@@ -288,7 +288,7 @@ select {
    motion-safe, so nobody who asked for less motion gets it. */
 @keyframes new-order-pulse {
   50% {
-    box-shadow: inset 0 0 0 10px var(--color-apricot), 0 0 0 4px var(--color-apricot);
+    box-shadow: inset 0 0 0 4px var(--color-apricot), 0 0 0 4px var(--color-apricot);
   }
 }
 
@@ -427,6 +427,11 @@ body:has(.admin-shell) {
   /* The ink buttons («Սկսել») get lighter on hover, like ink elsewhere. */
   .kitchen-light :is(button, a).bg-slip:hover:not(:disabled) {
     filter: brightness(1.6);
+  }
+  /* «Տեսա» on the new-order row: a calm step lighter, never a glow. */
+  .kitchen-light button[data-testid="new-order-ack"].bg-slip:hover:not(:disabled) {
+    filter: none;
+    background-color: #33363c;
   }
 }
 
