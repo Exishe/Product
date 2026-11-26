@@ -245,8 +245,16 @@ export function OrderPad({
                 </button>
               ))}
             </div>
-            {/* The dishes as 64 px rows on the one white surface, split by hairlines. */}
-            <ul className="border-staff-sep m-0 grid list-none content-start overflow-y-auto border-t p-0 pb-4">
+            {/* The dishes as 64 px rows on the one white surface, split by
+                hairlines. Under the open order on a phone they step out of
+                sight (keeping their scroll), so the dimmed slice above the
+                sheet holds only the search and the chips, never half a row. */}
+            <ul
+              className={clsx(
+                "border-staff-sep m-0 grid list-none content-start overflow-y-auto border-t p-0 pb-4",
+                cartOpen && "max-md:invisible",
+              )}
+            >
               {shown.length === 0 && <li className="text-staff-label2 py-4">{t("empty")}</li>}
               {shown.map((item) => {
                 const inCart = picked.get(item.id) ?? 0;

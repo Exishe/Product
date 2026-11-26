@@ -7,8 +7,10 @@ import { STATE_BADGE, StateIcon } from "./floor-map";
 import { quickAction, type InboxRow, type WaiterAction } from "./floor-model";
 import { button } from "./ui";
 
-// One short word each, so every button fits one line in the same column
-// (the row's badge already shows what kind of thing it is).
+// Short verbs, so every button reads as an action in the same column (the
+// row's badge already shows what kind of thing it is). «Նշել մատուցված» is the
+// table panel's own words for the same step, so one action has one name and
+// the pill never reads like the «Մատուցված է» state.
 const QUICK_LABEL = {
   accept: "inbox.quick.accept",
   serve: "inbox.quick.serve",
@@ -123,7 +125,7 @@ export function InboxList({
                 // and the overdue time, never to a button.
                 className={button(
                   "primary",
-                  "max-w-40 min-w-32 shrink-0 px-3! text-center text-[0.9375rem] leading-tight",
+                  "max-w-44 min-w-32 shrink-0 px-3! text-center text-[0.9375rem] leading-tight",
                 )}
               >
                 {/* «Փակել հաշիվը» widens the pill a little, or takes two lines; never cut. */}

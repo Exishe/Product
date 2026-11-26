@@ -1236,6 +1236,13 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - **Order pad:** one row layout whatever the count: the price always on the line under the name, + or the count and + on the right. On a phone the open cart is a sheet: 24 px top corners, a lifted shadow, drawn 20 px over the menu, which dims behind it (a tap on the dim folds the cart).
   - **Kitchen lanes:** New and In progress are N stacks (as many 20 rem stacks as the lane holds, 16 px apart), not a row-aligned grid, so a short ticket leaves no hole. Tickets are dealt oldest first into the stack with the least estimated height (`features/kitchen/lane-deal.ts`) and keep their stack while on the board, so a bump never reshuffles the others or rebuilds a card mid-confirmation; the deal is redone only when the number of stacks changes. Before the lane is measured the server's auto-fill grid shows.
   - **Busy popover:** the dialog is the whole screen, transparent, holding the Busy button drawn again above the dim in its pressed state (ink fill; apricot with a white outline while busy; a tap on it closes) and the card under it. No divider after the last option.
+- Sixth round (26 Nov 2026, judge's open items), presentation only:
+  - **One name per action:** the Orders pill for a ready plate says the table panel's «Նշել մատուցված» («Отметить поданным», «Mark served»), not «Մատուցված», which read like the «Մատուցված է» state. The pill column may be 11 rem, so the Armenian fits one line at 360 px; the Russian wraps to two whole lines.
+  - **Back says where it goes:** on a phone the table panel's back button names the list the table was opened from («‹ Կանչեր», «‹ Պատվերներ», «‹ Սեղաններ»), the tab that stays current.
+  - **Inbox heading on phones:** Orders and Calls show their 22 px title on every width, so the list starts under a name instead of a lone hairline; the phone floor keeps it for screen readers only (the area tabs lead there).
+  - **Order pad cart sheet:** while the cart is open on a phone the dish list steps out of sight (`invisible`, so its scroll is kept); the dimmed slice above the sheet shows only the search and the chips, never half a row or stepper.
+  - **Busy popover:** 30 rem wide; the close sits on the title row only and the explanation runs the full card width at 18 px in `staff-label2` (6.6:1), so «Խոհանոցը ծանրաբեռնված է» keeps one line.
+  - **No vibration before the first tap:** the live card and the call alerts skip `navigator.vibrate` until the page has had a user gesture (`navigator.userActivation.hasBeenActive`), which the browser otherwise refuses with a console error.
 
 ## ADR-102: Owner admin area pass on the ADR-094 foundation
 

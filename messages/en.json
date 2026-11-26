@@ -796,7 +796,7 @@
       "closeBill": "Close the bill",
       "quick": {
         "accept": "Accept",
-        "serve": "Served",
+        "serve": "Mark served",
         "going": "On my way",
         "settle": "Close the bill"
       }

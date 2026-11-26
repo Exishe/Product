@@ -41,7 +41,9 @@ export function useCallAlerts({
     stateRef.current = step.state;
     if (!same) setState(step.state);
     if (step.fresh.length > 0) {
-      if (typeof navigator.vibrate === "function") navigator.vibrate(VIBRATION);
+      // Not before the first tap on the page: the browser refuses and logs an error.
+      if (typeof navigator.vibrate === "function" && navigator.userActivation?.hasBeenActive !== false)
+        navigator.vibrate(VIBRATION);
       if (document.hidden) for (const r of step.fresh) void systemNotification(r, text(r));
     }
     if (step.play && on) {
