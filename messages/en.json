@@ -562,7 +562,10 @@
     "allDay": {
       "title": "All day",
       "quantity": "{quantity}×",
-      "plain": "{quantity} plain"
+      "plain": "{quantity} plain",
+      "moreVariants": "+{count}",
+      "moreVariantsLabel": "and {count, plural, one {# more option} other {# more options}}",
+      "next": "More dishes"
     },
     "ingredients": {
       "button": "Ingredient out",
@@ -633,7 +636,7 @@
       "total": "Total",
       "addOrder": "Add an order",
       "takeOrder": "Take order",
-      "close": "Close the table",
+      "close": "Close the bill",
       "closeBlocked": "Accept or reject the new order first.",
       "noOrders": "No orders yet.",
       "now": "Now",
@@ -877,7 +880,7 @@
       "soundOnTest": "Sound on. Tap to hear it.",
       "notificationBody": "Open the waiter app",
       "sound": "Sound",
-      "summary": "{count, plural, one {# table} other {# tables}} waiting",
+      "summary": "{count, plural, one {# table} other {# tables}} calling",
       "openShort": "Open"
     },
     "more": "More",

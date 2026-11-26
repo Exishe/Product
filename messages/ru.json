@@ -562,7 +562,10 @@
     "allDay": {
       "title": "Всего блюд",
       "quantity": "{quantity}×",
-      "plain": "{quantity} без добавок"
+      "plain": "{quantity} без добавок",
+      "moreVariants": "+{count}",
+      "moreVariantsLabel": "и ещё {count, plural, one {# вариант} few {# варианта} many {# вариантов} other {# варианта}}",
+      "next": "Другие блюда"
     },
     "ingredients": {
       "button": "Ингредиент закончился",
@@ -633,7 +636,7 @@
       "total": "Итого",
       "addOrder": "Добавить заказ",
       "takeOrder": "Записать заказ",
-      "close": "Закрыть стол",
+      "close": "Закрыть счёт",
       "closeBlocked": "Сначала примите или отклоните новый заказ.",
       "noOrders": "Заказов пока нет.",
       "now": "Сейчас",
@@ -877,7 +880,7 @@
       "soundOnTest": "Звук включён. Нажмите, чтобы услышать.",
       "notificationBody": "Откройте приложение официанта",
       "sound": "Звук",
-      "summary": "Ждут {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
+      "summary": "Зовут: {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
       "openShort": "Открыть"
     },
     "more": "Ещё",

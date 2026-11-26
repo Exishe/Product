@@ -86,7 +86,7 @@ test.describe("waiter app", () => {
     await expect(page.getByTestId("need")).toHaveText("Սպասում են՝ 1 սեղան");
     // The bottom bar offers the one job, accepting it, in place of the close.
     await expect(panel(page).getByRole("button", { name: ACCEPT_IN_BAR })).toBeVisible();
-    await expect(panel(page).getByRole("button", { name: "Փակել սեղանը" })).toHaveCount(0);
+    await expect(panel(page).getByRole("button", { name: "Փակել հաշիվը", exact: true })).toHaveCount(0);
     await shot(page, "71-new-order", info.project.name);
 
     // Accepted, then ready in the kitchen: «Պատրաստ է» in tarragon.
@@ -150,7 +150,7 @@ test.describe("waiter app", () => {
     await guestRequest(guest, "bring_bill", "cash");
     await expect(panel(page).getByTestId("bill-alert")).toHaveText("Հաշիվ՝ կանխիկ");
 
-    await panel(page).getByRole("button", { name: "Փակել սեղանը" }).click();
+    await panel(page).getByRole("button", { name: "Փակել հաշիվը", exact: true }).click();
     const sheet = page.getByRole("dialog", { name: "Սեղան 4" });
     await expect(sheet.getByRole("button", { name: "Կանխիկ" })).toHaveAttribute("aria-pressed", "true");
     await sheet.getByRole("button", { name: "Քարտով" }).click();
@@ -261,7 +261,7 @@ test.describe("waiter app", () => {
       .toEqual(["seated", "placed", "accepted", "ready", "served"]);
     await shot(page, "73-timeline", info.project.name);
 
-    await panel(page).getByRole("button", { name: "Փակել սեղանը" }).click();
+    await panel(page).getByRole("button", { name: "Փակել հաշիվը", exact: true }).click();
     const sheet = page.getByRole("dialog", { name: "Սեղան 5" });
     // Split must add up exactly.
     await sheet.getByRole("button", { name: "Երկուսով" }).click();

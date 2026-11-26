@@ -566,10 +566,11 @@ function App(p: WaiterAppProps) {
             setSelected(null);
             setTab("calls");
           }}
-          // On a phone the Calls tab is the list the bar opens: the bar would
-          // only repeat it (and the tab's badge) above it. From 768 px the
-          // list sits beside the floor, so the bar stays.
-          className={tab === "calls" && !table ? "max-md:hidden" : undefined}
+          // The Calls tab is the list the bar opens: on it the bar would only
+          // repeat the list (and the tab's badge) above it, at every width.
+          // A phone with a table open has the list out of sight, so the bar
+          // comes back there; from 768 px the list stays beside the panel.
+          className={tab === "calls" ? (table ? "md:hidden" : "hidden") : undefined}
         />
         {/* Plates and new orders; calls and bills ring in the bar above until answered. */}
         {!revoked && (

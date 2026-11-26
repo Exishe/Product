@@ -119,8 +119,10 @@ export function InboxList({
                 data-quick={quick.kind}
                 aria-label={t("inbox.action", { action: quickText, label: row.table.label })}
                 onClick={run}
+                // Ink like every row action: red belongs to the state circle
+                // and the overdue time, never to a button.
                 className={button(
-                  row.kind === "call" || row.kind === "bill" ? "destructive" : "primary",
+                  "primary",
                   "max-w-40 min-w-32 shrink-0 px-3! text-center text-[0.9375rem] leading-tight",
                 )}
               >

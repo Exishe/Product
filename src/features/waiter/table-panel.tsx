@@ -127,6 +127,14 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
   const toServe = table.orders.some(
     (o) => o.status === "accepted" && o.number !== null && o.tickets.some((k) => k.status === "ready"),
   );
+  // Closing is the filled button only once the guests are done: they asked
+  // for the bill, or every plate is on the table. While a dish still cooks it
+  // is the outline, so nobody closes a table that is still eating.
+  const live = table.orders.filter((o) => o.status === "accepted");
+  const allServed = live.every(
+    (o) => o.number !== null && o.tickets.every((k) => k.status === "served" || k.status === "cancelled"),
+  );
+  const settleFirst = !toServe && (table.bill !== null || allServed);
   // Nothing confirmed yet, only a guest's order waiting: the waiting amount is
   // the figure, in amber under its own label, never a big «0 ֏».
   const onlyPending = table.total === 0 && pendingAmount > 0;
@@ -316,7 +324,8 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
           {blocker !== "pending" && (
             <button
               type="button"
-              className={button(toServe ? "outline" : "primary", "min-h-14 shrink-0")}
+              data-emphasis={settleFirst ? "primary" : "outline"}
+              className={button(settleFirst ? "primary" : "outline", "min-h-14 shrink-0")}
               disabled={blocker !== null}
               onClick={() => table.sessionId && p.onSettle(table.sessionId)}
             >

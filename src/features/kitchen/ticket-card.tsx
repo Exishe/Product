@@ -46,7 +46,9 @@ const BAND: Record<Lateness | "void", string> = {
   normal: "bg-basalt-4 text-slip",
   hurry: "bg-apricot text-ink",
   late: "bg-late-on-dark text-white",
-  void: "bg-pom-tint text-pomegranate",
+  // A cancellation gets the neutral head; only its «Չեղարկվել է» label is red.
+  // Pink on the board means one thing: an allergy.
+  void: "bg-basalt-4 text-slip",
 };
 // The head band alone carries the state; the ticket has no coloured frame
 // (benchmark: drop the outline border). An on-time ticket keeps a 1 px
@@ -297,7 +299,9 @@ function Lines({
               data-testid="line-name"
               lang={l.nameLocale === boardLocale ? undefined : l.nameLocale}
               className={clsx(
-                "min-w-0 leading-[1.15] font-semibold [overflow-wrap:anywhere] hyphens-auto",
+                // Whole words, read from across the kitchen: no hyphen mid-word.
+                // A single word too long for the line still breaks, as a last resort.
+                "min-w-0 leading-[1.15] font-semibold [overflow-wrap:anywhere] hyphens-manual",
                 compact ? "text-xl" : "text-kds-item",
                 (gone || bumped) && "text-slip-dim line-through decoration-[3px]",
               )}
@@ -730,7 +734,7 @@ export function VoidTicketCard({
         compact={false}
         tone="void"
         timer={
-          <span className="flex items-center gap-2 text-2xl font-bold">
+          <span className="text-pom-on-dark flex items-center gap-2 text-2xl font-bold">
             <Ban aria-hidden="true" className="size-7 shrink-0" />
             {t("void")}
           </span>

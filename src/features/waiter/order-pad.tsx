@@ -33,6 +33,9 @@ export type PadOrder = Pick<Extract<WaiterAction, { kind: "place" }>, "lines" | 
 // ± on a cart line: 44 px, an ink ring on white, so it reads as a button.
 const STEPPER =
   "text-ink grid size-11 shrink-0 place-items-center rounded-full bg-white ring-[1.5px] ring-ink ring-inset";
+// The count between − and +: one filled ink circle in the menu row and in the cart.
+const COUNT =
+  "num bg-ink grid h-11 min-w-11 shrink-0 place-items-center rounded-full px-2 text-[1.125rem] font-bold text-white";
 
 // The order pad (screens.md §6): the guest's menu, compact, with search and
 // big touch targets. Sending goes through the outbox, so it works offline.
@@ -283,21 +286,20 @@ export function OrderPad({
                   {/* Once it is in the order the + becomes − N +, as on
                       iikoWaiter: the row itself shows how many, no summary
                       needed. A dish with options opens them again on +, and −
-                      takes off the last one added. */}
+                      takes off the last one added. From 768 px the cart column
+                      beside the menu holds the one stepper: the row keeps its
+                      + and a small count, so a dish never has two. */}
                   {inCart > 0 && (
-                    <span data-testid="pad-row-stepper" className="flex flex-none items-center gap-1">
+                    <span data-testid="pad-row-stepper" className="flex flex-none items-center gap-1 md:gap-2">
                       <button
                         type="button"
                         aria-label={t("rowLess", { name: item.name.text })}
-                        className={STEPPER}
+                        className={clsx(STEPPER, "md:hidden")}
                         onClick={() => stepItem(item.id, -1)}
                       >
                         <Minus aria-hidden="true" className="size-5" />
                       </button>
-                      <span
-                        data-testid="pad-row-count"
-                        className="num bg-ink grid h-11 min-w-11 place-items-center rounded-full px-2 text-[1.125rem] font-bold text-white"
-                      >
+                      <span data-testid="pad-row-count" className={clsx(COUNT, "md:h-8 md:min-w-8 md:text-[1rem]")}>
                         {inCart}
                       </span>
                       <button
@@ -377,7 +379,7 @@ export function OrderPad({
                   >
                     <Minus aria-hidden="true" className="size-5" />
                   </button>
-                  <span className="num w-8 text-center text-xl font-bold">{l.quantity}</span>
+                  <span className={COUNT}>{l.quantity}</span>
                   <button
                     type="button"
                     aria-label={t("more", { name: l.item.name.text })}

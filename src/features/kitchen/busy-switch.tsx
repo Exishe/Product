@@ -24,6 +24,10 @@ export function BusySwitch({
 }) {
   const t = useTranslations("kitchen.busy");
   const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  // Where the popover hangs: just under the Busy button, its right edge on
+  // the button's right edge. Measured on open, so it follows the header.
+  const [anchor, setAnchor] = useState({ top: 72, right: 16 });
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const on = isBusy(busy, now);
@@ -40,11 +44,14 @@ export function BusySwitch({
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         data-testid="busy-button"
         aria-haspopup="dialog"
         onClick={() => {
           setFailed(false);
+          const r = trigger.current?.getBoundingClientRect();
+          if (r) setAnchor({ top: Math.round(r.bottom + 8), right: Math.max(8, Math.round(window.innerWidth - r.right)) });
           dialog.current?.showModal();
         }}
         className={clsx(
@@ -59,14 +66,20 @@ export function BusySwitch({
       <dialog
         ref={dialog}
         aria-labelledby="busy-title"
-        // A sheet as tall as what it holds, at the top right under the Busy
-        // button, on the same white as the stop list's drawer.
-        className="text-slip bottom-auto mt-0 mr-0 ml-auto h-auto max-h-dvh w-[min(30rem,100vw)] max-w-none rounded-bl-[1rem] border-b border-l border-(--kds-frame) bg-white p-0 backdrop:bg-black/40"
+        // A popover hung under the Busy button: as tall as what it holds,
+        // rounded on every corner and lifted off the board, so it reads as
+        // the button's own menu, never a sheet cut off at the top. A tap on
+        // the dimmed board around it closes it.
+        style={{ top: anchor.top, right: anchor.right }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) dialog.current?.close();
+        }}
+        className="text-slip shadow-float fixed inset-auto m-0 h-auto max-h-[calc(100dvh-5rem)] w-[min(28rem,calc(100vw-1rem))] max-w-none overflow-hidden rounded-[1.25rem] border border-(--kds-frame) bg-white p-0 backdrop:bg-black/25"
       >
-        <div className="flex flex-col">
+        <div className="flex max-h-[calc(100dvh-5rem)] flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
-              <h2 id="busy-title" className="text-2xl font-semibold">
+              <h2 id="busy-title" className="text-2xl font-semibold [text-wrap:balance]">
                 {t("title")}
               </h2>
               <p className="text-slip-dim mt-1 text-[1.0625rem] leading-snug">{t("hint")}</p>
@@ -81,7 +94,7 @@ export function BusySwitch({
               <X aria-hidden="true" className="size-6" />
             </button>
           </div>
-          <div className="grid content-start gap-4 overflow-y-auto px-6 pt-0 pb-6">
+          <div className="grid min-h-0 content-start gap-4 overflow-y-auto px-6 pt-0 pb-6">
             {on && busy.until && (
               <p className="m-0 text-lg font-semibold">
                 {t("until", { time: formatTime(new Date(busy.until), timeZone) })}

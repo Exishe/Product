@@ -38,7 +38,7 @@ export function SoundButton({ on, onTap, warn }: { on: boolean; onTap: () => voi
 
 // Calls and bill requests under the header: one 56 px red bar at every width
 // (the one alert channel, as the benchmark asks). One request is the bar
-// itself with its answer and its close; two or more are «N սեղան սպասում է»,
+// itself with its answer and its close; two or more are «Կանչում են՝ N սեղան»,
 // which opens the Calls list. Calls and bills are both red: a guest waits.
 export function CallBanners({
   requests,

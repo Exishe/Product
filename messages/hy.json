@@ -562,7 +562,10 @@
     "allDay": {
       "title": "Ընդհանուր քանակ",
       "quantity": "{quantity}×",
-      "plain": "{quantity} առանց հավելման"
+      "plain": "{quantity} առանց հավելման",
+      "moreVariants": "+{count}",
+      "moreVariantsLabel": "և ևս {count} տարբերակ",
+      "next": "Մյուս ուտեստները"
     },
     "ingredients": {
       "button": "Բաղադրիչը սպառվել է",
@@ -633,7 +636,7 @@
       "total": "Ընդամենը",
       "addOrder": "Ավելացնել պատվեր",
       "takeOrder": "Գրել պատվեր",
-      "close": "Փակել սեղանը",
+      "close": "Փակել հաշիվը",
       "closeBlocked": "Նախ ընդունեք կամ մերժեք նոր պատվերը։",
       "noOrders": "Պատվերներ դեռ չկան։",
       "now": "Հիմա",
@@ -877,7 +880,7 @@
       "soundOnTest": "Ձայնը միացված է։ Հպեք՝ լսելու համար։",
       "notificationBody": "Բացեք մատուցողի հավելվածը",
       "sound": "Ձայն",
-      "summary": "{count} սեղան սպասում է",
+      "summary": "Կանչում են՝ {count} սեղան",
       "openShort": "Բացել"
     },
     "more": "Ավելին",
