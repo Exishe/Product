@@ -8,9 +8,12 @@ import { Plate, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // The main action on the menu: "View order", with the chosen dishes' plates,
-// the count and the total. On phones and tablets it sits on the bottom bar;
-// a desktop has the order rail instead (order-rail.tsx). It appears when the first dish goes
-// in, with one sweep of light round its edge (.ready), then rests plain.
+// the count and the total, 56 px tall. On phones and tablets it sits inside
+// the bottom panel, right on the tabs (guest-dock.tsx); a desktop has the
+// order rail instead (order-rail.tsx). A line without a photo shows its
+// count («×2») on a plain disc instead of an empty plate. It appears when the
+// first dish goes in, with one sweep of light round its edge (.ready), then
+// rests plain.
 export function CartBar({
   summary,
   items,
@@ -28,23 +31,34 @@ export function CartBar({
   const { t, locale } = useGuestI18n();
   const plates = (showPlates ? summary.lines : [])
     .slice(-3)
-    .map((p) => items[p.line.itemId])
-    .filter((i): i is GuestItem => Boolean(i));
+    .flatMap((p) => {
+      const item = items[p.line.itemId];
+      return item ? [{ item, line: p.line }] : [];
+    });
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`${styles.cta} ${styles.ready} rounded-guest-lg pointer-events-auto flex min-h-12 w-full items-center gap-3 py-1.5 pr-4 text-left text-body font-semibold ${plates.length ? "pl-2" : "pl-4"} ${className}`}
+      className={`${styles.cta} ${styles.ready} pointer-events-auto flex min-h-14 w-full items-center gap-3 py-1.5 pr-5 text-left text-body font-semibold ${plates.length ? "pl-2" : "pl-5"} ${className}`}
     >
       <span aria-hidden="true" className="flex flex-none -space-x-3">
-        {plates.map((i) => (
-          <Plate
-            key={i.id}
-            src={i.image ? dishPhotoUrl(i.image) : null}
-            size={32}
-            className="size-8 ring-2 ring-[var(--guest-accent)]"
-          />
-        ))}
+        {plates.map(({ item, line }) =>
+          item.image ? (
+            <Plate
+              key={line.id}
+              src={dishPhotoUrl(item.image)}
+              size={36}
+              className="size-9 ring-2 ring-[var(--guest-add)]"
+            />
+          ) : (
+            <span
+              key={line.id}
+              className="num bg-chip text-ink grid size-9 place-items-center rounded-full text-meta font-bold ring-2 ring-[var(--guest-add)]"
+            >
+              ×{line.quantity}
+            </span>
+          ),
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
         {t("menu.viewOrder")}

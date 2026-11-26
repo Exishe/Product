@@ -496,18 +496,22 @@
 .barWordmark {
   display: block;
   width: auto;
+  min-width: 5.5rem;
   max-width: 100%;
   height: 2.25rem;
   object-fit: contain;
   object-position: left;
 }
 
-/* The full name, never an ellipsis: it wraps to a second line, and a very
-   long one is set smaller on three. */
+/* The full name, never an ellipsis and never broken inside a word: it wraps
+   between words to a second line (only a word wider than the whole bar may
+   break), and a very long one is set smaller. */
 .barName {
   font-size: 1.25rem;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: manual;
   text-wrap: balance;
 }
 
@@ -782,36 +786,16 @@
   }
 }
 
-/* Table and language items in the menu bar: on hover the label turns over like a
-   card (rotateX) while a soft glow in the brand's accent blooms behind it. After
-   the Hover Gradient nav bar; plain CSS, so no animation library. Touch
-   screens and "reduce motion" get the glow and colour only, no turning. */
+/* Language items in the bar: on a mouse the label turns over like a card
+   (rotateX); plain CSS, so no animation library. No glow behind it (ADR-093:
+   nothing that stays lit on a touch screen); touch screens and "reduce motion"
+   get the colour only, no turning. */
 .flip {
   position: relative;
   display: grid;
   place-items: center;
   perspective: 600px;
   border-radius: 1rem;
-}
-
-.flip::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--guest-accent-text, currentColor) 22%, transparent) 0%,
-    color-mix(in srgb, var(--guest-accent-text, currentColor) 8%, transparent) 50%,
-    transparent 100%
-  );
-  opacity: 0;
-  transform: scale(0.8);
-  transition:
-    opacity 500ms cubic-bezier(0.4, 0, 0.2, 1),
-    transform 500ms cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
 .flipFront,
@@ -834,13 +818,6 @@
   opacity: 0;
 }
 
-.flip:hover::before,
-.flip:focus-visible::before,
-.flip:focus-within::before {
-  opacity: 1;
-  transform: scale(1.5);
-}
-
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .flipBack {
     transform: rotateX(90deg);
@@ -860,7 +837,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flip::before,
   .flipFront,
   .flipBack {
     transition: none;
@@ -944,5 +920,160 @@
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
+  }
+}
+
+/* The add control of a dish (dish-row.tsx): a round 44 px "+" that widens in
+   180 ms into a «− n +» pill once the dish is in the order, anchored at its
+   right edge so the "+" stays under the finger. A ring of the page colour
+   keeps it clear of the photo it sits on. The "+" keeps its hover lift, turn
+   and ripple (.plus); reduced motion gets the pill at once. */
+.addCtl {
+  position: relative;
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: 999px;
+  color: var(--guest-on-add);
+  box-shadow: 0 0 0 3px var(--guest-page);
+  transition: width 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.addCtl[data-open] {
+  width: 7rem;
+  overflow: hidden;
+  background: var(--guest-add);
+}
+
+.addCtl[data-dimmed] {
+  opacity: 0.4;
+}
+
+.addCtl[data-dimmed] .hit {
+  cursor: default;
+}
+
+.addCtl .hit,
+.addCtl .hit .plus {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.addCtl .hit .plus svg {
+  width: 18px;
+  height: 18px;
+}
+
+.addStep {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.addStep svg {
+  width: 18px;
+  height: 18px;
+}
+
+.addStep:active {
+  transform: scale(0.88);
+}
+
+.addStep:focus-visible {
+  outline: 2px solid var(--guest-on-add);
+  outline-offset: -5px;
+}
+
+.addCount {
+  min-width: 1.5rem;
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* How many of a dish with required choices are in the order, on its "+". */
+.addBadge {
+  position: absolute;
+  top: -0.375rem;
+  right: -0.375rem;
+  display: grid;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  padding-inline: 0.25rem;
+  border-radius: 999px;
+  background: var(--guest-page);
+  color: var(--guest-ink);
+  box-shadow: inset 0 0 0 1.5px var(--guest-add);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .addCtl,
+  .addStep {
+    transition: none;
+  }
+}
+
+/* A segment of the order's progress bar (order-status-view.tsx): it fills
+   from the left when its step is done, one after another on first view; the
+   current one breathes while the kitchen works. Reduced motion: still. */
+.segFill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--guest-accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.segFill[data-on="true"] {
+  animation: segFill 450ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.segFill[data-now] {
+  animation:
+    segFill 450ms cubic-bezier(0.65, 0, 0.35, 1) both,
+    segNow 1.6s ease-in-out calc(var(--d, 0ms) + 450ms) infinite alternate;
+}
+
+@keyframes segFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes segNow {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segFill[data-on="true"],
+  .segFill[data-now] {
+    animation: none;
+    transform: none;
   }
 }

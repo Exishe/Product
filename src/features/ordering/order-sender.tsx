@@ -6,6 +6,7 @@ import styles from "@/features/menu/guest-menu/guest.module.css";
 import type { SubAsk } from "@/features/menu/guest-menu/subs-dialog";
 import type { GuestItem } from "@/features/menu/guest-menu/view-model";
 import type { Locale } from "@/i18n/routing";
+import { formatAmd } from "@/lib/format/money";
 import { toOrderLines, type CartLine, type CartSummary } from "./cart";
 import { useGuestI18n } from "./guest-i18n-context";
 import type { OrderErrorKind } from "./order-errors";
@@ -199,7 +200,8 @@ export function OrderSender({
       />
     </Suspense>
   );
-  const primary = `${styles.cta} flex min-h-12 w-full items-center justify-center rounded-[16px] px-6 text-body font-semibold`;
+  // 56 px, full width, the total inside (benchmark §2.3: one CTA with the total).
+  const primary = `${styles.cta} flex min-h-14 w-full items-center justify-center gap-2 px-6 text-body font-semibold`;
   return (
     <div className="grid gap-3">
       {dialog}
@@ -227,7 +229,19 @@ export function OrderSender({
           disabled={phase.name === "sending" || summary.blocked || summary.count === 0}
           onClick={start}
         >
-          {phase.name === "sending" ? t("cart.sending") : t("cart.send")}
+          {phase.name === "sending" ? (
+            t("cart.sending")
+          ) : (
+            <>
+              {t("cart.send")}
+              {summary.total > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="num whitespace-nowrap">{formatAmd(summary.total, locale)}</span>
+                </>
+              )}
+            </>
+          )}
         </button>
       )}
     </div>

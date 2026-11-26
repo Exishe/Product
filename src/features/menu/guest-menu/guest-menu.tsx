@@ -1,6 +1,6 @@
 "use client";
 
-import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "./icons";
+import { ConciergeBell, QrCode, Search, ShoppingBag, SlidersHorizontal, UtensilsCrossed } from "./icons";
 import {
   Suspense,
   lazy,
@@ -34,11 +34,10 @@ import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
 import { MenuBar } from "./menu-bar";
-import styles from "./guest.module.css";
 import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
-import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
+import { CheckIcon, CloseIcon, Notice, dishPhotoUrl } from "./ui";
 import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -97,9 +96,9 @@ const CART_HASH = "#cart";
 // rail; the notices above the dishes sit in the middle one too.
 const COLUMN = "mx-auto w-full max-w-[1240px] px-4 md:px-8";
 const THREE_UP =
-  "lg:grid lg:grid-cols-[11rem_minmax(0,1fr)_16rem] lg:gap-6 xl:grid-cols-[12rem_minmax(0,1fr)_17rem] xl:gap-8";
-/** Where the desktop's side columns stick: just under the menu bar, level with the first heading. */
-const SIDE_TOP = "top-[calc(117px+1.25rem)]"; // the desktop menu bar is 117 px tall
+  "lg:grid lg:grid-cols-[13rem_minmax(0,1fr)_20rem] lg:gap-6 xl:grid-cols-[14rem_minmax(0,1fr)_22rem] xl:gap-10";
+/** Where the desktop's side columns stick: just under the sticky band, level with the first heading. */
+const SIDE_TOP = "top-[calc(var(--guest-sticky,4rem)+1.25rem)]";
 
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -162,7 +161,6 @@ export function GuestMenu({
   const [view, setView] = useState<"menu" | "cart">("menu");
   // The dish just added, which asks the server for "goes well with" ideas.
   const [suggest, setSuggest] = useState<{ id: string; cart: string[]; n: number } | null>(null);
-  const [suggestShown, setSuggestShown] = useState(false);
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
   const [locked, setLocked] = useState(false);
   // What the guest avoids (kept on this phone for every café) and whether
@@ -213,6 +211,12 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
+  // How many of each dish the order holds: the rows show it on their add control.
+  const inCart = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of lines) counts[l.itemId] = (counts[l.itemId] ?? 0) + l.quantity;
+    return counts;
+  }, [lines]);
   const subs = useMemo(
     () =>
       Object.fromEntries(
@@ -400,6 +404,12 @@ export function GuestMenu({
     },
     [lines, updateCart, closeCart],
   );
+  // «−» on a dish's pill: one less of its newest line; at one, the line goes.
+  const decrease = (item: GuestItem) => {
+    const line = lines.findLast((l) => l.itemId === item.id);
+    if (!line) return;
+    if (changeQuantity(line.id, line.quantity - 1).length === 0) setSuggest(null);
+  };
   const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1, via?: "suggest") =>
     gate(item, () => {
       sparkFrom(from);
@@ -414,10 +424,6 @@ export function GuestMenu({
         via,
       );
     });
-  const findDish = () => {
-    search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
-    search.current?.focus({ preventScroll: true });
-  };
 
   const orderingNotice =
     table.kind === "invalid" ? (
@@ -436,9 +442,10 @@ export function GuestMenu({
   // The first featured photo on the page is fetched at once (likely the LCP).
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
   const iconButton =
-    "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
+    "bg-surface text-ink relative grid size-11 flex-none place-items-center rounded-full border [border-color:var(--guest-line-strong)] disabled:opacity-60 max-lg:hidden";
+  // From 1024 px only: a phone and a tablet have the cart bar and the Order tab.
   const tools = (
-    <span className="flex flex-none items-center gap-2">
+    <span className="flex flex-none items-center gap-2 empty:hidden max-lg:hidden">
       {(canOrder || lines.length > 0) && (
         <button
           type="button"
@@ -457,8 +464,9 @@ export function GuestMenu({
       )}
     </span>
   );
+  // The rail's quiet actions: 48 px rows on hairlines, not outlined pills, so they never wrap.
   const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 border border-line px-3 text-label font-semibold";
+    "text-ink hover:bg-chip aria-expanded:bg-chip border-line -mx-2 flex min-h-12 items-center gap-3 rounded-guest-md border-b px-2 text-body font-semibold last:border-b-0";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -510,24 +518,25 @@ export function GuestMenu({
           {
             key: "menu",
             label: t("nav.menu"),
-            icon: <UtensilsCrossed size={22} aria-hidden />,
+            icon: <UtensilsCrossed size={24} aria-hidden />,
             current: view === "menu",
-            onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
+            onClick: () => (view === "cart" ? closeCart() : window.scrollTo({ top: 0, behavior: smooth() })),
           },
           lines.length > 0 || !orderHref
             ? {
                 key: "order",
                 label: t("nav.order"),
                 ariaLabel: orderLabel,
-                icon: <ShoppingBag size={22} aria-hidden />,
+                icon: <ShoppingBag size={24} aria-hidden />,
                 badge: count,
+                current: view === "cart",
                 disabled: lines.length === 0,
-                onClick: openCart,
+                onClick: () => (view === "cart" ? window.scrollTo({ top: 0, behavior: smooth() }) : openCart()),
               }
             : {
                 key: "order",
                 label: t("nav.order"),
-                icon: <ShoppingBag size={22} aria-hidden />,
+                icon: <ShoppingBag size={24} aria-hidden />,
                 href: orderHref,
               },
           ...(canOrder
@@ -535,8 +544,8 @@ export function GuestMenu({
                 {
                   key: "waiter",
                   label: t("nav.waiter"),
-                  icon: <ConciergeBell size={22} aria-hidden />,
-                  pressed: waiter.state !== "idle",
+                  icon: <ConciergeBell size={24} aria-hidden />,
+                  expanded: waiter.state === "confirm" || waiter.state === "sending",
                   onClick: waiter.ask,
                   testId: "call-waiter-nav",
                 },
@@ -544,6 +553,30 @@ export function GuestMenu({
             : []),
         ]
       : [];
+
+  const waiterPrompt = canOrder && table.kind === "ok" && (askedBefore || leftUnsent) && (
+    <Suspense fallback={null}>
+      <CallWaiterPrompt token={table.token} tableId={table.id} />
+    </Suspense>
+  );
+  const suggestions = (autoHide: boolean) =>
+    canOrder &&
+    suggest &&
+    lines.length > 0 && (
+      <Suspense fallback={null}>
+        <Suggestions
+          locationId={menu.locationId}
+          trigger={suggest}
+          cartIds={lines.map((l) => l.itemId)}
+          items={items}
+          soldOut={soldOutNow}
+          track={track}
+          onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
+          onChoose={setSheet}
+          autoHide={autoHide}
+        />
+      </Suspense>
+    );
 
   if (view === "cart" && lines.length > 0) {
     return (
@@ -567,51 +600,81 @@ export function GuestMenu({
             onBack={closeCart}
           />
         </Suspense>
+        {/* The tabs stay on the order view too: back to the menu, and the waiter. */}
+        <GuestDock items={dockItems} above={waiterPrompt} />
       </>
     );
   }
 
+  // One 48 px filled pill (benchmark §2.1: Wolt): the magnifier, the field at
+  // 16 px, its own clear ×, and the filters as a 44 px icon inside the right
+  // end, with a dot while one is on. No border box, one focus ring.
   const searchRow = (
-    <div className="flex items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <label className="sr-only" htmlFor="menu-search">
-          {t("menu.search")}
-        </label>
-        <Search
-          size={16}
-          aria-hidden
-          className="text-muted pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2"
-        />
-        <input
-          ref={search}
-          id="menu-search"
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!fold) void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
+    <div className="bg-chip relative flex min-h-12 min-w-[min(100%,14rem)] items-center rounded-full focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--guest-accent-text)]">
+      <label className="sr-only" htmlFor="menu-search">
+        {t("menu.search")}
+      </label>
+      <Search size={18} aria-hidden className="text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2" />
+      <input
+        ref={search}
+        id="menu-search"
+        type="search"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          if (!fold) void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
+        }}
+        placeholder={t("menu.searchPlaceholder")}
+        autoComplete="off"
+        enterKeyHint="search"
+        className="placeholder:text-muted min-h-12 w-full min-w-0 flex-1 rounded-full bg-transparent pr-2 pl-11 text-base outline-none [&::-webkit-search-cancel-button]:appearance-none"
+      />
+      {query && (
+        <button
+          type="button"
+          aria-label={t("menu.clearSearch")}
+          onClick={() => {
+            setQuery("");
+            search.current?.focus();
           }}
-          placeholder={t("menu.searchPlaceholder")}
-          autoComplete="off"
-          enterKeyHint="search"
-          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border [border-color:var(--guest-line-strong)] pr-4 pl-10 text-base"
-        />
-      </div>
+          className="text-muted hover:text-ink grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
+        >
+          <CloseIcon />
+        </button>
+      )}
       {offerFilter && (
         <button
           type="button"
           aria-haspopup="dialog"
           aria-pressed={filterCount > 0}
+          aria-label={filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
+          title={t("diet.open")}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 text-label font-semibold"
+          className="text-ink hover:bg-page relative mr-0.5 grid size-11 flex-none place-items-center rounded-full"
         >
-          <ShieldAlert size={15} aria-hidden />
-          {filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
+          <SlidersHorizontal size={20} />
+          {filterCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="bg-badge absolute top-2 right-2 size-2.5 rounded-full ring-2 ring-[var(--guest-chip)]"
+            />
+          )}
         </button>
       )}
     </div>
   );
+  // No table: the menu says how to order, in the line under the café's name.
+  const scanNote =
+    table.kind === "none" && menu.ordering ? (
+      <span
+        className="text-muted flex min-h-11 min-w-0 flex-1 basis-[20rem] items-center gap-2 py-1 text-label leading-[1.35]"
+        data-testid="scan-note"
+      >
+        <QrCode size={20} strokeWidth={1.75} className="flex-none" />
+        <span className="min-w-0">{t("menu.noTable")}</span>
+      </span>
+    ) : null;
   return (
     <>
       <MenuBar
@@ -626,6 +689,7 @@ export function GuestMenu({
         }
         home={home}
         tableLabel={table.kind === "ok" ? table.label : null}
+        note={scanNote}
         languages={languages}
         nav={<CategoryNav categories={shown} />}
         tools={tools}
@@ -634,9 +698,9 @@ export function GuestMenu({
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
         <div className={THREE_UP}>
           <div className="lg:col-start-2">
-            {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
+            {((menu.promos.length > 0 && !query) || orderingNotice || menu.kitchenBusy) && (
               <div className="grid gap-2 pt-4">
-                {promoBanners}
+                {!query && promoBanners}
                 {orderingNotice}
                 {menu.kitchenBusy && canOrder && (
                   <Notice tone="busy">
@@ -675,9 +739,24 @@ export function GuestMenu({
           <SectionList categories={shown} stick={SIDE_TOP} />
           <main className="min-w-0">
             {shown.length === 0 ? (
-              <p className="text-muted py-12 text-center" role="status">
-                {t("menu.noResults")}
-              </p>
+              // One headline, one sentence, one way out (benchmark §2.3 empty states).
+              <div className="grid justify-items-start gap-2 py-10" role="status">
+                <p className="text-heading font-semibold">{t("menu.noResultsTitle")}</p>
+                <p className="text-muted text-body">{t("menu.noResultsHint")}</p>
+                {(query || diet.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setDiet([]);
+                      search.current?.focus();
+                    }}
+                    className="border-line-strong hover:bg-chip mt-2 inline-flex min-h-12 items-center rounded-full border px-5 text-body font-semibold"
+                  >
+                    {t("menu.clearSearch")}
+                  </button>
+                )}
+              </div>
             ) : (
               // One compact page: the four clusters (food, desserts, drinks, wine) one
               // after another, each with its sections and their dishes as small cards.
@@ -700,17 +779,20 @@ export function GuestMenu({
                       key={item.id}
                       item={item}
                       canOrder={canOrder}
+                      preview={table.kind === "none" && menu.ordering}
                       warning={warningFor(item)}
                       index={i}
                       feature={item.id === lead}
+                      inCart={inCart[item.id] ?? 0}
                       onOpen={setSheet}
                       onQuickAdd={quickAdd}
+                      onDecrease={decrease}
                     />
                   );
                   return (
                     <>
                       {pictured.length > 0 && (
-                        <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{pictured.map(card)}</ul>
+                        <ul className="grid gap-3 md:grid-cols-2">{pictured.map(card)}</ul>
                       )}
                       {plain.length > 0 && (
                         <ul className={`grid gap-3 md:grid-cols-2 ${pictured.length > 0 ? "mt-3" : ""}`}>
@@ -721,8 +803,13 @@ export function GuestMenu({
                   );
                 };
                 return clusters.map(({ group, sections }) => (
-                  <div key={group} id={`group-${group}`} className="scroll-mt-48 pt-5" data-group={group}>
-                    {clusters.length > 1 && (
+                  <div key={group} id={`group-${group}`} className="scroll-mt-2 pt-5" data-group={group}>
+                    {clusters.length > 1 &&
+                      !(
+                        sections.length === 1 &&
+                        sections[0]!.name?.text.trim().toLocaleLowerCase() ===
+                          t(`menu.groups.${group}`).trim().toLocaleLowerCase()
+                      ) && (
                       <h2 className="display-face text-title text-[1.25rem] leading-[1.2]">
                         {t(`menu.groups.${group}`)}
                       </h2>
@@ -732,7 +819,7 @@ export function GuestMenu({
                         key={c.id}
                         id={sectionId(c.id)}
                         aria-labelledby={`h-${c.id}`}
-                        className="scroll-mt-48 pt-4"
+                        className="scroll-mt-2 pt-4"
                       >
                         {c.name && (
                           <h3
@@ -741,7 +828,7 @@ export function GuestMenu({
                             className="text-ink mb-3 flex items-baseline gap-2 text-name leading-[1.25] font-semibold"
                           >
                             {c.name.text}
-                            <span className="num text-soft text-meta font-normal">{c.items.length}</span>
+                            <span className="num text-soft text-label font-normal">{c.items.length}</span>
                           </h3>
                         )}
                         {rows(c.items)}
@@ -765,19 +852,20 @@ export function GuestMenu({
                     onQuantity={changeQuantity}
                     onOpen={openCart}
                     send={summary.blocked ? null : sender}
+                    ideas={suggestions(false)}
                     below={
                       table.kind === "ok" && (canOrder || orderHref) ? (
                         <>
                           {canOrder && (
                             <button
                               type="button"
-                              aria-pressed={waiter.state !== "idle"}
+                              aria-expanded={waiter.state === "confirm" || waiter.state === "sending"}
                               onClick={waiter.ask}
                               data-testid="call-waiter-rail"
                               className={railAction}
                             >
-                              <ConciergeBell size={18} aria-hidden />
-                              {t("order.callWaiter")}
+                              <ConciergeBell size={20} aria-hidden />
+                              {t("nav.waiter")}
                             </button>
                           )}
                           {orderHref && (
@@ -800,26 +888,8 @@ export function GuestMenu({
         items={dockItems}
         above={
           <>
-            {canOrder && table.kind === "ok" && (askedBefore || leftUnsent) && (
-              <Suspense fallback={null}>
-                <CallWaiterPrompt token={table.token} tableId={table.id} />
-              </Suspense>
-            )}
-            {canOrder && suggest && lines.length > 0 && (
-              <Suspense fallback={null}>
-                <Suggestions
-                  locationId={menu.locationId}
-                  trigger={suggest}
-                  cartIds={lines.map((l) => l.itemId)}
-                  items={items}
-                  soldOut={soldOutNow}
-                  track={track}
-                  onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
-                  onChoose={setSheet}
-                  onVisible={setSuggestShown}
-                />
-              </Suspense>
-            )}
+            {waiterPrompt}
+            {!wide && suggestions(true)}
             {lines.length > 0 && (
               <div className="lg:hidden">
                 <CartBar summary={summary} items={items} onOpen={openCart} />
@@ -868,16 +938,9 @@ export function GuestMenu({
           />
         </Suspense>
       )}
-      {/* On a phone and a tablet; a desktop sees the dish land in the order rail. */}
-      {toast && (
-        <p
-          key={toast.key}
-          aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float rounded-card fixed ${suggestShown ? "bottom-[calc(380px+env(safe-area-inset-bottom,0px))]" : "bottom-[calc(172px+env(safe-area-inset-bottom,0px))]"} left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
-        >
-          {toast.text}
-        </p>
-      )}
+      {/* The add itself is the feedback: the dish flies to the order, the row's
+          "+" turns into its count and the cart bar's total moves. Screen
+          readers hear it here. */}
       <p className="sr-only" role="status" aria-live="polite">
         {toast?.text}
       </p>

@@ -37,26 +37,23 @@ import {
 import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import {
-  ConciergeBell,
-  Gamepad2,
-  ReceiptText,
-  RotateCcw,
-  Sparkles,
-  Timer,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChevronRight, ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
+import { useCallWaiter } from "@/features/menu/guest-menu/call-waiter-state";
 import {
   displayStatus,
   isActive,
   STEPS,
-  stepIndex,
   type DisplayStatus,
   type OrderState,
 } from "./order-status";
 
 // Only fetched when the kitchen could not make a dish (ADR-081).
 const CantMakeNote = dynamic(() => import("./cant-make").then((m) => m.CantMakeNote), { ssr: false });
+// The menu's waiter choices, for a table with no order from this phone yet.
+const CallWaiterPrompt = dynamic(
+  () => import("@/features/menu/guest-menu/call-waiter-button").then((m) => m.CallWaiterPrompt),
+  { ssr: false },
+);
 
 type Db = SupabaseClient<Database>;
 type Names = Record<string, string | null> | null;
@@ -146,15 +143,28 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   };
 }
 
-// The steps one after another (ms): a done step ticks in on a spring, then
-// the line below it fills down to the next. On first view they play in turn;
-// a step reached later (live) plays at once.
+// The progress bar (ADR-093 area pass, benchmark §2.3: Uber Eats): four
+// segments, 4 px tall and 4 px apart (received and accepted share the first),
+// under the 28 px headline that names the state. Done segments fill from the left one after
+// another (ms apart) on first view; the current one breathes while the
+// kitchen works. Under it the current step's note at 16 px.
 const BEAT = 450;
+const SEGMENTS = ["accepted", "cooking", "ready", "served"] as const;
+const SEGMENT_OF: Record<DisplayStatus, number> = {
+  received: 0,
+  accepted: 1,
+  cooking: 1,
+  ready: 2,
+  served: 3,
+  paid: 3,
+  rejected: 0,
+  cancelled: 0,
+};
 
 function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
   const { t } = useGuestI18n();
-  const now = stepIndex(status);
-  const steps: string[] = status === "paid" ? [...STEPS, "paid"] : [...STEPS];
+  const now = SEGMENT_OF[status];
+  const finished = status === "served" || status === "paid";
   // After the first sequence, changes play without the wait.
   const [settled, setSettled] = useState(false);
   useEffect(() => {
@@ -170,62 +180,39 @@ function Tracker({ order, status }: { order: Order; status: DisplayStatus }) {
           : t("order.notes.received")
       : t(`order.notes.${status}`);
   return (
-    <ol className="my-4 grid" data-testid="tracker">
-      {steps.map((step, i) => {
-        const done = i <= now;
-        const current = i === now;
-        const last = i === steps.length - 1;
-        const tickAt = { "--d": `${settled ? BEAT : i * BEAT}ms` } as CSSProperties;
-        const fillAt = { "--d": `${settled ? 0 : i * BEAT + 120}ms` } as CSSProperties;
-        return (
-          <li
-            key={step}
-            className="relative grid min-h-[38px] grid-cols-[20px_1fr] items-start gap-2.5"
-            aria-current={current ? "step" : undefined}
-          >
-            {!last && (
-              <span
-                aria-hidden="true"
-                className="bg-line absolute top-5 -bottom-0.5 left-[9px] w-0.5 overflow-hidden"
-              >
-                <span className={`bg-accent ${motionStyles.fill}`} data-on={i < now} style={fillAt} />
-              </span>
-            )}
-            <span
-              aria-hidden="true"
-              className={`relative z-[1] grid size-5 place-items-center rounded-full border-[1.5px] [&_svg]:size-3 ${
-                done ? "border-accent bg-surface text-white" : "border-line-strong bg-surface"
-              } ${current ? "shadow-[0_0_0_4px_color-mix(in_srgb,var(--guest-accent)_16%,transparent)]" : ""}`}
-            >
-              {current && status !== "served" && status !== "paid" ? (
-                <span className={motionStyles.pulse} />
-              ) : null}
-              {done ? (
+    <div className="grid gap-3" data-testid="tracker">
+      <ol className="grid grid-cols-4 gap-1">
+        {SEGMENTS.map((step, i) => {
+          const done = i < now || finished;
+          const current = i === now && !finished;
+          const here = i === now;
+          const fillAt = { "--d": `${settled ? 0 : i * BEAT}ms` } as CSSProperties;
+          return (
+            <li key={step} className="min-w-0" aria-current={here ? "step" : undefined}>
+              <span aria-hidden="true" className="bg-line relative block h-1 overflow-hidden rounded-full">
                 <span
-                  className={`bg-accent absolute -inset-0.5 place-items-center rounded-full ${motionStyles.tick}`}
-                  style={tickAt}
-                >
-                  <CheckIcon />
-                </span>
-              ) : null}
-            </span>
-            <div className={current ? "pb-3" : ""}>
-              <div
-                className={`flex items-center gap-2 text-label leading-5 ${done ? "font-semibold" : "text-muted"}`}
+                  className={guestStyles.segFill}
+                  data-on={done || current}
+                  data-now={current || undefined}
+                  style={fillAt}
+                />
+              </span>
+              <span
+                // The 28 px headline says the state (as Uber's bar does); the four
+                // labels would break mid-word in narrow columns, so they are for
+                // screen readers, with the current step marked.
+                className={`sr-only ${
+                  here ? "text-ink font-semibold" : done ? "text-ink" : "text-muted"
+                }`}
               >
-                {t(`order.steps.${step}`)}
-                {current && status !== "served" && status !== "paid" && (
-                  <span className="text-accent-text rounded-[6px] bg-[#fbe9e0] px-1.5 py-px text-meta font-semibold">
-                    {t("order.now")}
-                  </span>
-                )}
-              </div>
-              {current && <p className="text-muted text-meta leading-snug">{note}</p>}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+                {t(`order.steps.${status === "received" && i === 0 ? "received" : step}`)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="text-body leading-[1.45]">{note}</p>
+    </div>
   );
 }
 
@@ -241,7 +228,7 @@ function WaitLine({ wait, placedAt }: { wait: WaitRange; placedAt: string }) {
   }, []);
   const late = waitState(wait, placedAt, now) === "late";
   return (
-    <p className="text-muted -mt-1 mb-3 text-meta" data-testid="order-wait" data-late={late}>
+    <p className="text-muted text-body" data-testid="order-wait" data-late={late}>
       {late ? t("wait.late") : t(wait.low === wait.high ? "wait.usualOne" : "wait.usual", wait)}
     </p>
   );
@@ -267,11 +254,13 @@ function RecommendedCard({
   menuHref,
   ordered,
   pairs,
+  onAdd,
 }: {
   dishes: OrbitDish[];
   menuHref: string;
   ordered: string[];
   pairs: Record<string, string[]>;
+  onAdd?: (itemId: string) => void;
 }) {
   const { t } = useGuestI18n();
   const byId = new Map(dishes.map((d) => [d.id, d]));
@@ -289,12 +278,11 @@ function RecommendedCard({
   return (
     // Part of the page, not a card on it: the page colour, the menu's heading style.
     <section aria-labelledby="rec-title">
-      <h2 id="rec-title" className="flex items-center gap-2 text-name font-semibold">
-        <Sparkles size={18} aria-hidden className="text-accent-text" />
+      <h2 id="rec-title" className="text-heading font-semibold">
         {t("order.recommended")}
       </h2>
       <div className="pt-2">
-        <DishOrbit dishes={list} menuHref={menuHref} />
+        <DishOrbit dishes={list} menuHref={menuHref} onAdd={onAdd} />
       </div>
     </section>
   );
@@ -344,54 +332,47 @@ function OrderCard({
     ) : null;
   if (part === "status")
     return (
-      <section
-        aria-label={t("order.title", { number: order.number })}
-        data-status={status}
-        className={guestStyles.orderCard}
-      >
-        <div className={guestStyles.orderCardHead}>
-          <Timer size={16} aria-hidden />
-          <p className="text-label">
-            {t("order.title", { number: order.number })} ·{" "}
-            <span className="font-normal">
-              {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
-            </span>
-          </p>
-        </div>
-        <div className={`${guestStyles.orderCardBody} pb-2`}>
-          {status !== "rejected" && status !== "cancelled" && (
-            <h2 className="text-name leading-[1.25] font-semibold" data-testid="order-phase">
-              {t(`order.steps.${status}`)}
-            </h2>
-          )}
-          {statusBlock}
-        </div>
+      // One status block on the page's edge (ADR-093 area pass): the state at
+      // 28 px, when it was sent, the progress bar and the wait. No box.
+      <section aria-label={t("order.title", { number: order.number })} data-status={status} className="grid gap-1">
+        {status !== "rejected" && status !== "cancelled" && (
+          <h2 className="display-face text-large leading-[1.15] font-semibold" data-testid="order-phase">
+            {t(`order.steps.${status}`)}
+          </h2>
+        )}
+        <p className="text-muted text-label">
+          {t("order.title", { number: order.number })} ·{" "}
+          <span className="whitespace-nowrap">
+            {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
+          </span>
+        </p>
+        <div className="mt-3 grid gap-3">{statusBlock}</div>
       </section>
     );
   return (
     <article
-      className={
-        latest
-          ? `${guestStyles.orderCard} ${guestStyles.orderCardBody} mb-5 !pb-1`
-          : "border-line border-t pt-4"
-      }
+      className={latest ? "border-line border-t pt-4 lg:border-t-0 lg:pt-0" : "border-line border-t pt-4"}
       data-testid="order"
       data-order-number={order.number}
       data-status={status}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <Title className={`display-face leading-[1.15] ${latest ? "text-[1.25rem]" : "text-[1rem]"}`}>
-          {t("order.title", { number: order.number })}
+        <Title className={`display-face leading-[1.2] ${latest ? "text-heading" : "text-name"}`}>
+          {latest ? t("cart.title") : t("order.title", { number: order.number })}
         </Title>
         {!latest && (
-          <span className="text-muted text-meta font-semibold">
+          <span className="text-muted text-label font-semibold">
             {t(`order.steps.${status === "rejected" || status === "cancelled" ? "received" : status}`)}
           </span>
         )}
       </div>
-      <p className="text-muted text-meta">
-        {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
-      </p>
+      {!latest && (
+        <p className="text-muted text-label">
+          <span className="whitespace-nowrap">
+            {t("order.placedAt", { time: formatTime(new Date(order.placed_at)) })}
+          </span>
+        </p>
+      )}
       {part === "all" && statusBlock}
       <ul className="mt-2">
         {lines.map((l) => {
@@ -406,7 +387,7 @@ function OrderCard({
               className="border-line grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b py-2.5 last:border-b-0"
             >
               <span
-                className={`text-label leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
+                className={`text-body leading-snug font-semibold [overflow-wrap:anywhere] ${left === 0 ? "text-muted line-through" : ""}`}
               >
                 <span className="num">
                   {l.cancelled_quantity > 0 && left > 0 ? (
@@ -417,11 +398,11 @@ function OrderCard({
                 {" × "}
                 {name ? <Txt value={name} locale={locale as Locale} /> : null}
               </span>
-              <span className="num text-right text-label font-semibold whitespace-nowrap">
+              <span className="num text-right text-body font-semibold whitespace-nowrap">
                 {left > 0 ? formatAmd(l.line_total, locale as Locale) : t("order.lineCancelled")}
               </span>
               {l.item_id && details?.[l.item_id] && (
-                <span className="text-soft col-start-1 text-meta break-words" data-testid="line-detail">
+                <span className="text-soft col-start-1 text-label break-words" data-testid="line-detail">
                   {details[l.item_id]}
                 </span>
               )}
@@ -431,7 +412,7 @@ function OrderCard({
                 </span>
               )}
               {mods.length > 0 && (
-                <span className="text-muted col-start-1 text-meta">
+                <span className="text-muted col-start-1 text-label">
                   {mods.map((m, i) => (
                     <span key={i}>
                       {i > 0 ? ", " : null}
@@ -440,7 +421,7 @@ function OrderCard({
                   ))}
                 </span>
               )}
-              {l.note && <span className="text-muted col-start-1 text-meta break-words">{l.note}</span>}
+              {l.note && <span className="text-muted col-start-1 text-label break-words">{l.note}</span>}
               {l.cant_make_at && cantMake?.db && (
                 <CantMakeNote
                   db={cantMake.db}
@@ -460,11 +441,11 @@ function OrderCard({
         </span>
       </div>
       {onRepeat && status !== "rejected" && status !== "cancelled" && repeatLines(order).length > 0 && (
-        <p className={latest ? "-mt-1 pb-5" : "-mt-2 pb-2"}>
+        <p className={latest ? "-mt-1 pb-4" : "-mt-2 pb-2"}>
           <button
             type="button"
             onClick={() => onRepeat(order)}
-            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-meta font-semibold"
+            className="rounded-pill text-ink hover:bg-chip inline-flex min-h-11 items-center gap-2 border [border-color:var(--guest-line-strong)] px-4 text-label font-semibold"
           >
             <RotateCcw size={16} aria-hidden />
             {t("order.sameAgain")}
@@ -480,6 +461,7 @@ function OrderCard({
 // safety poll, plus "call the waiter" and "ask for the bill".
 export function OrderStatusView({
   tableId,
+  token = null,
   menuHref,
   vapidPublicKey = null,
   wait = null,
@@ -489,6 +471,8 @@ export function OrderStatusView({
   cantMakeDishes,
 }: {
   tableId: string;
+  /** The table's QR token: the waiter's choices work before any order from this phone. */
+  token?: string | null;
   menuHref: string;
   /** Dishes to recommend while the order cooks, best first (photos before none). */
   dishes?: OrbitDish[];
@@ -530,6 +514,9 @@ export function OrderStatusView({
   });
   const sending = useRef(false);
   const [people, setPeople] = useState(1);
+  // The bottom bar's Waiter: two choices above the bar (call, or ask for the bill).
+  const [waiterOpen, setWaiterOpen] = useState(false);
+  const menuWaiter = useCallWaiter();
   const router = useRouter();
 
   useEffect(() => {
@@ -727,13 +714,43 @@ export function OrderStatusView({
 
   const orders = data?.orders ?? [];
   if (phase === "none" || orders.length === 0) {
+    // One headline, one sentence, one 56 px way back to the menu (benchmark
+    // §2.3 empty states), and the bottom bar, so the waiter and the bill are
+    // one tap away even before ordering from this phone.
+    const emptyDock: DockItem[] = [
+      { key: "menu", label: t("nav.menu"), icon: <UtensilsCrossed size={24} aria-hidden />, href: menuHref },
+      { key: "order", label: t("nav.order"), icon: <ReceiptText size={24} aria-hidden />, current: true },
+      ...(token
+        ? [
+            {
+              key: "waiter",
+              label: t("nav.waiter"),
+              icon: <ConciergeBell size={24} aria-hidden />,
+              expanded: menuWaiter.state === "confirm" || menuWaiter.state === "sending",
+              onClick: menuWaiter.ask,
+            },
+          ]
+        : []),
+    ];
     return (
-      <main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-start gap-3 px-4 py-10 md:px-8 md:py-16">
-        <h2 className="display-face text-3xl">{t("order.empty")}</h2>
-        <p className="text-muted">{t("order.emptyHint")}</p>
-        <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
+      <main
+        data-order-empty=""
+        className={`mx-auto grid w-full max-w-[720px] flex-1 content-start gap-2 px-4 pt-8 md:px-8 md:pt-14 ${DOCK_SPACE}`}
+      >
+        <h2 className="display-face text-headline leading-[1.2]">{t("order.empty")}</h2>
+        <p className="text-muted text-body">{t("order.emptyHint")}</p>
+        <a
+          href={menuHref}
+          className={`${guestStyles.cta} mt-4 flex min-h-14 w-full items-center justify-center px-6 text-body font-semibold md:w-auto md:justify-self-start`}
+        >
           {t("order.toMenu")}
         </a>
+        <GuestDock
+          items={emptyDock}
+          above={
+            token && menuWaiter.state !== "idle" ? <CallWaiterPrompt token={token} tableId={tableId} /> : null
+          }
+        />
       </main>
     );
   }
@@ -745,8 +762,9 @@ export function OrderStatusView({
   const grand = orders
     .filter((o) => o.status !== "rejected" && o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
+  // The page's secondary buttons: the page colour inside a 3:1 outline, 48 px, never wrapping.
   const secondary =
-    "min-h-11 rounded-pill border border-[var(--guest-line-strong)] bg-white px-4 text-label font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
+    "min-h-12 rounded-pill border border-[var(--guest-line-strong)] bg-page px-4 text-body font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60 aria-pressed:bg-chip";
   // Back to the menu with an earlier round in the cart (this table's cart).
   const repeat = (order: Order) => {
     const newId = () =>
@@ -804,8 +822,8 @@ export function OrderStatusView({
       data-testid="service-status"
       className={
         notes.length === 0
-          ? "-mb-2"
-          : "bg-surface text-ink shadow-float rounded-card border-line pointer-events-auto grid gap-2 border p-3"
+          ? "empty:hidden"
+          : "text-ink pointer-events-auto grid gap-2 py-1 lg:bg-page lg:shadow-float lg:rounded-feature lg:px-4 lg:py-3"
       }
     >
       {notes.map((n) => (
@@ -831,11 +849,11 @@ export function OrderStatusView({
   // waiting, and the waiter. Its Waiter item is the same request as the
   // button below the order, so it reads «Մատուցող», not the button's words.
   const dock: DockItem[] = [
-    { key: "menu", label: t("nav.menu"), icon: <UtensilsCrossed size={22} aria-hidden />, href: menuHref },
+    { key: "menu", label: t("nav.menu"), icon: <UtensilsCrossed size={24} aria-hidden />, href: menuHref },
     {
       key: "order",
       label: t("nav.order"),
-      icon: <ReceiptText size={22} aria-hidden />,
+      icon: <ReceiptText size={24} aria-hidden />,
       current: true,
       onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
     },
@@ -844,7 +862,7 @@ export function OrderStatusView({
           {
             key: "games",
             label: t("nav.games"),
-            icon: <Gamepad2 size={22} aria-hidden />,
+            icon: <Gamepad2 size={24} aria-hidden />,
             onClick: () =>
               document.getElementById("games")?.scrollIntoView({ behavior: smooth(), block: "start" }),
           },
@@ -855,14 +873,47 @@ export function OrderStatusView({
           {
             key: "waiter",
             label: t("nav.waiter"),
-            icon: <ConciergeBell size={22} aria-hidden />,
-            pressed: open.has("call_waiter"),
+            icon: <ConciergeBell size={24} aria-hidden />,
+            expanded: waiterOpen,
             disabled: asking !== null,
-            onClick: () => void ask("call_waiter"),
+            onClick: () => setWaiterOpen((o) => !o),
           },
         ]
       : []),
   ];
+
+  const row =
+    "border-line flex min-h-14 w-full items-center gap-3 border-b px-1 text-left text-body font-semibold last:border-b-0 disabled:opacity-60";
+  const waiterChoices = waiterOpen && !closed && (
+    <div role="group" aria-label={t("nav.waiter")} className="text-ink pointer-events-auto lg:hidden">
+      <button
+        type="button"
+        className={row}
+        disabled={asking !== null}
+        aria-pressed={open.has("call_waiter")}
+        onClick={() => {
+          setWaiterOpen(false);
+          void ask("call_waiter");
+        }}
+      >
+        <ConciergeBell size={22} aria-hidden />
+        <span className="min-w-0 flex-1">{t("order.callWaiter")}</span>
+      </button>
+      <button
+        type="button"
+        className={row}
+        disabled={asking !== null}
+        onClick={() => {
+          setWaiterOpen(false);
+          setChoosing(true);
+        }}
+      >
+        <ReceiptText size={22} aria-hidden />
+        <span className="min-w-0 flex-1">{t("order.askBill")}</span>
+        <ChevronRight size={20} aria-hidden className="text-muted" />
+      </button>
+    </div>
+  );
 
   return (
     // The whole screen, not a small block: the order on the left, its status and
@@ -886,7 +937,7 @@ export function OrderStatusView({
           <span className="display-face text-[1.125rem] leading-none">{t("order.steps.ready")}</span>
         </div>
       )}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-12">
         <div className="order-2 min-w-0 lg:order-1">
           {latest && (
             <OrderCard
@@ -898,9 +949,7 @@ export function OrderStatusView({
               cantMake={cantMake}
             />
           )}
-          {channel === "down" && (
-            <p className="text-muted -mt-2 mb-2 text-meta">{t("order.reconnecting")}</p>
-          )}
+          {channel === "down" && <p className="text-muted -mt-2 mb-3 text-label">{t("order.reconnecting")}</p>}
           <p className="sr-only" role="status" aria-live="polite">
             {latestStatus
               ? t(
@@ -918,7 +967,7 @@ export function OrderStatusView({
               {db && guestSessionId && latestStatus && waiting.has(latestStatus) && (
                 <NotifyReady db={db} guestSessionId={guestSessionId} vapidPublicKey={vapidPublicKey} />
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-3">
                 <button
                   type="button"
                   className={secondary}
@@ -949,10 +998,7 @@ export function OrderStatusView({
                   className="mt-3 grid scroll-mb-[calc(110px+env(safe-area-inset-bottom,0px))] gap-2"
                 >
                   {grand > 0 && (
-                    <div
-                      className="bg-surface shadow-card rounded-card mb-2 grid gap-2 border [border-color:var(--guest-card-border)] px-4 py-3"
-                      data-testid="split"
-                    >
+                    <div className="border-line mb-2 grid gap-2 border-y py-4" data-testid="split">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <span className="font-semibold">{t("order.splitLabel")}</span>
                         <span className="inline-flex items-center gap-1">
@@ -981,7 +1027,7 @@ export function OrderStatusView({
                       </div>
                       {people > 1 && (
                         <p
-                          className="num text-accent-text text-name font-semibold"
+                          className="num text-ink text-[2rem] leading-[1.1] font-bold"
                           data-testid="split-share"
                         >
                           {t("order.splitEach", {
@@ -989,11 +1035,11 @@ export function OrderStatusView({
                           })}
                         </p>
                       )}
-                      <p className="text-muted text-meta">{t("order.splitNote")}</p>
+                      <p className="text-muted text-label">{t("order.splitNote")}</p>
                     </div>
                   )}
                   <p className="m-0 font-semibold">{t("order.payTitle")}</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 min-[420px]:gap-3">
                     <button
                       type="button"
                       className={secondary}
@@ -1047,17 +1093,18 @@ export function OrderStatusView({
           )}
         </div>
         <aside
-          className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-24 lg:order-2"
+          className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:sticky lg:top-8 lg:order-2"
           aria-label={t("order.status")}
         >
           {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
         </aside>
       </div>
-      <div className="mt-6">
+      <div className="border-line mt-10 border-t pt-6">
         <Rise>
           <RecommendedCard
             dishes={dishes}
             menuHref={menuHref}
+            onAdd={closed || !latest ? undefined : (itemId) => addDish(latest, itemId)}
             pairs={pairs}
             ordered={orders.flatMap((o) => o.order_items.flatMap((l) => (l.item_id ? [l.item_id] : [])))}
           />
@@ -1074,7 +1121,15 @@ export function OrderStatusView({
           </Rise>
         </div>
       )}
-      <GuestDock items={dock} above={status} />
+      <GuestDock
+        items={dock}
+        above={
+          <>
+            {waiterChoices}
+            {status}
+          </>
+        }
+      />
     </main>
   );
 }

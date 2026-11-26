@@ -32,8 +32,9 @@ test("adding a dish shows owner-chosen ideas, one tap adds, no thanks hides, and
 
   const strip = page.getByTestId("suggestions");
   await expect(strip).toBeVisible();
+  // One idea at a time, as one row above the cart bar.
   const cards = strip.getByTestId("suggestion");
-  await expect(cards).toHaveCount(2);
+  await expect(cards).toHaveCount(1);
   await expect(cards.first().getByTestId("suggestion-reason")).toHaveText("Goes well with Tolma");
   // 44 px targets
   for (const sel of ["suggestion-add", "suggestion-dismiss"]) {
@@ -43,8 +44,9 @@ test("adding a dish shows owner-chosen ideas, one tap adds, no thanks hides, and
   }
   await page.screenshot({ path: test.info().outputPath("suggestions.png") });
 
-  // One tap adds the dish to the cart (cart bar counts 2) and the card goes away.
-  await cards.filter({ hasText: "Բորանի" }).getByTestId("suggestion-add").click();
+  // One tap adds the dish to the cart (cart bar counts 2) and the next idea takes its place.
+  await expect(cards.first()).toContainText("Բորանի");
+  await cards.first().getByTestId("suggestion-add").click();
   await expect(page.getByRole("button", { name: /View order/ })).toContainText("2 items");
   await expect(cards).toHaveCount(1);
   await expect(strip).not.toContainText("Բորանի");

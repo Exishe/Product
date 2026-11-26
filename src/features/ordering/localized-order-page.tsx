@@ -25,6 +25,7 @@ export function LocalizedOrderPage({
   path,
   query,
   tableId,
+  token = null,
   vapidPublicKey,
   wait,
   pairs,
@@ -36,6 +37,8 @@ export function LocalizedOrderPage({
   /** "?t=<token>" or "". */
   query: string;
   tableId: string;
+  /** The table's QR token (the waiter's choices before any order). */
+  token?: string | null;
   vapidPublicKey: string | null;
   wait: ViewProps["wait"];
   pairs: ViewProps["pairs"];
@@ -61,20 +64,22 @@ export function LocalizedOrderPage({
         // A short bar: the order starts near the top of the screen.
         compact
         home={{ href: menuHref }}
-        // Top right: order something new.
+        // Order something new: an outline pill with its words, beside the
+        // table (not on the empty page, whose own button does it).
         tools={
           <a
             href={menuHref}
-            aria-label={t("order.orderMore")}
-            className="bg-add text-on-add rounded-pill inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 md:px-5"
+            data-order-more=""
+            className="border-line-strong text-ink hover:bg-chip rounded-pill inline-flex min-h-11 items-center justify-center gap-1.5 border pr-4 pl-3 text-label font-semibold whitespace-nowrap transition-transform duration-150 active:scale-95"
           >
-            <Plus size={20} aria-hidden />
-            <span className="hidden md:inline">{t("order.orderMore")}</span>
+            <Plus size={18} aria-hidden />
+            {t("order.orderMore")}
           </a>
         }
       />
       <OrderStatusView
         tableId={tableId}
+        token={token}
         menuHref={menuHref}
         vapidPublicKey={vapidPublicKey}
         wait={wait}

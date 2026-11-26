@@ -868,10 +868,13 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   background: #fbf9f5 !important;
 }
 
-/* The bottom bar keeps the page colour, which is white on the order page. */
-[data-order-page] [data-testid="guest-dock"] {
-  background: #ffffff;
-  border-top: 1px solid #eae3d8;
+/* Focus is never hidden under the sticky band or the bottom panel (WCAG
+   2.4.11): the band and the panel publish their heights (category-nav.tsx,
+   guest-dock.tsx), and focus moves and scrollIntoView keep clear of both.
+   Section headings land just under the band for the same reason. */
+html:has(.guest-lux:not([data-guest-preview])) {
+  scroll-padding-top: calc(var(--guest-sticky, 0px) + 0.5rem);
+  scroll-padding-bottom: calc(var(--guest-bottom, 0px) + 1rem);
 }
 
 /* Full-screen section photos reach past the column; the page never scrolls sideways. */
@@ -903,7 +906,9 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   --guest-muted: #5f5950 !important;
   --guest-soft: #6e675c !important;
   --guest-line: #eae3d8 !important;
-  --guest-line-strong: #dcd3c5 !important;
+  /* Control outlines (fields, steppers, outline buttons): 3.3:1 on the page
+     (WCAG 1.4.11). Content hairlines stay --guest-line. */
+  --guest-line-strong: #988670 !important;
   --guest-card-border: transparent !important; /* no borders around content (ADR-093) */
   --guest-accent: #2f4b3b !important;
   --guest-on-accent: #ffffff !important;
@@ -951,7 +956,7 @@ body:has(.guest-lux:not([data-guest-theme="wine"]) [data-order-page]) {
   --guest-muted: #475862 !important;
   --guest-soft: #53646e !important;
   --guest-line: #e1ddd0 !important;
-  --guest-line-strong: #cdc8b8 !important;
+  --guest-line-strong: #8a8673 !important; /* control outlines: 3.3:1 */
   --guest-card-border: transparent !important;
   --guest-accent: #1f4e5f !important;
   --guest-on-accent: #ffffff !important;
@@ -1019,7 +1024,7 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
   --guest-muted: #555555 !important;
   --guest-soft: #5c5c5c !important;
   --guest-line: #e6e6e6 !important;
-  --guest-line-strong: #cfcfcf !important;
+  --guest-line-strong: #8a8a8a !important; /* control outlines: 3.4:1 on white */
   --guest-card-border: transparent !important;
   --guest-accent: #111111 !important;
   --guest-on-accent: #ffffff !important;
@@ -1049,7 +1054,7 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
   --guest-muted: #485870 !important;
   --guest-soft: #4f5f77 !important;
   --guest-line: #e0e7f1 !important;
-  --guest-line-strong: #c6d2e3 !important;
+  --guest-line-strong: #7a8aa3 !important; /* control outlines: 3.3:1 */
   --guest-card-border: transparent !important;
   --guest-accent: #1d4ed8 !important;
   --guest-accent-text: #1d4ed8 !important;
@@ -1080,4 +1085,14 @@ body:has(.guest-lux[data-demo][data-demo-palette="blue"]):has(.guest-lux[data-de
 }
 .guest-lux[data-demo] .demo-palette {
   display: flex !important;
+}
+/* The guest bar's meta row (guest-header.tsx GuestBar): outside the demo cafés
+   a row that holds only the hidden colour switch takes no room. */
+.guest-lux:not([data-demo]) .guest-meta:not(:has(> :not(.demo-palette, :empty))) {
+  display: none;
+}
+/* The status page with no order yet: its own button leads to the menu, so the
+   bar's «Order more» stays out of the way. */
+.guest-lux:has([data-order-empty]) [data-order-more] {
+  display: none;
 }

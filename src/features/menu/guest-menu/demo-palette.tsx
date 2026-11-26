@@ -39,17 +39,17 @@ export function DemoPalette() {
     }
   };
 
-  // One small segmented control: a 36 px track holding two solid dots, the
-  // current one ringed. Each button keeps a 44 px hit area (it reaches past
-  // the track's top and bottom), so the switch looks small but taps easily.
+  // One small segmented control: a 40 px track holding two 20 px dots, the
+  // current one ringed. Each button is a full 44x44 target, 4 px from the
+  // other, so a shaky finger doesn't land on the wrong colour.
   return (
     <div
       ref={ref}
       role="group"
       aria-label={t("palette.label")}
-      className="demo-palette mr-2 flex h-11 flex-none items-center"
+      className="demo-palette flex h-11 flex-none items-center"
     >
-      <span className="rounded-guest-md flex h-9 items-center bg-[var(--guest-chip)] px-0.5">
+      <span className="flex h-10 items-center gap-1 rounded-full bg-[var(--guest-chip)]">
         {(["mono", "blue"] as const).map((p) => (
           <button
             key={p}
@@ -58,11 +58,11 @@ export function DemoPalette() {
             aria-label={t(`palette.${p}`)}
             title={t(`palette.${p}`)}
             onClick={() => pick(p)}
-            className="group -my-1 grid h-11 w-9 place-items-center"
+            className="group -my-0.5 grid size-11 place-items-center rounded-full"
           >
             <span
               aria-hidden="true"
-              className={`block size-4 rounded-full group-aria-pressed:shadow-[0_0_0_2px_var(--guest-surface),0_0_0_3.5px_var(--guest-ink)] ${
+              className={`block size-5 rounded-full group-aria-pressed:shadow-[0_0_0_2px_var(--guest-chip),0_0_0_4px_var(--guest-ink)] ${
                 p === "mono" ? "bg-[#111111]" : "bg-[#1d4ed8]"
               }`}
             />

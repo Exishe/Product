@@ -98,38 +98,30 @@ export function Stepper({
   );
 }
 
-// Tags (owner, Nov 2026: no pill badges everywhere). Only two are a badge,
-// one style for both: «սիրված» and the chef's pick, on the photo's corner or
-// in the meta line of a card without one. The rest (diet, spicy, new) are
-// plain words in the muted meta line, joined with « · », so they follow the
-// café's palette instead of fixed hues.
+// Tags (owner, Nov 2026: no pill badges everywhere; ADR-093 area pass: one
+// treatment). Every tag is a word in the dish's meta line, joined with « · »;
+// the two that single a dish out, «սիրված» and the chef's pick, are set in
+// the ink and semibold, so they read first without a box, a pill or a corner
+// label clipped on a narrow photo. The same on a row, a card and the sheet.
 export const BADGE_TAGS: readonly GuestTag[] = ["popular", "chefs_pick"];
 export const isBadgeTag = (tag: GuestTag) => BADGE_TAGS.includes(tag);
 
-export function TagBadge({ label, onPhoto = false }: { label: string; onPhoto?: boolean }) {
-  return (
-    <span
-      className={`rounded-guest-sm text-ink inline-block px-2 py-1 text-meta leading-none font-semibold whitespace-nowrap ${
-        onPhoto ? "bg-surface" : "bg-chip"
-      }`}
-    >
-      {label}
-    </span>
-  );
+export function TagBadge({ label }: { label: string }) {
+  return <span className="text-ink font-semibold">{label}</span>;
 }
 
-/** A tag in a meta line: a badge for the two badge tags, a plain word otherwise. */
+/** A tag in a meta line: the ink for the two badge tags, a plain muted word otherwise. */
 export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
   return isBadgeTag(tag) ? <TagBadge label={label} /> : <span>{label}</span>;
 }
 
-/** Short facts in one muted 12 px line, joined with « · » (portion, tags, sold out). */
+/** Short facts in one muted 15 px line, joined with « · » (portion, tags, sold out). */
 export function MetaLine({ parts, className = "" }: { parts: ReactNode[]; className?: string }) {
   const shown = parts.filter(Boolean);
   if (shown.length === 0) return null;
   return (
     <span
-      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1 text-meta leading-[1.4] ${className}`}
+      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-label leading-[1.4] ${className}`}
     >
       {shown.map((part, i) => (
         <span key={i} className="contents">

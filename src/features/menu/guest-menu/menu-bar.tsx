@@ -1,22 +1,23 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { DemoPalette } from "./demo-palette";
-import { BrandMark, LanguageNav, TableChip, type HomeLink, type LanguageLink } from "./guest-header";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { BrandMark, GuestBar, type HomeLink, type LanguageLink } from "./guest-header";
 
-// The menu's bar (design battle entry B): a white strip with the café's mark on
-// the left and the table and languages on the right, then one beige band holding
-// the section groups and the search with the allergy filter. On a phone the
-// search comes first and the groups sit under it as tabs; from 1024 px the groups
-// take the left of the band and the search the right. The whole header stays at
-// the top while the menu scrolls; the section dropdown opens under it
-// (category-nav.tsx finds it by data-menubar).
+// The menu's top (ADR-093 area pass, benchmark §2.1). The guest bar (the café,
+// the languages, then the table or why there is none) sits on the page and
+// scrolls away; only the band under it stays: the search pill and one row of
+// section tabs, about 104 px on a phone, a sixth of the screen instead of a
+// third. A hairline shows under the band once the page has scrolled under it.
+// The band publishes its height as --guest-sticky on <html> (section headings
+// and focused controls land just under it) and is what the section tabs
+// measure for the scroll-spy (data-menubar).
 export function MenuBar({
   cafeName,
   logoUrl,
   wordmarkUrl,
   home,
   tableLabel,
+  note,
   languages,
   nav,
   tools,
@@ -27,33 +28,62 @@ export function MenuBar({
   wordmarkUrl: string | null;
   home: HomeLink;
   tableLabel: string | null;
+  /** Under the café's name when there is no table (scan the QR code). */
+  note?: ReactNode;
   languages: readonly LanguageLink[];
-  /** The section groups. */
+  /** The section tabs. */
   nav: ReactNode;
-  /** The order button. */
+  /** The order button (from 1024 px). */
   tools: ReactNode;
-  /** The search field (and the allergy filter). */
+  /** The search pill (and the filter inside it). */
   search: ReactNode;
 }) {
+  const [stuck, setStuck] = useState(false);
+  const sentinel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setStuck(!e!.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const observer = useRef<ResizeObserver | null>(null);
+  const band = useCallback((el: HTMLDivElement | null) => {
+    const root = document.documentElement;
+    observer.current?.disconnect();
+    if (!el) {
+      root.style.removeProperty("--guest-sticky");
+      return;
+    }
+    const publish = () => root.style.setProperty("--guest-sticky", `${Math.round(el.offsetHeight)}px`);
+    publish();
+    observer.current = new ResizeObserver(publish);
+    observer.current.observe(el);
+  }, []);
   return (
-    <header data-menubar="" data-testid="menubar" className="bg-surface sticky top-0 z-20">
-      <div className="mx-auto flex w-full max-w-[1240px] items-center gap-3 px-4 py-1.5 md:px-8">
-        <div className="min-w-0 flex-1">
-          <BrandMark cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} as="h1" />
-        </div>
-        <div className="flex flex-none items-center gap-1.5">
-          {tableLabel && <TableChip label={tableLabel} />}
-          <DemoPalette />
-          <LanguageNav languages={languages} />
-          {tools}
-        </div>
-      </div>
-      <div className="border-line border-b bg-[var(--guest-band)]">
-        <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-end gap-x-6 px-4 pt-3 md:px-8 lg:pt-2">
-          <div className="w-full lg:order-2 lg:w-[26rem] lg:flex-none lg:pb-2">{search}</div>
+    <>
+      <header data-testid="menubar" className="guest-head bg-surface text-ink">
+        <GuestBar
+          brand={<BrandMark cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} as="h1" />}
+          tableLabel={tableLabel}
+          note={note}
+          languages={languages}
+          tools={tools}
+        />
+      </header>
+      <div ref={sentinel} aria-hidden="true" className="h-px" />
+      <div
+        ref={band}
+        data-menubar=""
+        data-testid="menuband"
+        data-stuck={stuck || undefined}
+        className="sticky top-0 z-20 -mt-px border-b border-transparent bg-[var(--guest-band)] transition-[border-color] duration-200 data-[stuck]:border-[var(--guest-line)]"
+      >
+        <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center gap-x-6 px-4 pt-1 md:px-8 lg:py-2">
+          <div className="w-full lg:w-[26rem] lg:flex-none">{search}</div>
           <div className="w-full min-w-0 lg:order-1 lg:w-auto lg:flex-1">{nav}</div>
         </div>
       </div>
-    </header>
+    </>
   );
 }

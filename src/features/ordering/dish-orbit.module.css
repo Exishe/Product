@@ -25,7 +25,10 @@
   transform-origin: 0 0;
 }
 
+/* The swoosh behind the plate is gone (ADR-093 area pass: no decoration); its
+   tween in dish-orbit.tsx keeps running on a hidden path. */
 .arc {
+  display: none;
   position: absolute;
   top: 0;
   left: 0;
@@ -82,13 +85,6 @@
   visibility: visible;
 }
 
-.eye {
-  margin: 0 0 4px 2px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--guest-muted);
-}
-
 .t1,
 .t2 {
   display: block;
@@ -140,27 +136,39 @@
   visibility: visible;
 }
 
+/* The price as the menu sets it: the price colour, no chip. */
 .badge {
   display: inline-block;
-  min-width: 46px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  /* The menu's price colour on a quiet chip. */
-  background: var(--guest-chip);
   color: var(--guest-accent-text);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
-  transition: background-color 1100ms ease-in-out;
 }
 
 .desc {
-  min-height: 56px;
-  margin: 14px 0 0;
+  min-height: 48px;
+  margin: 8px 0 0;
   color: var(--guest-muted);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* «‹ 1 / 9 ›» on a phone (the dots are for the wide canvas only). */
+.counter {
+  display: none;
+}
+
+.step {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--guest-line-strong);
+  border-radius: 999px;
+  background: var(--guest-page);
+  color: var(--guest-ink);
+  cursor: pointer;
 }
 
 .strip {
@@ -222,7 +230,7 @@
 
 .thName {
   max-width: 80px;
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.25;
   text-align: center;
@@ -259,8 +267,8 @@
 
 .dot {
   display: grid;
-  width: 18px;
-  height: 12px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
   background: none;
@@ -270,11 +278,10 @@
 
 .dot i {
   display: block;
-  width: 3px;
-  height: 3px;
-  border-radius: 3px;
-  background: var(--guest-ink);
-  opacity: 0.45;
+  width: 6px;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--guest-line-strong);
   transition:
     height 450ms cubic-bezier(0.3, 0.7, 0.2, 1),
     opacity 300ms;
@@ -286,7 +293,7 @@
 
 .dot[aria-current] i {
   height: 22px;
-  opacity: 0.9;
+  background: var(--guest-ink);
 }
 
 .sr {
@@ -323,66 +330,68 @@
   }
 
   .pager {
-    position: relative;
-    top: auto;
-    left: auto;
+    display: none;
+  }
+
+  .counter {
+    display: flex;
     order: 5;
-    flex-direction: row;
-    margin-top: 10px;
-  }
-
-  .dot {
-    width: 12px;
-    height: 18px;
-  }
-
-  .dot[aria-current] {
-    width: 28px;
-    height: 18px;
-  }
-
-  .dot i {
-    width: 3px;
-    height: 3px;
-  }
-
-  .dot[aria-current] i {
-    width: 22px;
-    height: 3px;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+    color: var(--guest-muted);
+    font-size: 15px;
+    font-weight: 600;
   }
 
   .plates {
     position: relative;
     top: auto;
     left: auto;
-    width: min(62vw, 15rem);
-    height: min(62vw, 15rem);
+    width: min(46vw, 11rem);
+    height: min(46vw, 11rem);
   }
 
   .head {
     position: relative;
     top: auto;
     left: auto;
+    order: 2;
     width: 100%;
-    height: 132px;
-    margin-top: 12px;
+    height: 60px;
+    margin-top: 16px;
     text-align: center;
+  }
+
+  /* Name, price, description, then the button. */
+  .card {
+    position: relative;
+    top: auto;
+    left: auto;
+    order: 3;
+    width: 100%;
+    max-width: 22rem;
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: center;
+  }
+
+  .desc {
+    display: -webkit-box;
+    min-height: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .acts {
     position: relative;
     top: auto;
     left: auto;
-    margin-top: 2px;
-  }
-
-  .card {
-    position: relative;
-    top: auto;
-    left: auto;
-    width: 100%;
-    max-width: 22rem;
-    margin-top: 12px;
+    order: 4;
+    margin-top: 14px;
   }
 
   .strip {

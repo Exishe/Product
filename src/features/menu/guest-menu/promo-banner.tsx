@@ -24,9 +24,10 @@ export function PromoBanners({
             <span lang={p.title.lang !== locale ? p.title.lang : undefined} data-testid="promo-title">
               {p.title.text}
             </span>
-            {p.badge && !p.title.text.includes(p.badge) && (
+            {/* The hours once: not when the title already says a time. */}
+            {p.badge && !p.title.text.includes(p.badge) && !/\d/.test(p.title.text) && (
               <span
-                className="bg-surface text-ink rounded-guest-sm px-2 py-1 text-meta leading-none font-semibold whitespace-nowrap"
+                className="num text-accent-text text-label font-semibold whitespace-nowrap"
                 data-testid="promo-badge"
               >
                 {p.badge}

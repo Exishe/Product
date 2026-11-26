@@ -73,11 +73,11 @@ export function LineRow({
         <Txt
           value={item.description}
           locale={locale}
-          className={`text-soft ${col} text-body leading-[1.45] break-words`}
+          className={`text-soft ${col} text-label leading-[1.45] break-words`}
         />
       )}
       {options.length > 0 && (
-        <span className={`text-muted ${col} text-body leading-[1.45]`}>
+        <span className={`text-muted ${col} text-label leading-[1.45]`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -87,14 +87,14 @@ export function LineRow({
         </span>
       )}
       {line.note && (
-        <span className={`text-muted ${col} text-body leading-[1.45] break-words`}>
+        <span className={`text-muted ${col} text-label leading-[1.45] break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className={`text-alert ${col} text-meta font-semibold`} role="status">
+        <span className={`text-alert ${col} text-label font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}

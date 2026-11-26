@@ -13,12 +13,12 @@ describe("formatMessage", () => {
   it("picks plural forms by the language's rules", () => {
     const ruItems = ru.guest.menu.items;
     expect([1, 2, 5, 11, 21, 22].map((n) => formatMessage(ruItems, { count: n }, "ru"))).toEqual([
-      "1 блюдо",
-      "2 блюда",
-      "5 блюд",
-      "11 блюд",
-      "21 блюдо",
-      "22 блюда",
+      "1 позиция",
+      "2 позиции",
+      "5 позиций",
+      "11 позиций",
+      "21 позиция",
+      "22 позиции",
     ]);
     expect([1, 3].map((n) => formatMessage(hy.guest.menu.items, { count: n }, "hy"))).toEqual(["1 ուտեստ", "3 ուտեստ"]);
     expect([1, 3].map((n) => formatMessage(en.guest.menu.items, { count: n }, "en"))).toEqual(["1 item", "3 items"]);
