@@ -52,9 +52,11 @@ test("an owner adds 12 tables, prints them on 3 A4 sheets, and reprints table 5"
 
   await page.goto("/admin/tables");
   const row5 = row("5");
-  await row5.getByRole("button", { name: "Վերատպել QR" }).click();
+  // A new code lives in the table's editor, away from Print.
+  await row5.getByRole("button", { name: "Փոխել" }).click();
+  await row5.getByRole("button", { name: "Նոր QR կոդ" }).click();
   await expect(row5.getByRole("alert")).toContainText("Այս սեղանի հին QR կոդը կդադարի աշխատել։");
-  await row5.getByRole("button", { name: "Այո, վերատպել" }).click();
+  await row5.getByRole("button", { name: "Այո, ստեղծել նոր կոդ" }).click();
   await expect(row5.getByRole("status")).toHaveText("Նոր QR կոդը պատրաստ է, հինն այլևս չի աշխատում։ Տպեք և փակցրեք նորը։");
 
   await row5.getByRole("link", { name: "Տպել" }).click();

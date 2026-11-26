@@ -15,9 +15,13 @@ test("a dish hidden in the admin and published disappears from the guest menu", 
   await signInAsRunOwner(page.context(), cafe.restaurantId);
 
   await page.goto("/admin/menu");
+  // Show / hide lives in the dish's editor; the row then says "Hidden".
   const row = page.getByRole("listitem").filter({ hasText: "Բորանի" });
-  await row.getByRole("button", { name: "Ցուցադրվում է" }).click();
-  await expect(row.getByRole("button", { name: "Թաքցված է" })).toBeVisible();
+  await row.getByTestId("dish-row").click();
+  await page.getByRole("switch", { name: "Ցույց տալ ճաշացանկում" }).click();
+  await expect(page.getByTestId("toast").filter({ hasText: "թաքցվեց" })).toBeVisible();
+  await page.getByRole("button", { name: "Փակել" }).first().click();
+  await expect(row.getByTestId("dish-row")).toContainText("Թաքցված է");
   await page.getByRole("button", { name: "Հրապարակել" }).click();
   await expect(page.getByText("Հրապարակված է։")).toBeVisible();
 

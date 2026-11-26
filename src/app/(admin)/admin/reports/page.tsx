@@ -60,6 +60,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     api.rpc("last_weekly_digest", { p_location_id: location.id, p_locale: locale }),
     getTranslations("reports"),
   ]);
+  const nav = await getTranslations("adminNav");
   const conversion = safe(parseConversion, convRes.data, convRes.error);
   const matrix = safe(parseMatrix, matrixRes.data, matrixRes.error);
   const busy = safe(parseBusy, busyRes.data, busyRes.error);
@@ -90,6 +91,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return (
     <AdminPage
+      back={{ href: "/admin/dashboard", label: nav("dashboard") }}
       title={t("title")}
       subtitle={
         <>

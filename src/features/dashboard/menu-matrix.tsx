@@ -19,11 +19,11 @@ export async function MenuMatrix({ matrix, locale }: { matrix: Matrix; locale: L
 
   return (
     <section aria-labelledby="matrix-title" className="flex min-w-0 flex-col gap-3" data-testid="menu-matrix">
-      <div className="flex flex-col gap-1 px-1">
-        <h2 id="matrix-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+      <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
+        <h2 id="matrix-title" className="m-0 text-heading font-semibold">
           {t("title")}
         </h2>
-        <p className="text-staff-label2 m-0 max-w-prose text-[0.9375rem]">{t("hint")}</p>
+        <p className="text-staff-label2 m-0 max-w-prose text-label">{t("hint")}</p>
       </div>
 
       {any && basis !== "margin" && (
@@ -41,11 +41,11 @@ export async function MenuMatrix({ matrix, locale }: { matrix: Matrix; locale: L
       )}
 
       {!any ? (
-        <p className="text-staff-label2 m-0 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
+        <p className="text-staff-label2 m-0 py-2 text-name">
           {t("noSales")}
         </p>
       ) : (
-        <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2">
+        <ul className="m-0 grid list-none gap-x-8 gap-y-8 p-0 md:grid-cols-2">
           {QUADRANTS.map((q) => (
             <QuadrantCard key={q} q={q} dishes={groups[q]} locale={locale} t={t} />
           ))}
@@ -84,14 +84,14 @@ function QuadrantCard({
   const shown = dishes.slice(0, SHOWN);
   return (
     <li
-      className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5"
+      className="flex min-w-0 flex-col gap-3"
       data-testid={`quadrant-${q}`}
       aria-labelledby={`q-${q}`}
     >
       <div className="flex items-start gap-3">
         <QuadrantMark q={q} />
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h3 id={`q-${q}`} className="m-0 text-[1.0625rem] leading-tight font-bold">
+          <h3 id={`q-${q}`} className="m-0 text-name leading-tight font-semibold">
             {t(`${q}.name`)}
             <span className="text-staff-label2 num font-semibold"> · {dishes.length}</span>
           </h3>
@@ -112,7 +112,7 @@ function QuadrantCard({
                 <span className="font-semibold break-words" lang={dishNameLocale(d.name, locale)}>
                   {dishName(d.name, locale)}
                 </span>
-                <span className="text-staff-label2 text-[0.8125rem] break-words">
+                <span className="text-staff-label2 text-label break-words">
                   {dishName(d.section, locale)}
                 </span>
               </span>

@@ -12,9 +12,13 @@ const ICONS = { menu: BookOpen, orders: ShoppingBag, bills: ReceiptText } as con
 
 export default async function ExportPage() {
   await requireMember(["owner", "manager"]);
-  const t = await getTranslations("billing.export");
+  const [t, nav] = await Promise.all([getTranslations("billing.export"), getTranslations("adminNav")]);
   return (
-    <AdminPage title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
+    <AdminPage
+      back={{ href: "/admin/dashboard", label: nav("dashboard") }}
+      title={t("title")}
+      subtitle={<p className="m-0">{t("intro")}</p>}
+    >
       <div className={table.wrap}>
         <table className={table.table}>
           <thead className={table.head}>
@@ -44,8 +48,8 @@ export default async function ExportPage() {
                         <Icon className="size-5" />
                       </span>
                       <span className="flex min-w-0 flex-col">
-                        <span className="text-[1.0625rem] font-semibold">{t(kind)}</span>
-                        <span className="text-staff-label2 text-[0.9375rem]">{t(`${kind}Hint`)}</span>
+                        <span className="text-name font-semibold">{t(kind)}</span>
+                        <span className="text-staff-label2 text-label">{t(`${kind}Hint`)}</span>
                       </span>
                     </span>
                   </td>
@@ -61,7 +65,7 @@ export default async function ExportPage() {
                       href={`/admin/export/${kind}`}
                       download
                       data-testid={`export-${kind}`}
-                      className={button("tinted", "min-h-11 px-3 text-[0.9375rem] whitespace-nowrap")}
+                      className={button("secondary", "px-4 whitespace-nowrap")}
                     >
                       <Download aria-hidden="true" className="!size-4" />
                       {t("download")}

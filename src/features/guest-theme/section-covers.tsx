@@ -1,10 +1,10 @@
 "use client";
 
-import { ImagePlus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, ImagePlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useToast } from "@/features/admin-ui/toast";
-import { button } from "@/features/admin-ui/styles";
+import { textAction } from "@/features/admin-ui/styles";
 import { resizeToWebp } from "@/features/menu/photo";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { saveSectionCover } from "./actions";
@@ -74,22 +74,25 @@ export function SectionCovers({
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5" aria-labelledby="covers-title">
-      <h2 id="covers-title" className="m-0 text-[1.25rem] font-bold">
-        {b("covers")}
-      </h2>
-      <p className="text-staff-label2 m-0">{b("coversHint")}</p>
+    // Image slots straight on the page (ADR-093): no card around each section.
+    <section className="flex flex-col gap-4" aria-labelledby="covers-title">
+      <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
+        <h2 id="covers-title" className="m-0 text-heading font-semibold">
+          {b("covers")}
+        </h2>
+        <p className="text-staff-label2 m-0 text-label">{b("coversHint")}</p>
+      </div>
       {rows.length === 0 ? (
         <p className="text-staff-label2 m-0">{b("coversEmpty")}</p>
       ) : (
         <ul
-          className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3"
+          className="m-0 grid list-none gap-x-5 gap-y-6 p-0 sm:grid-cols-2 xl:grid-cols-3"
           data-testid="section-covers"
         >
           {rows.map((s) => {
             const name = s.name ?? b("untitled");
             return (
-              <li key={s.id} className="bg-staff-bg flex flex-col gap-3 rounded-2xl p-3">
+              <li key={s.id} className="flex min-w-0 flex-col gap-2">
                 {s.cover ? (
                   // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
                   <img
@@ -98,20 +101,23 @@ export function SectionCovers({
                     width={1200}
                     height={514}
                     loading="lazy"
-                    className="bg-staff-fill block aspect-[21/9] h-auto w-full rounded-xl object-cover"
+                    className="bg-staff-fill block aspect-video h-auto w-full rounded-xl object-cover"
                   />
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="border-staff-field block aspect-[21/9] w-full rounded-xl border border-dashed"
-                  />
+                    className="bg-staff-fill text-staff-label2 grid aspect-video w-full place-items-center rounded-xl"
+                  >
+                    <ImageIcon className="size-7" />
+                  </span>
                 )}
-                <span className="text-[1.0625rem] font-semibold [overflow-wrap:anywhere]">{name}</span>
-                <span className="flex flex-wrap gap-2">
+                <span className="flex min-w-0 flex-col items-start">
+                  <span className="min-w-0 text-label font-semibold [overflow-wrap:anywhere]">{name}</span>
+                  <span className="flex items-center">
                   <label
-                    className={button(
-                      "tinted",
-                      "has-[:focus-visible]:outline-ink min-h-11 cursor-pointer has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
+                    className={textAction(
+                      "ink",
+                      "has-[:focus-visible]:outline-ink -ml-2 cursor-pointer underline underline-offset-4 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
                     )}
                   >
                     <ImagePlus aria-hidden="true" />
@@ -130,15 +136,16 @@ export function SectionCovers({
                       type="button"
                       disabled={!ready || busy !== null}
                       onClick={() => void remove(s.id)}
-                      className={button("danger", "min-h-11")}
+                      className={textAction("danger", "ml-1")}
                       aria-label={b("coverRemove", { section: name })}
                     >
                       <Trash2 aria-hidden="true" />
                     </button>
                   )}
+                  </span>
                 </span>
                 {failed === s.id && (
-                  <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+                  <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
                     {t("uploadFailed")}
                   </p>
                 )}

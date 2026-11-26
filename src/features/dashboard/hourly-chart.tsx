@@ -24,8 +24,8 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
 
   return (
     <figure className="flex flex-col gap-3" aria-labelledby="hourly-title">
-      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 id="hourly-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+      <figcaption className="border-staff-sep flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-3">
+        <h2 id="hourly-title" className="m-0 text-heading font-semibold">
           {text.title}
         </h2>
         <ul className="text-staff-label2 m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[0.9375rem]">

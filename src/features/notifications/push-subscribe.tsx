@@ -1,6 +1,6 @@
 "use client";
 
-import { BellOff, BellRing, CircleCheck, Smartphone } from "lucide-react";
+import { BellOff, BellRing, CircleCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { button } from "@/features/admin-ui/styles";
 import { useEffect, useState } from "react";
@@ -88,12 +88,11 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
 
   return (
     <section
-      className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5"
+      className="flex flex-col gap-4"
       aria-labelledby="push-title"
       data-testid="push-section"
     >
-      <h2 id="push-title" className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <Smartphone aria-hidden="true" className="text-ink size-5 shrink-0" />
+      <h2 id="push-title" className="border-staff-sep m-0 flex items-center gap-2 border-b pb-3 text-heading font-semibold">
         {t("title")}
       </h2>
       <p className="text-staff-label2 m-0">{t("hint")}</p>

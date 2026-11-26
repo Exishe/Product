@@ -8,21 +8,19 @@ import {
   Plus,
   Printer,
   QrCode,
-  RefreshCw,
+  KeyRound,
   TriangleAlert,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { useToast } from "@/features/admin-ui/toast";
-import { button as btn, fieldLabel, input } from "@/features/admin-ui/styles";
+import { button as btn, fieldLabel, input, textAction } from "@/features/admin-ui/styles";
 import { addTable, reprintTable, updateTable, type TableResult } from "./actions";
 import type { Floor, FloorTable } from "./load.server";
 import { nextTableLabel } from "./schema";
 
 const field = input;
-const primary = btn("primary");
-const secondary = btn("secondary", "min-h-11 text-[0.9375rem]");
 
 type Notice = { kind: "ok" | "error"; text: string } | null;
 
@@ -132,104 +130,116 @@ function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
 
   return (
     <li
-      className="border-staff-sep flex flex-col gap-3 border-b px-4 py-3 last:border-0"
+      className="border-staff-sep flex flex-col gap-3 border-b py-3"
       data-testid="table-row"
       data-table-label={table.label}
     >
-      {mode === "edit" ? (
-        <form
-          className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
-          onSubmit={(e) => {
-            e.preventDefault();
-            save();
-          }}
-        >
-          <TableFields
-            floor={floor}
-            idPrefix={`table-${table.id}`}
-            {...draft}
-            onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
-          />
-          <div className="flex gap-2">
-            <button type="submit" className={primary} disabled={pending}>
-              {pending ? t("saving") : t("save")}
-            </button>
-            <button type="button" className={btn("secondary")} onClick={() => setMode("view")}>
-              {t("cancel")}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 basis-48 items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="bg-staff-fill text-staff-label2 grid size-11 shrink-0 place-items-center rounded-xl"
-            >
-              <QrCode className="size-5" />
+      {mode === "view" ? (
+        // One row per table (ADR-093): what it is, then Edit and Print. A new
+        // code, which retires the printed one, sits in the editor only.
+        <div className="flex min-h-12 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="bg-staff-fill text-ink grid size-12 shrink-0 place-items-center rounded-xl"
+          >
+            <QrCode className="size-6" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-name leading-tight font-semibold break-words">
+              {t("tableName", { label: table.label })}
             </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="text-[1.0625rem] leading-tight font-semibold break-words">
-                {t("tableName", { label: table.label })}
-              </span>
-              <span className="text-staff-label2 text-[0.9375rem]">
-                {t("seatsCount", { count: table.seats })}
-                {area ? ` · ${area}` : null}
-              </span>
+            <span className="text-staff-label2 text-label">
+              {t("seatsCount", { count: table.seats })}
+              {area ? ` · ${area}` : null}
             </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={secondary}
-              onClick={() => {
-                setDraft({ label: table.label, seats: String(table.seats), areaId: table.areaId ?? "" });
-                setNotice(null);
-                setMode("edit");
-              }}
-            >
-              <Pencil aria-hidden="true" className="!size-4" />
-              {t("edit")}
-            </button>
-            <button
-              type="button"
-              className={secondary}
-              onClick={() => {
-                setNotice(null);
-                setMode("confirm");
-              }}
-            >
-              <RefreshCw aria-hidden="true" className="!size-4" />
-              {t("reprint")}
-            </button>
-            <Link href={`/admin/tables/print?table=${table.id}`} className={secondary}>
-              <Printer aria-hidden="true" className="!size-4" />
-              {t("printOne")}
-            </Link>
-          </div>
+          </span>
+          <button
+            type="button"
+            className={textAction("ink")}
+            onClick={() => {
+              setDraft({ label: table.label, seats: String(table.seats), areaId: table.areaId ?? "" });
+              setNotice(null);
+              setMode("edit");
+            }}
+          >
+            <Pencil aria-hidden="true" />
+            {t("edit")}
+          </button>
+          {/* On a phone the label is read out but not shown: a 48 px printer button. */}
+          <Link
+            href={`/admin/tables/print?table=${table.id}`}
+            className={btn("secondary", "px-4 max-sm:w-12 max-sm:px-0")}
+          >
+            <Printer aria-hidden="true" />
+            <span className="max-sm:sr-only">{t("printOne")}</span>
+          </Link>
         </div>
-      )}
-      {mode === "confirm" && (
-        <div className="bg-pom-tint text-ink flex items-start gap-3 rounded-2xl p-4" role="alert">
-          <TriangleAlert aria-hidden="true" className="text-pomegranate mt-0.5 size-5 shrink-0" />
-          <div className="flex min-w-0 flex-col gap-3">
-            <p className="m-0">{t("reprintWarning")}</p>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={btn("destructive")} disabled={pending} onClick={reprint}>
-                {t("reprintConfirm")}
+      ) : (
+        <div className="flex flex-col gap-4 py-1">
+          <form
+            className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+          >
+            <TableFields
+              floor={floor}
+              idPrefix={`table-${table.id}`}
+              {...draft}
+              onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+            />
+            <div className="flex gap-2">
+              <button type="submit" className={btn("primary", "flex-1 sm:flex-none")} disabled={pending}>
+                {pending ? t("saving") : t("save")}
               </button>
-              <button type="button" className={btn("secondary")} onClick={() => setMode("view")}>
+              <button
+                type="button"
+                className={btn("secondary", "flex-1 sm:flex-none")}
+                onClick={() => setMode("view")}
+              >
                 {t("cancel")}
               </button>
             </div>
-          </div>
+          </form>
+          {mode === "confirm" ? (
+            <div className="bg-pom-tint text-ink flex items-start gap-3 rounded-xl p-4" role="alert">
+              <TriangleAlert aria-hidden="true" className="text-pomegranate mt-0.5 size-5 shrink-0" />
+              <div className="flex min-w-0 flex-col gap-3">
+                <p className="m-0">{t("reprintWarning")}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={btn("destructive")} disabled={pending} onClick={reprint}>
+                    {t("reprintConfirm")}
+                  </button>
+                  <button type="button" className={btn("secondary")} onClick={() => setMode("edit")}>
+                    {t("cancel")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border-staff-sep flex flex-col items-start gap-1 border-t pt-3">
+              <button
+                type="button"
+                className={textAction("danger", "-ml-2")}
+                onClick={() => {
+                  setNotice(null);
+                  setMode("confirm");
+                }}
+              >
+                <KeyRound aria-hidden="true" />
+                {t("reprint")}
+              </button>
+              <p className="text-staff-label2 m-0 text-label">{t("reprintHint")}</p>
+            </div>
+          )}
         </div>
       )}
       {notice && (
         <p
           role={notice.kind === "error" ? "alert" : "status"}
           className={clsx(
-            "m-0 flex items-start gap-2 text-[0.9375rem] font-semibold",
+            "m-0 flex items-start gap-2 text-label font-semibold",
             notice.kind === "error" ? "text-pomegranate" : "text-tarragon",
           )}
         >
@@ -254,6 +264,7 @@ export function TablesEditor({ floor }: { floor: Floor }) {
     areaId: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(floor.tables.length === 0);
   const [pending, start] = useTransition();
 
   const add = () =>
@@ -269,47 +280,59 @@ export function TablesEditor({ floor }: { floor: Floor }) {
       } else setError(errorText(t, result));
     });
 
+  // The list comes first: most visits are to print. Adding a table is one
+  // button under it; a café without tables starts with the form open.
   return (
     <div className="flex flex-col gap-6">
-      <form
-        className="grid gap-3 rounded-2xl bg-white p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end sm:p-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          add();
-        }}
-      >
-        <TableFields
-          floor={floor}
-          idPrefix="new-table"
-          {...draft}
-          onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
-        />
-        <button type="submit" className={primary} disabled={pending}>
-          <Plus aria-hidden="true" />
-          {pending ? t("adding") : t("add")}
-        </button>
-        {error && (
-          <p
-            className="text-pomegranate m-0 flex items-center gap-2 font-semibold sm:col-span-4"
-            role="alert"
-          >
-            <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
-            {error}
-          </p>
-        )}
-      </form>
-
       {floor.tables.length === 0 ? (
-        <p className="text-staff-label2 m-0 flex items-center gap-3 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
+        <p className="text-staff-label2 m-0 flex items-center gap-3 text-name">
           <QrCode aria-hidden="true" className="size-5 shrink-0" />
           {t("empty")}
         </p>
       ) : (
-        <ul className="m-0 list-none overflow-hidden rounded-2xl bg-white p-0">
+        <ul className="border-staff-sep m-0 list-none border-t p-0">
           {floor.tables.map((table) => (
             <TableRow key={table.id} floor={floor} table={table} />
           ))}
         </ul>
+      )}
+
+      {adding ? (
+        <form
+          className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
+          aria-label={t("add")}
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <TableFields
+            floor={floor}
+            idPrefix="new-table"
+            {...draft}
+            onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+          />
+          <button type="submit" className={btn("primary")} disabled={pending}>
+            <Plus aria-hidden="true" />
+            {pending ? t("adding") : t("add")}
+          </button>
+          {error && (
+            <p
+              className="text-pomegranate m-0 flex items-center gap-2 font-semibold sm:col-span-4"
+              role="alert"
+            >
+              <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
+              {error}
+            </p>
+          )}
+        </form>
+      ) : (
+        <div>
+          <button type="button" className={btn("secondary", "w-full sm:w-auto")} onClick={() => setAdding(true)}>
+            <Plus aria-hidden="true" />
+            {t("add")}
+          </button>
+        </div>
       )}
     </div>
   );

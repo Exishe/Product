@@ -4,22 +4,28 @@ import type { WeeklyDigest } from "./model";
 // "Last week's summary": the same rule-based message the owner gets in Telegram
 // on Monday (ADR-074), so it can be read without Telegram. The text comes from
 // the database in the viewer's language; it is shown as plain text.
+// The Telegram message opens with a pictograph; the admin shows no emoji
+// (ADR-093), so it is dropped from the start of the text and of each line.
+export function plainText(text: string): string {
+  return text.replace(/^[ \t]*(?:\p{Extended_Pictographic}\uFE0F?[ \t]*)+/gmu, "");
+}
+
 export async function DigestCard({ digest }: { digest: WeeklyDigest }) {
   const t = await getTranslations("reports.digest");
   return (
     <section
       aria-labelledby="digest-title"
-      className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5"
+      className="flex min-w-0 flex-col gap-4"
       data-testid="reports-digest"
     >
-      <div className="flex flex-col gap-1">
-        <h2 id="digest-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+      <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
+        <h2 id="digest-title" className="m-0 text-heading font-semibold">
           {t("title")}
         </h2>
-        <p className="text-staff-label2 m-0 max-w-prose text-[0.9375rem]">{t("hint")}</p>
+        <p className="text-staff-label2 m-0 max-w-prose text-label">{t("hint")}</p>
       </div>
-      <p className="m-0 max-w-prose text-[1.0625rem] leading-relaxed break-words whitespace-pre-line">
-        {digest.text}
+      <p className="m-0 max-w-prose text-name leading-relaxed break-words whitespace-pre-line">
+        {plainText(digest.text)}
       </p>
     </section>
   );

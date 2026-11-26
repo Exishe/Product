@@ -29,9 +29,11 @@ const createForm = (page: Page) =>
   page.locator("form").filter({ has: page.getByRole("heading", { name: "Ավելացնել մուտք" }) });
 
 async function createLogin(page: Page, role: "waiter" | "kitchen", ending: string) {
+  // The form opens in a sheet from the page's primary button and stays open.
+  if ((await createForm(page).count()) === 0) await page.getByTestId("add-person").click();
   const form = createForm(page);
   await form.getByLabel("Ում համար").selectOption(role);
-  await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill(ending);
+  await form.getByLabel("Մուտքանուն", { exact: true }).fill(ending);
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
   // The result of an earlier creation stays on screen until this one answers, so wait for this ending.
   const created = form.getByTestId("created-username");
@@ -66,7 +68,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await expect(list.getByTestId("staff-login-row")).toHaveCount(4);
   // The same ending twice is refused in the owner's language.
   const form = createForm(page);
-  await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill("sal");
+  await form.getByLabel("Մուտքանուն", { exact: true }).fill("sal");
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
   // Remote writes: up to 15 s on a loaded dev database.
   await expect(form.getByRole("alert").filter({ hasText: "արդեն զբաղված է" })).toBeVisible({ timeout: 15_000 });
@@ -82,6 +84,9 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await expect(k.page).toHaveURL(/\/kitchen\/[0-9a-f-]{36}$/, { timeout: 30_000 });
   expect((await k.page.goto("/admin/staff"))?.status()).toBe(403);
   await k.context.close();
+
+  // Close the sheet to work with the list again.
+  await page.getByRole("dialog").getByRole("button", { name: "Փակել" }).click();
 
   // A new password set by the owner works, and the old one stops working.
   const row = (name: string) => list.locator(`[data-username="${name}"]`);

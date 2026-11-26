@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Send } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { button } from "@/features/admin-ui/styles";
 import { useActionState } from "react";
@@ -22,9 +22,8 @@ export function TelegramConnect({
   const t = useTranslations("telegram");
   const [state, action, pending] = useActionState(createTelegramLink, initial);
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
-      <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <Send aria-hidden="true" className="text-ink size-5 shrink-0" />
+    <form action={action} className="flex flex-col gap-4">
+      <h2 className="border-staff-sep m-0 flex items-center gap-2 border-b pb-3 text-heading font-semibold">
         {t("connectTitle")}
       </h2>
       <p className="text-staff-label2 m-0">{t("connectHint")}</p>
@@ -53,14 +52,14 @@ export function TelegramConnect({
                 <ExternalLink aria-hidden="true" />
                 {t("openGroup")}
               </a>
-              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("linkHint")}</p>
+              <p className="text-staff-label2 m-0 text-label">{t("linkHint")}</p>
             </>
           ) : (
             <>
               <code className="num bg-staff-bg rounded-xl p-3 text-lg break-all">
                 {startCommand(state.code)}
               </code>
-              <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("commandHint")}</p>
+              <p className="text-staff-label2 m-0 text-label">{t("commandHint")}</p>
             </>
           )}
         </div>

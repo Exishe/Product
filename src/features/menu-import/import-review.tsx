@@ -87,7 +87,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
     return (
       <div className="flex flex-col gap-8">
         <ImportSteps current="publish" />
-        <section role="status" className="flex flex-col items-start gap-4 rounded-2xl bg-white p-6 sm:p-8">
+        <section role="status" className="flex flex-col items-start gap-4 py-4">
           <CircleCheck aria-hidden="true" className="text-tarragon size-10" />
           <h2 className="m-0 text-[1.75rem] leading-tight font-bold">
             {result.published ? t("doneTitle") : t("addedTitle", { count: result.dishes })}
@@ -201,7 +201,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
             const sectionChecked = category.items.every((i) => i.reviewed);
             return (
               <section key={ci} aria-labelledby={`section-${ci}`} className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-white p-3">
+                <div className="flex flex-wrap items-end gap-3">
                   <label className="flex min-w-0 flex-1 flex-col gap-1">
                     <span id={`section-${ci}`} className="sr-only">
                       {t("sectionName")}

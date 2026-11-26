@@ -1,10 +1,11 @@
 import { clsx } from "clsx";
-import { Ban, CircleCheck, Clock, Monitor } from "lucide-react";
+import { Ban, CircleCheck, Clock, Mail, Monitor, MonitorSmartphone, UserPlus } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { AdminPage, Section } from "@/features/admin-ui/page";
-import { button, chip, table } from "@/features/admin-ui/styles";
+import { SheetButton } from "@/features/admin-ui/sheet-button";
+import { chip, table, textAction } from "@/features/admin-ui/styles";
 import { InviteForm } from "@/features/staff/invite-form";
 import { parseStaffLogins } from "@/features/staff/logins-model";
 import { PairDeviceForm } from "@/features/staff/pair-device-form";
@@ -112,13 +113,13 @@ export default async function StaffPage() {
                 <span className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-[0.9375rem] font-semibold max-sm:hidden"
+                    className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-label font-semibold max-sm:hidden"
                   >
                     {kind === "people" ? initials(m.display_name) : <Monitor className="size-5" />}
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-[1.0625rem] font-semibold break-words">{m.display_name}</span>
-                    <span className="text-staff-label2 text-[0.9375rem]">{t(`roles.${m.role}`)}</span>
+                    <span className="text-name font-semibold break-words">{m.display_name}</span>
+                    <span className="text-staff-label2 text-label">{t(`roles.${m.role}`)}</span>
                     {/* On phones the status sits under the name; the column needs the width. */}
                     <span className="mt-1.5 sm:hidden">{status(m)}</span>
                   </span>
@@ -129,7 +130,7 @@ export default async function StaffPage() {
                 {m.is_active && m.role !== "owner" && (me.role === "owner" || m.kind === "device") && (
                   <form action={revokeMember}>
                     <input type="hidden" name="memberId" value={m.id} />
-                    <button type="submit" className={button("danger", "min-h-11 px-3 text-[0.9375rem]")}>
+                    <button type="submit" className={textAction("danger")}>
                       {t("revoke")}
                     </button>
                   </form>
@@ -156,19 +157,25 @@ export default async function StaffPage() {
       : null,
   }));
 
+  const close = t("close");
+  // One page, three lists with the same rows (ADR-093): the logins the
+  // screens use, the people with their own account, the paired devices. Each
+  // create form opens in a sheet; the common one (a new waiter or kitchen
+  // login) is the page's one primary button.
   return (
-    <AdminPage title={t("title")}>
-      {loginsAvailable && (
-        <Section
-          title={t("logins.title")}
-          hint={t("logins.intro")}
-          id="staff-logins"
-          testId="staff-logins"
-          bare
-        >
+    <AdminPage
+      title={t("title")}
+      actions={
+        loginsAvailable && (
           <NextIntlClientProvider>
-            <div className="flex min-w-0 flex-col gap-4">
-              <StaffLoginList rows={loginRows} roleLabels={roleLabels} />
+            <SheetButton
+              kind="primary"
+              label={t("addPerson")}
+              title={t("logins.createTitle")}
+              closeLabel={close}
+              icon={<UserPlus aria-hidden="true" />}
+              testId="add-person"
+            >
               <CreateLoginForm
                 stations={(stations ?? []).map((s) => ({
                   id: s.id,
@@ -177,26 +184,60 @@ export default async function StaffPage() {
                 prefix={restaurant?.slug ?? ""}
                 roleLabels={roleLabels}
               />
-            </div>
+            </SheetButton>
+          </NextIntlClientProvider>
+        )
+      }
+    >
+      {loginsAvailable && (
+        <Section
+          title={t("logins.title")}
+          hint={t("logins.intro")}
+          id="staff-logins"
+          testId="staff-logins"
+        >
+          <NextIntlClientProvider>
+            <StaffLoginList rows={loginRows} roleLabels={roleLabels} />
           </NextIntlClientProvider>
         </Section>
       )}
-      <Section title={t("people")} id="staff-people" bare>
+      <Section
+        title={t("people")}
+        id="staff-people"
+        actions={
+          me.role === "owner" && (
+            <NextIntlClientProvider>
+              <SheetButton label={t("inviteOpen")} title={t("inviteTitle")} closeLabel={close} icon={<Mail aria-hidden="true" />}>
+                <InviteForm baseUrl={baseUrl} />
+              </SheetButton>
+            </NextIntlClientProvider>
+          )
+        }
+      >
         {list(people, "people")}
       </Section>
-      <Section title={t("devices")} id="staff-devices" bare>
+      <Section
+        title={t("devices")}
+        id="staff-devices"
+        actions={
+          <NextIntlClientProvider>
+            <SheetButton
+              label={t("pairTitle")}
+              title={t("pairTitle")}
+              closeLabel={close}
+              icon={<MonitorSmartphone aria-hidden="true" />}
+            >
+              <PairDeviceForm pairUrl={`${baseUrl}/pair`} />
+            </SheetButton>
+          </NextIntlClientProvider>
+        }
+      >
         {devices.length > 0 ? (
           list(devices, "devices")
         ) : (
-          <p className="text-staff-label2 m-0 rounded-2xl bg-white px-4 py-5">{t("noDevices")}</p>
+          <p className="text-staff-label2 m-0 text-name">{t("noDevices")}</p>
         )}
       </Section>
-      <NextIntlClientProvider>
-        <div className="grid items-start gap-4 md:grid-cols-2">
-          <PairDeviceForm pairUrl={`${baseUrl}/pair`} />
-          {me.role === "owner" && <InviteForm baseUrl={baseUrl} />}
-        </div>
-      </NextIntlClientProvider>
     </AdminPage>
   );
 }

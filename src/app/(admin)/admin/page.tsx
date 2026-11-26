@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { clsx } from "clsx";
 import { AdminPage, Section, SettingsItem, SettingsList } from "@/features/admin-ui/page";
 import { AlertSettingsForm } from "@/features/alerts/alert-settings";
 import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
@@ -25,6 +26,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Locale } from "@/i18n/routing";
 
 type Todo = { key: string; href: string; text: string };
+
+const kpi =
+  "border-staff-sep flex min-w-0 flex-col gap-0.5 sm:border-l sm:px-6 sm:first:border-l-0 sm:first:pl-0";
+const kpiLabel = "text-staff-label2 text-label font-semibold";
+const kpiFigure = "m-0 text-large leading-tight font-bold";
 
 // Admin home: how today is going and what still needs doing, instead of a
 // second copy of the sidebar. Every row links to the page where the owner acts.
@@ -216,7 +222,7 @@ export default async function AdminHome() {
         actions={
           <Link
             href="/admin/dashboard"
-            className="text-ink inline-flex min-h-11 items-center gap-0.5 text-[0.9375rem] font-semibold underline underline-offset-4"
+            className="text-ink inline-flex min-h-11 items-center gap-0.5 text-label font-semibold underline underline-offset-4"
           >
             {t("allSales")}
             <ChevronRight aria-hidden="true" className="size-4" />
@@ -224,51 +230,50 @@ export default async function AdminHome() {
         }
       >
         {data ? (
-          <dl className="num m-0 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-            <div className="col-span-2 flex flex-col gap-0.5 sm:col-span-1">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("revenue")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold" data-testid="home-revenue">
+          // The same KPI row as Sales and Reports: figures on the page, 15 px
+          // labels, a hairline between the figures from 640 px.
+          <dl className="num m-0 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 sm:gap-x-0">
+            <div className={clsx(kpi, "col-span-2 sm:col-span-1")}>
+              <dt className={kpiLabel}>{d("revenue")}</dt>
+              <dd className={clsx(kpiFigure, "xl:text-figure")} data-testid="home-revenue">
                 {formatAmd(data.summary.revenue, locale)}
               </dd>
-              <dd className="text-staff-label2 m-0 text-[0.9375rem]">
+              <dd className="text-staff-label2 m-0 text-label">
                 {delta === null
                   ? d("noCompare")
                   : `${delta === 0 ? d("deltaSame") : d(delta > 0 ? "deltaUp" : "deltaDown", { pct: Math.abs(delta) })} ${d("compareToday")}`}
               </dd>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("orders")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold">
-                {formatInteger(data.summary.orders, locale)}
-              </dd>
+            <div className={kpi}>
+              <dt className={kpiLabel}>{d("orders")}</dt>
+              <dd className={clsx(kpiFigure, "xl:text-figure")}>{formatInteger(data.summary.orders, locale)}</dd>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("openTables")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold">
-                {formatInteger(data.open_tables.count, locale)}
-              </dd>
+            <div className={kpi}>
+              <dt className={kpiLabel}>{d("openTables")}</dt>
+              <dd className={clsx(kpiFigure, "xl:text-figure")}>{formatInteger(data.open_tables.count, locale)}</dd>
               {data.open_tables.count > 0 && (
-                <dd className="text-staff-label2 m-0 text-[0.9375rem]">
+                <dd className="text-staff-label2 m-0 text-label">
                   {formatAmd(data.open_tables.total, locale)}
                 </dd>
               )}
             </div>
           </dl>
         ) : (
-          <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("noSales")}</p>
+          <p className="text-staff-label2 m-0 text-name">{t("noSales")}</p>
         )}
       </Section>
 
       {todos.length > 0 && (
         <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
-          <ul className="m-0 flex list-none flex-col rounded-2xl bg-white p-0">
+          <ul className="border-staff-sep m-0 flex list-none flex-col border-t p-0">
             {todos.map((todo) => (
-              <li key={todo.key} className="border-staff-sep border-t first:border-0">
+              <li key={todo.key} className="border-staff-sep border-b">
                 <Link
                   href={todo.href}
                   data-testid={`todo-${todo.key}`}
-                  className="flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]"
+                  className="flex min-h-14 items-center gap-3 py-3 text-name"
                 >
+                  <span aria-hidden="true" className="bg-amber-text size-2 shrink-0 rounded-full" />
                   <span className="min-w-0 flex-1 break-words">{todo.text}</span>
                   <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />
                 </Link>

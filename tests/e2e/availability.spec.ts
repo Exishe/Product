@@ -21,19 +21,19 @@ test("the owner pauses ordering and closes the kitchen from the admin home", asy
 
   const pause = section.getByTestId("control-pause");
   await expect(pause).toContainText("Հյուրերը կարող են պատվիրել");
-  await pause.getByRole("button", { name: "Կանգնեցնել պատվերները" }).click();
+  await pause.getByRole("button", { name: "Կանգնեցված" }).click();
   await pause.getByRole("button", { name: "20 րոպե" }).click();
   await expect(pause.getByRole("status")).toContainText("Պատվերները կանգնեցված են մինչև");
   await page.reload();
   await expect(page.getByTestId("control-pause").getByRole("status")).toContainText("մինչև");
-  await page.getByTestId("control-pause").getByRole("button", { name: "Նորից ընդունել պատվերները" }).click();
+  await page.getByTestId("control-pause").getByRole("button", { name: "Ընդունվում են" }).click();
   await expect(page.getByTestId("control-pause").getByRole("status")).toContainText("Հյուրերը կարող են պատվիրել");
 
   // Without minutes it holds until resumed.
-  await page.getByRole("button", { name: "Կանգնեցնել պատվերները" }).click();
+  await page.getByTestId("control-pause").getByRole("button", { name: "Կանգնեցված" }).click();
   await page.getByRole("button", { name: "Մինչև նորից միացնեմ" }).click();
   await expect(page.getByTestId("control-pause").getByRole("status")).toContainText("մինչև նորից միացնեք");
-  await page.getByRole("button", { name: "Նորից ընդունել պատվերները" }).click();
+  await page.getByTestId("control-pause").getByRole("button", { name: "Ընդունվում են" }).click();
 
   const kitchen = page.getByTestId("control-kitchen");
   await kitchen.getByRole("button", { name: "Փակել խոհանոցն այսօրվա համար" }).click();

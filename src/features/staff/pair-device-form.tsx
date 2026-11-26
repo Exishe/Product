@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, MonitorSmartphone } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { button, fieldLabel, input } from "@/features/admin-ui/styles";
@@ -12,11 +12,8 @@ export function PairDeviceForm({ pairUrl }: { pairUrl: string }) {
   const t = useTranslations("staff");
   const [state, action, pending] = useActionState(createPairing, initial);
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
-      <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <MonitorSmartphone aria-hidden="true" className="text-ink size-5" />
-        {t("pairTitle")}
-      </h2>
+    <form action={action} className="flex flex-col gap-5">
+      {/* The sheet shows the title. */}
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>{t("pairRole")}</span>
         <select name="role" className={input} defaultValue="kitchen">
@@ -28,7 +25,7 @@ export function PairDeviceForm({ pairUrl }: { pairUrl: string }) {
         <span className={fieldLabel}>{t("pairLabel")}</span>
         <input name="label" required maxLength={60} className={input} />
       </label>
-      <button type="submit" disabled={pending} className={button("primary")}>
+      <button type="submit" disabled={pending} className={button("primary", "sm:w-fit")}>
         {t("pairSubmit")}
       </button>
       {state.code && (
@@ -39,7 +36,7 @@ export function PairDeviceForm({ pairUrl }: { pairUrl: string }) {
           >
             {state.code}
           </p>
-          <p className="text-staff-label2 m-0 text-[0.9375rem] break-words">
+          <p className="text-staff-label2 m-0 text-label break-words">
             {t("pairCode", { url: pairUrl })}
           </p>
         </div>

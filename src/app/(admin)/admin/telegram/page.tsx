@@ -53,7 +53,7 @@ export default async function TelegramPage() {
         {!botReady && (
           <p
             role="status"
-            className="bg-amber-tint m-0 flex items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]"
+            className="bg-amber-tint m-0 flex items-start gap-3 rounded-xl px-4 py-3 text-name"
             data-testid="bot-not-ready"
           >
             <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
@@ -63,11 +63,11 @@ export default async function TelegramPage() {
         <TelegramConnect botReady={botReady} botUsername={env.TELEGRAM_BOT_USERNAME ?? null} />
         <Section title={t("chats")} id="chats-title" bare>
           {chats.length === 0 ? (
-            <p className="text-staff-label2 m-0 rounded-2xl bg-white px-4 py-5" data-testid="no-chats">
+            <p className="text-staff-label2 m-0 text-name" data-testid="no-chats">
               {t("noChats")}
             </p>
           ) : (
-            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+            <ul className="m-0 flex list-none flex-col p-0">
               {chats.map((c) => (
                 <ChannelCard key={c.id} channel={c} />
               ))}
@@ -76,7 +76,7 @@ export default async function TelegramPage() {
         </Section>
         <PushSubscribe vapidPublicKey={env.VAPID_PUBLIC_KEY ?? null} />
         {mine.length > 0 && (
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="border-staff-sep -mt-6 m-0 flex list-none flex-col border-t p-0">
             {mine.map((c) => (
               <ChannelCard key={c.id} channel={c} />
             ))}

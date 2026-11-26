@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
@@ -30,15 +31,19 @@ export function TestDataPanel({ from, to, period }: { from: string; to: string; 
   }
 
   return (
-    <details className="rounded-2xl bg-white p-4" data-testid="test-data-panel">
-      <summary className="flex min-h-11 cursor-pointer items-center text-[1.0625rem] font-semibold">
-        {t("title")}
+    <details className="group border-staff-sep border-t" data-testid="test-data-panel">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 text-name font-semibold [&::-webkit-details-marker]:hidden">
+        <span className="flex-1">{t("title")}</span>
+        <ChevronDown
+          aria-hidden="true"
+          className="text-staff-label2 size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+        />
       </summary>
-      <div className="mt-2 flex flex-col gap-3">
-        <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("hint", { period })}</p>
+      <div className="flex flex-col gap-3 pb-4">
+        <p className="text-staff-label2 m-0 text-label">{t("hint", { period })}</p>
         {ask ? (
           <div className="flex flex-col gap-3">
-            <p className="m-0 text-[1.0625rem] font-semibold">
+            <p className="m-0 text-name font-semibold">
               {ask === "exclude" ? t("confirmExclude", { period }) : t("confirmInclude", { period })}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -46,7 +51,7 @@ export function TestDataPanel({ from, to, period }: { from: string; to: string; 
                 type="button"
                 disabled={pending}
                 onClick={() => run(ask === "exclude")}
-                className={button("primary", "min-h-11 text-[0.9375rem]")}
+                className={button("primary")}
                 data-testid="test-data-confirm"
               >
                 {ask === "exclude" ? t("exclude") : t("include")}
@@ -55,7 +60,7 @@ export function TestDataPanel({ from, to, period }: { from: string; to: string; 
                 type="button"
                 disabled={pending}
                 onClick={() => setAsk(null)}
-                className={button("tinted", "min-h-11 text-[0.9375rem]")}
+                className={button("secondary")}
               >
                 {t("cancel")}
               </button>
@@ -66,7 +71,7 @@ export function TestDataPanel({ from, to, period }: { from: string; to: string; 
             <button
               type="button"
               onClick={() => setAsk("exclude")}
-              className={button("secondary", "min-h-11 text-[0.9375rem]")}
+              className={button("secondary", "min-h-11 text-label")}
               data-testid="test-data-exclude"
             >
               {t("exclude")}
@@ -74,13 +79,13 @@ export function TestDataPanel({ from, to, period }: { from: string; to: string; 
             <button
               type="button"
               onClick={() => setAsk("include")}
-              className={button("tinted", "min-h-11 text-[0.9375rem]")}
+              className={button("secondary")}
             >
               {t("include")}
             </button>
           </div>
         )}
-        <p role="status" className="m-0 text-[0.9375rem] font-semibold">
+        <p role="status" className="m-0 text-label font-semibold">
           {result?.kind === "done"
             ? t(result.excluded ? "doneExcluded" : "doneIncluded", { count: result.orders })
             : result?.kind === "failed"

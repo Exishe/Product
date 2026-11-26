@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import { ChefHat, CirclePause, CirclePlay } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState, useTransition } from "react";
-import { button, fieldLabel, input } from "@/features/admin-ui/styles";
+import { button, fieldLabel, input, textAction } from "@/features/admin-ui/styles";
 import { formatTime } from "@/lib/format/date";
 import { pauseOrdering, resumeOrdering, setKitchenClosedToday, type ControlResult } from "./actions";
 
@@ -66,8 +66,15 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
     );
   }
 
-  const row = "flex flex-col gap-3 border-staff-sep border-t pt-4 first:border-0 first:pt-0";
-  const statusLine = "m-0 flex items-start gap-2 text-[1.0625rem] font-semibold";
+  const row = "flex flex-col gap-3 border-staff-sep border-t pt-5 first:border-0 first:pt-0";
+  const statusLine = "m-0 flex items-start gap-2 text-name";
+  const segment = (on: boolean, alert = false) =>
+    clsx(
+      "flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-label font-semibold transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
+      on ? "text-ink bg-white shadow-sm" : "text-staff-label2",
+      on && alert && "[&_svg]:text-pomegranate",
+      on && !alert && "[&_svg]:text-tarragon",
+    );
 
   return (
     <div className="flex flex-col gap-4" data-testid="venue-controls">
@@ -86,20 +93,39 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               : t("orderingOn")}
           </span>
         </p>
-        {pausedNow ? (
-          <div>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                run(resumeOrdering, () => setState((s) => ({ ...s, paused: false, pausedUntil: null })))
-              }
-              className={button("primary", "w-full sm:w-auto")}
-            >
-              {t("resume")}
-            </button>
-          </div>
-        ) : choosing ? (
+        {/* One segmented switch (ADR-093): taking orders or paused. Paused
+            first asks for how long; taking orders again resumes at once. */}
+        <div
+          role="group"
+          aria-label={t("segmentLabel")}
+          className="bg-staff-fill grid grid-cols-2 gap-1 rounded-full p-1 sm:max-w-md"
+        >
+          <button
+            type="button"
+            aria-pressed={!pausedNow && !choosing}
+            disabled={pending}
+            onClick={() =>
+              pausedNow
+                ? run(resumeOrdering, () => setState((s) => ({ ...s, paused: false, pausedUntil: null })))
+                : setChoosing(false)
+            }
+            className={segment(!pausedNow && !choosing)}
+          >
+            <CirclePlay aria-hidden="true" />
+            {t("segOn")}
+          </button>
+          <button
+            type="button"
+            aria-pressed={pausedNow || choosing}
+            disabled={pending}
+            onClick={() => !pausedNow && setChoosing(true)}
+            className={segment(pausedNow || choosing, true)}
+          >
+            <CirclePause aria-hidden="true" />
+            {t("segPaused")}
+          </button>
+        </div>
+        {choosing && !pausedNow && (
           <div className="flex flex-col gap-3">
             <p className={clsx(fieldLabel, "m-0")}>{t("howLong")}</p>
             <div className="flex flex-wrap gap-2">
@@ -154,25 +180,11 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               </button>
             </div>
             {custom !== "" && !customOk && (
-              <p className="text-pomegranate m-0 text-[0.9375rem] font-semibold">{t("minutesInvalid")}</p>
+              <p className="text-pomegranate m-0 text-label font-semibold">{t("minutesInvalid")}</p>
             )}
           </div>
-        ) : (
-          <div>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setChoosing(true)}
-              className={button("tinted", "w-full sm:w-auto")}
-            >
-              <CirclePause aria-hidden="true" />
-              {t("pauseOrdering")}
-            </button>
-          </div>
         )}
-        {!pausedNow && !choosing && (
-          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("pauseHint")}</p>
-        )}
+        {!pausedNow && !choosing && <p className="text-staff-label2 m-0 text-label">{t("pauseHint")}</p>}
       </div>
 
       <div className={row} data-testid="control-kitchen">
@@ -205,7 +217,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
           </div>
         ) : confirmClose ? (
           <div className="flex flex-col gap-3">
-            <p className="m-0 text-[1.0625rem]">{t("closeConfirm")}</p>
+            <p className="m-0 text-name">{t("closeConfirm")}</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -241,7 +253,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               type="button"
               disabled={pending}
               onClick={() => setConfirmClose(true)}
-              className={button("tinted", "w-full sm:w-auto")}
+              className={textAction("ink", "-ml-2 underline underline-offset-4")}
             >
               <ChefHat aria-hidden="true" />
               {t("closeKitchen")}
@@ -251,7 +263,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
       </div>
 
       {failed && (
-        <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+        <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
           {t("failed")}
         </p>
       )}
