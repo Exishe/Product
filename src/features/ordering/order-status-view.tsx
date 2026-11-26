@@ -11,7 +11,17 @@ import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import guestStyles from "@/features/menu/guest-menu/guest.module.css";
-import { CheckIcon, MinusIcon, Notice, PlusIcon, SECTION_TITLE, STEP, Txt } from "@/features/menu/guest-menu/ui";
+import {
+  CheckIcon,
+  MinusIcon,
+  Notice,
+  ORDER_BAR,
+  ORDER_COLUMN,
+  PlusIcon,
+  SECTION_TITLE,
+  STEP,
+  Txt,
+} from "@/features/menu/guest-menu/ui";
 import { DishOrbit, type OrbitDish } from "./dish-orbit";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
@@ -486,10 +496,8 @@ function OrderCard({
 // The order status page: the guest's orders at this table (read through RLS),
 // newest first, live over the guest's Realtime channel with a 10-second
 // safety poll, plus "call the waiter" and "ask for the bill".
-/** The order page's column: 44rem of content inside the 16/32 px gutters, centred; its bar uses it too. */
-export const ORDER_COLUMN = "max-w-[48rem]";
-/** The order pages' bar: the order's column, then the menu bar's 1440 px from 1024 px. */
-export const ORDER_BAR = "max-w-[48rem] lg:max-w-[1440px]";
+// Its column and bar are the cart's too (ui.tsx).
+export { ORDER_BAR, ORDER_COLUMN };
 
 export function OrderStatusView({
   tableId,

@@ -41,6 +41,7 @@ export const BellRing = draw([
 ]);
 export const Check = draw([["path", { d: "M20 6 9 17l-5-5" }]]);
 export const ChevronRight = draw([["path", { d: "m9 18 6-6-6-6" }]]);
+export const ChevronDown = draw([["path", { d: "m6 9 6 6 6-6" }]]);
 export const ReceiptText = draw([
   ["path", { d: "M13 16H8" }],
   ["path", { d: "M14 8H8" }],

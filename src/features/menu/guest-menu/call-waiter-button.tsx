@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -63,8 +63,26 @@ async function attempt(target: Target) {
 // status page has. A guest who ordered by voice, or never ordered from this
 // phone, still finds the bill here. After sending: one line that says what
 // the waiter knows; with no answer: «not sent yet» and Try again.
-export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: string }) {
+// From 1024 px (`place="rail"`) the same choices and results unfold under the
+// order rail's «Waiter» row the guest clicked, not at the foot of the screen:
+// that row is the title and carries the ×, so this part holds only the
+// choices, indented to the row's words, on the rail's hairlines. Focus moves
+// to the first choice, and back to the row when the choices close.
+export function CallWaiterPrompt({
+  token,
+  tableId,
+  place = "dock",
+  onLeave,
+}: {
+  token: string;
+  tableId: string;
+  place?: "dock" | "rail";
+  /** Where focus goes when the rail's choices close (the «Waiter» row). */
+  onLeave?: () => void;
+}) {
   const { t, locale } = useGuestI18n();
+  const rail = place === "rail";
+  const box = useRef<HTMLDivElement>(null);
   // Read without useCallWaiter: its leave-the-page reset belongs to the page,
   // not to this panel mounting (React's dev double mount would close it).
   const current = useSyncExternalStore(subscribe, callState, () => "idle" as const);
@@ -111,27 +129,66 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
   // Escape closes the choices, like any sheet.
   useEffect(() => {
     if (current !== "confirm") return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancel();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      cancel();
+      onLeave?.();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, cancel]);
+  }, [current, cancel, onLeave]);
+
+  // In the rail, focus follows the choices: to the first one as they open
+  // (to «Card» on the paying step), and back to the «Waiter» row when the
+  // choice that held it goes away (sent or closed).
+  const choosing = current === "confirm" || current === "sending";
+  useEffect(() => {
+    if (!rail || current !== "confirm") return;
+    box.current?.querySelector<HTMLElement>("[data-choice]")?.focus({ preventScroll: true });
+  }, [rail, current, paying]);
+  // Only after a key press: a mouse click needs no ring on the row (the
+  // browser keeps the reading place for the next Tab anyway).
+  const wasChoosing = useRef(false);
+  const byKey = useRef(false);
+  useEffect(() => {
+    if (!rail) return;
+    if (choosing) {
+      wasChoosing.current = true;
+      return;
+    }
+    if (!wasChoosing.current) return;
+    wasChoosing.current = false;
+    const lost = !document.activeElement || document.activeElement === document.body;
+    if (lost && byKey.current) onLeave?.();
+  }, [rail, choosing, onLeave]);
 
   const hidden = useSyncExternalStore(subscribe, noteIsHidden, () => false);
   if (current === "idle" || (current === "called" && hidden)) return null;
   const bill = askedFor().kind === "bring_bill";
-  const row =
-    "border-line flex min-h-14 w-full items-center gap-3 border-b px-1 text-left text-body font-semibold last:border-b-0 disabled:opacity-60";
+  // The bottom panel's rows are 56 px; the rail's are its own 48 px rows,
+  // each under a hairline that starts at the «Waiter» row's words.
+  const row = rail
+    ? "border-line flex min-h-12 w-full items-center gap-3 border-t text-left text-body font-semibold underline-offset-4 hover:underline disabled:opacity-60"
+    : "border-line flex min-h-14 w-full items-center gap-3 border-b px-1 text-left text-body font-semibold last:border-b-0 disabled:opacity-60";
+  const line = rail ? "border-line border-t" : "px-1";
+  const icon = rail ? 20 : 22;
   const pill = `${styles.cta} inline-flex min-h-12 items-center justify-center gap-2 px-5 text-body font-semibold`;
-  const choice =
-    "border-line-strong bg-page hover:bg-chip inline-flex min-h-14 items-center justify-center rounded-full border text-body font-semibold disabled:opacity-60";
+  const choice = `border-line-strong bg-page hover:bg-chip inline-flex items-center justify-center rounded-full border text-body font-semibold disabled:opacity-60 ${rail ? "min-h-12" : "min-h-14"}`;
   return (
     <div
-      className={`text-ink pointer-events-auto lg:bg-page lg:shadow-float lg:rounded-feature lg:px-4 lg:py-2 ${styles.pop}`}
+      ref={box}
+      // A click from a key (Enter, Space) has no pointer behind it: detail 0.
+      onClickCapture={(e) => (byKey.current = e.detail === 0)}
+      className={
+        rail
+          ? `text-ink pl-8 ${styles.unfold}`
+          : `text-ink pointer-events-auto lg:bg-page lg:shadow-float lg:rounded-feature lg:px-4 lg:py-2 ${styles.pop}`
+      }
       data-testid="call-waiter"
     >
       {current === "confirm" || current === "sending" ? (
         paying ? (
-          <div role="group" aria-label={t("order.payTitle")} className="grid gap-2 pb-1">
+          <div role="group" aria-label={t("order.payTitle")} className={`grid gap-2 ${rail ? `${line} pb-3` : "pb-1"}`}>
             <div className="flex min-h-11 items-center gap-1">
               <button
                 type="button"
@@ -146,6 +203,7 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                data-choice=""
                 className={choice}
                 disabled={current === "sending"}
                 onClick={() => send({ kind: "bring_bill", payment: "card" })}
@@ -163,28 +221,32 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
             </div>
           </div>
         ) : (
-          <div role="group" aria-labelledby="waiter-title">
-            {/* A title and a way to close, like any sheet (ADR-096). */}
-            <div className="flex min-h-11 items-center justify-between gap-2">
-              <p id="waiter-title" className="m-0 px-1 font-semibold">
-                {t("nav.waiter")}
-              </p>
-              <button
-                type="button"
-                onClick={cancel}
-                aria-label={t("sheet.close")}
-                className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
-              >
-                <CloseIcon />
-              </button>
-            </div>
+          <div role="group" aria-labelledby={rail ? "rail-waiter" : "waiter-title"}>
+            {/* A title and a way to close, like any sheet (ADR-096). In the
+                rail the «Waiter» row above is both. */}
+            {!rail && (
+              <div className="flex min-h-11 items-center justify-between gap-2">
+                <p id="waiter-title" className="m-0 px-1 font-semibold">
+                  {t("nav.waiter")}
+                </p>
+                <button
+                  type="button"
+                  onClick={cancel}
+                  aria-label={t("sheet.close")}
+                  className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            )}
             <button
               type="button"
+              data-choice=""
               className={row}
               disabled={current === "sending"}
               onClick={() => send({ kind: "call_waiter", payment: null })}
             >
-              <ConciergeBell size={22} />
+              <ConciergeBell size={icon} />
               <span className="min-w-0 flex-1">{t("order.callWaiter")}</span>
             </button>
             <button
@@ -194,15 +256,15 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
               aria-expanded={false}
               onClick={() => setPaying(true)}
             >
-              <ReceiptText size={22} />
+              <ReceiptText size={icon} />
               <span className="min-w-0 flex-1">{t("order.askBill")}</span>
-              <ChevronRight size={20} className="text-muted" />
+              <ChevronRight size={icon - 2} className="text-muted" />
             </button>
           </div>
         )
       ) : current === "unsent" ? (
-        <div className="grid gap-2 py-1">
-          <p role="status" className="text-alert px-1 font-semibold" data-testid="call-unsent">
+        <div className={`grid gap-2 ${rail ? `${line} pt-2 pb-3` : "py-1"}`}>
+          <p role="status" className={`text-alert font-semibold ${rail ? "" : "px-1"}`} data-testid="call-unsent">
             {t("order.notSent")}
           </p>
           <button type="button" onClick={() => void attempt(target)} className={`${pill} justify-self-start`}>
@@ -210,12 +272,12 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
           </button>
         </div>
       ) : current === "called" ? (
-        <p role="status" className="text-success flex min-h-12 items-center gap-2 px-1 font-semibold">
+        <p role="status" className={`text-success flex min-h-12 items-center gap-2 font-semibold ${line}`}>
           <CheckIcon />
           {bill ? t("order.billTold") : t("menu.waiterCalled")}
         </p>
       ) : (
-        <p role="alert" className="text-alert flex min-h-12 items-center px-1 font-semibold">
+        <p role="alert" className={`text-alert flex min-h-12 items-center font-semibold ${line}`}>
           {t("order.requestFailed")}
         </p>
       )}

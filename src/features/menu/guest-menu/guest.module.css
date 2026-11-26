@@ -102,6 +102,23 @@
   }
 }
 
+/* The waiter's choices opening under their row in the desktop rail: they
+   unfold downward from the row the guest clicked. */
+.unfold {
+  animation: unfold 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes unfold {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
 /* The slim bar that slides in once the big header has scrolled away. */
 .slim {
   transform: translateY(-100%);
@@ -117,7 +134,8 @@
   .bell,
   .ringing,
   .suggest,
-  .pop {
+  .pop,
+  .unfold {
     animation: none;
   }
   .slim {

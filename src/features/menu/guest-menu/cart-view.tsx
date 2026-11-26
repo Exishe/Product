@@ -7,11 +7,13 @@ import { formatAmd } from "@/lib/format/money";
 import { DOCK_SPACE } from "./guest-dock";
 import type { WaitRange } from "./hints";
 import { LineRow } from "./line-row";
-import { BackIcon } from "./ui";
+import { BackIcon, ORDER_COLUMN } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // "Your order" (ADR-094 area pass, benchmark §2.3): everything on the page's
-// 16 px edge, no box around the lines. A 44 px back and the 28 px title on one
+// 16 px edge, no box around the lines. The status page's column (ORDER_COLUMN),
+// and the bar above sits on the same column (guest-menu.tsx), so the café's
+// name, the title, the lines and the button share one left edge. A 44 px back and the 28 px title on one
 // row; the lines on hairlines, each the same grid (a 56 px photo column only
 // when the dish has a photo); the total at 24 px; the usual wait and how
 // paying works as two quiet lines; then the one action, «Send to the kitchen
@@ -41,7 +43,7 @@ export function CartView({
 }) {
   const { t, locale } = useGuestI18n();
   return (
-    <main className={`mx-auto w-full max-w-[720px] flex-1 px-4 md:px-8 ${DOCK_SPACE}`} data-testid="cart">
+    <main className={`mx-auto w-full ${ORDER_COLUMN} flex-1 px-4 md:px-8 ${DOCK_SPACE}`} data-testid="cart">
       <div className="-ml-3 flex items-center gap-1 pt-2 md:pt-5">
         <button
           type="button"

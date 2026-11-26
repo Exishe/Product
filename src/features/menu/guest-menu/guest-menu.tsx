@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChevronDown,
   ChevronRight,
   ConciergeBell,
   QrCode,
@@ -46,7 +47,7 @@ import { MENU_GRID, MenuBar } from "./menu-bar";
 import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
-import { CloseIcon, Notice, dishPhotoUrl } from "./ui";
+import { CloseIcon, Notice, ORDER_BAR, dishPhotoUrl } from "./ui";
 import { sameNamed, searchRank, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
@@ -196,6 +197,9 @@ export function GuestMenu({
   const [leftUnsent, setLeftUnsent] = useState(false);
   const [askedBefore, setAskedBefore] = useState(false);
   if (waiter.state !== "idle" && !askedBefore) setAskedBefore(true);
+  // The rail's «Waiter» row: focus comes back to it when its choices close.
+  const waiterRow = useRef<HTMLButtonElement>(null);
+  const backToWaiterRow = useCallback(() => waiterRow.current?.focus({ preventScroll: true }), []);
 
   const items = useMemo(
     () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
@@ -505,8 +509,9 @@ export function GuestMenu({
   );
   // The rail's quiet actions: plain 48 px rows on hairlines (no box, no fill
   // but the hover's underline), so they never wrap.
-  const railAction =
-    "text-ink border-line flex min-h-12 items-center gap-3 border-b text-body font-semibold underline-offset-4 last:border-b-0 hover:underline aria-expanded:underline";
+  const railRow = "text-ink flex min-h-12 items-center gap-3 text-body font-semibold underline-offset-4 hover:underline";
+  const railAction = `${railRow} border-line border-b last:border-b-0`;
+  const waiterOpen = waiter.state === "confirm" || waiter.state === "sending";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -530,8 +535,12 @@ export function GuestMenu({
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
-      // The order view keeps the screen for the order: a short bar.
+      // The order view keeps the screen for the order: a short bar, on the
+      // order's column like the status page's (one left edge from the café's
+      // name down to the button), one row from 1024 px as on the menu.
       compact={view === "cart" && lines.length > 0}
+      width={ORDER_BAR}
+      oneRow
     />
   );
   const sender =
@@ -594,11 +603,20 @@ export function GuestMenu({
         ]
       : [];
 
-  const waiterPrompt = canOrder && table.kind === "ok" && (askedBefore || leftUnsent) && (
-    <Suspense fallback={null}>
-      <CallWaiterPrompt token={table.token} tableId={table.id} />
-    </Suspense>
-  );
+  // The waiter's choices and what came of them: above the bar on a phone and
+  // tablet; from 1024 px under the rail's «Waiter» row, where the guest clicked.
+  const showWaiter = canOrder && table.kind === "ok" && (askedBefore || leftUnsent);
+  const waiterPrompt = (place: "dock" | "rail") =>
+    showWaiter && (
+      <Suspense fallback={null}>
+        <CallWaiterPrompt
+          token={table.token}
+          tableId={table.id}
+          place={place}
+          onLeave={place === "rail" ? backToWaiterRow : undefined}
+        />
+      </Suspense>
+    );
   // A phone shows "goes well with" for one add per visit: the add whose idea
   // showed first (kept for the tab's session). After that the bottom panel is
   // the cart bar and the tabs only, about 130 px (ADR-096).
@@ -648,7 +666,7 @@ export function GuestMenu({
           />
         </Suspense>
         {/* The tabs stay on the order view too: back to the menu, and the waiter. */}
-        <GuestDock items={dockItems} above={waiterPrompt} />
+        <GuestDock items={dockItems} above={waiterPrompt("dock")} />
       </>
     );
   }
@@ -920,16 +938,41 @@ export function GuestMenu({
                       table.kind === "ok" && (canOrder || orderHref) ? (
                         <>
                           {canOrder && (
-                            <button
-                              type="button"
-                              aria-expanded={waiter.state === "confirm" || waiter.state === "sending"}
-                              onClick={waiter.ask}
-                              data-testid="call-waiter-rail"
-                              className={railAction}
-                            >
-                              <ConciergeBell size={20} aria-hidden />
-                              {t("nav.waiter")}
-                            </button>
+                            // The row opens its choices right under itself
+                            // (CallWaiterPrompt place="rail"); while they are
+                            // open its chevron gives way to a ×.
+                            <div className="border-line border-b last:border-b-0">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  ref={waiterRow}
+                                  id="rail-waiter"
+                                  type="button"
+                                  aria-expanded={waiterOpen}
+                                  onClick={waiter.ask}
+                                  data-testid="call-waiter-rail"
+                                  className={`${railRow} min-w-0 flex-1 text-left`}
+                                >
+                                  <ConciergeBell size={20} aria-hidden />
+                                  <span className="flex-1">{t("nav.waiter")}</span>
+                                  {!waiterOpen && <ChevronDown size={18} aria-hidden className="text-muted" />}
+                                </button>
+                                {waiterOpen && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      waiter.cancel();
+                                      // From a key: back to the row (it replaces the ×).
+                                      if (e.detail === 0) backToWaiterRow();
+                                    }}
+                                    aria-label={t("sheet.close")}
+                                    className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
+                                  >
+                                    <CloseIcon />
+                                  </button>
+                                )}
+                              </div>
+                              {wide && waiterPrompt("rail")}
+                            </div>
                           )}
                           {orderHref && (
                             <a href={orderHref} className={railAction}>
@@ -952,7 +995,7 @@ export function GuestMenu({
         items={dockItems}
         above={
           <>
-            {waiterPrompt}
+            {!wide && waiterPrompt("dock")}
             {!wide && suggestions(true)}
             {lines.length > 0 && (
               <div className="lg:hidden">

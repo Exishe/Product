@@ -42,10 +42,13 @@ export function SectionList({ categories, stick }: { categories: GuestCategory[]
           {clusters.map(({ group, sections }, gi) => {
             // As in the phone's tab row: a group that is one section needs no
             // label over it («Աղանդեր» over «Աղանդեր»); the section's own
-            // link stands for the group, a little apart from the one above.
+            // link stands for the group. A hairline on the words' edge, in
+            // the middle of the gap above it, says the break is a new group,
+            // so the list never reads as unevenly spaced.
             const labelled = clusters.length > 1 && sections.length > 1;
             return (
-              <div key={group} className={`pb-1 ${!labelled && gi > 0 ? "pt-2" : ""}`}>
+              <div key={group} className="pb-1">
+                {!labelled && gi > 0 && <hr aria-hidden="true" className="border-line mt-0.5 mb-1.5 border-t" />}
                 {labelled && <p className="text-muted text-meta pt-3 pb-1">{t(`menu.groups.${group}`)}</p>}
                 <ul>
                   {sections.map((c) => (

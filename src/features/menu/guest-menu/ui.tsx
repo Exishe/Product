@@ -40,6 +40,14 @@ const ICON = { size: 22, strokeWidth: 2, "aria-hidden": true } as const;
  * 20 px in the display face.
  */
 export const SECTION_TITLE = "display-face text-heading leading-[1.2]";
+/**
+ * The order screens' column (the cart and the status page): 44rem of content
+ * inside the 16/32 px gutters, centred; their bar uses it too, so the café's
+ * name, the title, the lines and the button share one left edge.
+ */
+export const ORDER_COLUMN = "max-w-[48rem]";
+/** The order screens' bar: the order's column, then the menu bar's 1440 px from 1024 px. */
+export const ORDER_BAR = "max-w-[48rem] lg:max-w-[1440px]";
 
 export const PlusIcon = () => <Plus {...ICON} />;
 export const MinusIcon = () => <Minus {...ICON} />;
