@@ -1,44 +1,75 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CircleAlert, LoaderCircle } from "lucide-react";
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
-import { alert, button, fieldLabel, input } from "./styles";
+import { CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { alert, button, field, fieldLabel, iconButton, input } from "./styles";
+
+// Sign-in, sign-up and pairing fields (ADR-093, benchmark rule 13): 52 px
+// tall, 17 px text, white on the white page with the 3.4:1 edge.
+export const authInput = clsx(field, "h-13");
 
 // A labelled text field with one line under it: the hint, or the error that
 // replaces it. The line sits outside the <label>, so it is the field's
-// description (aria-describedby), not part of its name.
+// description (aria-describedby), not part of its name. A password field
+// given `reveal` (the button's name) gets a 44 px eye button inside its right
+// edge that shows what was typed; aria-pressed says whether it is shown.
 export function TextField({
   label,
   hint,
   error,
   inputClassName,
+  reveal,
+  type,
   ...props
 }: {
   label: string;
   hint?: string;
   error?: string | null;
   inputClassName?: string;
+  reveal?: string;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "className">) {
   const id = useId();
+  const [shown, setShown] = useState(false);
   const message = error || hint;
+  const canReveal = Boolean(reveal) && type === "password";
+  const control = (
+    <input
+      id={id}
+      type={canReveal && shown ? "text" : type}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={message ? `${id}-note` : undefined}
+      className={clsx(inputClassName ?? input, canReveal && "pr-13")}
+      {...props}
+    />
+  );
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className={fieldLabel}>
         {label}
       </label>
-      <input
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={message ? `${id}-note` : undefined}
-        className={inputClassName ?? input}
-        {...props}
-      />
+      {canReveal ? (
+        <div className="relative">
+          {control}
+          <button
+            type="button"
+            aria-label={reveal}
+            aria-pressed={shown}
+            aria-controls={id}
+            onClick={() => setShown((v) => !v)}
+            className={iconButton("text-staff-label2 hover:text-ink absolute inset-y-0 right-1 my-auto")}
+          >
+            {shown ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+          </button>
+        </div>
+      ) : (
+        control
+      )}
       {message && (
         <p
           id={`${id}-note`}
           className={clsx(
-            "m-0 flex items-start gap-1.5 text-[0.8125rem] leading-5",
+            "text-label m-0 flex items-start gap-1.5",
             error ? "text-pomegranate font-semibold" : "text-staff-label2",
           )}
         >

@@ -7,7 +7,7 @@ export const ownerPassword = process.env.E2E_OWNER_PASSWORD;
 export async function signInAsDemoOwner(page: Page): Promise<void> {
   await page.goto("/login");
   await page.getByLabel("Էլ․ փոստ").fill(ownerEmail as string);
-  await page.getByLabel("Գաղտնաբառ").fill(ownerPassword as string);
+  await page.getByLabel("Գաղտնաբառ", { exact: true }).fill(ownerPassword as string);
   await page.getByRole("button", { name: "Մուտք գործել" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 }
@@ -47,7 +47,7 @@ export async function signUpInBrowser(
   const send = async () => {
     await page.getByLabel("Ձեր անունը").fill(name);
     await page.getByLabel("Էլ․ փոստ").fill(email);
-    await page.getByLabel("Գաղտնաբառ").fill(password);
+    await page.getByLabel("Գաղտնաբառ", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Գրանցվել" }).click();
   };
   await page.goto("/signup");

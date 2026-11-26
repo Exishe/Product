@@ -8,35 +8,84 @@
     "metaTitle": "Pativ: QR menu and ordering for cafés",
     "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
     "title": "Orders go from the guest's phone straight to the kitchen",
-    "lead": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "lead": "Guests order from the QR on the table, and the kitchen and the waiter see it at once. No more reprinting menus.",
     "ctaDemo": "Open the demo menu",
     "ctaSignup": "Add your café",
     "signIn": "Sign in",
+    "nav": {
+      "pricing": "Pricing"
+    },
     "heroAlt": "The demo café's menu on a guest's phone",
     "features": {
       "title": "What's in Pativ",
       "menu": {
+        "tab": "Menu",
         "title": "QR menu",
         "text": "A menu with photos in three languages. Guests order from their own phone.",
         "alt": "A section of the guest menu with a dish photo"
       },
       "waiter": {
+        "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
         "alt": "Table calls in the waiter app"
       },
       "kitchen": {
+        "tab": "Kitchen",
         "title": "Kitchen screen",
         "text": "Tickets arrive in order, and late ones are marked in red.",
         "alt": "The kitchen screen with new and in-progress tickets"
       },
       "admin": {
+        "tab": "Admin",
         "title": "Owner admin",
-        "text": "Menu, tables, staff and the day's reports."
+        "text": "Menu, tables, staff and the day's reports.",
+        "alt": "The owner admin with the day's sales and to-dos"
       }
     },
+    "start": {
+      "title": "How to start",
+      "step1": {
+        "title": "Sign up",
+        "text": "Create an account and add your café. No card needed."
+      },
+      "step2": {
+        "title": "Add your menu",
+        "text": "Take photos of your paper menu. We read the dishes and prices and translate them, and you check everything before it goes live."
+      },
+      "step3": {
+        "title": "Print the QR codes",
+        "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
+      },
+      "why": "Armenian done right, and Russian and English too. Nothing to install or buy: it runs on the phones and tablets you have. Alerts come to Telegram."
+    },
+    "pricing": {
+      "title": "Pricing",
+      "menu": {
+        "name": "Menu",
+        "price": "Free",
+        "term": "No time limit",
+        "l1": "QR menu in three languages, with photos",
+        "l2": "Import from a photo of your paper menu",
+        "l3": "A sold-out list for the day"
+      },
+      "service": {
+        "name": "Service",
+        "price": "15 000 ֏",
+        "per": "a month",
+        "year": "or 150 000 ֏ a year, paid upfront",
+        "includes": "Everything in Menu, plus ordering from the table, the waiter app, the kitchen screen and Telegram alerts.",
+        "l1": "The first month is free",
+        "l2": "No card, no contract",
+        "l3": "In Yerevan we set it up in person, for free"
+      },
+      "founding": "For the first 10 cafés, Service is free during the pilot, then 10 000 ֏ a month for a year."
+    },
     "footer": {
-      "copyright": "© 2026 Pativ · Yerevan"
+      "copyright": "© 2026 Pativ · Yerevan",
+      "demo": "Demo menu",
+      "pair": "Connect a device",
+      "nav": "Links"
     }
   },
   "common": {
@@ -55,7 +104,8 @@
       "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
       "signupLink": "Sign up",
-      "subtitle": "For owners and staff"
+      "subtitle": "For owners and staff",
+      "pairLink": "Connect a device with a code"
     },
     "signup": {
       "title": "Sign up",
@@ -67,11 +117,13 @@
       "error": "Couldn't sign up. There may already be an account with this email.",
       "haveAccount": "Already have an account?",
       "loginLink": "Sign in",
-      "subtitle": "Create an account, then add your café.",
-      "passwordHint": "At least 8 characters"
+      "subtitle": "Create an account, and then we'll help you add your café and menu.",
+      "passwordHint": "At least 8 characters",
+      "trial": "The first month is free. No card needed."
     },
     "required": "Fill in this field.",
-    "emailFormat": "Check the email address."
+    "emailFormat": "Check the email address.",
+    "showPassword": "Show password"
   },
   "admin": {
     "home": {
@@ -311,7 +363,7 @@
       "failed": "Couldn't connect. Try again.",
       "format": "Enter 6 digits."
     },
-    "hint": "The owner will give you the code. It works for 10 minutes."
+    "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes."
   },
   "invite": {
     "title": "Join the team",

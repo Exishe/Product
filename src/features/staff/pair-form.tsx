@@ -4,7 +4,13 @@ import { clsx } from "clsx";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { FormError, SubmitButton, TextField, focusFirstInvalid, formValue } from "@/features/admin-ui/form-parts";
+import {
+  FormError,
+  SubmitButton,
+  TextField,
+  focusFirstInvalid,
+  formValue,
+} from "@/features/admin-ui/form-parts";
 import { field } from "@/features/admin-ui/styles";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
@@ -16,9 +22,13 @@ type Redeemed = {
   station_id: string | null;
 };
 
-// Six large digits, centred: the padding on the left equals the letter
-// spacing the last digit carries on its right.
-const codeInput = clsx(field, "num h-16 pl-[0.4em] text-center text-3xl tracking-[0.4em]");
+// Six 28 px monospace digits, centred in a 64 px field: the padding on the
+// left equals the letter spacing the last digit carries on its right. The
+// faint 000000 placeholder shows what goes in before anything is typed.
+const codeInput = clsx(
+  field,
+  "h-16 pl-[0.35em] text-center font-mono text-[1.75rem]! tabular-nums tracking-[0.35em] placeholder:text-staff-label2/45",
+);
 
 // The device signs in anonymously, then redeems the owner's code (ADR-038).
 export function PairForm() {
@@ -27,6 +37,7 @@ export function PairForm() {
   const [error, setError] = useState<PairError | null>(null);
   const [badFormat, setBadFormat] = useState(false);
   const [pending, setPending] = useState(false);
+  const [code, setCode] = useState("");
   const busy = useRef(false);
 
   async function submit(code: string) {
@@ -72,7 +83,13 @@ export function PairForm() {
       <TextField
         label={t("code")}
         error={badFormat ? t("errors.format") : null}
-        onChange={() => setBadFormat(false)}
+        onChange={(event) => {
+          // Digits only: a letter or a space never appears in the field.
+          setCode(event.currentTarget.value.replace(/\D/g, "").slice(0, 6));
+          setBadFormat(false);
+        }}
+        value={code}
+        placeholder="000000"
         name="code"
         inputMode="numeric"
         autoComplete="one-time-code"
@@ -82,7 +99,7 @@ export function PairForm() {
         inputClassName={codeInput}
       />
       {error && <FormError>{t(`errors.${error}`)}</FormError>}
-      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("pending")} />
+      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("pending")} className="min-h-14" />
     </form>
   );
 }

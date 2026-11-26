@@ -19,7 +19,7 @@ export default async function NotFound() {
       title={t("common.notFound")}
       subtitle={<p className="m-0">{t("common.notFoundHint")}</p>}
     >
-      <Link href="/" className={button("primary", "w-full self-start sm:w-auto")}>
+      <Link href="/" className={button("primary", "min-h-14 w-full self-start px-6 sm:w-auto")}>
         {t("common.backHome")}
       </Link>
     </AuthShell>

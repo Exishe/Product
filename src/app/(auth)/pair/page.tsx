@@ -1,11 +1,13 @@
 import { clsx } from "clsx";
 import { Unplug } from "lucide-react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AuthShell } from "@/features/admin-ui/auth-shell";
 import { alert } from "@/features/admin-ui/styles";
 import { PairForm } from "@/features/staff/pair-form";
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

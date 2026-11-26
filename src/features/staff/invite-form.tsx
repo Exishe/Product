@@ -36,7 +36,7 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
             <input
               readOnly
               value={link}
-              className={`${input} num text-[0.9375rem]`}
+              className={`${input} num`}
               data-testid="invite-link"
               aria-label={t("inviteLink")}
               onFocus={(e) => e.currentTarget.select()}

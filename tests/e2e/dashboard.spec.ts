@@ -167,7 +167,7 @@ test.describe("platform admin", () => {
   test("lists cafés, changes a plan and sees dead letters", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Էլ․ փոստ").fill(email as string);
-    await page.getByLabel("Գաղտնաբառ").fill(password as string);
+    await page.getByLabel("Գաղտնաբառ", { exact: true }).fill(password as string);
     await page.getByRole("button", { name: "Մուտք գործել" }).click();
     await page.goto("/platform");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Սրճարաններ");

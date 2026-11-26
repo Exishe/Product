@@ -20,7 +20,7 @@ async function signInWithUsername(browser: Browser, username: string, password: 
   const page = await context.newPage();
   await page.goto("/login");
   await page.getByLabel("Էլ․ փոստ կամ մուտքանուն").fill(username);
-  await page.getByLabel("Գաղտնաբառ").fill(password);
+  await page.getByLabel("Գաղտնաբառ", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Մուտք գործել" }).click();
   return { context, page };
 }
