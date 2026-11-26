@@ -568,7 +568,10 @@
     "allDay": {
       "title": "All day",
       "quantity": "{quantity}×",
-      "plain": "{quantity} plain"
+      "plain": "{quantity} plain",
+      "moreVariants": "+{count}",
+      "moreVariantsLabel": "and {count, plural, one {# more option} other {# more options}}",
+      "next": "More dishes"
     },
     "ingredients": {
       "button": "Ingredient out",
@@ -629,7 +632,7 @@
       "free": "Free",
       "freeHint": "Guests can order with the QR code, or you can take the order.",
       "openFor": "Open for {minutes} min",
-      "pick": "Pick a table on the map.",
+      "pickRow": "Pick a row to see the table.",
       "callAgo": "Called {minutes} min ago",
       "callNow": "Calling right now",
       "going": "On my way",
@@ -639,7 +642,7 @@
       "total": "Total",
       "addOrder": "Add an order",
       "takeOrder": "Take order",
-      "close": "Close the table",
+      "close": "Close the bill",
       "closeBlocked": "Accept or reject the new order first.",
       "noOrders": "No orders yet.",
       "now": "Now",
@@ -883,7 +886,7 @@
       "soundOnTest": "Sound on. Tap to hear it.",
       "notificationBody": "Open the waiter app",
       "sound": "Sound",
-      "summary": "{count, plural, one {# table} other {# tables}} waiting",
+      "summary": "{count, plural, one {# table} other {# tables}} calling",
       "openShort": "Open"
     },
     "more": "More",

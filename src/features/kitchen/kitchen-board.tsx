@@ -6,6 +6,7 @@ import { CircleCheck, Flame, Inbox, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { dealTickets, laneColumns, stacks, type LaneDeal } from "./lane-deal";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
@@ -585,6 +586,43 @@ function BoardColumn({
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
   const Icon = COLUMN_ICON[column];
+  // New and Cooking are N stacks of tickets, as many 20 rem stacks as fit,
+  // so a short ticket never leaves a hole under it (ADR-101). Until the lane
+  // is measured it is the plain grid the server drew.
+  const lane = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState<number | null>(null);
+  useEffect(() => {
+    const el = lane.current;
+    if (!el || strip) return;
+    const ro = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      setColumns(laneColumns(entry.contentRect.width, rem));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [strip]);
+  const [deal, setDeal] = useState<LaneDeal | null>(null);
+  const nextDeal = columns === null ? null : dealTickets(deal, tickets, columns);
+  if (nextDeal !== null && nextDeal !== deal) setDeal(nextDeal);
+  const card = (ticket: ShownTicket) =>
+    ticket.kind === "void" ? (
+      <VoidTicketCard key={ticket.id} ticket={ticket} fresh={fresh.has(ticket.id)} onAction={onAction} />
+    ) : (
+      <OrderTicketCard
+        key={ticket.id}
+        ticket={ticket}
+        column={column}
+        now={now}
+        fresh={fresh.has(ticket.id)}
+        highlighted={highlighted.has(ticket.id)}
+        done={bumped}
+        onToggleLine={onToggleLine}
+        onCantMake={onCantMake}
+        onAction={onAction}
+      />
+    );
+  const stacked = !strip && nextDeal !== null && tickets.length > 0;
   return (
     <section
       aria-labelledby={`column-${column}`}
@@ -618,42 +656,29 @@ function BoardColumn({
         </b>
       </h2>
       <div
+        ref={lane}
         className={clsx(
-          "min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
+          "min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] gap-4 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
           strip
             ? "flex flex-col sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72"
-            : // As many ticket columns as fit, none under 20rem.
-              "grid auto-rows-max grid-cols-[repeat(auto-fill,minmax(min(20rem,100%),1fr))] content-start items-start",
+            : stacked
+              ? "flex items-start"
+              : // Before the lane is measured: as many ticket columns as fit, none under 20rem.
+                "grid auto-rows-max grid-cols-[repeat(auto-fill,minmax(min(20rem,100%),1fr))] content-start items-start",
         )}
       >
         {tickets.length === 0 ? (
           <p className="text-slip-dim col-span-full m-0 grid flex-1 place-items-center px-2 py-6 text-center text-lg">
             {empty}
           </p>
+        ) : stacked ? (
+          stacks(nextDeal, tickets).map((stack, i) => (
+            <div key={i} data-testid="ticket-stack" className="flex min-w-0 flex-1 flex-col gap-4">
+              {stack.map(card)}
+            </div>
+          ))
         ) : (
-          tickets.map((ticket) =>
-            ticket.kind === "void" ? (
-              <VoidTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                fresh={fresh.has(ticket.id)}
-                onAction={onAction}
-              />
-            ) : (
-              <OrderTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                column={column}
-                now={now}
-                fresh={fresh.has(ticket.id)}
-                highlighted={highlighted.has(ticket.id)}
-                done={bumped}
-                onToggleLine={onToggleLine}
-                onCantMake={onCantMake}
-                onAction={onAction}
-              />
-            ),
-          )
+          tickets.map(card)
         )}
       </div>
     </section>

@@ -129,7 +129,10 @@ export function WaiterAlert({
       role="alert"
       data-testid="waiter-alert"
       className={clsx(
-        "text-ink fixed inset-x-2 top-1 z-30 mx-auto flex min-h-[3.25rem] max-w-[30rem] items-center overflow-hidden rounded-2xl bg-white shadow-float",
+        // A phone: the whole top row, edge to edge. From 768 px: over the
+        // café and connection block on the left, well short of the clock, so
+        // no word under it is cut in half.
+        "text-ink fixed inset-x-2 top-1 z-30 mx-auto flex min-h-[3.25rem] max-w-[30rem] items-center overflow-hidden rounded-2xl bg-white shadow-float md:right-auto md:mx-0 md:w-[28rem] lg:left-4",
         styles.drop,
       )}
     >

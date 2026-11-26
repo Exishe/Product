@@ -33,6 +33,9 @@ export type PadOrder = Pick<Extract<WaiterAction, { kind: "place" }>, "lines" | 
 // ± on a cart line: 44 px, an ink ring on white, so it reads as a button.
 const STEPPER =
   "text-ink grid size-11 shrink-0 place-items-center rounded-full bg-white ring-[1.5px] ring-ink ring-inset";
+// The count between − and +: one filled ink circle in the menu row and in the cart.
+const COUNT =
+  "num bg-ink grid h-11 min-w-11 shrink-0 place-items-center rounded-full px-2 text-[1.125rem] font-bold text-white";
 
 // The order pad (screens.md §6): the guest's menu, compact, with search and
 // big touch targets. Sending goes through the outbox, so it works offline.
@@ -193,7 +196,18 @@ export function OrderPad({
           // The menu is what the waiter works in: the wide column from
           // 768 px, placed explicitly (an item locked to a row is placed
           // first, so without this the cart took the left column).
-          <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden px-4 pt-3 sm:px-6 md:col-start-1 md:row-start-2">
+          <div className="relative grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden px-4 pt-3 sm:px-6 md:col-start-1 md:row-start-2">
+            {/* On a phone the open order is a sheet over the menu: the menu
+                dims behind it, and a tap on the dimmed part folds it again. */}
+            {cartOpen && (
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                onClick={() => setCartOpen(false)}
+                className="bg-ink/30 absolute inset-0 z-10 cursor-default admin-fade md:hidden"
+              />
+            )}
             <span className="relative block">
               <Search
                 aria-hidden="true"
@@ -246,58 +260,47 @@ export function OrderPad({
                     onClick={() => tap(item)}
                     className="disabled:text-staff-label2 flex min-h-16 min-w-0 flex-1 items-center justify-between gap-3 py-2 text-left text-[1.0625rem]"
                   >
-                    {/* The name comes from what the button shows (axe: label-content-name-mismatch). */}
-                    <span className="min-w-0 font-semibold break-words">
-                      {t.rich("addItem", {
-                        name: item.name.text,
-                        hidden: (chunks) => <span className="sr-only">{chunks}</span>,
-                        dish: (chunks) => <span lang={nameLang(item.name.lang)}>{chunks}</span>,
-                      })}
-                      {inCart > 0 && (
-                        <span aria-hidden="true" className="num text-staff-label2 block text-[0.9375rem] font-normal">
-                          {formatAmd(item.price, locale)}
-                        </span>
-                      )}
-                    </span>
-                    {/* With the stepper beside it the price moves under the
-                        name, so the name keeps the room on a 360 px phone. */}
-                    <span
-                      className={clsx(
-                        "flex flex-none items-center gap-3",
-                        inCart > 0 && "sr-only",
-                      )}
-                    >
-                      <span className="num text-[1.0625rem]">
+                    {/* The name comes from what the button shows (axe: label-content-name-mismatch).
+                        One row layout whatever the count: the price always on
+                        the line under the name, the controls on the right. */}
+                    <span className="grid min-w-0 gap-0.5">
+                      <span className="font-semibold break-words">
+                        {t.rich("addItem", {
+                          name: item.name.text,
+                          hidden: (chunks) => <span className="sr-only">{chunks}</span>,
+                          dish: (chunks) => <span lang={nameLang(item.name.lang)}>{chunks}</span>,
+                        })}
+                      </span>
+                      <span className="num text-staff-label2 text-[0.9375rem]">
                         {item.soldOut ? t("soldOut") : formatAmd(item.price, locale)}
                       </span>
-                      {!item.soldOut && inCart === 0 && (
-                        <span
-                          aria-hidden="true"
-                          className="text-ink ring-ink grid size-11 place-items-center rounded-full ring-[1.5px] ring-inset"
-                        >
-                          <Plus className="size-5" />
-                        </span>
-                      )}
                     </span>
+                    {!item.soldOut && inCart === 0 && (
+                      <span
+                        aria-hidden="true"
+                        className="text-ink ring-ink grid size-11 flex-none place-items-center rounded-full ring-[1.5px] ring-inset"
+                      >
+                        <Plus className="size-5" />
+                      </span>
+                    )}
                   </button>
                   {/* Once it is in the order the + becomes − N +, as on
                       iikoWaiter: the row itself shows how many, no summary
                       needed. A dish with options opens them again on +, and −
-                      takes off the last one added. */}
+                      takes off the last one added. From 768 px the cart column
+                      beside the menu holds the one stepper: the row keeps its
+                      + and a small count, so a dish never has two. */}
                   {inCart > 0 && (
-                    <span data-testid="pad-row-stepper" className="flex flex-none items-center gap-1">
+                    <span data-testid="pad-row-stepper" className="flex flex-none items-center gap-1 md:gap-2">
                       <button
                         type="button"
                         aria-label={t("rowLess", { name: item.name.text })}
-                        className={STEPPER}
+                        className={clsx(STEPPER, "md:hidden")}
                         onClick={() => stepItem(item.id, -1)}
                       >
                         <Minus aria-hidden="true" className="size-5" />
                       </button>
-                      <span
-                        data-testid="pad-row-count"
-                        className="num bg-ink grid h-11 min-w-11 place-items-center rounded-full px-2 text-[1.125rem] font-bold text-white"
-                      >
+                      <span data-testid="pad-row-count" className={clsx(COUNT, "md:h-8 md:min-w-8 md:text-[1rem]")}>
                         {inCart}
                       </span>
                       <button
@@ -327,8 +330,12 @@ export function OrderPad({
             // Its own rows: a heading (the summary bar on a phone), the
             // scrolling list, and the note and send button at the foot. No
             // track stretches the button.
-            "border-staff-sep grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] border-t md:col-start-2 md:row-start-2 md:border-t-0 md:border-l",
+            "border-staff-sep grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] border-t bg-white md:col-start-2 md:row-start-2 md:border-t-0 md:border-l",
             cart.length === 0 && "max-md:hidden",
+            // Open on a phone: rounded on top, lifted, and drawn over the
+            // dimmed menu, so it reads as a sheet rather than a cut.
+            cartOpen &&
+              "max-md:relative max-md:z-20 max-md:-mt-5 max-md:rounded-t-[1.5rem] max-md:border-t-0 max-md:shadow-[0_-8px_24px_rgb(19_36_27/0.16),0_-1px_3px_rgb(19_36_27/0.1)]",
           )}
         >
           <button
@@ -377,7 +384,7 @@ export function OrderPad({
                   >
                     <Minus aria-hidden="true" className="size-5" />
                   </button>
-                  <span className="num w-8 text-center text-xl font-bold">{l.quantity}</span>
+                  <span className={COUNT}>{l.quantity}</span>
                   <button
                     type="button"
                     aria-label={t("more", { name: l.item.name.text })}
