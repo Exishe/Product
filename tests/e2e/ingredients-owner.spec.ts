@@ -45,7 +45,7 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await egg.getByLabel("Կարող է փոխարինվել").selectOption({ label: "Կարագ" });
   await egg.getByLabel("Գնի փոփոխություն, դրամ").fill("-300");
   await egg.getByRole("button", { name: "Պահել բաղադրիչը", exact: true }).click();
-  // The row has two status lines (the ingredient's and the calories editor's); only the one just saved shows text.
+  // One Save per ingredient row, with its result on the same line.
   await expect(egg.getByRole("status").filter({ hasText: "Պահված է" })).toHaveCount(1, { timeout: 15_000 });
 
   await page.reload();

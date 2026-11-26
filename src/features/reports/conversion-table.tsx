@@ -20,6 +20,9 @@ export async function ConversionTable({ data, locale }: { data: Conversion; loca
   const flagged = data.items.filter((i) => i.flagged);
   const others = data.items.filter((i) => !i.flagged);
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+  // A share column of nothing but dashes says nothing: it is left out (the
+  // footnote under the table still says why), in both tables alike.
+  const showShare = data.items.some((i) => shareOf(i, pct) !== "–");
 
   return (
     <section
@@ -54,15 +57,17 @@ export async function ConversionTable({ data, locale }: { data: Conversion; loca
                 </h3>
                 <p className="text-staff-label2 m-0 text-label">{t("flaggedHint", { min: data.min_views })}</p>
               </div>
-              <Rows items={flagged} locale={locale} t={t} pct={pct} caption={t("flaggedTitle")} highlight />
+              <Rows items={flagged} locale={locale} t={t} pct={pct} caption={t("flaggedTitle")} showShare={showShare} highlight />
             </div>
           )}
           {others.length > 0 && (
             <div className="flex flex-col gap-2">
               {flagged.length > 0 && <h3 className="m-0 text-name font-semibold">{t("othersTitle")}</h3>}
-              <Rows items={others} locale={locale} t={t} pct={pct} caption={t("caption")} />
+              <Rows items={others} locale={locale} t={t} pct={pct} caption={t("caption")} showShare={showShare} />
               {others.some((i) => i.reason.key === "few_views") && (
-                <p className="text-staff-label2 m-0 text-label max-sm:hidden">{t("fewViewsNote")}</p>
+                <p className="text-staff-label2 m-0 text-label max-sm:hidden">
+                  {t(showShare ? "fewViewsNote" : "shareLaterNote")}
+                </p>
               )}
             </div>
           )}
@@ -72,12 +77,17 @@ export async function ConversionTable({ data, locale }: { data: Conversion; loca
   );
 }
 
+// The share as shown: a dash while it is too early to judge.
+const shareOf = (i: Item, pct: Intl.NumberFormat) =>
+  i.conversion === null || i.reason.key === "few_views" ? "–" : pct.format(i.conversion);
+
 function Rows({
   items,
   locale,
   t,
   pct,
   caption,
+  showShare,
   highlight,
 }: {
   items: Item[];
@@ -85,12 +95,12 @@ function Rows({
   t: T;
   pct: Intl.NumberFormat;
   caption: string;
+  showShare: boolean;
   highlight?: boolean;
 }) {
   const head =
     "text-staff-label2 px-2 py-2 text-right text-label font-semibold whitespace-nowrap first:pl-0 last:pr-0";
-  const share = (i: Item) =>
-    i.conversion === null || i.reason.key === "few_views" ? "–" : pct.format(i.conversion);
+  const share = (i: Item) => shareOf(i, pct);
   const reason = (i: Item) =>
     (i.reason.key === "never_ordered" || i.reason.key === "low_share") &&
     t(`reason.${i.reason.key}`, { views: i.reason.views, orders: i.reason.orders });
@@ -140,9 +150,11 @@ function Rows({
             <th scope="col" className={head}>
               {t("colOrdered")}
             </th>
-            <th scope="col" className={head}>
-              {t("colShare")}
-            </th>
+            {showShare && (
+              <th scope="col" className={head}>
+                {t("colShare")}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -164,7 +176,7 @@ function Rows({
               <td className="px-2 py-2.5 text-right">{formatInteger(i.views, locale)}</td>
               <td className="px-2 py-2.5 text-right">{formatInteger(i.adds, locale)}</td>
               <td className="px-2 py-2.5 text-right">{formatInteger(i.orders, locale)}</td>
-              <td className="py-2.5 pl-2 text-right">{share(i)}</td>
+              {showShare && <td className="py-2.5 pl-2 text-right">{share(i)}</td>}
             </tr>
           ))}
         </tbody>

@@ -1,10 +1,10 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { textAction, button, check, fieldLabel, input } from "@/features/admin-ui/styles";
+import { textAction, check, fieldLabel, input } from "@/features/admin-ui/styles";
 import { pickIngredientName } from "@/features/ingredients/names";
 import type { Locale } from "@/i18n/routing";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -300,10 +300,21 @@ function LineEditor({
   const [isKey, setIsKey] = useState(line.isKey);
   const [substituteId, setSubstituteId] = useState(line.substituteId ?? "");
   const [price, setPrice] = useState(line.priceDelta === null ? "" : String(line.priceDelta));
+  const [kcal, setKcal] = useState(ingredient?.kcal == null ? "" : String(ingredient.kcal));
+  const [piece, setPiece] = useState(ingredient?.gramsPerPiece == null ? "" : String(ingredient.gramsPerPiece));
   const [status, setStatus] = useState<
-    "idle" | "saving" | "saved" | "failed" | "amount" | "price" | "replacement"
+    "idle" | "saving" | "saved" | "failed" | "amount" | "price" | "replacement" | "kcal" | "piece"
   >("idle");
+  // Any edit takes the "Saved" line back, so it only ever describes the fields as they are.
+  const edited =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setStatus((s) => (s === "saved" ? "idle" : s));
+    };
 
+  // One quiet Save per ingredient (the sheet's own Save stays the only
+  // primary button): the line and, when they changed, its calories.
   async function save() {
     const qty = Number(amount.replace(",", "."));
     if (!Number.isFinite(qty) || qty <= 0) return setStatus("amount");
@@ -311,6 +322,12 @@ function LineEditor({
     const digits = price.replace(/\s/g, "");
     if (digits !== "" && !/^-?\d{1,7}$/.test(digits)) return setStatus("price");
     if (digits !== "" && sub === null) return setStatus("replacement");
+    const k = kcal.trim() === "" ? null : Number(kcal.replace(",", "."));
+    const p = piece.trim() === "" ? null : Number(piece.replace(",", "."));
+    if (ingredient) {
+      if (k !== null && (!Number.isFinite(k) || k < 0 || k > 1000)) return setStatus("kcal");
+      if (p !== null && (!Number.isFinite(p) || p < 0.1 || p > 10000)) return setStatus("piece");
+    }
     setStatus("saving");
     const res = await saveDishIngredient({
       itemId,
@@ -320,7 +337,12 @@ function LineEditor({
       substituteId: sub,
       priceDelta: digits === "" || sub === null ? null : Number(digits),
     });
-    setStatus(res.ok ? "saved" : "failed");
+    const kcalChanged = ingredient && (k !== ingredient.kcal || p !== ingredient.gramsPerPiece);
+    const kcalRes =
+      res.ok && ingredient && kcalChanged
+        ? await setIngredientKcal({ ingredientId: ingredient.id, kcalPer100: k, gramsPerPiece: p })
+        : res;
+    setStatus(kcalRes.ok ? "saved" : "failed");
     if (res.ok) onChanged();
   }
 
@@ -339,6 +361,8 @@ function LineEditor({
     amount: t("invalidAmount"),
     price: t("invalidPrice"),
     replacement: t("needReplacement"),
+    kcal: t("invalidKcal"),
+    piece: t("invalidPiece"),
   }[status];
 
   return (
@@ -349,7 +373,7 @@ function LineEditor({
           type="button"
           disabled={status === "saving"}
           onClick={() => void remove()}
-          className={textAction("danger")}
+          className={textAction("danger", "-mr-2")}
         >
           {t("remove")}
         </button>
@@ -361,7 +385,7 @@ function LineEditor({
           <input
             inputMode="decimal"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => edited(setAmount)(e.target.value)}
             className={clsx(input, "bg-white")}
           />
           <span className="text-staff-label2 text-label">{t("amountHint")}</span>
@@ -374,7 +398,7 @@ function LineEditor({
               checked={isKey}
               aria-describedby={ids.keyHint}
               onChange={(e) => {
-                setIsKey(e.target.checked);
+                edited(setIsKey)(e.target.checked);
                 if (!e.target.checked) {
                   setSubstituteId("");
                   setPrice("");
@@ -389,7 +413,15 @@ function LineEditor({
         {t("keyHint")}
       </p>
 
-      {ingredient && <KcalFields ingredient={ingredient} unit={unit} onChanged={onChanged} />}
+      {ingredient && (
+        <KcalFields
+          unit={unit}
+          kcal={kcal}
+          piece={piece}
+          onKcal={edited(setKcal)}
+          onPiece={edited(setPiece)}
+        />
+      )}
 
       {isKey && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -398,7 +430,7 @@ function LineEditor({
             <select
               value={substituteId}
               onChange={(e) => {
-                setSubstituteId(e.target.value);
+                edited(setSubstituteId)(e.target.value);
                 if (!e.target.value) setPrice("");
               }}
               className={clsx(input, "bg-white")}
@@ -418,7 +450,7 @@ function LineEditor({
               value={price}
               disabled={!substituteId}
               aria-describedby={ids.priceHint}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => edited(setPrice)(e.target.value)}
               className={clsx(input, "bg-white")}
             />
             <span id={ids.priceHint} className="text-staff-label2 text-label">
@@ -428,12 +460,14 @@ function LineEditor({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* A text action, not a second button shape: the sheet's sticky Save is
+          the only primary save on screen. The result sits on the same line. */}
+      <div className="-ml-2 flex flex-wrap items-center gap-x-2">
         <button
           type="button"
           disabled={status === "saving"}
           onClick={() => void save()}
-          className={button("secondary", "px-5")}
+          className={textAction("ink")}
         >
           {t("save")}
         </button>
@@ -441,10 +475,11 @@ function LineEditor({
           role="status"
           aria-live="polite"
           className={clsx(
-            "m-0 text-label font-semibold",
+            "m-0 inline-flex items-center gap-1.5 text-label font-semibold",
             status === "saved" ? "text-tarragon" : "text-pomegranate",
           )}
         >
+          {status === "saved" && <Check aria-hidden="true" className="size-4" />}
           {message}
         </p>
       </div>
@@ -485,42 +520,22 @@ function KcalSummary({
 }
 
 // Calories per 100 g and the weight of one piece: both belong to the ingredient,
-// so they apply to every dish that uses it.
+// so they apply to every dish that uses it. Saved with the ingredient's row.
 function KcalFields({
-  ingredient,
   unit,
-  onChanged,
+  kcal,
+  piece,
+  onKcal,
+  onPiece,
 }: {
-  ingredient: Ingredient;
   unit: string;
-  onChanged: () => void;
+  kcal: string;
+  piece: string;
+  onKcal: (v: string) => void;
+  onPiece: (v: string) => void;
 }) {
   const t = useTranslations("menu.ingredients");
   const hintId = useId();
-  const [kcal, setKcal] = useState(ingredient.kcal === null ? "" : String(ingredient.kcal));
-  const [piece, setPiece] = useState(ingredient.gramsPerPiece === null ? "" : String(ingredient.gramsPerPiece));
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed" | "kcal" | "piece">("idle");
-
-  async function save() {
-    const k = kcal.trim() === "" ? null : Number(kcal.replace(",", "."));
-    const p = piece.trim() === "" ? null : Number(piece.replace(",", "."));
-    if (k !== null && (!Number.isFinite(k) || k < 0 || k > 1000)) return setStatus("kcal");
-    if (p !== null && (!Number.isFinite(p) || p < 0.1 || p > 10000)) return setStatus("piece");
-    setStatus("saving");
-    const res = await setIngredientKcal({ ingredientId: ingredient.id, kcalPer100: k, gramsPerPiece: p });
-    setStatus(res.ok ? "saved" : "failed");
-    if (res.ok) onChanged();
-  }
-
-  const message = {
-    idle: "",
-    saving: "",
-    saved: t("saved"),
-    failed: t("saveFailed"),
-    kcal: t("invalidKcal"),
-    piece: t("invalidPiece"),
-  }[status];
-
   return (
     <div className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -530,7 +545,7 @@ function KcalFields({
             inputMode="decimal"
             value={kcal}
             aria-describedby={hintId}
-            onChange={(e) => setKcal(e.target.value)}
+            onChange={(e) => onKcal(e.target.value)}
             className={clsx(input, "bg-white")}
           />
         </label>
@@ -541,7 +556,7 @@ function KcalFields({
               inputMode="decimal"
               value={piece}
               aria-describedby={hintId}
-              onChange={(e) => setPiece(e.target.value)}
+              onChange={(e) => onPiece(e.target.value)}
               className={clsx(input, "bg-white")}
             />
           </label>
@@ -550,26 +565,6 @@ function KcalFields({
       <p id={hintId} className="text-staff-label2 m-0 text-label">
         {t("kcalHint")}
       </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          disabled={status === "saving"}
-          onClick={() => void save()}
-          className={button("secondary", "px-5")}
-        >
-          {t("kcalSave")}
-        </button>
-        <p
-          role="status"
-          aria-live="polite"
-          className={clsx(
-            "m-0 text-label font-semibold",
-            status === "saved" ? "text-tarragon" : "text-pomegranate",
-          )}
-        >
-          {message}
-        </p>
-      </div>
     </div>
   );
 }

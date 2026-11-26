@@ -1,7 +1,6 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Gift } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { button, fieldLabel, field, input } from "@/features/admin-ui/styles";
@@ -77,7 +76,6 @@ export function RewardsForm({ initial }: { initial: RewardSettings }) {
       }}
     >
       <div className="flex items-center gap-3">
-        <Gift aria-hidden="true" className={clsx("size-5 shrink-0", saved.on ? "text-tarragon" : "text-staff-label2")} />
         <p className="m-0 min-w-0 flex-1 text-[1.0625rem] font-semibold" role="status" data-testid="rewards-status">
           {saved.on ? t("on") : t("off")}
         </p>
@@ -106,7 +104,9 @@ export function RewardsForm({ initial }: { initial: RewardSettings }) {
 
       <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
         <legend className={clsx(fieldLabel, "mb-1.5 p-0")}>{t("kind")}</legend>
-        <div className="flex flex-wrap gap-2">
+        {/* The same grey-track segmented pair as guest ordering and the staff
+            role: both choices on screen, the chosen one white. */}
+        <div className="bg-staff-fill flex gap-1 rounded-full p-1 sm:grid sm:max-w-md sm:grid-cols-2">
           {(["percent", "text"] as const).map((k) => (
             <button
               key={k}
@@ -114,9 +114,12 @@ export function RewardsForm({ initial }: { initial: RewardSettings }) {
               aria-pressed={kind === k}
               onClick={() => edit(setKind)(k)}
               data-testid={`rewards-kind-${k}`}
-              className={button(kind === k ? "primary" : "tinted", "min-w-0 flex-1 sm:flex-none")}
+              className={clsx(
+                "flex min-h-11 min-w-0 flex-auto items-center justify-center rounded-full px-3 text-label font-semibold whitespace-nowrap transition-colors duration-150 motion-reduce:transition-none",
+                kind === k ? "text-ink bg-white shadow-sm" : "text-staff-label2 hover:text-ink",
+              )}
             >
-              {t(k === "percent" ? "kindPercent" : "kindText")}
+              <span className="truncate">{t(k === "percent" ? "kindPercent" : "kindText")}</span>
             </button>
           ))}
         </div>

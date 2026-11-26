@@ -363,6 +363,10 @@ body:has(:is(.auth-shell, .landing-page)) {
 .admin-scroll-row::-webkit-scrollbar {
   display: none;
 }
+/* A sideways row with more to the right: the last 24 px fade out. */
+.chip-fade[data-more] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+}
 
 
 /* Staff and admin screens (ADR-056, flattened by ADR-094): grouped content

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Sheet } from "@/features/admin-ui/sheet";
+import { AccountFooter, type Account } from "./account-footer";
 import { activeLink } from "./active";
 import { NAV_ICONS, type NavIcon } from "./nav-icons";
 
@@ -16,6 +17,7 @@ export type NavLink = { href: string; label: string; icon: NavIcon; also?: reado
 // sidebar flush on the grey, one line per item, the current one a tinted row.
 // Below: one 56 px bar with the café's name and a Pages button that opens
 // the same list in a sheet, so every section is visible at once on a phone.
+// Both end with the account: language and Sign out.
 export function AdminNav({
   brand,
   cafe,
@@ -23,7 +25,9 @@ export function AdminNav({
   menuLabel,
   closeLabel,
   links,
+  account,
 }: {
+  account: Account;
   brand: string;
   cafe: string;
   label: string;
@@ -65,12 +69,13 @@ export function AdminNav({
       {open && (
         <Sheet title={cafe} closeLabel={closeLabel} onClose={() => setOpenOn(null)} fit testId="admin-menu-sheet">
           <NavList label={label} links={links} active={active} size="sheet" onPick={() => setOpenOn(null)} />
+          <AccountFooter account={account} className="border-staff-sep mt-4 border-t pt-4" />
         </Sheet>
       )}
 
       {/* Desktop sidebar: flush on the grey page (ADR-094), no card, no shadow. */}
       <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:px-3 print:hidden">
-        <div className="flex flex-col gap-6 py-6">
+        <div className="flex min-h-full flex-col gap-6 py-6">
           <Link href="/admin" className="flex min-w-0 flex-col rounded-lg px-3 py-1">
             <span className="text-staff-label2 text-meta font-semibold">{brand}</span>
             <span className="page-title truncate text-[1.75rem]" title={cafe}>
@@ -78,6 +83,7 @@ export function AdminNav({
             </span>
           </Link>
           <NavList label={label} links={links} active={active} size="sidebar" />
+          <AccountFooter account={account} className="mt-auto" />
         </div>
       </aside>
     </>
@@ -126,7 +132,8 @@ function NavList({
                   aria-hidden="true"
                   className={clsx("size-5 shrink-0", current ? "text-ink" : "text-staff-label2")}
                 />
-                <span className="min-w-0 flex-1 truncate">{l.label}</span>
+                {/* A long label wraps to a second line rather than losing its end. */}
+                <span className="line-clamp-2 min-w-0 flex-1 py-1 leading-snug break-words">{l.label}</span>
                 {current && size === "sheet" && <Check aria-hidden="true" className="text-ink size-5 shrink-0" />}
               </Link>
             </li>

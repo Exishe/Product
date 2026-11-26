@@ -21,7 +21,7 @@ test("the owner pauses ordering and closes the kitchen from the admin home", asy
 
   const pause = section.getByTestId("control-pause");
   await expect(pause).toContainText("Հյուրերը կարող են պատվիրել");
-  await pause.getByRole("button", { name: "Կանգնեցված" }).click();
+  await pause.getByRole("button", { name: "Դադար" }).click();
   await pause.getByRole("button", { name: "20 րոպե" }).click();
   await expect(pause.getByRole("status")).toContainText("Պատվերները կանգնեցված են մինչև");
   await page.reload();
@@ -30,17 +30,18 @@ test("the owner pauses ordering and closes the kitchen from the admin home", asy
   await expect(page.getByTestId("control-pause").getByRole("status")).toContainText("Հյուրերը կարող են պատվիրել");
 
   // Without minutes it holds until resumed.
-  await page.getByTestId("control-pause").getByRole("button", { name: "Կանգնեցված" }).click();
+  await page.getByTestId("control-pause").getByRole("button", { name: "Դադար" }).click();
   await page.getByRole("button", { name: "Մինչև նորից միացնեմ" }).click();
   await expect(page.getByTestId("control-pause").getByRole("status")).toContainText("մինչև նորից միացնեք");
   await page.getByTestId("control-pause").getByRole("button", { name: "Ընդունվում են" }).click();
 
-  const kitchen = page.getByTestId("control-kitchen");
-  await kitchen.getByRole("button", { name: "Փակել այսօր" }).click();
-  await kitchen.getByRole("button", { name: "Այո, փակել" }).click();
-  await expect(kitchen.getByRole("status")).toContainText("Խոհանոցն այսօրվա համար փակ է");
-  await kitchen.getByRole("button", { name: "Բացել խոհանոցը" }).click();
-  await expect(kitchen.getByRole("status")).toContainText("Խոհանոցը պատվեր է ընդունում");
+  // Closed for today is the third segment of the same control; it asks once.
+  const controls = page.getByTestId("control-pause");
+  await controls.getByRole("button", { name: "Փակ է այսօր" }).click();
+  await page.getByTestId("control-kitchen").getByRole("button", { name: "Այո, փակել" }).click();
+  await expect(controls.getByRole("status")).toContainText("Խոհանոցն այսօրվա համար փակ է");
+  await controls.getByRole("button", { name: "Ընդունվում են" }).click();
+  await expect(controls.getByRole("status")).toContainText("Հյուրերը կարող են պատվիրել");
 });
 
 test.describe("an open guest menu follows the café's controls", () => {

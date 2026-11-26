@@ -24,7 +24,7 @@ import {
   type BrandFont,
   type PlateStyle,
 } from "./brand";
-import { BrandPreview, type PreviewDish } from "./brand-preview";
+import { BrandPreview, type PreviewDish, type PreviewSections } from "./brand-preview";
 import { RECOMMENDED_THEME, THEME_CHOICES, THEME_FACTS, contrast, type GuestTheme } from "./themes";
 
 const logoUrl = (path: string) =>
@@ -60,27 +60,29 @@ function ThemeSwatch({
   return (
     <span
       aria-hidden="true"
-      className="guest-lux bg-page text-ink relative block h-44 overflow-hidden rounded-xl p-3"
+      className="guest-lux bg-page text-ink relative block h-28 overflow-hidden rounded-xl p-2 sm:h-40 sm:p-3"
       data-guest-theme={theme}
       data-guest-preview=""
       data-plate={brand.plate ?? undefined}
       style={brandTokens(theme, brand, legacyColor).style}
     >
-      <span className="display-face text-title block text-[1.75rem] leading-none">{title}</span>
-      <span className="mt-3 grid grid-cols-2 gap-2">
+      <span className="display-face text-title block truncate text-[0.875rem] leading-none sm:text-[1.625rem]">
+        {title}
+      </span>
+      <span className="mt-2 grid grid-cols-2 gap-1.5 sm:mt-3 sm:gap-2">
         {[0, 1].map((i) => (
           <span
             key={i}
-            className="bg-surface shadow-card rounded-card block border [border-color:var(--guest-card-border)] p-2"
+            className="bg-surface shadow-card rounded-card block border [border-color:var(--guest-card-border)] p-1.5 sm:p-2"
           >
-            <span className="bg-dish shadow-plate mx-auto block size-9 rounded-full" />
-            <span className="bg-ink/70 mx-auto mt-2 block h-1.5 w-3/4 rounded-full" />
-            <span className="bg-accent-text mx-auto mt-1 block h-1.5 w-1/3 rounded-full" />
+            <span className="bg-dish shadow-plate mx-auto block size-6 rounded-full sm:size-9" />
+            <span className="bg-ink/70 mx-auto mt-1.5 block h-1 w-3/4 rounded-full sm:mt-2 sm:h-1.5" />
+            <span className="bg-accent-text mx-auto mt-1 block h-1 w-1/3 rounded-full sm:h-1.5" />
           </span>
         ))}
       </span>
-      <span className="bg-accent text-on-accent rounded-pill absolute inset-x-3 bottom-3 flex h-6 items-center px-2">
-        <span className="block h-1.5 w-1/3 rounded-full bg-current opacity-80" />
+      <span className="bg-accent text-on-accent rounded-pill absolute inset-x-2 bottom-2 flex h-4 items-center px-2 sm:inset-x-3 sm:bottom-3 sm:h-6">
+        <span className="block h-1 w-1/3 rounded-full bg-current opacity-80 sm:h-1.5" />
       </span>
     </span>
   );
@@ -146,9 +148,15 @@ export function AppearanceForm({
   cafeName,
   cover,
   sample,
+  sampleSections,
   initial,
   initialBrand,
+  covers,
 }: {
+  /** The section the sample dishes come from (the preview's heading). */
+  sampleSections?: PreviewSections | null;
+  /** Section covers: they save on their own, so they sit after the form's groups. */
+  covers?: ReactNode;
   restaurantId: string;
   ready: boolean;
   /** restaurants.brand exists (migration 20261119100000_brand_profile applied). */
@@ -288,13 +296,14 @@ export function AppearanceForm({
     <div className="flex flex-col gap-10">
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0" disabled={!ready}>
         <legend className={`mb-2 ${sectionTitle}`}>{t("theme")}</legend>
-        <div className="grid gap-3 sm:grid-cols-3">
+        {/* Three miniatures in one row at every width, the name under each.
+            No frame around a choice: the chosen miniature gets a 2 px ink
+            ring and a tick; its description shows once, under the row. */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {THEME_CHOICES.map((id) => (
             <label
               key={id}
-              // No frame on the choices: the miniature is the tile. Only the
-              // chosen one gets a 2 px ink ring (and the tick below).
-              className="has-[:checked]:ring-ink has-[:focus-visible]:outline-ink hover:bg-staff-bg relative flex cursor-pointer flex-col gap-3 rounded-[var(--radius-soft)] bg-white p-3 has-[:checked]:ring-2 has-[:checked]:hover:bg-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
+              className="group has-[:focus-visible]:outline-ink relative flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-4"
               data-testid={`theme-${id}`}
             >
               <input
@@ -308,33 +317,46 @@ export function AppearanceForm({
                 }}
                 className="sr-only"
               />
-              <ThemeSwatch theme={id} brand={brand} legacyColor={header} title={t("previewTitle")} />
-              <span className="flex items-start gap-2">
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-name font-semibold">
-                    {t(`themes.${id}.name`)}
-                    {id === RECOMMENDED_THEME && (
-                      <span className="bg-staff-fill text-ink rounded-full px-2 py-0.5 text-meta font-semibold">
-                        {t("recommended")}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-staff-label2 text-label">{t(`themes.${id}.hint`)}</span>
-                </span>
+              <span
+                className={`relative block rounded-[0.875rem] p-0.5 transition-shadow duration-150 motion-reduce:transition-none ${theme === id ? "ring-ink ring-2" : "group-hover:ring-staff-field group-hover:ring-2"}`}
+              >
+                <ThemeSwatch theme={id} brand={brand} legacyColor={header} title={t("previewTitle")} />
                 {/* Ticked as well as ringed: the choice never rests on colour alone. */}
-                <span
-                  aria-hidden="true"
-                  className={`grid size-6 shrink-0 place-items-center rounded-full ${theme === id ? "bg-ink text-white" : "ring-staff-field ring-1"}`}
-                >
-                  {theme === id && <Check className="size-4" />}
+                {theme === id && (
+                  <span
+                    aria-hidden="true"
+                    className="bg-ink absolute -top-2 -right-2 grid size-6 place-items-center rounded-full text-white ring-2 ring-white"
+                  >
+                    <Check className="size-4" />
+                  </span>
+                )}
+              </span>
+              <span className="flex min-w-0 flex-col items-start gap-1">
+                <span className={`text-name leading-tight ${theme === id ? "font-semibold" : "font-medium"}`}>
+                  {t(`themes.${id}.name`)}
                 </span>
+                {id === RECOMMENDED_THEME && (
+                  <span className="bg-staff-fill text-ink max-w-full rounded-full px-2 py-0.5 text-meta leading-snug font-semibold whitespace-nowrap">
+                    {t("recommended")}
+                  </span>
+                )}
               </span>
             </label>
           ))}
         </div>
+        {/* The description names its theme, so it never reads as the
+            caption of the first miniature. */}
+        <p className="text-staff-label2 m-0 mt-1 max-w-[60ch] text-label" aria-live="polite">
+          {t.rich("themeLine", {
+            name: t(`themes.${theme}.name`),
+            hint: t(`themes.${theme}.hint`),
+            b: (chunks) => <span className="text-ink font-semibold">{chunks}</span>,
+          })}
+        </p>
       </fieldset>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="flex min-w-0 flex-col gap-10">
         <fieldset className="m-0 flex min-w-0 flex-col gap-10 border-0 p-0" disabled={!ready}>
           <legend className="sr-only">{b("title")}</legend>
           <Group id={`${ids}-colors`} title={b("colors")} hint={b("colorsHint")}>
@@ -499,23 +521,21 @@ export function AppearanceForm({
           </Group>
 
           <Group id={`${ids}-wordmark`} title={b("wordmark")} hint={b("wordmarkHint")}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col">
               {wordmarkSlots.map((slot) => {
                 const path = brand[slot.key];
                 return (
+                  // One 64 px row per background: a chip in that colour (with
+                  // the picture once there is one), the name, then the actions.
                   <div
                     key={slot.key}
                     role="group"
                     aria-labelledby={`${ids}-${slot.key}`}
-                    className="flex min-w-0 flex-col gap-3"
+                    className="border-staff-sep flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b py-2 last:border-0"
                     data-testid={`slot-${slot.key}`}
                   >
-                    <h3 id={`${ids}-${slot.key}`} className="m-0 text-name font-semibold">
-                      {slot.title}
-                    </h3>
-                    {/* The chip is the background the picture is meant for. */}
                     <span
-                      className="border-staff-field grid h-24 place-items-center rounded-xl border p-3"
+                      className="grid h-12 w-24 shrink-0 place-items-center rounded-xl p-1.5 shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]"
                       style={{ background: slot.chip }}
                       data-testid={`chip-${slot.key}`}
                     >
@@ -524,12 +544,15 @@ export function AppearanceForm({
                         <img
                           src={logoUrl(path)}
                           alt=""
-                          height={56}
-                          className="h-14 w-auto max-w-full object-contain"
+                          height={36}
+                          className="h-9 w-auto max-w-full object-contain"
                         />
                       )}
                     </span>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <h3 id={`${ids}-${slot.key}`} className="m-0 min-w-0 flex-1 basis-32 text-name font-semibold">
+                      {slot.title}
+                    </h3>
+                    <div className="flex items-center gap-1">
                       <label className={fileLabel}>
                         <ImagePlus aria-hidden="true" />
                         {upload === "uploading" ? t("uploading") : b("wordmarkChoose")}
@@ -617,8 +640,11 @@ export function AppearanceForm({
             </div>
           </Group>
         </fieldset>
+        {covers}
+        </div>
 
-        <aside className="flex flex-col gap-3 lg:sticky lg:top-6" aria-labelledby={`${ids}-preview`}>
+        {/* Below 1024 px the preview opens from the bar (a sheet), so the page stays short. */}
+        <aside className="hidden flex-col gap-3 lg:sticky lg:top-6 lg:flex" aria-labelledby={`${ids}-preview`}>
           <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
             <h2 id={`${ids}-preview`} className="m-0 text-heading font-semibold">
               {b("preview")}
@@ -633,14 +659,16 @@ export function AppearanceForm({
             logo={logo}
             cover={cover}
             sample={sample}
+            sections={sampleSections}
           />
         </aside>
       </div>
 
-      {/* Phone: a solid bar pinned to the bottom with the preview one tap away
-          and Save once something changed. From 640 px it is a plain row (the
-          preview sits next to the form from 1024 px). */}
-      <div className="border-staff-sep sticky bottom-0 z-10 -mx-4 flex items-center gap-3 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:static sm:mx-0 sm:border-0 sm:p-0">
+      {/* The page's one save status, at every width: a solid bar pinned to
+          the bottom with Save once something changed (else "Saved"), and on
+          phones and tablets the preview one tap away (from 1024 px it sits
+          next to the form). Section covers save on their own above it. */}
+      <div className="border-staff-sep sticky bottom-0 z-10 -mx-4 -mb-16 flex min-h-[4.5rem] items-center gap-3 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
         <button
           type="button"
           onClick={() => setPreviewOpen(true)}
@@ -680,6 +708,7 @@ export function AppearanceForm({
             logo={logo}
             cover={cover}
             sample={sample}
+            sections={sampleSections}
           />
         </Sheet>
       )}

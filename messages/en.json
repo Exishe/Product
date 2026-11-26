@@ -238,16 +238,14 @@
       "pause": "Pause",
       "cancel": "Cancel",
       "pauseHint": "Guests can still read the menu. Orders already sent are not affected.",
-      "kitchenOpen": "The kitchen is taking orders.",
       "closedUntil": "The kitchen is closed for today. Orders open again at {time}.",
-      "reopen": "Reopen the kitchen",
       "closeConfirm": "Guests won't be able to order until the next opening. Close the kitchen for today?",
       "closeYes": "Yes, close",
       "failed": "Couldn't save that. Check the connection and try again.",
       "segmentLabel": "Guest orders",
       "segOn": "Taking orders",
       "segPaused": "Paused",
-      "closeToday": "Close for today"
+      "segClosed": "Closed today"
     },
     "promos": {
       "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
@@ -292,7 +290,7 @@
       "turnOff": "Turn off",
       "kind": "Reward",
       "kindPercent": "Percent off",
-      "kindText": "A gift or offer",
+      "kindText": "Gift or offer",
       "level": "Guest reaches level",
       "levelHint": "From {min} to {max}. The higher, the harder.",
       "percent": "Discount, %",
@@ -1053,7 +1051,6 @@
       "kcalPer100": "Calories, kcal per 100 {unit}",
       "gramsPerPiece": "Weight of one piece, g",
       "kcalHint": "Applies to every dish that uses this ingredient. Guests see the change after you publish.",
-      "kcalSave": "Save calories",
       "invalidKcal": "Enter calories from 0 to 1000.",
       "invalidPiece": "Enter a weight above zero.",
       "kcalShown": "Guests will see ≈ {value} kcal per portion after you publish.",
@@ -1078,6 +1075,7 @@
     "hiddenToast": "“{name}” hidden. Guests see it after you publish.",
     "shownToast": "“{name}” is back on the menu. Guests see it after you publish.",
     "soldOutToast": "“{name}”: sold out today.",
+    "soldOutHint": "If a dish is out today, tap <icon></icon>.",
     "backToast": "“{name}” is available again.",
     "undo": "Undo",
     "positionDish": "Place in the section",
@@ -1578,7 +1576,7 @@
   "telegram": {
     "title": "Telegram alerts",
     "intro": "By default only exceptions arrive: late orders, a screen offline, a cancellation after serving and the day summary. You can turn on an alert for every new order below.",
-    "botNotReady": "The Telegram bot isn't ready yet. Meanwhile you can turn on notifications on this phone.",
+    "botNotReady": "The Telegram bot isn't ready yet. Meanwhile you can turn on notifications on this device.",
     "connectTitle": "New chat",
     "connectHint": "You'll get a one-time link. Open it in Telegram and press Start.",
     "connect": "Connect Telegram",
@@ -1616,14 +1614,14 @@
     "error": "That didn't work. Please try again."
   },
   "push": {
-    "title": "Notifications on this phone",
-    "hint": "No Telegram? The same alerts can come through your phone's browser.",
-    "turnOn": "Turn on for this phone",
-    "turnOff": "Turn off for this phone",
-    "on": "On for this phone.",
+    "title": "Notifications on this device",
+    "hint": "No Telegram? The same alerts can come through this device's browser.",
+    "turnOn": "Turn on for this device",
+    "turnOff": "Turn off for this device",
+    "on": "On for this device.",
     "unsupported": "This browser can't receive notifications.",
     "install": "On an iPhone, first add the admin to the Home Screen (Share → Add to Home Screen), then open it from there.",
-    "unconfigured": "Phone notifications aren't available yet.",
+    "unconfigured": "Notifications aren't available on this device yet.",
     "denied": "Notifications are blocked in the browser settings.",
     "error": "Couldn't turn them on. Please try again."
   },
@@ -1639,7 +1637,10 @@
     "home": "Home",
     "open": "Pages",
     "close": "Close",
-    "pos": "POS connection"
+    "pos": "POS",
+    "language": "Language",
+    "signOut": "Sign out",
+    "account": "Account"
   },
   "billing": {
     "planName": {
@@ -1736,6 +1737,8 @@
     "kitchenHint": "From the ticket to “Ready”",
     "kitchenAvg": "{minutes} min on average",
     "kitchenOver": "{over} of {tickets} over 20 min",
+    "kitchenNoneOver": "No order waited over 20 min",
+    "notOrdered": "Not ordered",
     "defaultStation": "Kitchen",
     "noKitchen": "No dishes were marked ready.",
     "cancellations": "Cancellations",
@@ -1797,19 +1800,20 @@
     "title": "Guest page look",
     "intro": "Choose how guests see your menu when they scan the QR code. The order and order status pages follow it.",
     "theme": "Theme",
-    "recommended": "Recommended",
+    "recommended": "Suggested",
+    "themeLine": "<b>{name}</b>: {hint}",
     "themes": {
       "evening": {
         "name": "Evening",
-        "hint": "Ivory page, black buttons, champagne details"
+        "hint": "ivory page, black buttons, champagne details"
       },
       "wine": {
         "name": "Wine",
-        "hint": "Dark wine page, burgundy cards and one bright red"
+        "hint": "dark wine page, burgundy cards and one bright red"
       },
       "soft": {
         "name": "Pure",
-        "hint": "Light grey page, white cards, dark plates and one amber accent"
+        "hint": "light grey page, white cards, dark plates and one amber accent"
       }
     },
     "previewTitle": "Menu",
@@ -1894,7 +1898,7 @@
       "previewPrice": "2 900 ֏",
       "previewAdd": "Add",
       "covers": "Section covers",
-      "coversHint": "A wide photo at the top of a section. It is saved at once: guests see it without publishing the menu again.",
+      "coversHint": "A wide photo at the top of a section. Saved at once, no Save needed.",
       "coverChoose": "Add a cover",
       "coverChange": "Change",
       "coverRemove": "Remove the cover for “{section}”",
@@ -2006,6 +2010,7 @@
         "few_views": "Too few views to judge yet."
       },
       "fewViewsNote": "“–”: too few views to judge yet.",
+      "shareLaterNote": "The share who ordered appears once dishes have more views.",
       "metaLine": "{views} views · {adds} added · {orders} ordered",
       "showAll": "Show all ({count})"
     },

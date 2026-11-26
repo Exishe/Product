@@ -282,16 +282,15 @@ export default async function AdminHome() {
       </Section>
 
       <NextIntlClientProvider>
-        {/* One attention list (setup to-dos and live problem tables). It is
-            always there, so the owner learns where to look. */}
-        <Section title={t("attention")} id="home-attention" testId="home-attention">
-          <AttentionPanel
-            locationId={location && alerts ? location.id : null}
-            initial={alerts ?? []}
-            todos={todos}
-            allClear={t("allClear")}
-          />
-        </Section>
+        {/* One attention list (setup to-dos and live problem tables) with
+            its heading; when there is nothing, only the all-clear line. */}
+        <AttentionPanel
+          locationId={location && alerts ? location.id : null}
+          initial={alerts ?? []}
+          todos={todos}
+          title={t("attention")}
+          allClear={t("allClear")}
+        />
 
         {location && venue && (
           <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">

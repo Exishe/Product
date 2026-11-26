@@ -1,12 +1,14 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CircleAlert, CircleCheck, KeyRound, Plug, RefreshCw, RotateCcw, Send, Download } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ChevronDown, CircleAlert, CircleCheck, Download, Info, KeyRound, Plug, RefreshCw, RotateCcw, Send } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Notice, Section } from "@/features/admin-ui/page";
-import { button, card, chip, fieldLabel, input, table as tbl } from "@/features/admin-ui/styles";
+import { button, card, chip, fieldLabel, input, list, table as tbl, textAction } from "@/features/admin-ui/styles";
+import type { Locale } from "@/i18n/routing";
+import { formatDate, formatTime } from "@/lib/format/date";
 import {
   checkPosConnection,
   loadPosMenu,
@@ -88,9 +90,11 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
 
   return (
     <div className="flex flex-col gap-6" data-testid="pos-settings">
-      <Notice tone="info" icon={<CircleAlert aria-hidden="true" />}>
-        <p className="m-0">{t("notInV1")}</p>
-      </Notice>
+      {/* What isn't sent: a plain info line on the page, not a grey box. */}
+      <p className="text-staff-label2 m-0 flex max-w-[60ch] items-start gap-2 text-[0.9375rem] leading-normal">
+        <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+        {t("notInV1")}
+      </p>
 
       {flash && (
         <Notice tone={flash.tone} role={flash.tone === "alert" ? "alert" : "status"} icon={flash.tone === "ok" ? <CircleCheck aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}>
@@ -321,21 +325,37 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
       {/* 5. On / off and a test order */}
       {conn && (
         <Section title={t("activeTitle")} id="pos-active">
-          <p className="m-0 flex items-center gap-2 text-[1.0625rem] font-semibold" data-testid="pos-active-state">
-            <span className={clsx(chip.base, conn.isActive ? chip.ok : chip.plain)}>{conn.isActive ? t("activeOn") : t("activeOff")}</span>
-          </p>
-          <div className="flex flex-wrap gap-2">
+          {/* The state and, while on, its quiet red "Turn off" on one line
+              (as on Staff); then the group's actions. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <p className="m-0 flex items-center gap-2 text-[1.0625rem] font-semibold" data-testid="pos-active-state">
+              <span className={clsx(chip.base, conn.isActive ? chip.ok : chip.plain)}>{conn.isActive ? t("activeOn") : t("activeOff")}</span>
+            </p>
+            {conn.isActive && (
+              <button
+                type="button"
+                className={textAction("danger", "-mr-2")}
+                disabled={pending}
+                onClick={() => run(() => setPosActive(conn.id, false))}
+              >
+                {t("turnOff")}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!conn.isActive && (
+              <button
+                type="button"
+                className={button("primary", "max-sm:w-full")}
+                disabled={pending}
+                onClick={() => run(() => setPosActive(conn.id, true))}
+              >
+                {t("turnOn")}
+              </button>
+            )}
             <button
               type="button"
-              className={button(conn.isActive ? "danger" : "primary")}
-              disabled={pending}
-              onClick={() => run(() => setPosActive(conn.id, !conn.isActive))}
-            >
-              {conn.isActive ? t("turnOff") : t("turnOn")}
-            </button>
-            <button
-              type="button"
-              className={button("secondary")}
+              className={button("secondary", "max-sm:w-full")}
               disabled={pending || (conn.vendor !== "test" && !conn.hasSecret)}
               onClick={() => run(() => sendPosTest(conn.id), undefined, t("testQueued"))}
             >
@@ -353,7 +373,7 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
           id="pos-recent"
           bare
           actions={
-            <button type="button" className={button("plain")} onClick={() => router.refresh()}>
+            <button type="button" className={textAction()} onClick={() => router.refresh()}>
               <RefreshCw aria-hidden="true" />
               {t("refresh")}
             </button>
@@ -362,7 +382,7 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
           {data.recent.length === 0 ? (
             <p className={clsx(card, "text-staff-label2 m-0")}>{t("recentEmpty")}</p>
           ) : (
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            <ul className={clsx(list.wrap, "border-staff-sep border-t")}>
               {data.recent.map((s) => (
                 <SendRow key={s.id} send={s} disabled={pending} onRetry={() => run(() => retryPosSend(s.id))} />
               ))}
@@ -380,9 +400,14 @@ function statusChip(status: PosSendView["status"]) {
 
 function SendRow({ send, disabled, onRetry }: { send: PosSendView; disabled: boolean; onRetry: () => void }) {
   const t = useTranslations("pos");
+  const locale = useLocale() as Locale;
+  const at = new Date(send.createdAt);
+  // Café time in the admin's format (26.11.2026, 10:22), the same on the
+  // server and in the browser.
+  const when = [formatDate(at, locale), formatTime(at)].join(", ");
   const title = send.isTest ? t("testOrder", { number: send.orderNumber ?? "" }) : t("order", { number: send.orderNumber ?? "" });
   return (
-    <li className={clsx(card, "flex flex-col gap-2")} data-testid="pos-send" data-status={send.status}>
+    <li className={clsx(list.item, "gap-1.5 pb-1")} data-testid="pos-send" data-status={send.status}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <strong>
           {title}
@@ -391,26 +416,33 @@ function SendRow({ send, disabled, onRetry }: { send: PosSendView; disabled: boo
         <span className={clsx(chip.base, statusChip(send.status))}>{t(`status.${send.status}`)}</span>
       </div>
       <p className="text-staff-label2 m-0 text-[0.875rem]">
-        {new Date(send.createdAt).toLocaleString()}
+        <time dateTime={send.createdAt}>{when}</time>
         {send.externalOrderId && <> · {t("externalId", { id: send.externalOrderId })}</>}
       </p>
       {send.lastError && (send.status === "failed" || send.status === "dead") && (
         <p className="text-pomegranate m-0 text-[0.9375rem] break-words">{send.lastError}</p>
       )}
-      <details>
-        <summary className="text-ink cursor-pointer text-[0.9375rem] font-semibold">{t("showPayload")}</summary>
-        <pre className="bg-staff-fill mt-2 max-h-80 overflow-auto rounded-xl p-3 text-[0.8125rem] leading-snug" lang="und">
-          {JSON.stringify(send.payload, null, 2)}
-        </pre>
-      </details>
       {(send.status === "failed" || send.status === "dead") && (
-        <div>
-          <button type="button" className={button("secondary")} disabled={disabled} onClick={onRetry}>
+        <div className="-ml-2">
+          <button type="button" className={textAction()} disabled={disabled} onClick={onRetry}>
             <RotateCcw aria-hidden="true" />
             {t("retry")}
           </button>
         </div>
       )}
+      {/* The admin's disclosure row: label on the left, chevron on the right. */}
+      <details className="group">
+        <summary className="text-ink flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-label font-semibold [&::-webkit-details-marker]:hidden">
+          {t("showPayload")}
+          <ChevronDown
+            aria-hidden="true"
+            className="text-staff-label2 size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+          />
+        </summary>
+        <pre className="bg-staff-fill mb-3 max-h-80 overflow-auto rounded-xl p-3 text-[0.8125rem] leading-snug" lang="und">
+          {JSON.stringify(send.payload, null, 2)}
+        </pre>
+      </details>
     </li>
   );
 }

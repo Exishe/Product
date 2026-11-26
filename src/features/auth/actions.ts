@@ -102,3 +102,10 @@ export async function signUp(_prev: SignUpState, form: FormData): Promise<SignUp
   if (error || !data.session) return { error: "failed" };
   redirect(safeNext(form.get("next"), "/admin/new"));
 }
+
+// "Sign out" in the admin's account footer: end the session, then the sign-in page.
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
