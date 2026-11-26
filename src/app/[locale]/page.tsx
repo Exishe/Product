@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BrandLink, localeOption } from "@/features/admin-ui/brand";
 import { LandingEffects } from "@/features/landing/landing-effects";
 import { Showcase, type ShowcasePanel } from "@/features/landing/showcase";
+import { qrPath } from "@/features/tables-qr/qr-svg";
 import { routing } from "@/i18n/routing";
+import { parseServerEnv } from "@/lib/env.server";
 
 // The showcase café «Pativ Demo» (docs/04-operations/showcase-cafe.md), not
 // demo-cafe: that one is the CI fixture and is reset by the tests.
@@ -26,7 +29,9 @@ const WIDE = { width: 1440, height: 1376 };
 const HERO = { width: 780, height: 1418 };
 
 const STEPS = ["step1", "step2", "step3"] as const;
-const WHY = ["hardware", "languages", "telegram"] as const;
+// Three facts the hero doesn't already say: the offline queue, the CSV export
+// and the Telegram alerts.
+const WHY = ["offline", "export", "telegram"] as const;
 
 // One container for the whole page: 1120 px, 16 px gutters on phones, 32 px from md.
 const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
@@ -76,6 +81,10 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   const signupHref = `/signup?lang=${locale}`;
   const loginHref = `/login?lang=${locale}`;
   const pairHref = `/pair?lang=${locale}`;
+  // From lg the hero carries a QR code of the demo menu, so an owner reading
+  // on a laptop can try the guest side on their own phone.
+  const demoQr = qrPath(new URL(demoHref, parseServerEnv(process.env).APP_BASE_URL).toString());
+  const bold = (chunks: ReactNode) => <strong className="font-semibold">{chunks}</strong>;
 
   const panels: ShowcasePanel[] = SURFACES.map((s) => ({
     id: s,
@@ -186,12 +195,27 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
               </a>
             </div>
             <p className="text-slate text-label m-0 mt-4">{t("trial")}</p>
+            {/* Laptops only: a phone can't scan its own screen. */}
+            <div className="mt-10 hidden items-center gap-5 lg:flex">
+              <svg
+                viewBox={`0 0 ${demoQr.size} ${demoQr.size}`}
+                role="img"
+                aria-label={t("qr.alt")}
+                shapeRendering="crispEdges"
+                className="text-ink size-28 shrink-0 rounded-[12px] shadow-[inset_0_0_0_1px_var(--color-hairline)]"
+              >
+                <path fill="currentColor" d={demoQr.d} />
+              </svg>
+              <p className="text-ink text-label m-0 max-w-[28ch] leading-normal text-pretty">
+                {t("qr.text")}
+              </p>
+            </div>
           </div>
           <div className="relative z-10 -mb-16 lg:col-span-5 lg:col-start-8 lg:-mb-24">
             <a
               href={demoHref}
               aria-label={t("ctaDemo")}
-              className="shadow-soft-float mx-auto block w-full max-w-[360px] overflow-hidden rounded-[28px] lg:max-w-[400px]"
+              className="shadow-soft-float mx-auto block w-full max-w-[360px] overflow-hidden rounded-[20px] lg:max-w-[400px]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- static webp at 2x, sized below; no image runtime on the landing */}
               <img
@@ -298,7 +322,15 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 <p className="text-slate text-label m-0 mt-1">{t("pricing.service.year")}</p>
                 <div className="pt-6">{signupButton}</div>
                 <div>
-                  <p className={planTerms}>{t("pricing.service.offer")}</p>
+                  {/* The two offers as two short lines, each with its own lead. */}
+                  <div className="mt-8 flex max-w-[44ch] flex-col gap-2">
+                    <p className="text-name m-0 leading-normal text-pretty">
+                      {t.rich("pricing.service.offer", { b: bold })}
+                    </p>
+                    <p className="text-name m-0 leading-normal text-pretty">
+                      {t.rich("pricing.service.founding", { b: bold })}
+                    </p>
+                  </div>
                   <p className="text-name m-0 mt-6 leading-normal">{t("pricing.service.includes")}</p>
                   <ul className={`${planList} mt-2!`}>
                     <li>{t("pricing.service.l1")}</li>

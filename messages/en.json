@@ -24,18 +24,18 @@
         "tab": "Menu",
         "title": "QR menu",
         "text": "A menu with photos in three languages. Guests order from their own phone.",
-        "alt": "A section of the guest menu with a dish photo",
-        "p1": "Guests switch between Armenian, Russian and English at the top.",
-        "p2": "A dish that ran out today is marked, so nobody orders it.",
+        "alt": "A dish open on the guest's phone: a large photo, the price and an Add button with the total",
+        "p1": "Each dish opens with a large photo, its description and calories.",
+        "p2": "Guests pick the quantity, leave a note for the kitchen and see the total before adding.",
         "p3": "Guests can call the waiter or ask for the bill from their phone."
       },
       "waiter": {
         "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "The waiter app's order list, table by table",
-        "p1": "Each row shows what the table needs and how long it has waited.",
-        "p2": "One tap accepts an order and sends it to the kitchen.",
+        "alt": "The waiter app's floor: four tables, each coloured by what it needs",
+        "p1": "A table's colour says what it needs: a new order, food to serve or the bill.",
+        "p2": "Under the number: how long the table has waited and its total so far.",
         "p3": "Calls and bill requests ring, so nobody waves for long."
       },
       "kitchen": {
@@ -52,9 +52,9 @@
         "tab": "Admin",
         "title": "Owner admin",
         "text": "Menu, tables, staff and the day's reports.",
-        "alt": "A dish open in the owner admin's menu editor, with its name and description in three languages",
-        "p1": "Each dish has its name and description in Armenian, Russian and English.",
-        "p2": "Change a price or a photo, then publish the menu when it's ready.",
+        "alt": "The owner admin's menu on a phone: breakfast dishes with photos, prices and a Sold out today button",
+        "p1": "Every dish with its photo and price, section by section.",
+        "p2": "One tap on Sold out today hides a dish from guests, and the list clears in the morning.",
         "p3": "Tables with their QR codes, staff logins and the day's sales are here too."
       }
     },
@@ -73,13 +73,13 @@
         "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
       },
       "why": {
-        "hardware": {
-          "lead": "No new hardware",
-          "text": "It runs on the phones and tablets you already have."
+        "offline": {
+          "lead": "Works through Wi-Fi drops",
+          "text": "If the connection drops, the guest's order waits on their phone and goes out by itself when it's back."
         },
-        "languages": {
-          "lead": "Three languages",
-          "text": "The menu is in Armenian, Russian and English."
+        "export": {
+          "lead": "Your data in Excel",
+          "text": "Download the menu, orders and bills as CSV files for Excel or Google Sheets."
         },
         "telegram": {
           "lead": "Telegram alerts",
@@ -108,7 +108,8 @@
         "l1": "Ordering from the table",
         "l2": "The waiter app and the kitchen screen",
         "l3": "Telegram alerts",
-        "offer": "The first month is free. The first 10 cafés pay nothing during the pilot, then 10 000 ֏ a month for a year.",
+        "offer": "<b>The first month is free.</b>",
+        "founding": "<b>The first 10 cafés:</b> a free pilot, then 10 000 ֏ a month for the first year.",
         "perks": "No card, no contract. In Yerevan we set it up in person, for free."
       }
     },
@@ -119,8 +120,12 @@
       "nav": "Links"
     },
     "proof": {
-      "text": "Every screen on this page is a screenshot of the working product, not a mock-up.",
-      "link": "Try it as a guest"
+      "text": "Every picture comes from Pativ Demo, our sample café.",
+      "link": "Open its menu as a guest"
+    },
+    "qr": {
+      "text": "Scan to open the demo menu on your phone.",
+      "alt": "QR code for the demo menu"
     }
   },
   "common": {
@@ -184,7 +189,8 @@
       "submit": "Save and sign in",
       "pending": "Saving…",
       "checking": "Checking the link…",
-      "expired": "This link has expired or was already used.",
+      "expiredTitle": "This link no longer works",
+      "expired": "It has expired or was already used. Ask for a new one and it will arrive by email.",
       "newLink": "Get a new link",
       "error": "Couldn't save the password. Try again."
     }
@@ -432,7 +438,7 @@
     },
     "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
     "note": "The device opens as the kitchen screen or the waiter app, depending on the code.",
-    "loginLink": "Sign in with email instead"
+    "loginLink": "Sign in with a username or email instead"
   },
   "invite": {
     "title": "Join the team",
