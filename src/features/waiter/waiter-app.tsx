@@ -32,6 +32,7 @@ import {
 import { openRequests, type AlertRequest } from "./call-alerts";
 import { CallBanners, SoundButton } from "./call-banners";
 import { fetchFloor } from "./floor-data";
+import { fetchPosSends, retryPosSendFromWaiter, type WaiterPosSend } from "../pos/waiter-pos";
 import { fetchLivePromoTitles } from "./promos";
 import { fetchRewards, resolveReward, type WaiterReward } from "./rewards";
 import { AreaTabs, FloorMap } from "./floor-map";
@@ -152,6 +153,7 @@ function App(p: WaiterAppProps) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState<Tab>("tables");
   const [recent, setRecent] = useState<SentTap[]>([]);
+  const [posSends, setPosSends] = useState<Record<string, WaiterPosSend>>({});
 
   // Promos switch on and off during service: look again every 30 s while visible.
   useEffect(() => {
@@ -196,6 +198,8 @@ function App(p: WaiterAppProps) {
           return;
         }
         setRows(res.data);
+        // POS status per order (ADR-093): a failed read keeps what is shown.
+        void fetchPosSends(getBrowserClient(), p.location.id).then((s) => s && setPosSends(s));
         // Open game rewards (ADR-075): a failed read keeps what is shown.
         void fetchRewards(getBrowserClient(), p.location.id).then((r) => r && setRewards(r));
         setFetchFailed(false);
@@ -411,6 +415,13 @@ function App(p: WaiterAppProps) {
     const res = await ackCantMake(getBrowserClient(), lineId);
     if (!res.ok && (res.reason === "forbidden" || res.reason === "network")) return res;
     return direct(res);
+  };
+
+  // «Կրկին ուղարկել» on an order the POS did not get (ADR-093).
+  const onPosRetry = async (id: number) => {
+    const res = await retryPosSendFromWaiter(getBrowserClient(), id);
+    if (res.ok) void refresh();
+    return res;
   };
 
   const onSeatWaiting = async (waitingSessionId: string) => {
@@ -644,6 +655,8 @@ function App(p: WaiterAppProps) {
               rewards={rewards.filter((r) => r.tableId === table.id)}
               onReward={onReward}
               onAckCantMake={onAckCantMake}
+              posSends={posSends}
+              onPosRetry={onPosRetry}
               now={now}
               timeZone={p.location.timeZone}
             />

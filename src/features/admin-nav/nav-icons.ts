@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Building2,
+  CreditCard,
   ChartColumn,
   ChartLine,
   Download,
@@ -22,6 +23,7 @@ export const NAV_ICONS = {
   staff: Users,
   look: Palette,
   telegram: Send,
+  pos: CreditCard,
   export: Download,
   platform: Building2,
 } satisfies Record<string, LucideIcon>;

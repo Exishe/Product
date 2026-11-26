@@ -36,6 +36,8 @@ import { StateIcon } from "./floor-map";
 import { TableTimeline } from "./table-timeline";
 import { CantMakeCards } from "./cant-make-card";
 import { RewardCards } from "./reward-card";
+import { PosOrderStatus } from "../pos/pos-order-status";
+import type { WaiterPosSend } from "../pos/waiter-pos";
 import type { WaiterReward } from "./rewards";
 import { button, chip, choice, Sheet } from "./ui";
 
@@ -52,6 +54,9 @@ export type PanelProps = {
   onReward: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
   /** "Told the guest" on a dish the kitchen could not make (ADR-081). */
   onAckCantMake: (lineId: string) => Promise<DirectResult>;
+  /** The POS send of each order, when the café's POS is connected (ADR-093). */
+  posSends?: Record<string, WaiterPosSend>;
+  onPosRetry?: (id: number) => Promise<{ ok: boolean }>;
   /** Back to the map on phones (the panel is a pushed screen there). */
   onBack: () => void;
   headingRef: RefObject<HTMLHeadingElement | null>;
@@ -234,6 +239,8 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
             onAction={p.onAction}
             onReject={setRejecting}
             onCancel={setCancelling}
+            pos={p.posSends?.[o.id]}
+            onPosRetry={p.onPosRetry}
           />
         ))}
         <TableTimeline table={table} timeZone={p.timeZone} />
@@ -306,6 +313,8 @@ function OrderCard({
   onAction,
   onReject,
   onCancel,
+  pos,
+  onPosRetry,
 }: {
   order: WaiterOrder;
   tableLabel: string;
@@ -314,6 +323,8 @@ function OrderCard({
   onAction: (action: WaiterAction) => void;
   onReject: (order: WaiterOrder) => void;
   onCancel: (line: WaiterLine) => void;
+  pos?: WaiterPosSend;
+  onPosRetry?: (id: number) => Promise<{ ok: boolean }>;
 }) {
   const t = useTranslations("waiter");
   const tPrint = useTranslations("print");
@@ -461,6 +472,13 @@ function OrderCard({
             note={order.note}
           />
         </PrintTicketButton>
+      )}
+      {pos && onPosRetry && order.status !== "placed" && (
+        <PosOrderStatus
+          send={pos}
+          changed={order.status === "cancelled" || order.lines.some((l) => l.cancelled > 0 || l.cantMakePending)}
+          onRetry={onPosRetry}
+        />
       )}
       {order.status === "rejected" && order.rejectReason && (
         <p className="text-staff-label2 m-0 text-[0.9375rem]">

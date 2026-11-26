@@ -46,7 +46,7 @@ function ts(type: string): string {
   if (t === "boolean") return "boolean";
   if (t === "jsonb" || t === "json") return "Json";
   if (t === "void") return "undefined";
-  if (["app_locale", "member_role", "ticket_status", "service_request_kind", "payment_method", "order_source"].includes(t))
+  if (["app_locale", "member_role", "ticket_status", "service_request_kind", "payment_method", "order_source", "service_request_status"].includes(t))
     return `Enums["${t}"]`;
   throw new Error(`No TypeScript mapping for ${type}`);
 }

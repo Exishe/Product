@@ -2704,6 +2704,195 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_connections: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          has_secret: boolean
+          id: string
+          is_active: boolean
+          location_id: string
+          restaurant_id: string
+          settings: Json
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          has_secret?: boolean
+          id?: string
+          is_active?: boolean
+          location_id: string
+          restaurant_id: string
+          settings?: Json
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          has_secret?: boolean
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          restaurant_id?: string
+          settings?: Json
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
+      pos_item_links: {
+        Row: {
+          auto_matched: boolean
+          connection_id: string
+          external_id: string
+          external_name: string | null
+          item_id: string
+          modifiers: Json
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          auto_matched?: boolean
+          connection_id: string
+          external_id: string
+          external_name?: string | null
+          item_id: string
+          modifiers?: Json
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          auto_matched?: boolean
+          connection_id?: string
+          external_id?: string
+          external_name?: string | null
+          item_id?: string
+          modifiers?: Json
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pos_outbox: {
+        Row: {
+          attempts: number
+          connection_id: string
+          created_at: string
+          external_order_id: string | null
+          id: number
+          idempotency_key: string
+          is_test: boolean
+          last_error: string | null
+          lease_until: string | null
+          location_id: string
+          net_request_id: number | null
+          next_attempt_at: string
+          order_id: string | null
+          payload: Json
+          restaurant_id: string
+          sent_at: string | null
+          status: string
+          table_session_id: string | null
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          attempts?: number
+          connection_id: string
+          created_at?: string
+          external_order_id?: string | null
+          id?: number
+          idempotency_key: string
+          is_test?: boolean
+          last_error?: string | null
+          lease_until?: string | null
+          location_id: string
+          net_request_id?: number | null
+          next_attempt_at?: string
+          order_id?: string | null
+          payload: Json
+          restaurant_id: string
+          sent_at?: string | null
+          status?: string
+          table_session_id?: string | null
+          updated_at?: string
+          vendor: string
+        }
+        Update: {
+          attempts?: number
+          connection_id?: string
+          created_at?: string
+          external_order_id?: string | null
+          id?: number
+          idempotency_key?: string
+          is_test?: boolean
+          last_error?: string | null
+          lease_until?: string | null
+          location_id?: string
+          net_request_id?: number | null
+          next_attempt_at?: string
+          order_id?: string | null
+          payload?: Json
+          restaurant_id?: string
+          sent_at?: string | null
+          status?: string
+          table_session_id?: string | null
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
+      pos_session_orders: {
+        Row: {
+          connection_id: string
+          created_at: string
+          external_order_id: string
+          restaurant_id: string
+          table_session_id: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          external_order_id: string
+          restaurant_id: string
+          table_session_id: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          external_order_id?: string
+          restaurant_id?: string
+          table_session_id?: string
+        }
+        Relationships: []
+      }
+      pos_table_links: {
+        Row: {
+          connection_id: string
+          external_name: string | null
+          external_table_id: string
+          restaurant_id: string
+          table_id: string
+        }
+        Insert: {
+          connection_id: string
+          external_name?: string | null
+          external_table_id: string
+          restaurant_id: string
+          table_id: string
+        }
+        Update: {
+          connection_id?: string
+          external_name?: string | null
+          external_table_id?: string
+          restaurant_id?: string
+          table_id?: string
+        }
+        Relationships: []
+      }
       prep_areas: {
         Row: {
           id: string
