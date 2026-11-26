@@ -244,12 +244,15 @@
 }
 
 /* Every text field is 16 px or larger, so iOS Safari never zooms the page when
-   a field takes focus (ADR-093). Unlayered on purpose: it wins over a smaller
-   text utility on the field; larger sizes (the pairing code, KDS) stay. */
-input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
-textarea,
-select {
-  font-size: max(1rem, 1em);
+   a field takes focus (ADR-093). In the base layer, so a text utility on a
+   field still wins: the admin field's 17 px and the pairing code's 28 px
+   apply. No field carries a utility under 16 px (keep it that way). */
+@layer base {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+  textarea,
+  select {
+    font-size: max(1rem, 1em);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -347,6 +350,11 @@ select {
 }
 body:has(.admin-shell) {
   background: var(--color-staff-bg);
+}
+/* The front door (landing, sign-in, sign-up, pairing, 404) is one white
+   page, so iOS overscroll and the browser bar match it. */
+body:has(:is(.auth-shell, .landing-page)) {
+  background: var(--color-white);
 }
 /* A row of tabs that scrolls sideways shows no scroll bar. */
 .admin-scroll-row {

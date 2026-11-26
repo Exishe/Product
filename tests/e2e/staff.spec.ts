@@ -50,7 +50,7 @@ test.describe("staff and devices at the demo café", () => {
     await person.getByRole("link", { name: "Գրանցվել" }).click();
     await person.getByLabel("Ձեր անունը").fill("Մարիամ");
     await person.getByLabel("Էլ․ փոստ").fill(`e2e-${unique()}@pativ.test`);
-    await person.getByLabel("Գաղտնաբառ").fill("e2e-password-123");
+    await person.getByLabel("Գաղտնաբառ", { exact: true }).fill("e2e-password-123");
     await person.getByRole("button", { name: "Գրանցվել" }).click();
     await expect(person).toHaveURL(/\/invite\//);
     await person.getByLabel("Ձեր անունը").fill("Մարիամ");

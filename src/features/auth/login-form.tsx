@@ -1,8 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useActionState, useState, type FormEvent } from "react";
-import { FormError, SubmitButton, TextField, focusFirstInvalid, formValue } from "@/features/admin-ui/form-parts";
+import {
+  FormError,
+  SubmitButton,
+  TextField,
+  authInput,
+  focusFirstInvalid,
+  formValue,
+} from "@/features/admin-ui/form-parts";
 import { signIn, type SignInState } from "./actions";
 
 const initial: SignInState = { error: null };
@@ -39,6 +47,7 @@ export function LoginForm({ next }: { next?: string }) {
         onChange={clear("email")}
         name="email"
         type="text"
+        inputClassName={authInput}
         inputMode="email"
         autoComplete="username"
         autoCapitalize="none"
@@ -53,11 +62,27 @@ export function LoginForm({ next }: { next?: string }) {
         onChange={clear("password")}
         name="password"
         type="password"
+        reveal={t("showPassword")}
+        inputClassName={authInput}
         autoComplete="current-password"
         required
       />
+      {/* Right under the field it is about, before the button. */}
+      <p className="-mt-2 mb-0">
+        <Link
+          href="/forgot-password"
+          className="text-ink text-label inline-flex min-h-11 items-center rounded-full font-semibold underline underline-offset-4"
+        >
+          {t("login.forgotLink")}
+        </Link>
+      </p>
       {state.error && <FormError>{t(state.error === "busy" ? "login.busy" : "login.error")}</FormError>}
-      <SubmitButton pending={pending} label={t("login.submit")} pendingLabel={t("login.pending")} />
+      <SubmitButton
+        pending={pending}
+        label={t("login.submit")}
+        pendingLabel={t("login.pending")}
+        className="min-h-14"
+      />
     </form>
   );
 }

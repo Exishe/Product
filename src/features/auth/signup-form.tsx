@@ -2,7 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { useActionState, useState, type FormEvent } from "react";
-import { FormError, SubmitButton, TextField, focusFirstInvalid, formValue } from "@/features/admin-ui/form-parts";
+import {
+  FormError,
+  SubmitButton,
+  TextField,
+  authInput,
+  focusFirstInvalid,
+  formValue,
+} from "@/features/admin-ui/form-parts";
 import { signUp, type SignUpState } from "./actions";
 
 const initial: SignUpState = { error: null };
@@ -60,6 +67,7 @@ export function SignUpForm({ next }: { next?: string }) {
         error={message("name")}
         onChange={clear("name")}
         name="name"
+        inputClassName={authInput}
         autoComplete="name"
         required
         maxLength={80}
@@ -70,6 +78,7 @@ export function SignUpForm({ next }: { next?: string }) {
         onChange={clear("email")}
         name="email"
         type="email"
+        inputClassName={authInput}
         autoComplete="email"
         required
       />
@@ -81,12 +90,20 @@ export function SignUpForm({ next }: { next?: string }) {
         onChange={clear("password")}
         name="password"
         type="password"
+        reveal={t("showPassword")}
+        inputClassName={authInput}
         autoComplete="new-password"
         required
         minLength={8}
       />
       {state.error && <FormError>{t("signup.error")}</FormError>}
-      <SubmitButton pending={pending} label={t("signup.submit")} pendingLabel={t("signup.pending")} />
+      <SubmitButton
+        pending={pending}
+        label={t("signup.submit")}
+        pendingLabel={t("signup.pending")}
+        className="min-h-14"
+      />
+      <p className="text-staff-label2 text-label m-0">{t("signup.trial")}</p>
     </form>
   );
 }

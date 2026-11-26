@@ -6,43 +6,130 @@
   },
   "landing": {
     "metaTitle": "Pativ: QR menu and ordering for cafés",
-    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's phone.",
     "title": "Orders go from the guest's phone straight to the kitchen",
-    "lead": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "lead": "Runs on the phones you already have, no new devices. We build the menu in three languages from a photo of your paper one.",
     "ctaDemo": "Open the demo menu",
     "ctaSignup": "Add your café",
+    "trial": "The first month is free. No card needed.",
     "signIn": "Sign in",
+    "nav": {
+      "pricing": "Pricing",
+      "signup": "Sign up"
+    },
     "heroAlt": "The demo café's menu on a guest's phone",
     "features": {
       "title": "What's in Pativ",
       "menu": {
+        "tab": "Menu",
         "title": "QR menu",
         "text": "A menu with photos in three languages. Guests order from their own phone.",
-        "alt": "A section of the guest menu with a dish photo"
+        "alt": "A section of the guest menu with a dish photo",
+        "p1": "Guests switch between Armenian, Russian and English at the top.",
+        "p2": "A dish that ran out today is marked, so nobody orders it.",
+        "p3": "Guests can call the waiter or ask for the bill from their phone."
       },
       "waiter": {
+        "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "Table calls in the waiter app"
+        "alt": "The waiter app's order list, table by table",
+        "p1": "Each row shows what the table needs and how long it has waited.",
+        "p2": "One tap accepts an order and sends it to the kitchen.",
+        "p3": "Calls and bill requests ring, so nobody waves for long."
       },
       "kitchen": {
+        "tab": "Kitchen",
         "title": "Kitchen screen",
-        "text": "Tickets arrive in order, and late ones are marked in red.",
-        "alt": "The kitchen screen with new and in-progress tickets"
+        "text": "Tickets arrive in order and turn red after 12 minutes.",
+        "alt": "The kitchen screen with new and in-progress tickets",
+        "note": "Each café picks its kitchen screen's language: Armenian, Russian or English.",
+        "p1": "One tap moves a ticket on: New, Cooking, Ready.",
+        "p2": "The table that has waited longest is always shown at the top.",
+        "p3": "The cook can mark a dish as sold out, and guests can no longer order it."
       },
       "admin": {
+        "tab": "Admin",
         "title": "Owner admin",
-        "text": "Menu, tables, staff and the day's reports."
+        "text": "Menu, tables, staff and the day's reports.",
+        "alt": "A dish open in the owner admin's menu editor, with its name and description in three languages",
+        "p1": "Each dish has its name and description in Armenian, Russian and English.",
+        "p2": "Change a price or a photo, then publish the menu when it's ready.",
+        "p3": "Tables with their QR codes, staff logins and the day's sales are here too."
+      }
+    },
+    "start": {
+      "title": "How to start",
+      "step1": {
+        "title": "Sign up",
+        "text": "Create an account and add your café. No card needed."
+      },
+      "step2": {
+        "title": "Add your menu",
+        "text": "Take photos of your paper menu. We read the dishes and prices and translate them, and you check everything before it goes live."
+      },
+      "step3": {
+        "title": "Print the QR codes",
+        "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
+      },
+      "why": {
+        "hardware": {
+          "lead": "No new hardware",
+          "text": "It runs on the phones and tablets you already have."
+        },
+        "languages": {
+          "lead": "Three languages",
+          "text": "The menu is in Armenian, Russian and English."
+        },
+        "telegram": {
+          "lead": "Telegram alerts",
+          "text": "When a table waits too long, you and your team get a message."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "menu": {
+        "name": "Menu",
+        "price": "Free",
+        "term": "No time limit",
+        "note": "Guests see the menu but can't order from it.",
+        "l1": "QR menu in three languages, with photos",
+        "l2": "Import from a photo of your paper menu",
+        "l3": "A sold-out list for the day",
+        "cta": "Start free"
+      },
+      "service": {
+        "name": "Service",
+        "price": "15 000 ֏",
+        "per": "a month",
+        "year": "or 150 000 ֏ a year, paid upfront",
+        "includes": "Everything in Menu, plus:",
+        "l1": "Ordering from the table",
+        "l2": "The waiter app and the kitchen screen",
+        "l3": "Telegram alerts",
+        "offer": "The first month is free. The first 10 cafés pay nothing during the pilot, then 10 000 ֏ a month for a year.",
+        "perks": "No card, no contract. In Yerevan we set it up in person, for free."
       }
     },
     "footer": {
-      "copyright": "© 2026 Pativ · Yerevan"
+      "copyright": "© 2026 Pativ · Yerevan",
+      "demo": "Demo menu",
+      "pair": "Connect a device",
+      "nav": "Links"
+    },
+    "proof": {
+      "text": "Every screen on this page is a screenshot of the working product, not a mock-up.",
+      "link": "Try it as a guest"
     }
   },
   "common": {
     "notFound": "This page doesn't exist.",
     "backHome": "Home",
-    "notFoundHint": "The link may be old or mistyped."
+    "notFoundHint": "The link may be old or mistyped.",
+    "notFoundQr": "If you scanned a QR code at a café, ask the staff for a new one.",
+    "notFoundDemo": "Demo menu",
+    "notFoundSignIn": "Sign in"
   },
   "auth": {
     "login": {
@@ -51,11 +138,13 @@
       "password": "Password",
       "submit": "Sign in",
       "pending": "Checking…",
-      "error": "Wrong email, username or password.",
+      "error": "Wrong email, username or password. Check the keyboard language and Caps Lock.",
       "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
       "signupLink": "Sign up",
-      "subtitle": "For owners and staff"
+      "subtitle": "For owners and staff",
+      "pairLink": "Connect a device with a code",
+      "forgotLink": "Forgot your password?"
     },
     "signup": {
       "title": "Sign up",
@@ -67,11 +156,38 @@
       "error": "Couldn't sign up. There may already be an account with this email.",
       "haveAccount": "Already have an account?",
       "loginLink": "Sign in",
-      "subtitle": "Create an account, then add your café.",
-      "passwordHint": "At least 8 characters"
+      "subtitle": "Create an account, and then we'll help you add your café and menu.",
+      "passwordHint": "At least 8 characters",
+      "trial": "The first month is free. No card needed."
     },
     "required": "Fill in this field.",
-    "emailFormat": "Check the email address."
+    "emailFormat": "Check the email address.",
+    "showPassword": "Show password",
+    "forgot": {
+      "title": "Forgot your password?",
+      "staffTitle": "Waiter or kitchen login",
+      "staffText": "Ask the café owner. They set a new password in the admin, under Staff and devices.",
+      "ownerTitle": "Owner account",
+      "ownerText": "Enter your email, and we'll send a link to set a new password.",
+      "email": "Email",
+      "submit": "Send the link",
+      "pending": "Sending…",
+      "sent": "If an account uses {email}, the link is on its way. Check your inbox, and the spam folder too.",
+      "error": "Couldn't send the link. Wait a minute and try again.",
+      "back": "Back to sign-in"
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Use at least 8 characters.",
+      "password": "New password",
+      "again": "Repeat the password",
+      "submit": "Save and sign in",
+      "pending": "Saving…",
+      "checking": "Checking the link…",
+      "expired": "This link has expired or was already used.",
+      "newLink": "Get a new link",
+      "error": "Couldn't save the password. Try again."
+    }
   },
   "admin": {
     "home": {
@@ -299,7 +415,7 @@
     "error": "That didn't work. Try again, or sign in again first."
   },
   "pair": {
-    "title": "Connect this device",
+    "title": "Connect a device",
     "code": "Six-digit code",
     "submit": "Connect",
     "pending": "Connecting…",
@@ -311,7 +427,9 @@
       "failed": "Couldn't connect. Try again.",
       "format": "Enter 6 digits."
     },
-    "hint": "The owner will give you the code. It works for 10 minutes."
+    "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
+    "note": "The device opens as the kitchen screen or the waiter app, depending on the code.",
+    "loginLink": "Sign in with email instead"
   },
   "invite": {
     "title": "Join the team",

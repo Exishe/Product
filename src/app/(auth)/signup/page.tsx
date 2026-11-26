@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AuthShell } from "@/features/admin-ui/auth-shell";
 import { SignUpForm } from "@/features/auth/signup-form";
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

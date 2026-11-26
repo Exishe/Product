@@ -109,7 +109,7 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
                         <select
                           name="plan"
                           defaultValue={c.plan ?? "service"}
-                          className={clsx(input, "h-11 w-auto text-[0.9375rem]")}
+                          className={clsx(input, "h-11 w-auto")}
                         >
                           <option value="menu">{billing("menu")}</option>
                           <option value="service">{billing("service")}</option>
@@ -122,7 +122,7 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
                         <select
                           name="status"
                           defaultValue={c.status ?? "trialing"}
-                          className={clsx(input, "h-11 w-auto text-[0.9375rem]")}
+                          className={clsx(input, "h-11 w-auto")}
                         >
                           {(["trialing", "active", "past_due", "canceled"] as const).map((s) => (
                             <option key={s} value={s}>
