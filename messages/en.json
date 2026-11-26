@@ -1,13 +1,13 @@
 {
   "brand": {
     "name": "Pativ",
-    "tagline": "Orders go from the guest's phone straight to the kitchen",
+    "tagline": "Orders go from the guest’s phone straight to the kitchen",
     "staffApp": "Kitchen screen and waiter tablet"
   },
   "landing": {
     "metaTitle": "Pativ: QR menu and ordering for cafés",
-    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's phone.",
-    "title": "Orders go from the guest's phone straight to the kitchen",
+    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter’s phone.",
+    "title": "Orders go from the guest’s phone straight to the kitchen",
     "lead": "Runs on the phones you already have, no new devices. We build the menu in three languages from a photo of your paper one.",
     "ctaDemo": "Open the demo menu",
     "ctaSignup": "Add your café",
@@ -17,14 +17,14 @@
       "pricing": "Pricing",
       "signup": "Sign up"
     },
-    "heroAlt": "The demo café's menu on a guest's phone",
+    "heroAlt": "The demo café’s menu on a guest’s phone",
     "features": {
-      "title": "What's in Pativ",
+      "title": "What’s in Pativ",
       "menu": {
         "tab": "Menu",
         "title": "QR menu",
         "text": "A menu with photos in three languages. Guests order from their own phone.",
-        "alt": "A dish open on the guest's phone: a large photo, the price and an Add button with the total",
+        "alt": "A dish open on the guest’s phone: a large photo, the price and an Add button with the total",
         "p1": "Each dish opens with a large photo, its description and calories.",
         "p2": "Guests pick the quantity, leave a note for the kitchen and see the total before adding.",
         "p3": "Guests can call the waiter or ask for the bill from their phone."
@@ -33,8 +33,8 @@
         "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "The waiter app's floor: nine tables, each coloured by what it needs",
-        "p1": "A table's colour says what it needs: a new order, food to serve or the bill.",
+        "alt": "The waiter app’s floor: nine tables, each coloured by what it needs",
+        "p1": "A table’s colour says what it needs: a new order, food to serve or the bill.",
         "p2": "Under the number: how long the table has waited and its total so far.",
         "p3": "Calls and bill requests ring, so nobody waves for long."
       },
@@ -42,8 +42,8 @@
         "tab": "Kitchen",
         "title": "Kitchen screen",
         "text": "Tickets arrive in order and turn red after 12 minutes.",
-        "alt": "The kitchen screen with tickets by stage",
-        "note": "Each café picks its kitchen screen's language: Armenian, Russian or English.",
+        "alt": "The kitchen screen: an order waiting 13 minutes has turned red",
+        "note": "Each café picks its kitchen screen’s language: Armenian, Russian or English.",
         "p1": "One tap moves a ticket on: New, Cooking, Ready.",
         "p2": "The table that has waited longest is always shown at the top.",
         "p3": "The cook can mark a dish as sold out, and guests can no longer order it."
@@ -51,11 +51,11 @@
       "admin": {
         "tab": "Admin",
         "title": "Owner admin",
-        "text": "Menu, tables, staff and the day's reports.",
-        "alt": "The owner admin's menu on a phone: breakfast dishes with photos, prices and a Sold out today button",
+        "text": "Menu, tables, staff and the day’s reports.",
+        "alt": "The owner admin’s menu on a phone: breakfast dishes with photos, prices and a Sold out today button",
         "p1": "Every dish with its photo and price, section by section.",
         "p2": "One tap on Sold out today hides a dish from guests, and the list clears in the morning.",
-        "p3": "Tables with their QR codes, staff logins and the day's sales are here too."
+        "p3": "Tables with their QR codes, staff logins and the day’s sales are here too."
       }
     },
     "start": {
@@ -73,9 +73,10 @@
         "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
       },
       "why": {
+        "title": "Also built in",
         "offline": {
           "lead": "Works through Wi-Fi drops",
-          "text": "If the connection drops, the guest's order waits on their phone and goes out by itself when it's back."
+          "text": "If the connection drops, the guest’s order waits on their phone and goes out by itself when it’s back."
         },
         "export": {
           "lead": "Your data in Excel",
@@ -93,7 +94,7 @@
         "name": "Menu",
         "price": "Free",
         "term": "No time limit",
-        "note": "Guests see the menu but can't order from it.",
+        "note": "Guests see the menu but can’t order from it.",
         "l1": "QR menu in three languages, with photos",
         "l2": "Import from a photo of your paper menu",
         "l3": "A sold-out list for the day",
@@ -129,7 +130,7 @@
     }
   },
   "common": {
-    "notFound": "This page doesn't exist.",
+    "notFound": "This page doesn’t exist.",
     "backHome": "Home",
     "notFoundHint": "The link may be old or mistyped.",
     "notFoundQr": "If you scanned a QR code at a café, ask the staff for a new one.",
@@ -158,10 +159,10 @@
       "password": "Password",
       "submit": "Sign up",
       "pending": "Signing up…",
-      "error": "Couldn't sign up. There may already be an account with this email.",
+      "error": "Couldn’t sign up. There may already be an account with this email.",
       "haveAccount": "Already have an account?",
       "loginLink": "Sign in",
-      "subtitle": "Create an account, and then we'll help you add your café and menu.",
+      "subtitle": "Create an account, and then we’ll help you add your café and menu.",
       "passwordHint": "At least 8 characters",
       "trial": "The first month is free. No card needed."
     },
@@ -173,12 +174,12 @@
       "staffTitle": "Waiter or kitchen login",
       "staffText": "Ask the café owner. They set a new password in the admin, under Staff and devices.",
       "ownerTitle": "Owner account",
-      "ownerText": "Enter your email, and we'll send a link to set a new password.",
+      "ownerText": "Enter your email, and we’ll send a link to set a new password.",
       "email": "Email",
       "submit": "Send the link",
       "pending": "Sending…",
       "sent": "If an account uses {email}, the link is on its way. Check your inbox, and the spam folder too.",
-      "error": "Couldn't send the link. Wait a minute and try again.",
+      "error": "Couldn’t send the link. Wait a minute and try again.",
       "back": "Back to sign-in"
     },
     "reset": {
@@ -192,7 +193,7 @@
       "expiredTitle": "This link no longer works",
       "expired": "It has expired or was already used. Ask for a new one and it will arrive by email.",
       "newLink": "Get a new link",
-      "error": "Couldn't save the password. Try again."
+      "error": "Couldn’t save the password. Try again."
     }
   },
   "admin": {
@@ -431,7 +432,7 @@
       "invalid_pairing_code": "The code is wrong or has expired.",
       "rate_limited": "Too many tries. Wait 10 minutes and enter the code again.",
       "anonymous_session_required": "A personal account is open on this device. Sign out of it first.",
-      "failed": "Couldn't connect. Try again.",
+      "failed": "Couldn’t connect. Try again.",
       "format": "Enter 6 digits."
     },
     "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
