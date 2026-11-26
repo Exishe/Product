@@ -719,8 +719,13 @@ function App(p: WaiterAppProps) {
             />
           ) : tab === "tables" ? (
             // Nothing picked: what needs doing now, the Orders and Calls lists in one.
-            <section aria-labelledby="now-title" className="grid min-h-0 content-start gap-3 overflow-y-auto p-4 lg:p-6">
-              <h2 id="now-title" className="m-0 text-[1.0625rem] font-semibold">
+            // Same top offset and title as the list beside it, so the two
+            // panes read as one screen.
+            <section
+              aria-labelledby="now-title"
+              className="grid min-h-0 auto-rows-max content-start gap-4 overflow-y-auto px-4 pt-3 pb-6 lg:px-6"
+            >
+              <h2 id="now-title" className="m-0 text-[1.375rem] leading-tight font-semibold">
                 {t("panel.now")}
               </h2>
               <InboxList
@@ -733,7 +738,20 @@ function App(p: WaiterAppProps) {
               />
             </section>
           ) : (
-            <p className="text-staff-label2 m-0 p-6 text-[0.9375rem]">{t("panel.pick")}</p>
+            // Orders and Calls have no map: the pane says what a tap on a row does.
+            <div
+              data-testid="panel-empty"
+              className="text-staff-label2 grid h-full place-content-center justify-items-center gap-3 p-8 text-center"
+            >
+              {tab === "calls" ? (
+                <BellRing aria-hidden="true" className="size-12" strokeWidth={1.5} />
+              ) : (
+                <ClipboardList aria-hidden="true" className="size-12" strokeWidth={1.5} />
+              )}
+              <p className="m-0 max-w-[18rem] text-[1.0625rem] leading-snug [text-wrap:balance]">
+                {t("panel.pickRow")}
+              </p>
+            </div>
           )}
         </aside>
       </div>

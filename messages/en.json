@@ -626,7 +626,7 @@
       "free": "Free",
       "freeHint": "Guests can order with the QR code, or you can take the order.",
       "openFor": "Open for {minutes} min",
-      "pick": "Pick a table on the map.",
+      "pickRow": "Pick a row to see the table.",
       "callAgo": "Called {minutes} min ago",
       "callNow": "Calling right now",
       "going": "On my way",

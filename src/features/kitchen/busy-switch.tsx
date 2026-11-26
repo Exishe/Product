@@ -27,7 +27,8 @@ export function BusySwitch({
   const trigger = useRef<HTMLButtonElement>(null);
   // Where the popover hangs: just under the Busy button, its right edge on
   // the button's right edge. Measured on open, so it follows the header.
-  const [anchor, setAnchor] = useState({ top: 72, right: 16 });
+  const [anchor, setAnchor] = useState({ top: 72, right: 16, left: 0, width: 0, height: 48 });
+  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const on = isBusy(busy, now);
@@ -41,6 +42,14 @@ export function BusySwitch({
     else setFailed(true);
   }
 
+  const label = (
+    <>
+      <Hourglass aria-hidden="true" className="size-5 shrink-0" />
+      {/* Icon only on a phone; the name stays for screen readers. */}
+      <span className="max-sm:sr-only">{on ? t("on", { minutes: busy.minutes ?? 0 }) : t("button")}</span>
+    </>
+  );
+
   return (
     <>
       <button
@@ -51,17 +60,21 @@ export function BusySwitch({
         onClick={() => {
           setFailed(false);
           const r = trigger.current?.getBoundingClientRect();
-          if (r) setAnchor({ top: Math.round(r.bottom + 8), right: Math.max(8, Math.round(window.innerWidth - r.right)) });
+          if (r)
+            setAnchor({
+              top: Math.round(r.bottom + 8),
+              right: Math.max(8, Math.round(window.innerWidth - r.right)),
+              left: r.left,
+              width: r.width,
+              height: r.height,
+            });
           dialog.current?.showModal();
+          setOpen(true);
         }}
-        className={clsx(
-          "inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
-          on ? "bg-apricot text-ink" : "bg-basalt-3 text-slip",
-        )}
+        aria-expanded={open}
+        className={triggerClass(on, open)}
       >
-        <Hourglass aria-hidden="true" className="size-5 shrink-0" />
-        {/* Icon only on a phone; the name stays for screen readers. */}
-        <span className="max-sm:sr-only">{on ? t("on", { minutes: busy.minutes ?? 0 }) : t("button")}</span>
+        {label}
       </button>
       <dialog
         ref={dialog}
@@ -70,13 +83,27 @@ export function BusySwitch({
         // rounded on every corner and lifted off the board, so it reads as
         // the button's own menu, never a sheet cut off at the top. A tap on
         // the dimmed board around it closes it.
-        style={{ top: anchor.top, right: anchor.right }}
+        // The dialog is the whole screen, transparent: the dimmed board, the
+        // Busy button drawn again above the dim in its pressed state, and the
+        // card hung under it, so the popover visibly belongs to the button.
+        onClose={() => setOpen(false)}
         onClick={(e) => {
           if (e.target === e.currentTarget) dialog.current?.close();
         }}
-        className="text-slip shadow-float fixed inset-auto m-0 h-auto max-h-[calc(100dvh-5rem)] w-[min(28rem,calc(100vw-1rem))] max-w-none overflow-hidden rounded-[1.25rem] border border-(--kds-frame) bg-white p-0 backdrop:bg-black/25"
+        className="text-slip fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-black/25"
       >
-        <div className="flex max-h-[calc(100dvh-5rem)] flex-col">
+        <span
+          aria-hidden="true"
+          onClick={() => dialog.current?.close()}
+          style={{ top: anchor.top - 8 - anchor.height, left: anchor.left, width: anchor.width, height: anchor.height }}
+          className={clsx(triggerClass(on, true), "absolute cursor-pointer")}
+        >
+          {label}
+        </span>
+        <div
+          style={{ top: anchor.top, right: anchor.right }}
+          className="shadow-float absolute flex max-h-[calc(100dvh-5rem)] w-[min(28rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-[1.25rem] border border-(--kds-frame) bg-white"
+        >
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
               <h2 id="busy-title" className="text-2xl font-semibold [text-wrap:balance]">
@@ -103,7 +130,7 @@ export function BusySwitch({
             {/* Three 64 px rows on the drawer, split by hairlines, each with a
                 radio mark, the current one ticked: a list like the stop list,
                 not three boxes. */}
-            <ul className="m-0 grid list-none border-b border-(--kds-frame) p-0">
+            <ul className="m-0 grid list-none p-0">
               {CHOICES.map((m) => {
                 const current = on && busy.minutes === m;
                 return (
@@ -158,5 +185,15 @@ export function BusySwitch({
         </div>
       </dialog>
     </>
+  );
+}
+
+// The Busy button. Open, it is pressed: the ink fill (or, while busy, the
+// apricot with a white outline), lifted above the dimmed board with its popover.
+function triggerClass(on: boolean, open: boolean) {
+  return clsx(
+    "inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
+    on ? "bg-apricot text-ink" : open ? "bg-slip text-basalt-3" : "bg-basalt-3 text-slip",
+    open && on && "outline-2 outline-offset-2 outline-white outline-solid",
   );
 }

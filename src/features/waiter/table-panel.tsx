@@ -192,9 +192,10 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
                     ? t("panel.callAgo", { minutes: table.call.minutes })
                     : t("panel.callNow")}
                 </span>
+                {/* Ink like every row action: the pink band and the red dot are the state. */}
                 <button
                   type="button"
-                  className={button("destructive", "flex-none")}
+                  className={button("primary", "flex-none")}
                   onClick={() => table.call && p.onAction({ kind: "resolve", requestId: table.call.id })}
                 >
                   {t("panel.going")}
