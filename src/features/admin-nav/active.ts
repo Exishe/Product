@@ -8,3 +8,17 @@ export function activeHref(pathname: string, hrefs: readonly string[]): string |
   }
   return best;
 }
+
+// The same, for links that also stand for pages outside their folder (Sales
+// covers Reports and Export, which have no navigation row of their own).
+export function activeLink(
+  pathname: string,
+  links: readonly { href: string; also?: readonly string[] }[],
+): string | null {
+  const owner = new Map<string, string>();
+  for (const l of links) {
+    for (const prefix of [l.href, ...(l.also ?? [])]) owner.set(prefix, l.href);
+  }
+  const hit = activeHref(pathname, [...owner.keys()]);
+  return hit === null ? null : (owner.get(hit) ?? null);
+}

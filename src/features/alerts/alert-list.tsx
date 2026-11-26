@@ -2,12 +2,14 @@ import { Ban, BellRing, Hourglass } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { dishName, type TableAlert } from "./model";
 
-// One line per problem table: which table, what is wrong, for how long.
+// One line per problem table: which table, what is wrong, for how long. On the
+// admin home a hairline row like the to-dos under it; on the dark waiter bar
+// an amber chip.
 export function AlertList({ alerts, dark = false }: { alerts: TableAlert[]; dark?: boolean }) {
   const t = useTranslations("alerts");
   const locale = useLocale();
   return (
-    <ul className="m-0 flex list-none flex-col gap-2 p-0" data-testid="alert-list">
+    <ul className={dark ? "m-0 flex list-none flex-col gap-2 p-0" : "m-0 flex list-none flex-col p-0"} data-testid="alert-list">
       {alerts.map((a) => {
         const Icon = a.reason === "calls" ? BellRing : a.reason === "cant_make" ? Ban : Hourglass;
         return (
@@ -17,7 +19,7 @@ export function AlertList({ alerts, dark = false }: { alerts: TableAlert[]; dark
             className={
               dark
                 ? "bg-amber-tint text-amber-text flex min-h-11 items-start gap-2 rounded-xl px-3 py-2 text-[0.9375rem] leading-snug font-semibold"
-                : "bg-amber-tint text-ink flex min-h-11 items-start gap-3 rounded-xl px-3 py-2.5 text-[1.0625rem] leading-snug"
+                : "border-staff-sep text-ink flex min-h-14 items-start gap-3 border-b py-3.5 text-[1.0625rem] leading-snug"
             }
           >
             <Icon aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />

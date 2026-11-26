@@ -25,19 +25,19 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
   const [state, action, pending] = useActionState(updateChannel, initial);
   const name = channel.kind === "web_push" ? t("pushChannel") : (channel.title ?? t("kindTelegram"));
   return (
-    <li className="rounded-2xl bg-white p-4 sm:p-5" data-testid="channel-card">
+    <li className="border-staff-sep border-b py-5 first:pt-1" data-testid="channel-card">
       <form action={action} className="flex flex-col gap-4">
         <input type="hidden" name="channelId" value={channel.id} />
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="m-0 min-w-0 text-[1.125rem] font-bold break-words">{name}</h3>
-          <span className="text-staff-label2 text-[0.9375rem]">
+          <h3 className="m-0 min-w-0 text-name font-semibold break-words">{name}</h3>
+          <span className="text-staff-label2 text-label">
             {channel.kind === "web_push" ? t("kindPush") : t("kindTelegram")}
           </span>
         </div>
         <fieldset className="m-0 flex flex-col gap-0.5 border-0 p-0">
           <legend className={`${fieldLabel} mb-1`}>{t("eventsLegend")}</legend>
           {ALERT_EVENTS.filter((e) => e !== "weekly.digest" || channel.kind === "telegram").map((e) => (
-            <label key={e} className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <label key={e} className="flex min-h-11 items-center gap-3 text-name">
               <input
                 type="checkbox"
                 name="events"
@@ -78,7 +78,7 @@ export function ChannelCard({ channel }: { channel: ChannelView }) {
             {t("disconnect")}
           </button>
         </div>
-        <p aria-live="polite" className="m-0 min-h-6 text-[0.9375rem] font-semibold">
+        <p aria-live="polite" className="m-0 min-h-6 text-label font-semibold">
           {state.saved && <span className="text-tarragon">{t("saved")}</span>}
           {state.tested && <span className="text-tarragon">{t("testQueued")}</span>}
           {state.error && (

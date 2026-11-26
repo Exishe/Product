@@ -37,15 +37,16 @@ export function OutIngredientSetting({ initial }: { initial: Mode }) {
     <fieldset
       aria-describedby={`${groupId}-hint`}
       data-testid="out-ingredient-setting"
-      className="m-0 mb-4 flex min-w-0 flex-col gap-2 rounded-2xl border-0 bg-white p-4"
+      className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
     >
-      <legend className="float-left mb-1 w-full text-[0.9375rem] font-bold">{t("displayTitle")}</legend>
-      <p id={`${groupId}-hint`} className="text-staff-label2 m-0 text-[0.9375rem]">
+      {/* The setting row shows the title; the legend names the group for screen readers. */}
+      <legend className="sr-only">{t("displayTitle")}</legend>
+      <p id={`${groupId}-hint`} className="text-staff-label2 m-0 max-w-[60ch] text-label">
         {t("displayHint")}
       </p>
-      <div className="flex flex-col gap-1 sm:flex-row sm:gap-6">
+      <div className="flex flex-col">
         {options.map((o) => (
-          <label key={o.value} className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+          <label key={o.value} className="flex min-h-12 cursor-pointer items-center gap-3 text-name">
             <input
               type="radio"
               name={groupId}
@@ -64,8 +65,8 @@ export function OutIngredientSetting({ initial }: { initial: Mode }) {
           role="status"
           className={
             status === "saved"
-              ? "text-tarragon m-0 text-[0.9375rem] font-semibold"
-              : "text-pomegranate m-0 text-[0.9375rem] font-semibold"
+              ? "text-tarragon m-0 text-label font-semibold"
+              : "text-pomegranate m-0 text-label font-semibold"
           }
         >
           {status === "saved" ? t("displaySaved") : t("displayFailed")}

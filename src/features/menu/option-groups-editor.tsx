@@ -89,7 +89,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
       <p
         aria-live="polite"
         className={clsx(
-          "m-0 basis-full text-[0.9375rem] font-semibold",
+          "m-0 basis-full text-label font-semibold",
           status === "saved" ? "text-tarragon" : "text-pomegranate",
         )}
       >
@@ -109,7 +109,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
       }}
       className="flex flex-col gap-4"
     >
-      <div className="flex flex-col gap-3 rounded-2xl bg-white p-4">
+      <div className="flex flex-col gap-3">
         {LOCALES.map((l) => (
           <label key={l} className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t(`groupName.${l}`)}</span>
@@ -124,7 +124,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
         ))}
       </div>
       <fieldset className="m-0 flex flex-col gap-1 rounded-2xl border-0 bg-white p-4">
-        <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+        <label className="flex min-h-11 items-center gap-3 text-name">
           <input
             type="radio"
             name="required"
@@ -134,7 +134,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
           />
           {t("required")}
         </label>
-        <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+        <label className="flex min-h-11 items-center gap-3 text-name">
           <input
             type="radio"
             name="required"
@@ -151,7 +151,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
           className="m-0 flex min-w-0 flex-col gap-2 rounded-2xl border-0 bg-white p-4"
           data-testid="option-fieldset"
         >
-          <legend className="float-left mb-1 w-full text-[0.9375rem] font-bold">
+          <legend className="float-left mb-1 w-full text-label font-bold">
             {t("option")} {i + 1}
           </legend>
           {LOCALES.map((l) => (
@@ -186,7 +186,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
             />
           </label>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <label className="flex min-h-11 items-center gap-3 text-[1.0625rem]">
+            <label className="flex min-h-11 items-center gap-3 text-name">
               <input
                 type="checkbox"
                 className={check}
@@ -205,7 +205,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
               <button
                 type="button"
                 onClick={() => setDraft({ ...draft, options: draft.options.filter((_, k) => k !== i) })}
-                className={button("danger", "min-h-11 text-[0.9375rem]")}
+                className={button("danger", "min-h-11 text-label")}
               >
                 <Trash2 aria-hidden="true" className="!size-4" />
                 {t("removeOption")}
@@ -235,27 +235,27 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
     >
       <section className="flex min-w-0 flex-col gap-3">
         {groups.length === 0 ? (
-          <p className="text-staff-label2 m-0 flex items-center gap-3 rounded-2xl bg-white px-4 py-6 text-[1.0625rem]">
+          <p className="text-staff-label2 m-0 flex items-center gap-3 py-4 text-name">
             <SlidersHorizontal aria-hidden="true" className="size-5 shrink-0" />
             {t("empty")}
           </p>
         ) : (
-          <ul className="m-0 list-none overflow-hidden rounded-2xl bg-white p-0">
+          <ul className="border-staff-sep m-0 list-none border-t p-0">
             {groups.map((g) => (
-              <li key={g.id} className="border-staff-sep border-b last:border-0">
+              <li key={g.id} className="border-staff-sep border-b">
                 <button
                   type="button"
                   onClick={() => edit(g)}
                   className={clsx(
-                    "flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left",
-                    draft?.id === g.id && "bg-staff-fill",
+                    "flex min-h-16 w-full items-center gap-3 py-3 text-left",
+                    draft?.id === g.id && "bg-staff-bg",
                   )}
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-[1.0625rem] font-semibold break-words">
+                    <span className="text-name font-semibold break-words">
                       {g.names[locale] || g.names.hy}
                     </span>
-                    <span className="text-staff-label2 text-[0.9375rem] break-words">
+                    <span className="text-staff-label2 text-label break-words">
                       {g.options
                         .map(
                           (o) =>
@@ -283,7 +283,7 @@ export function OptionGroupsEditor({ groups }: { groups: EditorGroup[] }) {
           className="admin-fade bg-staff-fill/60 ring-staff-sep flex min-w-0 flex-col self-start overflow-hidden rounded-2xl ring-1 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-8.5rem)]"
         >
           <header className="border-staff-sep flex min-h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
-            <h2 className="m-0 min-w-0 flex-1 truncate text-[1.0625rem] font-bold">{title}</h2>
+            <h2 className="m-0 min-w-0 flex-1 truncate text-name font-bold">{title}</h2>
             <button
               type="button"
               onClick={() => setDraft(null)}

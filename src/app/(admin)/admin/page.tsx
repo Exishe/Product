@@ -2,11 +2,12 @@ import { NextIntlClientProvider } from "next-intl";
 import { ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { clsx } from "clsx";
 import { AdminPage, Section, SettingsItem, SettingsList } from "@/features/admin-ui/page";
 import { AlertSettingsForm } from "@/features/alerts/alert-settings";
 import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
 import { soundOr, DEFAULT_CALL_SOUND, DEFAULT_ORDER_SOUND } from "@/lib/sounds/library";
-import { AttentionPanel } from "@/features/alerts/attention-panel";
+import { AttentionPanel, type AttentionTodo } from "@/features/alerts/attention-panel";
 import { parseAlerts, type AlertSettings, type TableAlert } from "@/features/alerts/model";
 import { VenueControls, type VenueState } from "@/features/availability/venue-controls";
 import { PlanBanner } from "@/features/billing/plan-banner";
@@ -17,6 +18,8 @@ import { settingsFromRow, type RewardSettings } from "@/features/game-rewards/mo
 import { PromoManager } from "@/features/promos/promo-manager";
 import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
+import { textAction } from "@/features/admin-ui/styles";
+import { parseStaffLogins } from "@/features/staff/logins-model";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { formatAmd, formatInteger } from "@/lib/format/money";
@@ -24,7 +27,12 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Locale } from "@/i18n/routing";
 
-type Todo = { key: string; href: string; text: string };
+type Todo = AttentionTodo;
+
+const kpi =
+  "border-staff-sep flex min-w-0 flex-col gap-0.5 sm:border-l sm:px-6 sm:first:border-l-0 sm:first:pl-0";
+const kpiLabel = "text-staff-label2 text-label font-semibold";
+const kpiFigure = "m-0 text-large leading-tight font-bold";
 
 // Admin home: how today is going and what still needs doing, instead of a
 // second copy of the sidebar. Every row links to the page where the owner acts.
@@ -187,27 +195,41 @@ export default async function AdminHome() {
   )
     todos.push({ key: "publish", href: "/admin/menu", text: t("unpublished") });
   if ((tables.count ?? 0) === 0) todos.push({ key: "tables", href: "/admin/tables", text: t("noTables") });
-  if ((devices.count ?? 0) === 0) todos.push({ key: "devices", href: "/admin/staff", text: t("noDevices") });
+  // Staff screens come in two ways: a paired device, or a waiter or kitchen
+  // login (ADR-067). Only when neither has ever been used is there something to do.
+  if ((devices.count ?? 0) === 0) {
+    const logins = location
+      ? await supabase.schema("api").rpc("list_staff_logins", { p_location_id: location.id })
+      : null;
+    const signedIn =
+      !!logins && !logins.error && parseStaffLogins(logins.data).some((l) => l.isActive && l.lastSignInAt);
+    if (!signedIn) todos.push({ key: "devices", href: "/admin/staff", text: t("noDevices") });
+  }
   if ((noPhoto.count ?? 0) > 0)
     todos.push({ key: "photos", href: "/admin/menu", text: t("noPhotos", { count: noPhoto.count ?? 0 }) });
   if ((stops.count ?? 0) > 0)
     todos.push({ key: "stops", href: "/admin/menu", text: t("stopList", { count: stops.count ?? 0 }) });
 
   const delta = data ? deltaPercent(data.summary.revenue, data.compare.revenue) : null;
+  // The plan line belongs to the greeting: right under it, not a group of its
+  // own 48 px further down (it is a tinted block only when the owner must act).
   const subtitle = (
-    <p className="num m-0">
-      {t("welcome", { name: member.displayName })}
-      {location &&
-        ` · ${t("date", {
-          date: formatDate(new Date(), locale, location.timezone),
-          time: formatTime(new Date(), location.timezone),
-        })}`}
-    </p>
+    <div className="flex flex-col gap-3">
+      <p className="num m-0">
+        {/* The café's name is the title above; the line greets and dates. */}
+        {t("welcome")}
+        {location &&
+          ` · ${t("date", {
+            date: formatDate(new Date(), locale, location.timezone),
+            time: formatTime(new Date(), location.timezone),
+          })}`}
+      </p>
+      {member.role === "owner" && <PlanBanner restaurantId={rid} locale={locale} />}
+    </div>
   );
 
   return (
     <AdminPage title={restaurant?.name} subtitle={subtitle} width="md">
-      {member.role === "owner" && <PlanBanner restaurantId={rid} locale={locale} />}
 
       <Section
         title={t("today")}
@@ -216,7 +238,7 @@ export default async function AdminHome() {
         actions={
           <Link
             href="/admin/dashboard"
-            className="text-ink inline-flex min-h-11 items-center gap-0.5 text-[0.9375rem] font-semibold underline underline-offset-4"
+            className={textAction("ink")}
           >
             {t("allSales")}
             <ChevronRight aria-hidden="true" className="size-4" />
@@ -224,66 +246,52 @@ export default async function AdminHome() {
         }
       >
         {data ? (
-          <dl className="num m-0 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-            <div className="col-span-2 flex flex-col gap-0.5 sm:col-span-1">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("revenue")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold" data-testid="home-revenue">
+          // The same KPI row as Sales and Reports: figures on the page, 15 px
+          // labels, a hairline between the figures from 640 px.
+          <dl className="num m-0 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 sm:gap-x-0">
+            <div className={clsx(kpi, "col-span-2 sm:col-span-1")}>
+              <dt className={kpiLabel}>{d("revenue")}</dt>
+              {/* Revenue leads the page: 40 px on a phone, where it has the
+                  row to itself, and from 1280 px. */}
+              <dd className="text-figure sm:text-large xl:text-figure m-0 leading-tight font-bold" data-testid="home-revenue">
                 {formatAmd(data.summary.revenue, locale)}
               </dd>
-              <dd className="text-staff-label2 m-0 text-[0.9375rem]">
+              <dd className="text-staff-label2 m-0 text-label">
                 {delta === null
                   ? d("noCompare")
                   : `${delta === 0 ? d("deltaSame") : d(delta > 0 ? "deltaUp" : "deltaDown", { pct: Math.abs(delta) })} ${d("compareToday")}`}
               </dd>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("orders")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold">
-                {formatInteger(data.summary.orders, locale)}
-              </dd>
+            <div className={kpi}>
+              <dt className={kpiLabel}>{d("orders")}</dt>
+              <dd className={clsx(kpiFigure, "xl:text-figure")}>{formatInteger(data.summary.orders, locale)}</dd>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <dt className="text-staff-label2 text-[0.9375rem] font-semibold">{d("openTables")}</dt>
-              <dd className="m-0 text-[1.75rem] leading-tight font-bold">
-                {formatInteger(data.open_tables.count, locale)}
-              </dd>
+            <div className={kpi}>
+              <dt className={kpiLabel}>{d("openTables")}</dt>
+              <dd className={clsx(kpiFigure, "xl:text-figure")}>{formatInteger(data.open_tables.count, locale)}</dd>
               {data.open_tables.count > 0 && (
-                <dd className="text-staff-label2 m-0 text-[0.9375rem]">
+                <dd className="text-staff-label2 m-0 text-label">
                   {formatAmd(data.open_tables.total, locale)}
                 </dd>
               )}
             </div>
           </dl>
         ) : (
-          <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("noSales")}</p>
+          <p className="text-staff-label2 m-0 text-name">{t("noSales")}</p>
         )}
       </Section>
 
-      {todos.length > 0 && (
-        <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
-          <ul className="m-0 flex list-none flex-col rounded-2xl bg-white p-0">
-            {todos.map((todo) => (
-              <li key={todo.key} className="border-staff-sep border-t first:border-0">
-                <Link
-                  href={todo.href}
-                  data-testid={`todo-${todo.key}`}
-                  className="flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3 text-[1.0625rem]"
-                >
-                  <span className="min-w-0 flex-1 break-words">{todo.text}</span>
-                  <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
       <NextIntlClientProvider>
-        {location && alerts && (
-          <Section title={t("attention")} id="home-attention" testId="home-attention">
-            <AttentionPanel locationId={location.id} initial={alerts} />
-          </Section>
-        )}
+        {/* One attention list (setup to-dos and live problem tables). It is
+            always there, so the owner learns where to look. */}
+        <Section title={t("attention")} id="home-attention" testId="home-attention">
+          <AttentionPanel
+            locationId={location && alerts ? location.id : null}
+            initial={alerts ?? []}
+            todos={todos}
+            allClear={t("allClear")}
+          />
+        </Section>
 
         {location && venue && (
           <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">

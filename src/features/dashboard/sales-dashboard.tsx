@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { chip } from "@/features/admin-ui/styles";
+import { chip, group, groupHead, sectionTitle } from "@/features/admin-ui/styles";
 import { formatAmd, formatInteger } from "@/lib/format/money";
 import type { Locale } from "@/i18n/routing";
 import { HourlyChart } from "./hourly-chart";
@@ -18,8 +18,9 @@ import {
 
 type T = Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
 
-// Owners ask for these first (screens.md, 13): average bill, revenue, orders,
-// then the best and the weakest dishes. Everything else follows.
+// Owners ask for these first (screens.md, 13): revenue, average bill, orders,
+// then the best and the weakest dishes. Everything else follows. The figures
+// sit flat on the page, split by hairlines (ADR-093): no filled card.
 export async function SalesDashboard({ data, locale }: { data: Dashboard; locale: Locale }) {
   const t = await getTranslations("dashboard");
   const money = (n: number) => formatAmd(n, locale);
@@ -31,21 +32,31 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
   const c = data.compare;
   const hours = chartHours(data.hourly);
   const qrPct = sharePercent(s.qr_orders, s.orders);
+  // "Nothing to compare yet" is said once under the row, not under each figure.
+  const noCompare = [
+    [s.revenue, c.revenue],
+    [s.avg_bill, c.avg_bill],
+    [s.orders, c.orders],
+  ].every(([now, before]) => deltaPercent(now!, before!) === null);
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label={t("title")}>
+    <div className="flex flex-col gap-12">
+      {/* Two by two from the narrowest phone, so all four figures are seen at
+          a glance; one row of four from 1024 px. */}
+      <section
+        className="border-staff-sep grid grid-cols-2 gap-x-4 gap-y-6 border-t pt-5 sm:gap-x-6 lg:grid-cols-4 lg:gap-x-0"
+        aria-label={t("title")}
+      >
+        <Kpi testId="kpi-revenue" label={t("revenue")} value={money(s.revenue)}>
+          <Delta t={t} now={s.revenue} before={c.revenue} label={compareLabel} />
+        </Kpi>
         <Kpi
           testId="kpi-avg-bill"
-          hero
           label={t("avgBill")}
           value={money(s.avg_bill)}
           hint={t("bills", { count: s.bills })}
         >
-          <Delta t={t} now={s.avg_bill} before={c.avg_bill} label={compareLabel} onDark />
-        </Kpi>
-        <Kpi testId="kpi-revenue" label={t("revenue")} value={money(s.revenue)}>
-          <Delta t={t} now={s.revenue} before={c.revenue} label={compareLabel} />
+          <Delta t={t} now={s.avg_bill} before={c.avg_bill} label={compareLabel} />
         </Kpi>
         <Kpi
           testId="kpi-orders"
@@ -58,16 +69,24 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         <Kpi
           testId="kpi-open-tables"
           label={t("openTables")}
-          value={t("openTablesValue", {
-            count: data.open_tables.count,
-            total: money(data.open_tables.total),
-          })}
-          hint={t("openTablesHint")}
-          small
+          value={formatInteger(data.open_tables.count, locale)}
+          hint={
+            data.open_tables.count > 0
+              ? `${money(data.open_tables.total)} · ${t("openTablesHint")}`
+              : t("openTablesHint")
+          }
         />
+        {noCompare && (
+          <p
+            className="text-staff-label2 col-span-2 m-0 text-label lg:col-span-4"
+            data-testid="kpi-no-compare"
+          >
+            {t("noCompareAll")}
+          </p>
+        )}
       </section>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-10 md:grid-cols-2 md:gap-8">
         <DishList
           testId="best-dishes"
           title={t("best")}
@@ -105,9 +124,9 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         </Card>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
         <Card testId="sources">
-          <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("sources")}</h2>
+          <GroupHead title={t("sources")} />
           <ShareRow label={t("qr")} count={s.qr_orders} pct={qrPct} tone="bg-ink" locale={locale} />
           <ShareRow
             label={t("waiter")}
@@ -119,10 +138,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         </Card>
 
         <Card testId="kitchen-time">
-          <div>
-            <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("kitchen")}</h2>
-            <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("kitchenHint")}</p>
-          </div>
+          <GroupHead title={t("kitchen")} hint={t("kitchenHint")} />
           {data.kitchen.length === 0 ? (
             <p className="text-staff-label2 m-0">{t("noKitchen")}</p>
           ) : (
@@ -148,7 +164,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         </Card>
 
         <Card testId="cancellations">
-          <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{t("cancellations")}</h2>
+          <GroupHead title={t("cancellations")} />
           {data.cancellations.items === 0 && data.cancellations.rejected_orders === 0 ? (
             <p className="text-staff-label2 m-0">{t("noCancellations")}</p>
           ) : (
@@ -173,11 +189,21 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
   );
 }
 
+// A group on the page (ADR-093): a 20 px heading and a hairline, no box.
 function Card({ children, testId }: { children: React.ReactNode; testId?: string }) {
   return (
-    <section data-testid={testId} className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5">
+    <section data-testid={testId} className={group}>
       {children}
     </section>
+  );
+}
+
+function GroupHead({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className={groupHead}>
+      <h2 className={sectionTitle}>{title}</h2>
+      {hint && <p className="text-staff-label2 m-0 text-label">{hint}</p>}
+    </div>
   );
 }
 
@@ -185,36 +211,31 @@ function Kpi({
   label,
   value,
   hint,
-  hero,
-  small,
   testId,
   children,
 }: {
   label: string;
   value: string;
   hint?: string;
-  hero?: boolean;
-  small?: boolean;
   testId: string;
   children?: React.ReactNode;
 }) {
   return (
     <div
       data-testid={testId}
-      className={`flex min-w-0 flex-col gap-1 rounded-2xl p-4 sm:p-5 ${hero ? "bg-ink text-white" : "bg-white"}`}
+      className="border-staff-sep flex min-w-0 flex-col gap-1 lg:border-l lg:px-6 lg:first:border-l-0 lg:first:pl-0"
     >
-      <span className={`text-[0.9375rem] font-semibold ${hero ? "text-white/80" : "text-staff-label2"}`}>
-        {label}
-      </span>
+      <span className="text-staff-label2 text-label font-semibold">{label}</span>
       <span
         data-testid={`${testId}-value`}
-        className={`num leading-tight font-bold break-words ${small ? "text-[1.5rem]" : "text-[2rem]"}`}
+        className={clsx(
+          "num leading-tight font-bold break-words",
+          "text-[1.5rem] sm:text-large xl:text-figure xl:tracking-[-0.01em]",
+        )}
       >
         {value}
       </span>
-      {hint && (
-        <span className={`text-[0.9375rem] ${hero ? "text-white/80" : "text-staff-label2"}`}>{hint}</span>
-      )}
+      {hint && <span className="text-staff-label2 text-label">{hint}</span>}
       {children}
     </div>
   );
@@ -225,17 +246,16 @@ function Delta({
   now,
   before,
   label,
-  onDark,
 }: {
   t: T;
   now: number;
   before: number;
   label: string;
-  onDark?: boolean;
 }) {
-  const muted = onDark ? "text-white/80" : "text-staff-label2";
+  const muted = "text-staff-label2";
   const pct = deltaPercent(now, before);
-  if (pct === null) return <span className={`${muted} text-[0.9375rem]`}>{t("noCompare")}</span>;
+  // No comparison: the row says so once (noCompareAll).
+  if (pct === null) return null;
   // The word (↑ 12 %), an icon and the colour together, never colour alone.
   const [text, tone, Icon] =
     pct > 0
@@ -244,7 +264,7 @@ function Delta({
         ? [t("deltaDown", { pct: Math.abs(pct) }), chip.alert, TrendingDown]
         : [t("deltaSame"), chip.plain, Minus];
   return (
-    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem]">
+    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-label">
       <span className={clsx(chip.base, tone, "num")}>
         <Icon aria-hidden="true" />
         {text}
@@ -271,10 +291,7 @@ function DishList({
 }) {
   return (
     <Card testId={testId}>
-      <div>
-        <h2 className="m-0 text-[1.25rem] leading-tight font-bold">{title}</h2>
-        <p className="text-staff-label2 m-0 text-[0.9375rem]">{hint}</p>
-      </div>
+      <GroupHead title={title} hint={hint} />
       <ol className="m-0 flex list-none flex-col p-0">
         {dishes.map((d, i) => (
           <li key={i} className="border-staff-sep flex items-center gap-3 border-t py-2.5 first:border-0">

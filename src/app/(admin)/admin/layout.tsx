@@ -45,16 +45,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     getTranslations("adminNav"),
     getTranslations("brand"),
   ]);
+  // At most seven one-line items (ADR-093). Reports and Export are reached
+  // from Sales, Import from the menu page.
   const links: NavLink[] = [
-    { href: "/admin/dashboard", label: t("dashboard"), icon: "dashboard" },
-    { href: "/admin/reports", label: t("reports"), icon: "reports" },
+    { href: "/admin", label: t("home"), icon: "home" },
+    { href: "/admin/dashboard", label: t("dashboard"), icon: "dashboard", also: ["/admin/reports", "/admin/export"] },
     { href: "/admin/menu", label: t("menu"), icon: "menu" },
-    { href: "/admin/menu/import", label: t("import"), icon: "import", sub: true },
     { href: "/admin/tables", label: t("tables"), icon: "tables" },
     { href: "/admin/staff", label: t("staff"), icon: "staff" },
     { href: "/admin/look", label: t("look"), icon: "look" },
     { href: "/admin/telegram", label: t("telegram"), icon: "telegram" },
-    { href: "/admin/export", label: t("export"), icon: "export" },
     ...(admin ? [{ href: "/platform", label: t("platform"), icon: "platform" as const }] : []),
   ];
 
@@ -63,7 +63,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     // ADR-093: the "inverted L". The navigation sits flush on the grey; the
     // content is one white column, so a view reads as one page, not as cards.
     <div className="admin-shell text-ink flex min-h-dvh flex-col bg-white lg:flex-row lg:bg-staff-bg print:bg-white">
-      <AdminNav brand={brand("name")} cafe={restaurant?.name ?? ""} label={t("label")} links={links} />
+      <AdminNav
+        brand={brand("name")}
+        cafe={restaurant?.name ?? ""}
+        label={t("label")}
+        menuLabel={t("open")}
+        closeLabel={t("close")}
+        links={links}
+      />
       <div className="min-w-0 flex-1 bg-white">
         <ToastProvider>{children}</ToastProvider>
       </div>

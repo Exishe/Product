@@ -8,6 +8,7 @@ test.describe("staff and devices at the demo café", () => {
     const label = `E2E խոհանոց ${unique()}`;
     await signInAsDemoOwner(page);
     await page.goto("/admin/staff");
+    await page.getByRole("button", { name: "Միացնել սարք" }).click();
     await page.getByLabel("Սարքի անունը").fill(label);
     await page.getByRole("button", { name: "Ստանալ կոդը" }).click();
     const code = (await page.getByTestId("pairing-code").textContent())?.trim() ?? "";
@@ -40,6 +41,7 @@ test.describe("staff and devices at the demo café", () => {
   test("an invited manager signs up from the link and joins the café", async ({ page, browser }) => {
     await signInAsDemoOwner(page);
     await page.goto("/admin/staff");
+    await page.getByRole("button", { name: "Հրավիրել էլ․ փոստով" }).click();
     await page.getByRole("button", { name: "Ստանալ հղումը" }).click();
     const link = await page.getByTestId("invite-link").inputValue();
     expect(link).toMatch(/\/invite\/[A-Za-z0-9_-]{32}$/);

@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { button, check, fieldLabel, input } from "@/features/admin-ui/styles";
+import { textAction, button, check, fieldLabel, input } from "@/features/admin-ui/styles";
 import { pickIngredientName } from "@/features/ingredients/names";
 import type { Locale } from "@/i18n/routing";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -169,28 +169,28 @@ export function IngredientsPanel({
       aria-labelledby={titleId}
       data-testid="dish-ingredients"
       onKeyDown={stopEnter}
-      className="flex flex-col gap-4 rounded-2xl bg-white p-4"
+      className="border-staff-sep flex flex-col gap-4 border-t pt-4"
     >
       <div>
-        <h3 id={titleId} className="m-0 text-[0.9375rem] font-bold">
+        <h3 id={titleId} className="m-0 text-name font-semibold">
           {t("title")}
         </h3>
-        <p className="text-staff-label2 m-0 mt-1 text-[0.9375rem]">{t("hint")}</p>
+        <p className="text-staff-label2 m-0 mt-1 text-label">{t("hint")}</p>
       </div>
 
       {kcalSupported && preview && lines !== null && lines.length > 0 && (
         <KcalSummary preview={preview} ingredients={ingredients} locale={locale} />
       )}
       {loadFailed && (
-        <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+        <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
           {t("saveFailed")}
         </p>
       )}
       {lines !== null && lines.length === 0 && (
-        <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("empty")}</p>
+        <p className="text-staff-label2 m-0 text-label">{t("empty")}</p>
       )}
 
-      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+      <ul className="m-0 flex list-none flex-col p-0">
         {sorted.map((line) => (
           <LineEditor
             key={line.ingredientId}
@@ -221,11 +221,11 @@ export function IngredientsPanel({
           aria-describedby={hintId}
           className={input}
         />
-        <p id={hintId} className="text-staff-label2 m-0 text-[0.9375rem]">
+        <p id={hintId} className="text-staff-label2 m-0 text-label">
           {t("findHint")}
         </p>
         {addFailed && (
-          <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+          <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
             {t("addFailed")}
           </p>
         )}
@@ -267,7 +267,7 @@ export function IngredientsPanel({
         )}
 
         {typed && inCafe.length === 0 && fromList.length === 0 && (
-          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("nothingFound")}</p>
+          <p className="text-staff-label2 m-0 text-label">{t("nothingFound")}</p>
         )}
       </div>
     </section>
@@ -342,14 +342,14 @@ function LineEditor({
   }[status];
 
   return (
-    <li className="bg-staff-fill flex flex-col gap-3 rounded-2xl p-3">
+    <li className="border-staff-sep flex flex-col gap-3 border-b py-4 first:pt-1">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="m-0 min-w-0 text-[1.0625rem] font-semibold [overflow-wrap:anywhere]">{name}</h4>
+        <h4 className="m-0 min-w-0 text-name font-semibold [overflow-wrap:anywhere]">{name}</h4>
         <button
           type="button"
           disabled={status === "saving"}
           onClick={() => void remove()}
-          className={button("danger", "min-h-11 shrink-0 px-4 text-[0.9375rem]")}
+          className={textAction("danger")}
         >
           {t("remove")}
         </button>
@@ -364,10 +364,10 @@ function LineEditor({
             onChange={(e) => setAmount(e.target.value)}
             className={clsx(input, "bg-white")}
           />
-          <span className="text-staff-label2 text-[0.875rem]">{t("amountHint")}</span>
+          <span className="text-staff-label2 text-label">{t("amountHint")}</span>
         </label>
         <div className="flex items-end">
-          <label className="flex min-h-11 items-center gap-3 text-[1.0625rem] font-semibold">
+          <label className="flex min-h-11 items-center gap-3 text-name font-semibold">
             <input
               type="checkbox"
               className={check}
@@ -385,7 +385,7 @@ function LineEditor({
           </label>
         </div>
       </div>
-      <p id={ids.keyHint} className="text-staff-label2 m-0 text-[0.9375rem]">
+      <p id={ids.keyHint} className="text-staff-label2 m-0 text-label">
         {t("keyHint")}
       </p>
 
@@ -421,7 +421,7 @@ function LineEditor({
               onChange={(e) => setPrice(e.target.value)}
               className={clsx(input, "bg-white")}
             />
-            <span id={ids.priceHint} className="text-staff-label2 text-[0.875rem]">
+            <span id={ids.priceHint} className="text-staff-label2 text-label">
               {t("priceHint")}
             </span>
           </label>
@@ -433,7 +433,7 @@ function LineEditor({
           type="button"
           disabled={status === "saving"}
           onClick={() => void save()}
-          className={button("primary", "min-h-11 px-5")}
+          className={button("secondary", "px-5")}
         >
           {t("save")}
         </button>
@@ -441,7 +441,7 @@ function LineEditor({
           role="status"
           aria-live="polite"
           className={clsx(
-            "m-0 text-[0.9375rem] font-semibold",
+            "m-0 text-label font-semibold",
             status === "saved" ? "text-tarragon" : "text-pomegranate",
           )}
         >
@@ -471,7 +471,7 @@ function KcalSummary({
   const noCalories = names("kcal");
   const noWeight = names("weight");
   return (
-    <div data-testid="kcal-summary" className="bg-staff-fill rounded-2xl p-3 text-[0.9375rem]" role="status">
+    <div data-testid="kcal-summary" className="bg-staff-bg rounded-xl px-4 py-3 text-label" role="status">
       <p className="m-0 font-semibold">{t("kcalNone")}</p>
       {preview.kcal !== null && (
         <p className="m-0 mt-1" data-testid="kcal-value">
@@ -547,7 +547,7 @@ function KcalFields({
           </label>
         )}
       </div>
-      <p id={hintId} className="text-staff-label2 m-0 text-[0.875rem]">
+      <p id={hintId} className="text-staff-label2 m-0 text-label">
         {t("kcalHint")}
       </p>
       <div className="flex flex-wrap items-center gap-3">
@@ -555,7 +555,7 @@ function KcalFields({
           type="button"
           disabled={status === "saving"}
           onClick={() => void save()}
-          className={button("plain", "min-h-11 px-5")}
+          className={button("secondary", "px-5")}
         >
           {t("kcalSave")}
         </button>
@@ -563,7 +563,7 @@ function KcalFields({
           role="status"
           aria-live="polite"
           className={clsx(
-            "m-0 text-[0.9375rem] font-semibold",
+            "m-0 text-label font-semibold",
             status === "saved" ? "text-tarragon" : "text-pomegranate",
           )}
         >
@@ -577,7 +577,7 @@ function KcalFields({
 function ResultGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <h4 className="text-staff-label2 m-0 text-[0.875rem] font-semibold">{title}</h4>
+      <h4 className="text-staff-label2 m-0 text-label font-semibold">{title}</h4>
       <ul className="m-0 flex max-h-72 list-none flex-col overflow-y-auto p-0">{children}</ul>
     </div>
   );
@@ -604,8 +604,8 @@ function ResultRow({
         onClick={onAdd}
         className="hover:bg-staff-fill focus-visible:outline-ink flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left disabled:opacity-50"
       >
-        <span className="min-w-0 text-[1.0625rem] [overflow-wrap:anywhere]">{name}</span>
-        <span className="text-staff-label2 flex shrink-0 items-center gap-2 text-[0.9375rem] font-semibold">
+        <span className="min-w-0 text-name [overflow-wrap:anywhere]">{name}</span>
+        <span className="text-staff-label2 flex shrink-0 items-center gap-2 text-label font-semibold">
           {unit}
           <Plus aria-hidden="true" className="size-4" />
           {addLabel}

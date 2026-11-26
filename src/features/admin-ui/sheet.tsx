@@ -27,7 +27,10 @@ export function Sheet({
   footer,
   children,
   testId,
+  fit,
 }: {
+  // fit: as tall as its content on phones (a short list), not 92 % of the screen.
+  fit?: boolean;
   title: ReactNode;
   closeLabel: string;
   onClose: () => void;
@@ -60,15 +63,17 @@ export function Sheet({
       aria-labelledby="sheet-title"
       data-testid={testId}
       className={clsx(
-        "admin-rise admin-sheet-side bg-staff-bg text-ink shadow-float m-0 flex max-h-none max-w-none flex-col overflow-hidden p-0 backdrop:bg-black/40 [&:not([open])]:hidden",
+        "admin-rise admin-sheet-side bg-white text-ink shadow-float m-0 flex max-h-none max-w-none flex-col overflow-hidden p-0 backdrop:bg-black/40 [&:not([open])]:hidden",
         // phone: a bottom sheet, 92 % of the screen tall
-        "inset-x-0 top-auto bottom-0 h-[92dvh] w-full rounded-t-[1.25rem]",
+        fit
+          ? "inset-x-0 top-auto bottom-0 h-auto max-h-[92dvh] w-full rounded-t-[1.25rem]"
+          : "inset-x-0 top-auto bottom-0 h-[92dvh] w-full rounded-t-[1.25rem]",
         // tablet: a panel on the right edge, full height
         "md:inset-y-0 md:right-0 md:left-auto md:h-dvh md:w-[28rem] md:rounded-none md:rounded-l-[1.25rem]",
       )}
     >
       <header className="border-staff-sep flex min-h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
-        <h2 id="sheet-title" className="m-0 min-w-0 flex-1 truncate text-[1.0625rem] font-bold">
+        <h2 id="sheet-title" className="m-0 min-w-0 flex-1 truncate text-heading font-semibold">
           {title}
         </h2>
         <button

@@ -47,13 +47,19 @@ export async function PlanBanner({ restaurantId, locale }: { restaurantId: strin
       role={urgent ? "status" : undefined}
       data-testid="plan-banner"
       data-plan={state.kind}
-      className={`text-ink flex items-start gap-3 rounded-2xl px-4 py-3 ${tone.box}`}
+      // A quiet line on the page while the free month runs (ADR-093); a tinted
+      // block only when the owner must act.
+      className={
+        urgent
+          ? `text-ink flex items-start gap-3 rounded-xl px-4 py-3 ${tone.box}`
+          : "text-ink flex items-start gap-2.5"
+      }
     >
       <tone.icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="m-0 text-[1.0625rem] font-semibold">{text}</p>
+        <p className={urgent ? "m-0 text-name font-semibold" : "m-0 text-label"}>{text}</p>
         {state.kind !== "trial" || urgent ? (
-          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("howToPay")}</p>
+          <p className="text-staff-label2 m-0 text-label">{t("howToPay")}</p>
         ) : null}
       </div>
     </div>

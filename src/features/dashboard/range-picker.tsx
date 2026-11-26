@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { button, fieldLabel } from "@/features/admin-ui/styles";
@@ -6,7 +7,9 @@ import { DateField } from "./date-field";
 import { addDays, MAX_DAYS, PRESETS, type Preset, type Range } from "./range";
 
 // Presets as a segmented control of links and a custom range as a plain GET
-// form: works without JS.
+// form: works without JS. The two date fields show only on «Other dates»
+// (its link opens the current range as a custom one), so the control is one
+// line until the owner asks for something else.
 export async function RangePicker({
   range,
   today,
@@ -24,6 +27,13 @@ export async function RangePicker({
   hidden?: Record<string, string>;
 }) {
   const [t, locale] = await Promise.all([getTranslations("dashboard"), getLocale()]);
+  const custom = range.preset === "custom";
+  const customHref = `${basePath}?${new URLSearchParams({ ...hidden, from: range.from, to: range.to })}`;
+  const segment = (on: boolean) =>
+    clsx(
+      "flex min-h-11 items-center justify-center rounded-[0.625rem] px-2 text-center text-[0.9375rem] leading-tight font-semibold sm:px-3",
+      on ? "text-ink bg-white shadow-sm" : "text-staff-label2 hover:text-ink",
+    );
   return (
     <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
       <nav aria-label={t("rangeLabel")} className="w-full sm:w-auto">
@@ -33,17 +43,27 @@ export async function RangePicker({
               <Link
                 href={p === defaultPreset ? basePath : `${basePath}?range=${p}`}
                 aria-current={range.preset === p ? "page" : undefined}
-                className={clsx(
-                  "flex min-h-11 items-center justify-center rounded-[0.625rem] px-3 text-center text-[0.9375rem] font-semibold",
-                  range.preset === p ? "text-ink bg-white shadow-sm" : "text-staff-label2",
-                )}
+                className={segment(range.preset === p)}
               >
                 {t(`ranges.${p}`)}
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              href={customHref}
+              aria-current={custom ? "page" : undefined}
+              className={segment(custom)}
+              data-testid="range-custom"
+            >
+              {/* A phone has room for four words and a calendar, not five words. */}
+              <CalendarRange aria-hidden="true" className="size-5 shrink-0 sm:hidden" />
+              <span className="max-sm:sr-only">{t("ranges.custom")}</span>
+            </Link>
+          </li>
         </ul>
       </nav>
+      {custom && (
       <form method="get" action={basePath} className="flex flex-wrap items-end gap-2">
         {Object.entries(hidden ?? {}).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
@@ -66,6 +86,7 @@ export async function RangePicker({
           {t("apply")}
         </button>
       </form>
+      )}
     </div>
   );
 }

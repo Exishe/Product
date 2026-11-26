@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, Copy, UserPlus } from "lucide-react";
+import { CircleAlert, Copy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { useToast } from "@/features/admin-ui/toast";
@@ -15,11 +15,8 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
   const [state, action, pending] = useActionState(createInvite, initial);
   const link = state.token ? `${baseUrl}/invite/${state.token}` : null;
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5">
-      <h2 className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <UserPlus aria-hidden="true" className="text-ink size-5" />
-        {t("inviteTitle")}
-      </h2>
+    <form action={action} className="flex flex-col gap-5">
+      {/* The sheet shows the title. */}
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>{t("inviteRole")}</span>
         <select name="role" defaultValue="manager" className={input}>
@@ -27,7 +24,7 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
           <option value="waiter">{t("inviteWaiter")}</option>
         </select>
       </label>
-      <button type="submit" disabled={pending} className={button("primary")}>
+      <button type="submit" disabled={pending} className={button("primary", "sm:w-fit")}>
         {t("inviteSubmit")}
       </button>
       {link && (
@@ -36,7 +33,7 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
             <input
               readOnly
               value={link}
-              className={`${input} num`}
+              className={`${input} num text-label`}
               data-testid="invite-link"
               aria-label={t("inviteLink")}
               onFocus={(e) => e.currentTarget.select()}
@@ -55,7 +52,7 @@ export function InviteForm({ baseUrl }: { baseUrl: string }) {
               <Copy aria-hidden="true" />
             </button>
           </div>
-          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("inviteLink")}</p>
+          <p className="text-staff-label2 m-0 text-label">{t("inviteLink")}</p>
         </div>
       )}
       {state.error && (

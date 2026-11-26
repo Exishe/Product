@@ -9,34 +9,40 @@ const migrationApplied = process.env.E2E_M10_MIGRATION === "applied";
 const shots = process.env.E2E_SCREENSHOTS;
 
 test.describe("admin navigation and export", () => {
-  test("the sidebar links every admin section and marks the current one", async ({ page }, info) => {
+  test("the navigation links every admin section and marks the current one", async ({ page }, info) => {
     test.skip(!ownerEmail || !ownerPassword, "needs E2E_OWNER_EMAIL and E2E_OWNER_PASSWORD from .env.local");
     await signInAsDemoOwner(page);
+    // Below 1024 px the list opens in a sheet from the top bar's Sections button.
+    const openNav = async () => {
+      const button = page.getByTestId("admin-menu-button");
+      if (await button.isVisible()) await button.click();
+    };
     const nav = page.getByRole("navigation", { name: "Ադմինի բաժիններ" });
+    await openNav();
     for (const name of [
+      "Գլխավոր",
       "Վաճառքներ",
       "Ճաշացանկ",
-      "Ներմուծում լուսանկարից",
       "Սեղաններ և QR",
-      "Աշխատակիցներ և սարքեր",
-      "Telegram",
-      "Արտահանում",
+      "Աշխատակիցներ",
+      "Հյուրի էջի տեսքը",
+      "Ծանուցումներ",
     ]) {
       await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
     }
+    await expect(nav.getByRole("link", { name: "Գլխավոր", exact: true })).toHaveAttribute("aria-current", "page");
     await nav.getByRole("link", { name: "Սեղաններ և QR" }).click();
     await expect(page).toHaveURL(/\/admin\/tables$/);
+    await openNav();
     await expect(nav.getByRole("link", { name: "Սեղաններ և QR" })).toHaveAttribute("aria-current", "page");
-    await nav.getByRole("link", { name: "Ներմուծում լուսանկարից" }).click();
-    await expect(page).toHaveURL(/\/admin\/menu\/import$/);
-    await expect(nav.getByRole("link", { name: "Ներմուծում լուսանկարից" })).toHaveAttribute(
+    // Import is reached from the menu page; the menu stays the current section.
+    await page.goto("/admin/menu/import");
+    await openNav();
+    await expect(nav.getByRole("link", { name: "Ճաշացանկ", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await expect(nav.getByRole("link", { name: "Ճաշացանկ", exact: true })).not.toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await page.keyboard.press("Escape");
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -51,10 +57,9 @@ test.describe("admin navigation and export", () => {
     await expect(banner).toContainText("մնացել է 30 օր");
     await expect(banner).toContainText("15 000 ֏");
 
-    await page
-      .getByRole("navigation", { name: "Ադմինի բաժիններ" })
-      .getByRole("link", { name: "Արտահանում" })
-      .click();
+    // Export opens from Sales.
+    await page.goto("/admin/dashboard");
+    await page.getByRole("link", { name: "Արտահանել CSV" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Տվյալների արտահանում");
     if (shots) await page.screenshot({ path: `${shots}/export-${info.project.name}.png`, fullPage: true });
 
@@ -141,7 +146,8 @@ test.describe("sales dashboard", () => {
       return;
     }
     const kpis = page.getByTestId(/^kpi-[a-z-]+$/);
-    await expect(kpis.first()).toHaveAttribute("data-testid", "kpi-avg-bill");
+    // Revenue leads (ADR-093 admin pass); the average bill follows.
+    await expect(kpis.first()).toHaveAttribute("data-testid", "kpi-revenue");
     await expect(page.getByTestId("kpi-avg-bill-value")).toHaveText(/^\d{1,3}([ \u00a0]\d{3})*[ \u00a0]֏$/);
     await expect(page.getByTestId("kpi-revenue-value")).toHaveText(/֏$/);
     await expect(page.getByTestId("best-dishes")).toBeVisible();

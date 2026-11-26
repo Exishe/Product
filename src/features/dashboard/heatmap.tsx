@@ -32,14 +32,14 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
   return (
     <section
       aria-labelledby="heatmap-title"
-      className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5"
+      className="flex min-w-0 flex-col gap-4"
       data-testid="sales-heatmap"
     >
-      <div className="flex flex-col gap-1">
-        <h2 id="heatmap-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+      <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
+        <h2 id="heatmap-title" className="m-0 text-heading font-semibold">
           {t("title")}
         </h2>
-        <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("hint", { weeks: map.weeks })}</p>
+        <p className="text-staff-label2 m-0 text-label">{t("hint", { weeks: map.weeks })}</p>
       </div>
 
       {grid.hours.length === 0 ? (
@@ -64,8 +64,8 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
               </li>
             )}
           </ul>
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <table className="num w-full border-separate border-spacing-[3px] text-[0.75rem]">
+          <div className="relative -mx-1 overflow-x-auto px-1 pb-1">
+            <table className="num w-full border-separate border-spacing-[3px] text-meta">
               <caption className="sr-only">{t("hint", { weeks: map.weeks })}</caption>
               <thead>
                 <tr>
@@ -89,7 +89,7 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
                   <tr key={d}>
                     <th
                       scope="row"
-                      className="text-staff-label2 pr-1.5 text-left text-[0.8125rem] font-semibold whitespace-nowrap"
+                      className="text-staff-label2 pr-1.5 text-left text-meta font-semibold whitespace-nowrap"
                     >
                       {days[d]}
                     </th>
@@ -110,7 +110,7 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
               </tbody>
             </table>
           </div>
-          <div aria-hidden="true" className="text-staff-label2 flex items-center gap-1.5 text-[0.8125rem]">
+          <div aria-hidden="true" className="text-staff-label2 flex items-center gap-1.5 text-meta">
             {t("less")}
             {LEVEL.map((c) => (
               <span key={c} className={clsx("size-4 rounded-[3px]", c)} />

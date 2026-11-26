@@ -13,7 +13,10 @@ const kinds = {
   // not a floating white pill: the 3.4:1 field edge, drawn inside.
   secondary:
     "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
-  tinted: "bg-staff-fill text-ink disabled:bg-staff-fill disabled:text-staff-label2",
+  // One secondary style on the white column: "tinted" now draws the same
+  // outline, so a grey-filled pill never sits next to an outlined one.
+  tinted:
+    "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
   plain: "px-2 text-ink underline underline-offset-4 disabled:text-staff-label2",
@@ -52,21 +55,27 @@ export const alert = {
 export const sectionTitle = "m-0 text-heading font-semibold break-words";
 export const cardTitle = "m-0 text-name font-semibold break-words";
 
-// A quiet text action inside a list row: no fill, no shadow, 44 px tall.
+// A quiet text action: 16 px semibold ink with its icon or chevron, no fill,
+// no shadow, 44 px tall. Underlined only on hover and keyboard focus (an app,
+// not a 2010 web link).
 export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
   clsx(
-    "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[0.9375rem] font-semibold whitespace-nowrap disabled:cursor-not-allowed disabled:text-staff-label2 [&_svg]:size-4 [&_svg]:shrink-0",
+    "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-body font-semibold whitespace-nowrap underline-offset-4 hover:underline focus-visible:underline disabled:cursor-not-allowed disabled:text-staff-label2 disabled:no-underline [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
     tone === "danger" ? "text-pomegranate" : "text-ink",
     extra,
   );
 
-// Grouped content (ADR-093): white like the content column it sits on, with no
-// border and no shadow, so groups read as parts of one page, split by space.
-// On the grey staff screens it is a flat white group.
-export const card = "rounded-2xl bg-white p-4 sm:p-5";
+// Grouped content (ADR-093): no box at all. The group sits on the white
+// column with the page's left edge, split from the next one by space.
+export const card = "flex flex-col gap-4";
+
+// A group with its own heading (a self-made Section): the heading block ends
+// in a hairline and the content follows on the page.
+export const group = "flex min-w-0 flex-col gap-4";
+export const groupHead = "border-staff-sep flex flex-col gap-1 border-b pb-3";
 
 export const chip = {
-  base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",
+  base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-label leading-6 font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   plain: "bg-staff-fill text-staff-label2",
   ok: "bg-tarragon-tint text-tarragon",
   wait: "bg-amber-tint text-amber-text",
@@ -76,28 +85,29 @@ export const chip = {
 // Checkboxes and radios: native, tinted, 24 px.
 export const check = "size-6 shrink-0 accent-ink";
 
-// White grouped lists (people, devices, logins, tables): 64 px rows split by
-// hairlines. The three columns line up across every list on a page: who,
-// status, actions.
+// Lists (people, devices, logins, tables): 64 px rows on the page split by
+// hairlines, text on the page's left edge. The three columns line up across
+// every list on a page: who, status, actions.
 export const list = {
-  wrap: "m-0 flex list-none flex-col rounded-2xl bg-white p-0",
-  item: "border-staff-sep flex flex-col gap-3 border-b px-4 py-3 last:border-0",
+  wrap: "m-0 flex list-none flex-col p-0",
+  item: "border-staff-sep flex flex-col gap-3 border-b py-3 last:border-0",
   row: "flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 sm:grid sm:grid-cols-[minmax(0,1fr)_13rem_minmax(0,16rem)] sm:gap-x-4",
   who: "flex min-w-0 flex-1 items-center gap-3",
   avatar:
     "bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-[0.9375rem] font-semibold [&_svg]:size-5",
-  name: "text-[1.0625rem] leading-snug font-semibold break-words",
-  sub: "text-staff-label2 text-[0.9375rem] leading-snug",
-  status: "text-staff-label2 flex min-w-0 flex-col gap-0.5 text-[0.9375rem]",
+  name: "text-name leading-snug font-semibold break-words",
+  sub: "text-staff-label2 text-label leading-snug",
+  status: "text-staff-label2 flex min-w-0 flex-col gap-0.5 text-label",
   actions: "ml-auto flex flex-wrap items-center justify-end gap-1 sm:ml-0",
 };
 
 // Shared table styles (a shadcn/ui-style data table in our tokens).
 export const table = {
-  wrap: "min-w-0 overflow-hidden rounded-2xl bg-white",
-  table: "w-full border-collapse text-left text-[0.9375rem]",
-  head: "border-b border-staff-sep text-[0.8125rem] font-semibold text-staff-label2",
-  th: "px-4 py-2.5 font-semibold",
+  wrap: "min-w-0 overflow-x-auto",
+  table: "w-full border-collapse text-left text-label",
+  head: "border-b border-staff-sep text-label font-semibold text-staff-label2",
+  // The first column starts on the page's edge, like every heading above it.
+  th: "px-3 py-2.5 font-semibold first:pl-0 last:pr-0",
   row: "border-b border-staff-sep last:border-0",
-  td: "px-4 py-3 align-middle",
+  td: "px-3 py-3 align-middle first:pl-0 last:pr-0",
 };

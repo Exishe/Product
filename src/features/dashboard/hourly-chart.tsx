@@ -1,3 +1,5 @@
+import { ChevronDown } from "lucide-react";
+import { textAction } from "@/features/admin-ui/styles";
 import type { HourRow } from "./model";
 
 export type HourlyText = {
@@ -21,11 +23,13 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
   const top = niceCeil(max);
   const ticks = [top, Math.round(top / 2), 0];
   const labelEvery = rows.length > 12 ? 3 : rows.length > 8 ? 2 : 1;
+  // The legend names only what is drawn.
+  const hasBefore = rows.some((r) => r.compare_orders > 0);
 
   return (
     <figure className="flex flex-col gap-3" aria-labelledby="hourly-title">
-      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 id="hourly-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+      <figcaption className="border-staff-sep flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b pb-3">
+        <h2 id="hourly-title" className="m-0 text-heading font-semibold">
           {text.title}
         </h2>
         <ul className="text-staff-label2 m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[0.9375rem]">
@@ -33,10 +37,12 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
             <span aria-hidden className="bg-ink inline-block h-3 w-3 rounded-[3px]" />
             {text.seriesNow}
           </li>
-          <li className="flex items-center gap-2">
-            <span aria-hidden className="bg-amber-text inline-block h-1 w-4 rounded-full" />
-            {text.seriesBefore}
-          </li>
+          {hasBefore && (
+            <li className="flex items-center gap-2">
+              <span aria-hidden className="bg-amber-text inline-block h-1 w-4 rounded-full" />
+              {text.seriesBefore}
+            </li>
+          )}
         </ul>
       </figcaption>
 
@@ -83,9 +89,10 @@ export function HourlyChart({ rows, text }: { rows: readonly HourRow[]; text: Ho
         </div>
       </div>
 
-      <details>
-        <summary className="text-ink inline-flex min-h-11 cursor-pointer items-center rounded-lg font-semibold underline underline-offset-4">
+      <details className="group">
+        <summary className={textAction("ink", "-ml-2 w-fit list-none [&::-webkit-details-marker]:hidden")}>
           {text.showTable}
+          <ChevronDown aria-hidden="true" className="transition-transform group-open:rotate-180 motion-reduce:transition-none" />
         </summary>
         <table className="num mt-2 w-full max-w-md border-collapse text-left text-[0.9375rem]">
           <thead className="text-staff-label2">

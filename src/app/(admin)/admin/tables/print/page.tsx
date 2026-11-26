@@ -1,5 +1,5 @@
-import { CircleAlert, ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { CircleAlert } from "lucide-react";
+import { AdminPage } from "@/features/admin-ui/page";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { loadFloor } from "@/features/tables-qr/load.server";
@@ -44,27 +44,18 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
   );
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 pt-6 pb-12 sm:px-6 lg:px-8 lg:pt-10 print:block print:max-w-none print:p-0">
-      <div className="flex flex-wrap items-end justify-between gap-4 print:hidden">
-        <div className="flex min-w-0 flex-col gap-1">
-          <Link
-            href="/admin/tables"
-            className="text-ink -ml-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-[1.0625rem] font-semibold"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-            {t("print.back")}
-          </Link>
-          <h1 className="m-0 text-[1.75rem] leading-tight font-bold sm:text-[2.125rem]">
-            {t("print.title")}
-          </h1>
-          <p className="text-staff-label2 m-0 max-w-prose text-[1.0625rem]">{t("print.hint")}</p>
-        </div>
-        {cards.length > 0 && <PrintButton label={t("print.print")} />}
-      </div>
+    <AdminPage
+      back={{ href: "/admin/tables", label: t("print.back") }}
+      title={t("print.title")}
+      subtitle={<p className="m-0">{t("print.hint")}</p>}
+      actions={cards.length > 0 && <PrintButton label={t("print.print")} />}
+      width="lg"
+      className="print:block print:max-w-none print:p-0"
+    >
       {!floor.menuPublished && (
         <p
           role="status"
-          className="bg-amber-tint m-0 flex items-start gap-3 rounded-2xl px-4 py-3 text-[1.0625rem] print:hidden"
+          className="bg-amber-tint m-0 flex items-start gap-3 rounded-xl px-4 py-3 text-name print:hidden"
         >
           <CircleAlert aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
           {t("print.notPublished")}
@@ -81,6 +72,6 @@ export default async function PrintQrPage({ searchParams }: { searchParams: Prom
           qrLabel={(label) => t("tableName", { label })}
         />
       )}
-    </main>
+    </AdminPage>
   );
 }

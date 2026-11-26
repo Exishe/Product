@@ -10,6 +10,8 @@ test("an owner builds a menu by hand: a section, dishes in three languages, size
 
   await page.getByRole("button", { name: "Լրացնել ձեռքով" }).click();
   await page.getByLabel("Անունը հայերեն").fill("Տաք ուտեստներ");
+  // Russian and English sit under "Translations", folded by default.
+  await page.getByText("Թարգմանություններ").click();
   await page.getByLabel("Անունը ռուսերեն").fill("Горячие блюда");
   await page.getByRole("button", { name: "Պահել" }).click();
   await expect(page.getByRole("heading", { level: 2, name: "Տաք ուտեստներ" })).toBeVisible();
@@ -17,6 +19,7 @@ test("an owner builds a menu by hand: a section, dishes in three languages, size
   // A dish with three names and a price typed with a space
   await page.getByRole("button", { name: "+ Ավելացնել ուտեստ" }).click();
   await page.getByLabel("Անունը հայերեն").fill("Տոլմա");
+  await page.getByText("Թարգմանություններ").click();
   await page.getByLabel("Անունը ռուսերեն").fill("Толма");
   await page.getByLabel("Անունը անգլերեն").fill("Tolma");
   await page.getByLabel("Գինը, ֏").fill("1500.5");
@@ -33,11 +36,9 @@ test("an owner builds a menu by hand: a section, dishes in three languages, size
   await page.getByLabel("Գինը, ֏").fill("4500");
   await page.getByRole("button", { name: "Պահել" }).click();
   await expect(page.getByTestId("dish-row")).toHaveCount(2);
-  await page
-    .getByRole("listitem")
-    .filter({ hasText: "Խաշլամա" })
-    .getByRole("button", { name: "Տեղափոխել վեր" })
-    .click();
+  // The order of dishes is set in the dish's editor, not with arrows on every row.
+  await page.getByTestId("dish-row").filter({ hasText: "Խաշլամա" }).click();
+  await page.getByRole("button", { name: "Բարձրացնել" }).click();
   await expect(page.getByTestId("dish-row").first()).toContainText("Խաշլամա");
 
   // An option group for sizes, attached to the tolma

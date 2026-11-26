@@ -31,8 +31,12 @@ test("the owner sets kinds, adds a pairing and changes the table", async ({ page
   await page.reload();
   await expect(page.getByTestId(`rec-type-${cafe.items.coffee}`)).toHaveValue("coffee_tea");
 
-  // One dish by hand.
+  // One dish by hand. Sections whose dishes all have a kind start closed.
   const tolmaType = page.getByTestId(`rec-type-${cafe.items.tolma}`);
+  const tolmaGroup = page.locator("details", { has: tolmaType });
+  if (!(await tolmaGroup.evaluate((d) => (d as HTMLDetailsElement).open))) {
+    await tolmaGroup.locator("summary").click();
+  }
   await tolmaType.selectOption("main");
   await page.reload();
   await expect(page.getByTestId(`rec-type-${cafe.items.tolma}`)).toHaveValue("main");
