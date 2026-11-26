@@ -33,7 +33,7 @@
         "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "The waiter app's floor: four tables, each coloured by what it needs",
+        "alt": "The waiter app's floor: nine tables, each coloured by what it needs",
         "p1": "A table's colour says what it needs: a new order, food to serve or the bill.",
         "p2": "Under the number: how long the table has waited and its total so far.",
         "p3": "Calls and bill requests ring, so nobody waves for long."
@@ -42,7 +42,7 @@
         "tab": "Kitchen",
         "title": "Kitchen screen",
         "text": "Tickets arrive in order and turn red after 12 minutes.",
-        "alt": "The kitchen screen with new and in-progress tickets",
+        "alt": "The kitchen screen with tickets by stage",
         "note": "Each café picks its kitchen screen's language: Armenian, Russian or English.",
         "p1": "One tap moves a ticket on: New, Cooking, Ready.",
         "p2": "The table that has waited longest is always shown at the top.",

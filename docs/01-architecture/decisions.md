@@ -1197,6 +1197,10 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - Reset password: an old or used link changes the title to "This link no longer works" with one sentence and the 56 px "Get a new link" button (`AuthHeading`, shared with `AuthShell`, so the client form can render the title).
   - Pairing: the link back to sign-in says "username or email", since waiter and kitchen logins have no email.
   - 404: the title wraps "pretty" and may run 96 px past the column from sm, so «Такой страницы нет.» sits on one line on desktop.
+- Revision (26 Nov, sixth round, judge's open items):
+  - Every showcase picture now sits in a fixed slot (420:688, or 720:688 for the kitchen crop from md), so a picture that ends sooner sits at the slot's top and switching tabs never changes the panel's height.
+  - Pictures re-shot read-only (every write from the screenshot browser answered locally, sample data only in its reads): the waiter's Hall has nine tables in three full rows (seated, ready, new, bill, a second seated table and four free ones; the Terrace's tables are numbered on from 10 in that browser), so the floor no longer looks empty; alt texts say nine tables. The dish sheet is scrolled to its end, so the note field sits whole above the 56 px add bar (the × stays 12 px under the top, as on a taller phone). The kitchen crop is the current board's Cooking and Ready lanes with the header's right part, cut to end 24 px under the tallest ticket with equal side margins (the sample cooking ticket has four lines). The admin list starts 32 px above "Sections" and ends 24 px under its last whole row (a little shorter than the screen in each language; its height is in `PHONE_HEIGHT`). The kitchen phone picture is unchanged.
+  - Footer below sm: the five links are a 2-column grid of left-aligned 44 px rows; the fifth ("Connect a device") spans both columns so it never wraps. From sm one inline row as before.
 
 ## ADR-101: Waiter app and kitchen display area pass: one bar, fills for state, rows for content
 

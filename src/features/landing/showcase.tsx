@@ -13,7 +13,8 @@ export type ShowcasePanel = {
   points: string[];
   // An optional muted line under the list (the kitchen's language note).
   note?: string;
-  // Every surface has a portrait screenshot (420x688 CSS px at 2x). The
+  // Every surface has a portrait screenshot (420x688 CSS px at 2x, or a
+  // little shorter when its content ends sooner). The
   // kitchen also has a wide one (720x688 at 2x) from md up; the other
   // surfaces stay one phone screen at every width.
   phone: { src: string; width: number; height: number };
@@ -125,26 +126,36 @@ export function Showcase({
               p.wide ? "lg:w-[40rem] xl:w-[45rem]" : "lg:w-[23.375rem] xl:w-[26.25rem]",
             )}
           >
-            <picture className="contents">
-              {p.wide && (
-                <source
-                  media="(min-width: 48rem)"
-                  srcSet={p.wide.src}
-                  width={p.wide.width}
-                  height={p.wide.height}
-                />
+            {/* A fixed 420:688 slot (720:688 for a wide picture from md), so a
+                picture cut a little shorter than the screen (the admin list)
+                sits at its top and switching tabs never changes the height. */}
+            <div
+              className={clsx(
+                "aspect-[420/688] w-full md:h-full md:w-auto md:max-w-full lg:h-auto lg:w-full",
+                p.wide && "md:aspect-[720/688]",
               )}
-              {/* A static webp at 2x; no image runtime on the landing. */}
-              <img
-                src={p.phone.src}
-                width={p.phone.width}
-                height={p.phone.height}
-                alt={p.alt}
-                loading={i === 0 ? "eager" : "lazy"}
-                decoding="async"
-                className="shadow-soft-float block h-auto w-full rounded-[20px] md:h-full md:w-auto md:max-w-full lg:h-auto lg:w-full"
-              />
-            </picture>
+            >
+              <picture className="contents">
+                {p.wide && (
+                  <source
+                    media="(min-width: 48rem)"
+                    srcSet={p.wide.src}
+                    width={p.wide.width}
+                    height={p.wide.height}
+                  />
+                )}
+                {/* A static webp at 2x; no image runtime on the landing. */}
+                <img
+                  src={p.phone.src}
+                  width={p.phone.width}
+                  height={p.phone.height}
+                  alt={p.alt}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="shadow-soft-float block h-auto w-full rounded-[20px]"
+                />
+              </picture>
+            </div>
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
             <h3 className="text-subtitle m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>

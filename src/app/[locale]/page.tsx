@@ -22,6 +22,12 @@ const SURFACES = ["menu", "waiter", "kitchen", "admin"] as const;
 const WIDE_SURFACES: readonly string[] = ["kitchen"];
 const POINTS = ["p1", "p2", "p3"] as const;
 const PHONE = { width: 840, height: 1376 };
+// The admin list ends 24 px under its last whole dish row, so its picture is
+// a little shorter than the screen, by locale; it sits at the top of the same
+// 420x688 slot, so the panel keeps its height.
+const PHONE_HEIGHT: Partial<Record<(typeof SURFACES)[number], Record<string, number>>> = {
+  admin: { hy: 1272, ru: 1310, en: 1348 },
+};
 const WIDE = { width: 1440, height: 1376 };
 
 // The hero picture: the live demo menu at 390 px (2x), down to just above the
@@ -94,7 +100,11 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
     points: POINTS.map((k) => t(`features.${s}.${k}`)),
     alt: t(`features.${s}.alt`),
     note: s === "kitchen" ? t("features.kitchen.note") : undefined,
-    phone: { src: `/landing/show-${s}-${locale}-phone.webp`, ...PHONE },
+    phone: {
+      src: `/landing/show-${s}-${locale}-phone.webp`,
+      ...PHONE,
+      height: PHONE_HEIGHT[s]?.[locale] ?? PHONE.height,
+    },
     wide: WIDE_SURFACES.includes(s) ? { src: `/landing/show-${s}-${locale}.webp`, ...WIDE } : undefined,
   }));
 
@@ -351,7 +361,13 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
         <div className={`${container} flex flex-col gap-4 py-8 md:py-10`}>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <BrandLink href={`/${locale}`} name={brand("name")} />
-            <nav aria-label={t("footer.nav")} className="-mx-2 flex flex-wrap">
+            {/* Below sm the five links are a 2-column grid of 44 px rows, left
+                aligned (the fifth, alone on its row, takes both columns so it
+                never wraps); from sm one inline row. */}
+            <nav
+              aria-label={t("footer.nav")}
+              className="-mx-2 grid grid-cols-2 gap-x-4 sm:flex sm:flex-wrap sm:gap-x-0"
+            >
               <a href={demoHref} className={`${textLink} px-2`}>
                 {t("footer.demo")}
               </a>
@@ -364,7 +380,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
               <a href={loginHref} className={`${textLink} px-2`}>
                 {t("signIn")}
               </a>
-              <a href={pairHref} className={`${textLink} px-2`}>
+              <a href={pairHref} className={`${textLink} col-span-2 px-2`}>
                 {t("footer.pair")}
               </a>
             </nav>
