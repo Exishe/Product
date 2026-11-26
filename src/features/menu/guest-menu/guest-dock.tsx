@@ -31,9 +31,11 @@ export type DockItem = {
 // three items carry 15 px labels, four items 13 px. The current item (ADR-095)
 // has its label in the ink and a 56 × 32 px tint behind its icon, nothing
 // under the text (an underline would cut through Armenian descenders).
-// Labels are never cut: a label keeps its words whole, the items wrap onto a
-// second row when large text needs it, and under large text (the dock under
-// 16rem wide) the icons step aside so the words get the room (WCAG 1.4.4).
+// While the waiter's choices are open, only the Waiter item looks current.
+// Labels are never cut: a label keeps its words whole. Under large text (the
+// dock under 16rem wide, WCAG 1.4.4) the bar stays one row: the current item
+// shows its words on the tint, the others their icon only, their words kept
+// for screen readers.
 // The Order item is where a dish added on a phone flies to (fly.ts), its
 // count bouncing as it lands.
 //
@@ -62,6 +64,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
   }, []);
   if (items.length === 0 && !above) return null;
   const four = items.length > 3;
+  const opened = items.some((item) => item.expanded);
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
       <div
@@ -72,20 +75,23 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
         }`}
       >
         <div
-          className={`mx-auto grid w-full max-w-[480px] gap-2 px-4 pt-2 pb-3 empty:hidden lg:pointer-events-auto lg:pb-0 ${four ? "sm:max-w-[620px]" : ""}`}
+          className={`mx-auto grid w-full max-w-[480px] grid-cols-[minmax(0,1fr)] gap-2 px-4 pt-2 pb-3 empty:hidden lg:pointer-events-auto lg:pb-0 ${four ? "sm:max-w-[620px]" : ""}`}
         >
           {above}
         </div>
         {items.length > 0 && (
           <nav
             aria-label={t("nav.label")}
-            className={`text-dock-ink @container mx-auto flex w-full max-w-[480px] flex-wrap lg:hidden ${four ? "gap-0 px-0.5 sm:max-w-[620px]" : "gap-1 px-2"}`}
+            className={`text-dock-ink @container mx-auto flex w-full max-w-[480px] lg:hidden ${four ? "gap-0 px-[2px] sm:max-w-[620px]" : "gap-[4px] px-[8px]"}`}
             data-testid="guest-dock"
           >
             {items.map((item) => {
+              // One item looks current at a time: while a sheet of the bar is
+              // open (the waiter's choices) it is that item, not the page's.
+              const on = opened ? item.expanded === true : Boolean(item.current);
               const body = (
                 <>
-                  <span className="group-hover:bg-chip/60 group-aria-expanded:bg-chip group-aria-[current=page]:bg-chip relative grid h-8 w-14 flex-none place-items-center rounded-full transition-colors duration-200 @max-[16rem]:hidden">
+                  <span className="group-hover:bg-chip/60 group-data-[on]:bg-chip relative grid h-8 w-14 flex-none place-items-center rounded-full transition-colors duration-200 @max-[16rem]:h-[32px] @max-[16rem]:w-[44px] @max-[16rem]:group-data-[on]:hidden">
                     {item.icon}
                     {item.badge ? (
                       <span
@@ -97,13 +103,13 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                     ) : null}
                   </span>
                   <span
-                    className={`max-w-full text-center leading-[1.15] [overflow-wrap:normal] break-normal ${four ? "text-meta" : "text-label"}`}
+                    className={`max-w-full text-center leading-[1.15] [overflow-wrap:normal] break-normal ${four ? "text-meta" : "text-label"} ${on ? "@max-[16rem]:px-[12px] @max-[16rem]:whitespace-nowrap" : "@max-[16rem]:sr-only"}`}
                   >
                     {item.label}
                   </span>
                 </>
               );
-              const cls = `group text-dock-muted hover:text-dock-ink aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink aria-expanded:text-dock-ink relative flex min-h-[56px] min-w-max flex-1 basis-0 flex-col @max-[16rem]:aria-expanded:bg-chip @max-[16rem]:aria-[current=page]:bg-chip items-center justify-center gap-0.5 rounded-xl py-1 font-semibold transition-colors duration-150 disabled:opacity-50 ${four ? "px-0.5" : "px-1"}`;
+              const cls = `group text-dock-muted hover:text-dock-ink data-[on]:text-dock-ink aria-pressed:text-dock-ink relative flex min-h-[56px] min-w-max flex-1 basis-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1 font-semibold transition-colors duration-150 disabled:opacity-50 @max-[16rem]:flex-row @max-[16rem]:gap-0 @max-[16rem]:rounded-full @max-[16rem]:data-[on]:bg-chip @max-[16rem]:data-[on]:flex-auto ${four ? "px-[2px]" : "px-[4px]"}`;
               return item.href ? (
                 <a
                   key={item.key}
@@ -111,6 +117,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                   onClick={item.onClick}
                   aria-current={item.current ? "page" : undefined}
                   aria-label={item.ariaLabel}
+                  data-on={on || undefined}
                   className={cls}
                   data-testid={item.testId}
                   data-fly-target={item.key === "order" ? 2 : undefined}
@@ -127,6 +134,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                   aria-pressed={item.expanded === undefined ? item.pressed : undefined}
                   aria-expanded={item.expanded}
                   aria-label={item.ariaLabel}
+                  data-on={on || undefined}
                   className={cls}
                   data-testid={item.testId}
                   data-fly-target={item.key === "order" ? 2 : undefined}

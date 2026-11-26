@@ -231,6 +231,7 @@ export function GuestHeader({
   languages,
   tools,
   compact = false,
+  width = "max-w-[1120px]",
   home,
 }: {
   cafeName: string;
@@ -243,6 +244,8 @@ export function GuestHeader({
   tools?: ReactNode;
   /** One short bar instead of the large name (order and status views). */
   compact?: boolean;
+  /** The compact bar's column (the order page's 48rem, so the bar and the page share one column). */
+  width?: string;
   /** The café's name and wordmark lead to the menu. */
   home?: HomeLink;
 }) {
@@ -264,7 +267,7 @@ export function GuestHeader({
           tableLabel={tableLabel}
           languages={languages}
           tools={tools}
-          width="max-w-[1120px]"
+          width={width}
         />
       </header>
     );

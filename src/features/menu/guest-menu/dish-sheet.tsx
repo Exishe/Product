@@ -18,7 +18,8 @@ import {
 } from "./selection";
 import styles from "./guest.module.css";
 import { ShieldAlert } from "./icons";
-import { CloseIcon, MetaLine, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { QtyPill } from "./qty-pill";
+import { CloseIcon, MetaLine, isBadgeTag, orderTags, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -154,8 +155,13 @@ export function DishSheet({
           <p className="mt-2">
             <MetaLine
               parts={[
+                ...orderTags(item.tags).filter(isBadgeTag).map((tag) => (
+                  <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+                )),
                 item.portion && t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount }),
-                ...item.tags.map((tag) => <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />),
+                ...item.tags
+                  .filter((tag) => !isBadgeTag(tag))
+                  .map((tag) => <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />),
               ]}
             />
           </p>
@@ -288,19 +294,16 @@ export function DishSheet({
         >
           {canOrder ? (
             <div className="flex items-center gap-3">
-              <span className="flex flex-none items-center gap-0.5">
-                <Stepper
-                  value={quantity}
-                  max={MAX_QUANTITY}
-                  onChange={setQuantity}
-                  labels={{
-                    decrease: t("sheet.decrease"),
-                    increase: t("sheet.increase"),
-                    quantity: t("sheet.quantity"),
-                  }}
-                  button="size-11"
-                />
-              </span>
+              <QtyPill
+                value={quantity}
+                min={1}
+                max={MAX_QUANTITY}
+                valueLabel={t("sheet.quantity")}
+                decreaseLabel={t("sheet.decrease")}
+                increaseLabel={t("sheet.increase")}
+                onDecrease={() => setQuantity((n) => Math.max(1, n - 1))}
+                onIncrease={() => setQuantity((n) => Math.min(MAX_QUANTITY, n + 1))}
+              />
               <button
                 type="button"
                 aria-disabled={!valid || undefined}

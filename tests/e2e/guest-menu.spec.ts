@@ -169,7 +169,7 @@ test.describe("guest menu edge cases at a fresh café", () => {
     await expect(trout.getByRole("button", { name: /Sevan trout/ })).toBeDisabled();
     await expect(trout.getByRole("button", { name: "Add Sevan trout" })).toHaveCount(0);
     await expect(dish(page, "Tolma")).toContainText("300 g");
-    await expect(dish(page, "Tolma")).toContainText("popular");
+    await expect(dish(page, "Tolma")).toContainText("Popular");
 
     await dish(page, "Armenian coffee").getByRole("button", { name: "Add Armenian coffee" }).click();
     const sheet = page.getByRole("dialog", { name: "Armenian coffee" });

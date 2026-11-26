@@ -18,46 +18,22 @@ function scrollToSection(id: string): number {
   return performance.now() + 1500;
 }
 
-// The section tabs in the sticky band (ADR-093 area pass, benchmark §2.1):
-// every section of the menu in one row of 16 px text tabs, 48 px tall, with a
-// 3 px line under the current one that glides to the next as the page
-// scrolls (scroll-spy) and the row turning to keep it in view. One tap jumps
-// to a section. Where the menu has groups (Food, Desserts, Drinks, Wine) each
-// run of tabs starts with the group's name, small, muted and regular, set
-// off from its tabs by a short vertical hairline, so it never reads as a tab
-// or as the current one (ADR-095); a tap on it jumps to the group's first
-// section, and it carries aria-current while the page is in that group. A
-// group whose only section carries its name is one tab. The
-// row fades at its right edge when it scrolls sideways. From 1024 px the
-// section list on the left does this job, so the row is a phone and tablet
-// thing.
-export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
-  const { t, locale } = useGuestI18n();
-  const wrap = useRef<HTMLElement>(null);
-  const row = useRef<HTMLDivElement>(null);
+/**
+ * The section the guest is reading (scroll-spy): the last one whose top has
+ * passed the sticky band. The phone's tab row and the desktop's section list
+ * both follow it; `go` jumps to a section and keeps it current on the way.
+ */
+export function useCurrentSection(categories: GuestCategory[]): [string | null, (id: string) => void] {
   const [active, setActive] = useState(categories[0]?.id ?? null);
-  const [line, setLine] = useState<{ left: number; width: number } | null>(null);
   // After a tap, its section stays current while the page scrolls there.
   const holdUntil = useRef(0);
   const current = categories.some((c) => c.id === active) ? active : (categories[0]?.id ?? null);
 
-  const clusters = useMemo(() => {
-    const groups = groupSections(categories);
-    return groups.length < 2 ? [{ group: null, sections: categories }] : groups;
-  }, [categories]);
-  const currentGroup = clusters.find((g) => g.sections.some((s) => s.id === current))?.group ?? null;
-
-  const go = (id: string) => {
-    setActive(id);
-    holdUntil.current = scrollToSection(id);
-  };
-
-  // Scroll-spy: the current section is the last one whose top has passed the band.
   useEffect(() => {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const bar = wrap.current?.closest<HTMLElement>("[data-menubar]") ?? wrap.current;
+      const bar = document.querySelector<HTMLElement>("[data-menubar]");
       const offset = (bar ? Math.max(bar.getBoundingClientRect().bottom, 80) : 80) + 24;
       let id = categories[0]?.id ?? null;
       for (const c of categories) {
@@ -83,6 +59,38 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
     };
   }, [categories]);
 
+  const go = (id: string) => {
+    setActive(id);
+    holdUntil.current = scrollToSection(id);
+  };
+  return [current, go];
+}
+
+// The section tabs in the sticky band (ADR-093 area pass, benchmark §2.1):
+// every section of the menu in one row of 16 px text tabs, 48 px tall, with a
+// 3 px line under the current one that glides to the next as the page
+// scrolls (scroll-spy) and the row turning to keep the whole of it in view. One tap jumps
+// to a section. Where the menu has groups (Food, Desserts, Drinks, Wine) each
+// run of tabs starts with the group's name, small, muted and regular, set
+// off from its tabs by a short vertical hairline, so it never reads as a tab
+// or as the current one (ADR-095); a tap on it jumps to the group's first
+// section, and it carries aria-current while the page is in that group. A
+// group whose only section carries its name is one tab. The
+// row fades at its right edge when it scrolls sideways. From 1024 px the
+// section list on the left does this job, so the row is a phone and tablet
+// thing.
+export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
+  const { t, locale } = useGuestI18n();
+  const row = useRef<HTMLDivElement>(null);
+  const [line, setLine] = useState<{ left: number; width: number } | null>(null);
+  const [current, go] = useCurrentSection(categories);
+
+  const clusters = useMemo(() => {
+    const groups = groupSections(categories);
+    return groups.length < 2 ? [{ group: null, sections: categories }] : groups;
+  }, [categories]);
+  const currentGroup = clusters.find((g) => g.sections.some((s) => s.id === current))?.group ?? null;
+
   // The underline follows the current tab, and the row turns to keep it in view.
   useEffect(() => {
     const strip = row.current;
@@ -91,10 +99,18 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
       const tab = strip.querySelector<HTMLElement>(`[data-cat="${current}"]`);
       if (!tab) return setLine(null);
       setLine({ left: tab.offsetLeft, width: tab.offsetWidth });
+      // The whole tab in view, long names included: centred in the row, or
+      // from its start when it is wider than the row (16 px in, clear of the
+      // fade at the right edge).
       const left = tab.offsetLeft;
       const right = left + tab.offsetWidth;
-      if (left < strip.scrollLeft + 24 || right > strip.scrollLeft + strip.clientWidth - 32)
-        strip.scrollTo({ left: left - strip.clientWidth / 3, behavior: smooth() });
+      const from = strip.scrollLeft + 16;
+      const to = strip.scrollLeft + strip.clientWidth - 32;
+      if (left < from || right > to) {
+        const centred = left + tab.offsetWidth / 2 - strip.clientWidth / 2;
+        const target = tab.offsetWidth > strip.clientWidth - 48 ? left - 16 : centred;
+        strip.scrollTo({ left: Math.max(0, target), behavior: smooth() });
+      }
     };
     place();
     const observer = new ResizeObserver(place);
@@ -106,7 +122,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
   const tab =
     "flex min-h-12 flex-none items-center px-3 text-body whitespace-nowrap transition-colors duration-200 text-muted hover:text-ink aria-[current=true]:text-ink aria-[current=true]:font-semibold";
   return (
-    <nav ref={wrap} aria-label={t("menu.categories")} data-current={current ?? undefined} className="min-w-0 lg:hidden">
+    <nav aria-label={t("menu.categories")} data-current={current ?? undefined} className="min-w-0 lg:hidden">
       <div
         ref={row}
         className="relative -mx-4 flex scroll-px-4 [scrollbar-width:none] overflow-x-auto px-1 [mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent)] md:-mx-8 md:px-5 [&::-webkit-scrollbar]:hidden"

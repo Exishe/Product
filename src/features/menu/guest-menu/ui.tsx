@@ -1,4 +1,4 @@
-import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "./icons";
+import { BellRing, Check, ChefHat, ChevronLeft, Heart, Minus, Plus, QrCode, X } from "./icons";
 import type { ElementType, ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { GuestTag, Text } from "./view-model";
@@ -99,20 +99,34 @@ export function Stepper({
 }
 
 // Tags (owner, Nov 2026: no pill badges everywhere; ADR-093 area pass: one
-// treatment). Every tag is a word in the dish's meta line, joined with « · »;
-// the two that single a dish out, «սիրված» and the chef's pick, are set in
-// the ink and semibold, so they read first without a box, a pill or a corner
-// label clipped on a narrow photo. The same on a row, a card and the sheet.
+// treatment). Every tag is a word in the dish's meta line, joined with « · ».
+// The two that single a dish out, «Սիրված» and the chef's pick, lead the line
+// as a label (ADR-096): capitalised, in the accent colour, at the meta's own
+// size and weight, after a small mark (a heart, a chef's hat), so they never
+// read as a second line of the dish's name. No box, no pill, no corner label
+// clipped on a narrow photo. The same on a row, a card and the sheet.
 export const BADGE_TAGS: readonly GuestTag[] = ["popular", "chefs_pick"];
 export const isBadgeTag = (tag: GuestTag) => BADGE_TAGS.includes(tag);
 
-export function TagBadge({ label }: { label: string }) {
-  return <span className="text-ink font-semibold">{label}</span>;
+/** The badge tags first, in their fixed order, then the rest as the café set them. */
+export const orderTags = (tags: readonly GuestTag[]): GuestTag[] => [
+  ...BADGE_TAGS.filter((b) => tags.includes(b)),
+  ...tags.filter((tag) => !isBadgeTag(tag)),
+];
+
+export function TagBadge({ tag, label }: { tag: GuestTag; label: string }) {
+  const Mark = tag === "chefs_pick" ? ChefHat : Heart;
+  return (
+    <span className="text-accent-text inline-flex items-baseline gap-1" data-badge={tag}>
+      <Mark size={14} strokeWidth={2.25} className="flex-none translate-y-[2px] self-start" />
+      {label}
+    </span>
+  );
 }
 
-/** A tag in a meta line: the ink for the two badge tags, a plain muted word otherwise. */
+/** A tag in a meta line: a label for the two badge tags, a plain muted word otherwise. */
 export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
-  return isBadgeTag(tag) ? <TagBadge label={label} /> : <span>{label}</span>;
+  return isBadgeTag(tag) ? <TagBadge tag={tag} label={label} /> : <span>{label}</span>;
 }
 
 /**

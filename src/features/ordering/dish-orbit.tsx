@@ -104,7 +104,7 @@ export function DishOrbit({
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const reduced = useRef(false);
 
-  // The canvas is scaled to the card's width; on a phone it is stacked instead.
+  // The canvas is scaled to the card's width; under 768 px (the order page's column, a phone) it is stacked instead.
   useEffect(() => {
     const el = root.current;
     if (!el) return;

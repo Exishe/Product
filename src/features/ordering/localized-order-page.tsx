@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { useGuestI18n } from "./guest-i18n-context";
-import { OrderStatusView } from "./order-status-view";
+import { ORDER_COLUMN, OrderStatusView } from "./order-status-view";
 
 type ViewProps = ComponentProps<typeof OrderStatusView>;
 
@@ -30,7 +30,7 @@ export function LocalizedOrderPage({
   wait,
   pairs,
 }: {
-  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact">;
+  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact" | "width">;
   texts: Partial<Record<Locale, OrderTexts>>;
   /** The menu's address without the language: /m/{café}/{location}. */
   path: string;
@@ -63,6 +63,8 @@ export function LocalizedOrderPage({
         {...header}
         // A short bar: the order starts near the top of the screen.
         compact
+        // The bar on the page's own column, so «Order more» sits over the order.
+        width={ORDER_COLUMN}
         home={{ href: menuHref }}
         // Order something new: an outline pill with its words, beside the
         // table (not on the empty page, whose own button does it).

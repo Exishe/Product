@@ -1,5 +1,5 @@
 /* Dish orbit (dish-orbit.tsx). One 960 x 520 design canvas scaled to the card's
-   width; on a phone (card under 640 px) the same pieces stack in one column. */
+   width; in the order page's 44rem column and on a phone (card under 768 px, ADR-096) the same pieces stack in one column. */
 .root {
   position: relative;
   width: 100%;
@@ -309,7 +309,7 @@
    260 px: the name, the price and two lines of description on the left, the
    plate (no drop shadow) on the right, then the outline «Add · price» and the
    «‹ n / 9 ›» counter under it, both on the left edge. No canvas. */
-@container (max-width: 639px) {
+@container (max-width: 767px) {
   .scaler {
     aspect-ratio: auto;
   }

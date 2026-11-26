@@ -707,6 +707,7 @@ export function GuestMenu({
       <span
         className="text-muted flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 py-1 text-label leading-[1.35]"
         data-testid="scan-note"
+        id="scan-note"
       >
         <QrCode size={18} strokeWidth={1.75} className="flex-none" />
         <span className="min-w-0">{t("menu.noTable")}</span>
@@ -799,10 +800,12 @@ export function GuestMenu({
                 const clusters = groupSections(shown);
                 // The pictured dishes come first (a row with a photo on a phone; a
                 // photo card, three across on a tablet, two beside the rail from 1024 px
-                // and three again from 1280 px), then the
-                // dishes without a photo as a list on hairlines, so one grid never
-                // mixes a tall photo card with a short text one. Within each, the
-                // café's own order stays.
+                // and three again from 1280 px), then the dishes without a photo.
+                // A section with photos is one grid on one set of columns: its
+                // photo-less dishes carry on in the same columns, right after the
+                // last photo (no empty slot, no second set of column edges). A
+                // section without photos is a two-column list on hairlines.
+                // Within each, the café's own order stays.
                 const rows = (list: GuestItem[]) => {
                   const pictured = list.filter((i) => i.image);
                   const plain = list.filter((i) => !i.image);
@@ -820,25 +823,24 @@ export function GuestMenu({
                       onDecrease={decrease}
                     />
                   );
-                  return (
-                    <>
-                      {pictured.length > 0 && (
-                        <ul className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3">
-                          {pictured.map(card)}
-                        </ul>
-                      )}
-                      {plain.length > 0 && (
-                        <ul className={`grid gap-3 md:grid-cols-2 md:gap-x-8 ${pictured.length > 0 ? "mt-3 md:mt-8" : ""}`}>
-                          {plain.map((item, i) => card(item, pictured.length + i))}
-                        </ul>
-                      )}
-                    </>
+                  return pictured.length > 0 ? (
+                    <ul
+                      // A photo-less dish beside a photo keeps its own height (its price
+                      // under its name), not the photo card's.
+                      className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3 md:[&>li:not([data-photo])]:self-start"
+                      data-mixed={plain.length > 0 || undefined}
+                    >
+                      {[...pictured, ...plain].map(card)}
+                    </ul>
+                  ) : (
+                    <ul className="grid gap-3 md:grid-cols-2 md:gap-x-6">{plain.map(card)}</ul>
                   );
                 };
                 // Each group after the first, and each section after the first,
                 // starts under one hairline with 32 px of air, so a new section
-                // reads at a glance while scrolling.
-                const rule = "border-line mt-4 border-t pt-8 md:mt-10";
+                // reads at a glance while scrolling. The space above the hairline
+                // is the rows' own gap (about 32 px), not a hole at each section end.
+                const rule = "border-line border-t pt-8 md:mt-5";
                 return clusters.map(({ group, sections }, gi) => {
                   const titled =
                     clusters.length > 1 &&

@@ -63,6 +63,21 @@ export const SlidersHorizontal = draw([
   ["path", { d: "M8 10v4" }],
   ["path", { d: "M8 12H3" }],
 ]);
+export const ChefHat = draw([
+  [
+    "path",
+    {
+      d: "M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z",
+    },
+  ],
+  ["path", { d: "M6 17h12" }],
+]);
+export const Heart = draw([
+  [
+    "path",
+    { d: "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" },
+  ],
+]);
 export const ChevronLeft = draw([["path", { d: "m15 18-6-6 6-6" }]]);
 export const ConciergeBell = draw([
   ["path", { d: "M3 20a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1Z" }],

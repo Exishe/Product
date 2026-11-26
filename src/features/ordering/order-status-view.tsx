@@ -459,6 +459,9 @@ function OrderCard({
 // The order status page: the guest's orders at this table (read through RLS),
 // newest first, live over the guest's Realtime channel with a 10-second
 // safety poll, plus "call the waiter" and "ask for the bill".
+/** The order page's column: 44rem of content inside the 16/32 px gutters, centred; its bar uses it too. */
+export const ORDER_COLUMN = "max-w-[48rem]";
+
 export function OrderStatusView({
   tableId,
   token = null,
@@ -697,7 +700,7 @@ export function OrderStatusView({
   if (phase === "loading") {
     return slow ? (
       <main
-        className="mx-auto w-full max-w-[720px] flex-1 animate-pulse px-4 pt-5 md:px-8 md:pt-10"
+        className={`mx-auto w-full ${ORDER_COLUMN} flex-1 animate-pulse px-4 pt-5 md:px-8 md:pt-10`}
         aria-busy="true"
       >
         <div className="rounded-chip bg-mist h-10 w-2/3" />
@@ -735,7 +738,7 @@ export function OrderStatusView({
     return (
       <main
         data-order-empty=""
-        className={`mx-auto grid w-full max-w-[720px] flex-1 content-start gap-2 px-4 pt-8 md:px-8 md:pt-14 ${DOCK_SPACE}`}
+        className={`mx-auto grid w-full ${ORDER_COLUMN} flex-1 content-start gap-2 px-4 pt-8 md:px-8 md:pt-14 ${DOCK_SPACE}`}
       >
         <h2 className="display-face text-headline leading-[1.2]">{t("order.empty")}</h2>
         <p className="text-muted text-body">{t("order.emptyHint")}</p>
@@ -916,12 +919,13 @@ export function OrderStatusView({
   );
 
   return (
-    // One column on one left edge at every width (ADR-095): the state, its bar
-    // and the wait first, then the order and the waiter, then the showcase and
-    // the games across the page.
+    // One centred column at every width (ADR-095, ADR-096): the state, its
+    // bar and the wait first, then the order and the waiter, then the showcase
+    // and the games, all on the column the café's bar above uses too, so every
+    // hairline is the column's width and nothing hangs at the screen's edge.
     <main
       data-order-page=""
-      className={`mx-auto w-full max-w-[1120px] flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
+      className={`mx-auto w-full ${ORDER_COLUMN} flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
     >
       {latestStatus === "ready" && (
         // Decoration: the status itself is announced below and shown in the tracker.

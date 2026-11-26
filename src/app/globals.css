@@ -994,7 +994,8 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
    page with no box and no inner padding (--dish-pad 0), so the photo, the
    name, the meta line, the price and the "+" share one left edge. On a phone
    the rows are split by one hairline; from 768 px the pictured dishes stand
-   in a grid and the dishes without a photo keep a hairline above each. Wine
+   in a grid and the dishes without a photo keep a hairline above each (in
+   the same grid and columns when the section has photos). Wine
    keeps its burgundy cards. */
 .guest-lux:not([data-guest-theme="wine"]) [data-testid="dish"][data-layout="row"] {
   --dish-pad: 0px;
@@ -1012,7 +1013,7 @@ body:has(.guest-lux[data-guest-theme="soft"] [data-order-page]) {
   }
 }
 @media (width >= 48rem) {
-  .guest-lux:not([data-guest-theme="wine"]) ul:has(> [data-testid="dish"][data-layout="row"]:not([data-photo])) {
+  .guest-lux:not([data-guest-theme="wine"]) ul:not([data-mixed]):has(> [data-testid="dish"][data-layout="row"]:not([data-photo])) {
     row-gap: 0;
   }
   .guest-lux:not([data-guest-theme="wine"]) [data-testid="dish"][data-layout="row"]:not([data-photo]) {

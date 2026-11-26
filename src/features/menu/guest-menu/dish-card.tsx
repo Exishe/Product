@@ -8,7 +8,7 @@ import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { formatAmd } from "@/lib/format/money";
 import styles from "./guest.module.css";
-import { PlusIcon, Plate, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { PlusIcon, Plate, Stepper, TagChip, orderTags, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One dish as a card (owner's pick, menu-layout.webp): the dish on a round
@@ -105,7 +105,7 @@ export function DishCard({
           {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
         </span>
       )}
-      {item.tags.map((tag) => (
+      {orderTags(item.tags).map((tag) => (
         <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
       ))}
       {warning && (

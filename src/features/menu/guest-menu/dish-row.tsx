@@ -6,7 +6,7 @@ import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import styles from "./guest.module.css";
-import { MetaLine, MinusIcon, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { MetaLine, isBadgeTag, orderTags, MinusIcon, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import { sizesOf, type GuestItem } from "./view-model";
 
 // One dish (ADR-093 area pass, ADR-095). On a phone a row on the page: the
@@ -24,8 +24,8 @@ import { sizesOf, type GuestItem } from "./view-model";
 // choices) it widens in 180 ms into a «− n +» pill bound to the order's
 // quantity; «−» at 1 takes it out. A dish with required choices keeps the "+"
 // (it opens the sheet) with the count on a small badge. Without a table the
-// "+" shows dimmed and does nothing: the line under the café's name says how
-// to order.
+// "+" shows in a quiet outline (page colour, hairline ring, muted glyph): the line under the café's name says how
+// to order, and a tap on the "+" brings that line into view.
 //
 // Like a wine card: a dish sold in two or three sizes (glass and bottle,
 // standard and mini) lists each size with its price instead of one price, and a
@@ -34,6 +34,19 @@ import { sizesOf, type GuestItem } from "./view-model";
 //
 // The row is a card in the Wine theme (its burgundy cards stay); every other
 // theme lays it flat on the page (globals.css), with `--dish-pad` at 0.
+/** No table: a tap on a "+" brings the "order with the table's QR code" line into view and pulses it once. */
+function pointToScanNote() {
+  const note = document.getElementById("scan-note");
+  if (!note) return;
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+  if (!still)
+    note.animate(
+      [{ color: "var(--guest-muted)" }, { color: "var(--guest-ink)" }, { color: "var(--guest-muted)" }],
+      { duration: 1400, delay: 250, easing: "ease-in-out" },
+    );
+}
+
 export function DishRow({
   item,
   canOrder,
@@ -110,8 +123,10 @@ export function DishRow({
         aria-label={t("menu.add", { name })}
         aria-haspopup={needsChoice ? "dialog" : undefined}
         aria-disabled={dimmed || (open && inCart >= MAX_QUANTITY) || undefined}
+        aria-describedby={dimmed ? "scan-note" : undefined}
         onClick={(e) => {
-          if (dimmed || (open && inCart >= MAX_QUANTITY)) return;
+          if (dimmed) return pointToScanNote();
+          if (open && inCart >= MAX_QUANTITY) return;
           if (needsChoice) onOpen(item);
           else onQuickAdd(item, e.currentTarget);
         }}
@@ -199,8 +214,13 @@ export function DishRow({
             className="mt-1"
             parts={[
               item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>,
+              ...orderTags(item.tags).filter(isBadgeTag).map((tag) => (
+                <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+              )),
               item.portion && t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount }),
-              ...item.tags.map((tag) => <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />),
+              ...item.tags
+                .filter((tag) => !isBadgeTag(tag))
+                .map((tag) => <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />),
             ]}
           />
           {item.origin ? (

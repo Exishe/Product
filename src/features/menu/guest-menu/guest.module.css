@@ -947,12 +947,27 @@
   background: var(--guest-add);
 }
 
-.addCtl[data-dimmed] {
-  opacity: 0.4;
+/* No table: the "+" at full opacity in a quiet dress (the page colour, a
+   hairline ring, a muted glyph), so it reads as "not here yet", not as a
+   glitch over the photo. A tap points to the QR line under the café's name. */
+.addCtl[data-dimmed] .hit {
+  cursor: help;
 }
 
-.addCtl[data-dimmed] .hit {
-  cursor: default;
+.addCtl[data-dimmed] .plus {
+  background: var(--guest-page);
+  color: var(--guest-muted);
+  box-shadow: inset 0 0 0 1px var(--guest-line-strong);
+  transform: none;
+  filter: none;
+}
+
+.addCtl[data-dimmed] .plus svg {
+  transform: none;
+}
+
+.addCtl[data-dimmed] .plus::after {
+  display: none;
 }
 
 .addCtl .hit,
