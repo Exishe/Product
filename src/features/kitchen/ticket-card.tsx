@@ -14,7 +14,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { lineKey, type BoardLine, type KitchenAction, type ShownTicket } from "./board-model";
 import { ageLabel, classifyLateness, elapsedMinutes, type AgeLabel, type Lateness } from "./lateness";
@@ -23,6 +23,8 @@ import { ageLabel, classifyLateness, elapsedMinutes, type AgeLabel, type Latenes
 // and red after 6. The ticket itself is never "late" there (ADR-056).
 const READY_HURRY_MIN = 3;
 const READY_LATE_MIN = 6;
+// How long "can't make" stays out after a cook touched a ticket's dishes.
+const ARMED_MS = 8_000;
 
 // A ticket on the light kitchen board (ADR-056), readable at 1.5 m: table
 // number 64 px, quantity boxes and dish names 26 px, one big 72 px action.
@@ -246,8 +248,20 @@ function Lines({
   // One line at a time asks "are you sure?"; a sent one waits for the board to refresh.
   const [asking, setAsking] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // "Can't make" stays out of sight until a cook touches this ticket's dishes
+  // (or hovers them with a mouse, or tabs to it): six ⊘ marks down every
+  // ticket read as noise beside the food.
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timer = window.setTimeout(() => setArmed(false), ARMED_MS);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
   return (
-    <ul className="m-0 grid list-none gap-3 p-0">
+    <ul
+      className="group/lines m-0 grid list-none gap-3 p-0"
+      onPointerDown={onCantMake ? () => setArmed(true) : undefined}
+    >
       {lines.map((l) => {
         const gone = struck || l.quantity === 0;
         const bumped = !gone && !!done?.has(lineKey(ticketId, l.id));
@@ -353,8 +367,9 @@ function Lines({
         const canAsk = onCantMake !== undefined && !gone && !bumped;
         return (
           <li key={l.id} data-testid="ticket-line" data-done={bumped || undefined}>
-            {/* "Can't make" is a quiet icon 12 px past the dish's tap area, and
-                the row stops at 34rem so it stays next to the name on a wide lane. */}
+            {/* "Can't make" is a quiet icon 12 px past the dish's tap area,
+                shown once the ticket's dishes are touched, and the row stops at
+                34rem so it stays next to the name on a wide lane. */}
             <div className={clsx("max-w-[34rem]", canAsk && "flex items-start gap-3")}>
               {tappable ? (
                 // Item-level bump: tap a dish when it's plated (56 px row).
@@ -379,7 +394,11 @@ function Lines({
                   data-testid="cant-make"
                   aria-label={t("cantMakeLabel", { name: l.name })}
                   title={t("cantMake")}
-                  className="text-slip-dim/75 -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
+                  className={clsx(
+                    "text-slip-dim -mr-2 grid size-11 shrink-0 place-items-center rounded-xl transition-opacity duration-150",
+                    "group-hover/lines:opacity-100 focus-visible:opacity-100",
+                    armed ? "opacity-100" : "opacity-0",
+                  )}
                   onClick={() => setAsking(l.id)}
                 >
                   <Ban aria-hidden="true" className="size-5" />
@@ -519,7 +538,11 @@ export function OrderTicketCard({
     <TicketCard.Root
       id={ticket.id}
       number={ticket.number}
-      label={t("tableLabel", { table: ticket.table ?? ticket.number })}
+      label={
+        ticket.table
+          ? t("tableLabel", { table: ticket.table })
+          : t("orderLabel", { number: ticket.number })
+      }
       kind="order"
       lateness={lateness}
       pending={ticket.pending}
@@ -567,8 +590,12 @@ export function OrderTicketCard({
         }
         meta={
           <>
+            {/* With no table the big number already is the order's: the line
+                under it names only where it came from. */}
             <span className="min-w-0 truncate">
-              {t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}
+              {ticket.table
+                ? t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })
+                : t(`source.${ticket.source}`)}
             </span>
             {/* Printing is occasional: an icon at the end of the order line, not a second big button. */}
             <PrintTicketButton
@@ -593,7 +620,10 @@ export function OrderTicketCard({
         <p
           data-testid="ticket-allergy"
           className={clsx(
-            "bg-late-on-dark m-0 flex items-start gap-2 px-4 py-2 leading-snug font-bold text-white [overflow-wrap:anywhere]",
+            // A red tint with red-ink text: never the colour of any head
+            // (grey, amber, red), so on a late ticket the warning stays its own
+            // line instead of merging into the red band above it.
+            "bg-pom-tint text-pomegranate m-0 flex items-start gap-2 px-4 py-2 leading-snug font-bold [overflow-wrap:anywhere]",
             compact ? "text-lg" : "text-xl",
           )}
         >

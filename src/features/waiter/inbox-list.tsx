@@ -121,10 +121,11 @@ export function InboxList({
                 onClick={run}
                 className={button(
                   row.kind === "call" || row.kind === "bill" ? "destructive" : "primary",
-                  "w-32 shrink-0 px-2! text-[0.9375rem] whitespace-nowrap",
+                  "max-w-40 min-w-32 shrink-0 px-3! text-center text-[0.9375rem] leading-tight",
                 )}
               >
-                <span className="min-w-0 truncate">{quickText}</span>
+                {/* «Փակել հաշիվը» widens the pill a little, or takes two lines; never cut. */}
+                <span className="min-w-0 [text-wrap:balance]">{quickText}</span>
               </button>
             )}
           </li>

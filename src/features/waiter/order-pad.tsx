@@ -177,7 +177,7 @@ export function OrderPad({
         </header>
 
         {categories.length === 0 ? (
-          <p className="text-staff-label2 m-0 p-6">{t("noMenu")}</p>
+          <p className="text-staff-label2 m-0 p-6 md:col-start-1 md:row-start-2">{t("noMenu")}</p>
         ) : choosing ? (
           <Options
             item={choosing.item}
@@ -190,7 +190,10 @@ export function OrderPad({
             }}
           />
         ) : (
-          <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden px-4 pt-3 sm:px-6">
+          // The menu is what the waiter works in: the wide column from
+          // 768 px, placed explicitly (an item locked to a row is placed
+          // first, so without this the cart took the left column).
+          <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden px-4 pt-3 sm:px-6 md:col-start-1 md:row-start-2">
             <span className="relative block">
               <Search
                 aria-hidden="true"
@@ -321,7 +324,10 @@ export function OrderPad({
         <aside
           aria-label={t("cart")}
           className={clsx(
-            "border-staff-sep grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] border-t md:row-start-2 md:border-t-0 md:border-l",
+            // Its own rows: a heading (the summary bar on a phone), the
+            // scrolling list, and the note and send button at the foot. No
+            // track stretches the button.
+            "border-staff-sep grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] border-t md:col-start-2 md:row-start-2 md:border-t-0 md:border-l",
             cart.length === 0 && "max-md:hidden",
           )}
         >
@@ -341,11 +347,15 @@ export function OrderPad({
               className={clsx("size-5 shrink-0 transition-transform duration-200", cartOpen && "rotate-180")}
             />
           </button>
+          <p className="num m-0 flex min-h-12 items-center justify-between gap-3 px-4 pt-2 text-[1.0625rem] font-semibold max-md:hidden">
+            <span>{t("cart")}</span>
+            {count > 0 && <span className="text-staff-label2 text-[0.9375rem]">{t("items", { count })}</span>}
+          </p>
           <ul
             id={cartId}
             data-testid="pad-cart"
             className={clsx(
-              "m-0 grid max-h-[40dvh] list-none content-start overflow-y-auto px-4 sm:px-6 md:max-h-none md:px-4 md:pt-2",
+              "m-0 grid max-h-[40dvh] min-h-0 list-none content-start overflow-y-auto px-4 sm:px-6 md:max-h-none md:px-4",
               !cartOpen && "max-md:hidden",
             )}
           >
@@ -381,7 +391,7 @@ export function OrderPad({
               </li>
             ))}
           </ul>
-          <div className="border-staff-sep grid gap-2 border-t px-4 pt-2 pb-4 sm:px-6 md:px-4">
+          <div className="border-staff-sep grid content-end gap-2 self-end border-t px-4 pt-2 pb-4 sm:px-6 md:px-4">
             {noteOpen || note ? (
               <label className="text-staff-label2 grid gap-1 text-[0.9375rem] font-semibold">
                 {t("note")}
@@ -406,14 +416,16 @@ export function OrderPad({
             )}
             <button
               type="button"
-              className={button("primary", "min-h-14")}
+              className={button("primary", "h-14 self-end md:flex-wrap md:content-center md:gap-y-0 md:px-4")}
               disabled={cart.length === 0}
               onClick={send}
             >
-              <Send aria-hidden="true" />
-              <span>{t("send")}</span>
+              {/* In the 20 rem cart column the icon gives way and the words
+                  and the total wrap as two whole lines, never mid-label. */}
+              <Send aria-hidden="true" className="md:hidden" />
+              <span className="whitespace-nowrap">{t("send")}</span>
               {cart.length > 0 && (
-                <span className="num font-bold">
+                <span className="num font-bold whitespace-nowrap">
                   <span aria-hidden="true">· </span>
                   {formatAmd(total, locale)}
                 </span>
@@ -442,7 +454,7 @@ function Options({
   const t = useTranslations("waiter.pad");
   const locale = useLocale() as Locale;
   return (
-    <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-6">
+    <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-6 md:col-start-1 md:row-start-2">
       <h3 className="m-0 text-[1.25rem] font-bold break-words">{item.name.text}</h3>
       {item.groups.map((g) => (
         <fieldset key={g.id} className="m-0 grid gap-2 border-0 p-0">

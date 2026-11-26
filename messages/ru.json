@@ -343,6 +343,7 @@
     "ticket": {
       "table": "Стол",
       "tableLabel": "Стол {table}",
+      "orderLabel": "Заказ {number}",
       "noTable": "Заказ",
       "order": "Заказ {number}, {source}",
       "source": {
@@ -517,7 +518,7 @@
       "now": "Сейчас",
       "allClear": "Всё в порядке.",
       "pendingTotal": "ждёт: {amount}",
-      "pendingOnly": "Ждёт подтверждения",
+      "pendingSuffix": "не подтверждено",
       "acceptOrder": "Принять заказ {number}"
     },
     "waiting": {
@@ -669,7 +670,7 @@
         "accept": "Принять",
         "serve": "Подано",
         "going": "Иду",
-        "settle": "Закрыть"
+        "settle": "Закрыть счёт"
       }
     },
     "quiet": "тихо {time}",

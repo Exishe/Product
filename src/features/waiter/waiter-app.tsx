@@ -479,9 +479,9 @@ function App(p: WaiterAppProps) {
     <div className="staff-shell bg-staff-bg text-ink grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       {/* One 56 px row at every width: the café and the connection dot on the
           left; the clock, the sound and «…» (my shift, notifications, the
-          password) on the right. The one call bar rings underneath, then the
-          live card for plates and new orders, both in the flow so neither
-          covers the other. */}
+          password) on the right. The one call bar rings underneath. The live
+          card for plates and new orders floats over the top row and takes no
+          room, so nothing below it jumps. */}
       <header className="bg-staff-bg grid gap-2 px-4 pt-1.5 pb-2 lg:px-6">
         <div className="flex min-h-11 items-center gap-2">
           <p className="m-0 min-w-0 truncate text-[1.0625rem] leading-tight font-semibold">{p.cafeName}</p>
@@ -561,7 +561,14 @@ function App(p: WaiterAppProps) {
           className={tab === "calls" && !table ? "max-md:hidden" : undefined}
         />
         {/* Plates and new orders; calls and bills ring in the bar above until answered. */}
-        {!revoked && <WaiterAlert tables={floor.tables} onOpen={openTable} kinds={LIVE_ALERT_KINDS} />}
+        {!revoked && (
+          <WaiterAlert
+            tables={floor.tables}
+            onOpen={openTable}
+            kinds={LIVE_ALERT_KINDS}
+            openTableId={selected}
+          />
+        )}
       </header>
       {connection === "offline" ? (
         <p

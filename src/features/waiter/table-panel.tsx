@@ -281,9 +281,15 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
       <div className="border-staff-sep grid gap-2 border-t bg-white px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] lg:px-6">
         <div className="flex min-h-14 items-center gap-3">
           {onlyPending ? (
+            // The chip on the order already says «Սպասում է հաստատման»: the
+            // bar keeps its usual «Ընդամենը» and marks the figure as not yet
+            // accepted.
             <div data-testid="table-pending" className="grid min-w-0 flex-1 leading-tight">
-              <span className="text-amber-text text-[0.9375rem] font-semibold">{t("panel.pendingOnly")}</span>
-              <b className="num text-amber-text text-[1.5rem] font-bold">{formatAmd(pendingAmount, locale)}</b>
+              <span className="text-staff-label2 text-[0.9375rem] font-semibold">{t("panel.total")}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <b className="num text-amber-text text-[1.5rem] font-bold">{formatAmd(pendingAmount, locale)}</b>
+                <span className="text-amber-text text-[0.9375rem] font-semibold">{t("panel.pendingSuffix")}</span>
+              </span>
             </div>
           ) : (
             <div className="grid min-w-0 flex-1 leading-tight">

@@ -343,6 +343,7 @@
     "ticket": {
       "table": "Table",
       "tableLabel": "Table {table}",
+      "orderLabel": "Order {number}",
       "noTable": "Order",
       "order": "Order {number}, {source}",
       "source": {
@@ -517,7 +518,7 @@
       "now": "Now",
       "allClear": "All good.",
       "pendingTotal": "waiting: {amount}",
-      "pendingOnly": "Waiting to be accepted",
+      "pendingSuffix": "not accepted yet",
       "acceptOrder": "Accept order {number}"
     },
     "waiting": {
@@ -669,7 +670,7 @@
         "accept": "Accept",
         "serve": "Served",
         "going": "On my way",
-        "settle": "Close"
+        "settle": "Close the bill"
       }
     },
     "quiet": "quiet {time}",

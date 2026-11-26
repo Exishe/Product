@@ -343,6 +343,7 @@
     "ticket": {
       "table": "Սեղան",
       "tableLabel": "Սեղան {table}",
+      "orderLabel": "Պատվեր {number}",
       "noTable": "Պատվեր",
       "order": "Պատվեր {number}, {source}",
       "source": {
@@ -517,7 +518,7 @@
       "now": "Հիմա",
       "allClear": "Ամեն ինչ կարգին է։",
       "pendingTotal": "սպասում է՝ {amount}",
-      "pendingOnly": "Սպասում է հաստատման",
+      "pendingSuffix": "չհաստատված",
       "acceptOrder": "Ընդունել պատվեր {number}"
     },
     "waiting": {
@@ -669,7 +670,7 @@
         "accept": "Ընդունել",
         "serve": "Մատուցված",
         "going": "Գնում եմ",
-        "settle": "Փակել"
+        "settle": "Փակել հաշիվը"
       }
     },
     "quiet": "լուռ է {time}",

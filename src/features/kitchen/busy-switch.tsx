@@ -87,8 +87,9 @@ export function BusySwitch({
                 {t("until", { time: formatTime(new Date(busy.until), timeZone) })}
               </p>
             )}
-            {/* Three 64 px rows on the drawer, split by hairlines, the current
-                one ticked: a list like the stop list, not three boxes. */}
+            {/* Three 64 px rows on the drawer, split by hairlines, each with a
+                radio mark, the current one ticked: a list like the stop list,
+                not three boxes. */}
             <ul className="m-0 grid list-none border-b border-(--kds-frame) p-0">
               {CHOICES.map((m) => {
                 const current = on && busy.minutes === m;
@@ -105,7 +106,17 @@ export function BusySwitch({
                       )}
                     >
                       <span className="num">{t("minutes", { minutes: m })}</span>
-                      {current && <Check aria-hidden="true" className="size-6 shrink-0" />}
+                      {/* A 24 px radio mark on every row, so the three read as
+                          choices before one is on; the current one is filled. */}
+                      <span
+                        aria-hidden="true"
+                        className={clsx(
+                          "grid size-6 shrink-0 place-items-center rounded-full",
+                          current ? "bg-ink text-apricot" : "ring-2 ring-(--kds-edge) ring-inset",
+                        )}
+                      >
+                        {current && <Check className="size-4" strokeWidth={3} />}
+                      </span>
                     </button>
                   </li>
                 );
