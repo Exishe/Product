@@ -181,6 +181,24 @@ export function CallWaiterPrompt({
   const line = rail ? "border-line border-t" : "px-1";
   const icon = rail ? 20 : 22;
   const pill = `${styles.cta} inline-flex min-h-12 items-center justify-center gap-2 px-5 text-body font-semibold`;
+  // The bottom panel's title row, «Waiter» and a 44 px ×, over the choices and
+  // over what came of them (not sent yet, failed), so the guest always sees
+  // what the panel is and how to close it. In the rail the «Waiter» row is both.
+  const head = (close: () => void) => (
+    <div className="flex min-h-11 items-center justify-between gap-2">
+      <p id="waiter-title" className="m-0 px-1 font-semibold">
+        {t("nav.waiter")}
+      </p>
+      <button
+        type="button"
+        onClick={close}
+        aria-label={t("sheet.close")}
+        className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
+      >
+        <CloseIcon />
+      </button>
+    </div>
+  );
   const choice = `border-line-strong bg-page hover:bg-chip inline-flex items-center justify-center rounded-full border text-body font-semibold disabled:opacity-60 ${rail ? "min-h-12" : "min-h-14"}`;
   return (
     <div
@@ -232,21 +250,7 @@ export function CallWaiterPrompt({
           <div role="group" aria-labelledby={rail ? "rail-waiter" : "waiter-title"}>
             {/* A title and a way to close, like any sheet (ADR-096). In the
                 rail the «Waiter» row above is both. */}
-            {!rail && (
-              <div className="flex min-h-11 items-center justify-between gap-2">
-                <p id="waiter-title" className="m-0 px-1 font-semibold">
-                  {t("nav.waiter")}
-                </p>
-                <button
-                  type="button"
-                  onClick={cancel}
-                  aria-label={t("sheet.close")}
-                  className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
-                >
-                  <CloseIcon />
-                </button>
-              </div>
-            )}
+            {!rail && head(cancel)}
             <button
               type="button"
               data-choice=""
@@ -273,23 +277,36 @@ export function CallWaiterPrompt({
           </div>
         )
       ) : current === "unsent" ? (
-        <div className={`grid gap-2 ${rail ? `${line} pt-2 pb-3` : "py-1"}`}>
-          <p role="status" className={`text-alert font-semibold ${rail ? "" : "px-1"}`} data-testid="call-unsent">
-            {t("order.notSent")}
-          </p>
-          <button type="button" onClick={() => void attempt(target)} className={`${pill} justify-self-start`}>
-            {t("order.retryRequest")}
-          </button>
-        </div>
+        <>
+          {!rail && head(() => dismiss(tableId))}
+          <div className={`grid gap-2 ${rail ? `${line} pt-2 pb-3` : "pb-1"}`}>
+            {/* Still trying on its own: ink with a small turning mark, not
+                the alert red that means "it went wrong". */}
+            <p
+              role="status"
+              className={`m-0 flex items-start gap-2.5 font-semibold ${rail ? "" : "px-1"}`}
+              data-testid="call-unsent"
+            >
+              <span aria-hidden="true" className={`text-muted mt-[0.3em] ${styles.pending}`} />
+              <span className="min-w-0">{t("order.notSent")}</span>
+            </p>
+            <button type="button" onClick={() => void attempt(target)} className={`${pill} justify-self-start`}>
+              {t("order.retryRequest")}
+            </button>
+          </div>
+        </>
       ) : current === "called" ? (
         <p role="status" className={`text-success flex min-h-12 items-center gap-2 font-semibold ${line}`}>
           <CheckIcon />
           {bill ? t("order.billTold") : t("menu.waiterCalled")}
         </p>
       ) : (
-        <p role="alert" className={`text-alert flex min-h-12 items-center font-semibold ${line}`}>
-          {t("order.requestFailed")}
-        </p>
+        <>
+          {!rail && head(() => dismiss(tableId))}
+          <p role="alert" className={`text-alert m-0 flex min-h-12 items-center font-semibold ${line}`}>
+            {t("order.requestFailed")}
+          </p>
+        </>
       )}
     </div>
   );

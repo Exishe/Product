@@ -119,6 +119,24 @@
   }
 }
 
+/* A request that is still being retried (call-waiter-button.tsx): a small
+   ring with a gap, turning slowly. Still (but still a ring) without motion. */
+.pending {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: pending-turn 1.1s linear infinite;
+}
+
+@keyframes pending-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* The slim bar that slides in once the big header has scrolled away. */
 .slim {
   transform: translateY(-100%);
@@ -135,7 +153,9 @@
   .ringing,
   .suggest,
   .pop,
-  .unfold {
+  .unfold,
+  .pending,
+  .toast {
     animation: none;
   }
   .slim {
@@ -1050,13 +1070,25 @@
   text-align: center;
 }
 
-/* The sheet's footer: one 56 px line with the add button beside it. */
-/* 48 x 56 steps on the narrowest phones, so the price on the button keeps its
+/* The sheet's footer: one 56 px line with the add button beside it. The
+   stepper is the quiet control there (the chip colour, ink glyphs), so the
+   filled «Add · price» is the footer's one dark element, the one action.
+   48 x 56 steps on the narrowest phones, so the price on the button keeps its
    room; 56 x 56 from 400 px. */
 .addCtl[data-size="lg"] {
   width: 8rem;
   height: 3.5rem;
-  box-shadow: none;
+  background: var(--guest-chip);
+  color: var(--guest-ink);
+  box-shadow: inset 0 0 0 1px var(--guest-line);
+}
+
+.addCtl[data-size="lg"] .addStep:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--guest-ink) 7%, transparent);
+}
+
+.addCtl[data-size="lg"] .addStep:focus-visible {
+  outline-color: var(--guest-ink);
 }
 
 .addCtl[data-size="lg"] .addStep {

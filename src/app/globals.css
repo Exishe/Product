@@ -1116,8 +1116,10 @@ body:has(.guest-lux[data-demo][data-demo-palette="blue"]):has(.guest-lux[data-de
   display: flex !important;
 }
 /* The guest bar's meta row (guest-header.tsx GuestBar): outside the demo cafés
-   a row that holds only the hidden colour switch takes no room. */
-.guest-lux:not([data-demo]) .guest-meta:not(:has(> :not(.demo-palette, :empty))) {
+   a row that holds only the hidden colour switch takes no room. The café's own
+   scope (the one with a theme) decides: the guest layout's outer .guest-lux
+   never carries data-demo, so it must not hide the demo's switch. */
+.guest-lux[data-guest-theme]:not([data-demo]) .guest-meta:not(:has(> :not(.demo-palette, :empty))) {
   display: none;
 }
 /* The status page with no order yet: its own button leads to the menu, so the

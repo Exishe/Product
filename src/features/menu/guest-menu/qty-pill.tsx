@@ -5,10 +5,11 @@ import { MinusIcon, PlusIcon } from "./ui";
 
 // The one quantity control of the guest pages (ADR-096): a filled 44 px pill,
 // «− n +», the same on a dish row, in the order view and in the desktop
-// rail and in the dish sheet's footer. A dish row starts it as a round "+"
-// that widens into this pill (dish-row.tsx); the order lines and the sheet
-// show it open. The sheet counts from 1 (`min`), so its «−» rests at 1, and
-// sets it at 56 px (`size="lg"`), the height of the add button beside it.
+// rail. A dish row starts it as a round "+" that widens into this pill
+// (dish-row.tsx); the order lines and the sheet show it open. The sheet counts
+// from 1 (`min`), so its «−» rests at 1, and sets it at 56 px (`size="lg"`),
+// the height of the add button beside it, in a quiet dress (the chip colour,
+// ink glyphs): there the filled add button is the one action.
 export function QtyPill({
   value,
   min = 0,

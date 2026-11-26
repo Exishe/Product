@@ -207,8 +207,10 @@ export function GuestBar({
         <div className={`flex min-w-[min(9.5rem,45vw)] flex-1 items-center ${lg("lg:min-w-0 lg:flex-initial")}`}>
           {brand}
         </div>
+        {/* ml-auto at every width: the languages stay at the right edge in
+            one-row mode too, whatever the meta row holds (or when it is hidden). */}
         <div
-          className={`ml-auto flex max-w-full flex-none flex-wrap items-center justify-end ${lg("lg:order-last lg:ml-0")}`}
+          className={`ml-auto flex max-w-full flex-none flex-wrap items-center justify-end ${lg("lg:order-last")}`}
         >
           <LanguageNav languages={languages} />
         </div>

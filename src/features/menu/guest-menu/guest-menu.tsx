@@ -39,7 +39,8 @@ import { matchesDiet, type DietFilter } from "./diet-filter";
 import { dismiss as dismissWaiter, useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
 import { SectionList } from "./section-list";
-import { DishRow } from "./dish-row";
+import { DishRow, SCAN_HINT_EVENT } from "./dish-row";
+import styles from "./guest.module.css";
 import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
@@ -172,6 +173,8 @@ export function GuestMenu({
   // The dish just added, which asks the server for "goes well with" ideas.
   const [suggest, setSuggest] = useState<{ id: string; cart: string[]; n: number } | null>(null);
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
+  // No table: a tap on a "+" shows how to order in a toast (dish-row.tsx).
+  const [scanHint, setScanHint] = useState(0);
   // The add whose idea a phone showed (-1: one showed earlier in this tab).
   const [ideaShownOn, setIdeaShownOn] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
@@ -390,6 +393,17 @@ export function GuestMenu({
     const timer = setTimeout(() => setToast(null), 2400);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const show = () => setScanHint(Date.now());
+    window.addEventListener(SCAN_HINT_EVENT, show);
+    return () => window.removeEventListener(SCAN_HINT_EVENT, show);
+  }, []);
+  useEffect(() => {
+    if (!scanHint) return;
+    const timer = setTimeout(() => setScanHint(0), 3200);
+    return () => clearTimeout(timer);
+  }, [scanHint]);
 
   const onSoldOut = useCallback(
     (itemId: string) => setSoldOutNow((ids) => (ids.includes(itemId) ? ids : [...ids, itemId])),
@@ -736,7 +750,7 @@ export function GuestMenu({
   const scanNote =
     table.kind === "none" && menu.ordering ? (
       <span
-        className="text-muted flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 py-1 text-label leading-[1.35]"
+        className="text-muted flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 rounded-lg py-1 text-label leading-[1.35]"
         data-testid="scan-note"
         id="scan-note"
       >
@@ -1053,6 +1067,20 @@ export function GuestMenu({
       <p className="sr-only" role="status" aria-live="polite">
         {toast?.text}
       </p>
+      {/* No table: what a tap on a "+" gets (dish-row.tsx pointToScanNote),
+          right above the bottom edge where the thumb is. Each tap starts it
+          again (the key), so a second tap is answered too. */}
+      {scanHint > 0 && (
+        <p
+          key={scanHint}
+          role="status"
+          data-testid="scan-toast"
+          className={`bg-ink text-page shadow-float rounded-full fixed bottom-[calc(16px+var(--guest-bottom,0px)+env(safe-area-inset-bottom,0px))] left-1/2 z-40 m-0 flex min-h-12 w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2.5 py-2.5 pr-5 pl-4 text-body font-semibold ${styles.toast}`}
+        >
+          <QrCode size={20} strokeWidth={1.75} className="flex-none" />
+          <span className="min-w-0">{t("menu.noTable")}</span>
+        </p>
+      )}
     </>
   );
 }
