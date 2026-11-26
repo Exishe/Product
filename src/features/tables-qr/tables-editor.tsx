@@ -154,12 +154,6 @@ function TableRow({ floor, table, grouped }: { floor: Floor; table: FloorTable; 
         // One row per table (ADR-094): what it is, then Edit and Print. A new
         // code, which retires the printed one, sits in the editor only.
         <div className="flex min-h-12 items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="bg-staff-fill text-ink grid size-12 shrink-0 place-items-center rounded-xl"
-          >
-            <QrCode className="size-6" />
-          </span>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-name leading-tight font-semibold break-words">
               {t("tableName", { label: table.label })}
@@ -195,12 +189,6 @@ function TableRow({ floor, table, grouped }: { floor: Floor; table: FloorTable; 
         <div className="flex flex-col gap-4 py-1">
           {/* The editor keeps saying which table it is. */}
           <h3 id={`table-${table.id}-title`} className="m-0 flex min-h-12 items-center gap-3 text-name font-semibold">
-            <span
-              aria-hidden="true"
-              className="bg-staff-fill text-ink grid size-12 shrink-0 place-items-center rounded-xl"
-            >
-              <Pencil className="size-5" />
-            </span>
             {t("tableName", { label: table.label })}
           </h3>
           <form

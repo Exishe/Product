@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Image as ImageIcon, ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, Trash2, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useToast } from "@/features/admin-ui/toast";
@@ -81,15 +81,18 @@ export function SectionCovers({
         <h2 id="covers-title" className={sectionTitle}>
           {b("covers")}
         </h2>
-        <p className="text-staff-label2 m-0 text-label">{b("coversHint")}</p>
+        {/* These save on their own, unlike the rest of the page: said once, here. */}
+        <p className="text-staff-label2 m-0 flex items-start gap-1.5 text-label">
+          <Zap aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          {b("coversHint")}
+        </p>
       </div>
       {rows.length === 0 ? (
         <p className="text-staff-label2 m-0">{b("coversEmpty")}</p>
       ) : (
-        // One hairline row per section (ADR-094): a small 16:9 thumbnail or an
-        // empty slot, the name, and the action at the right. The large preview
-        // shows only for a cover that exists, so an empty menu is not a wall
-        // of grey placeholders.
+        // One hairline row per section (ADR-094): a plain 48 px thumbnail (the
+        // cover, or an empty grey square), the name, and the action at the
+        // right. The large preview shows only for a cover that exists.
         <ul className="m-0 flex list-none flex-col p-0" data-testid="section-covers">
           {rows.map((s) => {
             const name = s.name ?? b("untitled");
@@ -101,18 +104,13 @@ export function SectionCovers({
                     <img
                       src={coverUrl(s.cover)}
                       alt=""
-                      width={64}
-                      height={36}
+                      width={48}
+                      height={48}
                       loading="lazy"
-                      className="bg-staff-fill block h-9 w-16 shrink-0 rounded-md object-cover"
+                      className="bg-staff-bg block size-12 shrink-0 rounded-xl object-cover"
                     />
                   ) : (
-                    <span
-                      aria-hidden="true"
-                      className="text-staff-label2 grid h-9 w-16 shrink-0 place-items-center rounded-md border border-dashed border-staff-field"
-                    >
-                      <ImageIcon className="size-4" />
-                    </span>
+                    <span aria-hidden="true" className="bg-staff-bg block size-12 shrink-0 rounded-xl" />
                   )}
                   <span className="min-w-0 flex-1 text-name font-semibold [overflow-wrap:anywhere]">{name}</span>
                   <span className="-mr-2 flex shrink-0 items-center">
@@ -161,11 +159,11 @@ export function SectionCovers({
                     width={1200}
                     height={514}
                     loading="lazy"
-                    className="bg-staff-fill block aspect-video h-auto w-full max-w-md rounded-xl object-cover sm:ml-[4.75rem]"
+                    className="bg-staff-fill block aspect-video h-auto w-full max-w-md rounded-xl object-cover sm:ml-[3.75rem]"
                   />
                 )}
                 {failed === s.id && (
-                  <p role="alert" className="text-pomegranate m-0 text-label font-semibold sm:ml-[4.75rem]">
+                  <p role="alert" className="text-pomegranate m-0 text-label font-semibold sm:ml-[3.75rem]">
                     {t("uploadFailed")}
                   </p>
                 )}

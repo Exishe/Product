@@ -232,16 +232,14 @@
       "pause": "Pause",
       "cancel": "Cancel",
       "pauseHint": "Guests can still read the menu. Orders already sent are not affected.",
-      "kitchenOpen": "The kitchen is taking orders.",
       "closedUntil": "The kitchen is closed for today. Orders open again at {time}.",
-      "reopen": "Reopen the kitchen",
       "closeConfirm": "Guests won't be able to order until the next opening. Close the kitchen for today?",
       "closeYes": "Yes, close",
       "failed": "Couldn't save that. Check the connection and try again.",
       "segmentLabel": "Guest orders",
       "segOn": "Taking orders",
       "segPaused": "Paused",
-      "closeToday": "Close for today"
+      "segClosed": "Closed today"
     },
     "promos": {
       "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
@@ -286,7 +284,7 @@
       "turnOff": "Turn off",
       "kind": "Reward",
       "kindPercent": "Percent off",
-      "kindText": "A gift or offer",
+      "kindText": "Gift or offer",
       "level": "Guest reaches level",
       "levelHint": "From {min} to {max}. The higher, the harder.",
       "percent": "Discount, %",
@@ -1044,7 +1042,6 @@
       "kcalPer100": "Calories, kcal per 100 {unit}",
       "gramsPerPiece": "Weight of one piece, g",
       "kcalHint": "Applies to every dish that uses this ingredient. Guests see the change after you publish.",
-      "kcalSave": "Save calories",
       "invalidKcal": "Enter calories from 0 to 1000.",
       "invalidPiece": "Enter a weight above zero.",
       "kcalShown": "Guests will see ≈ {value} kcal per portion after you publish.",
@@ -1630,7 +1627,10 @@
     "home": "Home",
     "open": "Pages",
     "close": "Close",
-    "pos": "POS connection"
+    "pos": "POS connection",
+    "language": "Language",
+    "signOut": "Sign out",
+    "account": "Account"
   },
   "billing": {
     "planName": {
@@ -1885,7 +1885,7 @@
       "previewPrice": "2 900 ֏",
       "previewAdd": "Add",
       "covers": "Section covers",
-      "coversHint": "A wide photo at the top of a section. It is saved at once: guests see it without publishing the menu again.",
+      "coversHint": "A wide photo at the top of a section. Saved at once, no Save needed.",
       "coverChoose": "Add a cover",
       "coverChange": "Change",
       "coverRemove": "Remove the cover for “{section}”",

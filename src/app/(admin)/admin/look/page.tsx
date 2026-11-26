@@ -42,16 +42,16 @@ export default async function LookPage() {
       .order("sort"),
     getTranslations("look"),
     getLocale(),
-    // Two of the café's own dishes with photos, so the preview shows its food
-    // on the chosen plates instead of placeholder letters (read only).
+    // The café's own dishes with photos, so the preview shows its food on
+    // the chosen plates instead of placeholder letters (read only).
     supabase
       .from("items")
-      .select("price, image_path, item_translations(locale, name)")
+      .select("price, image_path, category_id, item_translations(locale, name)")
       .eq("restaurant_id", me.restaurantId)
       .eq("is_active", true)
       .not("image_path", "is", null)
       .order("sort")
-      .limit(2),
+      .limit(60),
   ]);
   // Before migration 20261119100000_brand_profile there is no brand column,
   // and before 20261117120000_guest_theme no theme either.
@@ -81,13 +81,23 @@ export default async function LookPage() {
     const pick = [locale, ...NAME_ORDER].map((l) => names.find((n) => n.locale === l)?.name).find(Boolean);
     return { id: c.id, name: pick ?? null, cover: c.image_path };
   });
-  const sample: PreviewDish[] = (dishes.data ?? []).flatMap((d) => {
+  const withPhotos = (dishes.data ?? []).flatMap((d) => {
     const names = d.item_translations ?? [];
     const name = [locale, ...NAME_ORDER].map((l) => names.find((n) => n.locale === l)?.name).find(Boolean);
     return name && Number.isInteger(d.price) && d.price >= 0
-      ? [{ name, price: formatAmd(d.price, locale as Locale), image: d.image_path }]
+      ? [{ category: d.category_id, dish: { name, price: formatAmd(d.price, locale as Locale), image: d.image_path } }]
       : [];
   });
+  // The preview's heading names the section its two dishes come from: the
+  // first section (in menu order) that has dishes with photos.
+  const shownIndex = covers.findIndex((c) => c.name && withPhotos.some((w) => w.category === c.id));
+  const shown = covers[shownIndex];
+  const sample: PreviewDish[] = shown
+    ? withPhotos.filter((w) => w.category === shown.id).slice(0, 2).map((w) => w.dish)
+    : [];
+  const sampleSections = shown?.name
+    ? { current: shown.name, next: covers.slice(shownIndex + 1).find((c) => c.name)?.name ?? null }
+    : null;
 
   return (
     <AdminPage
@@ -126,18 +136,15 @@ export default async function LookPage() {
           cafeName={row?.name ?? ""}
           cover={covers.find((c) => c.cover)?.cover ?? null}
           sample={sample}
+          sampleSections={sampleSections}
           initial={{
             theme: guestTheme(row && "guest_theme" in row ? row.guest_theme : null),
             brandColor: row?.brand_color ?? null,
             logoPath: row?.logo_path ?? null,
           }}
           initialBrand={(withBrand.data && parseBrand(withBrand.data.brand)) || EMPTY_BRAND}
+          covers={<SectionCovers restaurantId={me.restaurantId} ready={brandReady} sections={covers} />}
         />
-        {/* The covers keep the form's column, so their rows and hairlines end
-            where the colour and plate groups end. */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
-          <SectionCovers restaurantId={me.restaurantId} ready={brandReady} sections={covers} />
-        </div>
       </NextIntlClientProvider>
     </AdminPage>
   );

@@ -122,6 +122,32 @@ export function MenuEditor({ data }: { data: EditorData }) {
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string | null>(data.categories[0]?.id ?? null);
   const [panel, setPanel] = useState<Panel>(null);
+  // Phone and tablet: the section chips scroll sideways. A fade on the right
+  // edge says there is more while there is; the chosen chip is scrolled into
+  // view (only the row moves, never the page).
+  const chipRow = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const row = chipRow.current;
+    if (!row) return;
+    const mark = () => {
+      const more = row.scrollLeft + row.clientWidth < row.scrollWidth - 2;
+      if (more) row.dataset.more = "";
+      else delete row.dataset.more;
+    };
+    const chosen = row.querySelector<HTMLElement>('[aria-current="true"]');
+    if (chosen && row.scrollWidth > row.clientWidth) {
+      const left = chosen.offsetLeft; // the row is the offset parent (relative)
+      if (left < row.scrollLeft || left + chosen.offsetWidth > row.scrollLeft + row.clientWidth - 24)
+        row.scrollTo({ left: Math.max(0, left - 16), behavior: "smooth" });
+    }
+    mark();
+    row.addEventListener("scroll", mark, { passive: true });
+    window.addEventListener("resize", mark);
+    return () => {
+      row.removeEventListener("scroll", mark);
+      window.removeEventListener("resize", mark);
+    };
+  }, [selected, data.categories.length]);
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   // Deleting a dish asks once more, inline, before it happens.
@@ -712,17 +738,19 @@ export function MenuEditor({ data }: { data: EditorData }) {
 
       {panel.kind === "category" && (
         <Group title={t("sectionShown")}>
-          <label className="flex min-h-12 items-center gap-3 text-name">
-            <input
-              type="checkbox"
-              className={check}
-              checked={panel.draft.isActive}
-              onChange={(e) =>
-                setPanel({ kind: "category", draft: { ...panel.draft, isActive: e.target.checked } })
-              }
-            />
+          {/* The same switch as a dish's "Shown on the menu" (saved with the section). */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={panel.draft.isActive}
+            onClick={() =>
+              setPanel({ kind: "category", draft: { ...panel.draft, isActive: !panel.draft.isActive } })
+            }
+            className="flex min-h-12 items-center gap-3 text-left text-name"
+          >
+            <Switch on={panel.draft.isActive} />
             {t("sectionShownToggle")}
-          </label>
+          </button>
           <p className="text-staff-label2 m-0 text-label">{t("sectionShownHint")}</p>
         </Group>
       )}
@@ -974,7 +1002,10 @@ export function MenuEditor({ data }: { data: EditorData }) {
           {/* Phone and tablet: a row of section chips. From 1024 px: a list, one
               line per section, the current one tinted. The order is set in the
               section's editor, as for dishes, so no row carries arrows. */}
-          <ul className="admin-scroll-row relative m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
+          <ul
+            ref={chipRow}
+            className="admin-scroll-row chip-fade relative m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0"
+          >
             {data.categories.map((c) => {
               const current = c.id === selected;
               const name = nameFor(c.names, locale);
@@ -1119,6 +1150,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         </span>
                         <span className="text-staff-label2 flex min-w-0 flex-wrap items-center gap-x-2 text-label leading-snug">
                           <span className="num text-ink font-semibold sm:hidden">{formatAmd(d.price, locale)}</span>
+                          {soldOut && (
+                            <span aria-hidden="true" className="text-pomegranate font-semibold sm:hidden">
+                              {t("soldOut")}
+                            </span>
+                          )}
                           {!d.isActive && (
                             <span className="text-pomegranate inline-flex items-center gap-1 font-semibold">
                               <EyeOff aria-hidden="true" className="size-4" />
@@ -1143,32 +1179,34 @@ export function MenuEditor({ data }: { data: EditorData }) {
                           )}
                         </span>
                       </span>
-                      <span className="num hidden shrink-0 text-name font-semibold sm:inline">
-                        {formatAmd(d.price, locale)}
+                      <span className="hidden shrink-0 flex-col items-end sm:flex">
+                        <span className="num text-name font-semibold">{formatAmd(d.price, locale)}</span>
+                        {soldOut && (
+                          <span aria-hidden="true" className="text-pomegranate text-label font-semibold">
+                            {t("soldOut")}
+                          </span>
+                        )}
                       </span>
                     </button>
-                    {/* The one control on the row: today's availability. Off, an
-                        outlined pill with a "no" sign, plainly a button; on,
-                        filled red with a check, so only the dishes that are out
-                        stand out in the list. */}
+                    {/* The one control on the row: today's availability, a
+                        44 px "no" sign named "Not today" (tooltip and screen
+                        reader). Quiet until pressed; pressed, a red disc, and
+                        the row says "Not today" under the price. */}
                     <button
                       type="button"
                       aria-pressed={soldOut}
+                      aria-label={t("soldOut")}
+                      title={t("soldOut")}
                       disabled={pending}
                       onClick={() => toggleSoldOut(d, !soldOut)}
                       className={clsx(
-                        "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-label font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none",
+                        "grid size-11 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none",
                         soldOut
                           ? "bg-pomegranate text-white"
-                          : "text-ink hover:bg-staff-fill bg-white shadow-[inset_0_0_0_1px_var(--color-staff-field)]",
+                          : "text-staff-label2 hover:bg-staff-fill hover:text-ink",
                       )}
                     >
-                      {soldOut ? (
-                        <Check aria-hidden="true" className="size-4" />
-                      ) : (
-                        <Ban aria-hidden="true" className="text-staff-label2 size-4" />
-                      )}
-                      {t("soldOut")}
+                      <Ban aria-hidden="true" className="size-[1.375rem]" />
                     </button>
                   </li>
                 );

@@ -7,6 +7,8 @@ import type { GuestTheme } from "./themes";
 
 /** A real dish of the café for the preview: its name, formatted price and photo. */
 export type PreviewDish = { name: string; price: string; image: string | null };
+/** The section the sample dishes come from, and the one after it (the second tab). */
+export type PreviewSections = { current: string; next: string | null };
 
 const storageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
@@ -22,7 +24,10 @@ export function BrandPreview({
   logo,
   cover,
   sample = [],
+  sections = null,
 }: {
+  /** Set when the sample is the café's own: the heading names their section. */
+  sections?: PreviewSections | null;
   /** The café's first dishes with photos; placeholders fill in when there are fewer than two. */
   sample?: PreviewDish[];
   theme: GuestTheme;
@@ -43,6 +48,9 @@ export function BrandPreview({
     { name: t("previewDish2"), price: t("previewPrice"), image: null },
   ];
   const dishes = [...sample, ...placeholders].slice(0, 2);
+  // The heading and the tabs always match the dishes under them.
+  const section = sections?.current ?? t("previewSection");
+  const nextTab = sections?.next ?? null;
   return (
     <div
       aria-hidden="true"
@@ -86,16 +94,18 @@ export function BrandPreview({
           </span>
         )}
         <span className="display-face guest-flourish text-title mt-2 block text-[1.375rem] leading-tight">
-          {t("previewSection")}
+          {section}
         </span>
       </div>
       <div className="flex gap-2 overflow-hidden px-4 pt-3">
         <span className="bg-tab text-on-tab rounded-pill text-meta px-3 py-1.5 font-semibold whitespace-nowrap">
-          {t("previewSection")}
+          {section}
         </span>
-        <span className="text-muted rounded-pill text-meta border [border-color:var(--guest-tab-border)] px-3 py-1.5 font-semibold whitespace-nowrap">
-          {t("previewDish2")}
-        </span>
+        {nextTab && (
+          <span className="text-muted rounded-pill text-meta border [border-color:var(--guest-tab-border)] px-3 py-1.5 font-semibold whitespace-nowrap">
+            {nextTab}
+          </span>
+        )}
       </div>
       <div className="px-4 pt-4 pb-5">
         {cover && (
@@ -106,9 +116,7 @@ export function BrandPreview({
             className="rounded-card bg-plate mb-3 block aspect-[21/9] w-full object-cover"
           />
         )}
-        <span className="display-face text-title block text-[1.75rem] leading-none">
-          {t("previewSection")}
-        </span>
+        <span className="display-face text-title block text-[1.75rem] leading-none">{section}</span>
         <span className="mt-3 grid grid-cols-2 gap-3">
           {dishes.map((dish, i) => (
             <span

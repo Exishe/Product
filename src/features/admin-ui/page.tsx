@@ -32,10 +32,11 @@ export function AdminPage({
       className={clsx(
         // Groups are split by 40-48 px of space (ADR-094), not by card edges.
         // From 1024 px the column is anchored to the sidebar (h1 always at
-        // 240 + 40 px), so the title never jumps between pages; the width
-        // is only a cap on the right.
+        // 240 + 40 px), so the title never jumps between pages. Every page
+        // shares one frame (77rem, the header's right edge included); only
+        // the two-column bodies (menu, look: "xl") may run wider under it.
         "flex w-full flex-col gap-10 px-4 pt-6 pb-16 sm:px-6 lg:gap-12 lg:px-10 lg:pt-10",
-        { sm: "max-w-[45rem]", md: "max-w-[65rem]", lg: "max-w-[77rem]", xl: "max-w-[85rem]" }[width],
+        { sm: "max-w-[45rem]", md: "max-w-[77rem]", lg: "max-w-[77rem]", xl: "max-w-[85rem]" }[width],
         className,
       )}
     >
@@ -44,7 +45,7 @@ export function AdminPage({
           subtitle, so a long word in the title never splits. */}
       <header
         className={clsx(
-          "mb-2 grid print:hidden",
+          "mb-2 grid w-full max-w-[72rem] print:hidden",
           inlineActions
             ? "grid-cols-[minmax(0,1fr)_auto] gap-x-3 xl:gap-x-8"
             : "grid-cols-[minmax(0,1fr)] xl:grid-cols-[minmax(14ch,1fr)_auto] xl:gap-x-8",

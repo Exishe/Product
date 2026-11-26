@@ -1,7 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { AdminNav, type NavLink } from "@/features/admin-nav/admin-nav";
 import { ToastProvider } from "@/features/admin-ui/toast";
+import { routing } from "@/i18n/routing";
 import { pickMembership, type Membership } from "@/lib/auth/membership";
 import { RESTAURANT_COOKIE } from "@/lib/auth/require-member";
 import { createClient } from "@/lib/supabase/server";
@@ -40,10 +41,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
   if (!member) return children;
 
-  const [{ data: restaurant }, t, brand] = await Promise.all([
+  const [{ data: restaurant }, t, brand, lang, roles, locale] = await Promise.all([
     supabase.from("restaurants").select("name").eq("id", member.restaurantId).single(),
     getTranslations("adminNav"),
     getTranslations("brand"),
+    getTranslations("guest.language"),
+    getTranslations("staff.roles"),
+    getLocale(),
   ]);
   // Eight one-line items (ADR-094, plus the POS connection). Reports and Export are reached
   // from Sales, Import from the menu page.
@@ -71,6 +75,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         menuLabel={t("open")}
         closeLabel={t("close")}
         links={links}
+        account={{
+          name: member.displayName,
+          role: roles(member.role === "manager" ? "manager" : "owner"),
+          locale,
+          languageLabel: t("language"),
+          languageNames: Object.fromEntries(routing.locales.map((l) => [l, lang(l)])),
+          signOutLabel: t("signOut"),
+          accountLabel: t("account"),
+        }}
       />
       <div className="min-w-0 flex-1 bg-white">
         <ToastProvider>{children}</ToastProvider>
