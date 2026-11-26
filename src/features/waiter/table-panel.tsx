@@ -3,13 +3,13 @@
 import { clsx } from "clsx";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  BellRing,
   Check,
   ChevronLeft,
   CircleAlert,
   CircleDashed,
   Clock,
   Copy,
+  Ellipsis,
   HandPlatter,
   Minus,
   Plus,
@@ -94,7 +94,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
   if (table.state === "free" && table.orders.length === 0) {
     return (
       <>
-        <div className="bg-staff-bg grid flex-1 content-start gap-3 overflow-y-auto p-4 lg:p-6">
+        <div className="grid flex-1 content-start gap-3 overflow-y-auto bg-white px-4 pt-3 pb-6 lg:px-6">
           {nav}
           <p className="text-staff-label2 m-0 flex items-center gap-2 text-[1.0625rem] font-semibold">
             <CircleDashed aria-hidden="true" className="size-5 shrink-0" />
@@ -102,7 +102,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
           </p>
           <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("panel.freeHint")}</p>
         </div>
-        <div className="border-staff-sep grid gap-3 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:px-6">
+        <div className="border-staff-sep grid border-t bg-white px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] lg:px-6">
           <button type="button" className={button("primary", "min-h-14")} onClick={p.onOpenPad}>
             <SquarePen aria-hidden="true" />
             {t("panel.takeOrder")}
@@ -112,16 +112,35 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
     );
   }
 
+  // A guest's order waits to be accepted: the bar at the bottom accepts the
+  // oldest one, so the one job is under the thumb, not below the fold.
+  const placed = table.orders.filter((o) => o.status === "placed");
+  const pendingOrder = placed.at(-1) ?? null;
+  const pendingAmount = placed.reduce((s, o) => s + o.total, 0);
+  // Food on the pass comes before the bill: while a plate waits to be served,
+  // «Նշել մատուցված» is the one filled button and the close steps back.
+  const toServe = table.orders.some(
+    (o) => o.status === "accepted" && o.number !== null && o.tickets.some((k) => k.status === "ready"),
+  );
+  // Nothing confirmed yet, only a guest's order waiting: the waiting amount is
+  // the figure, in amber under its own label, never a big «0 ֏».
+  const onlyPending = table.total === 0 && pendingAmount > 0;
+
+  // Requests and notices are rows across the whole panel, tinted, never boxes.
+  const BLEED = "-mx-4 px-4 lg:-mx-6 lg:px-6";
+
   return (
     <>
-      <div className="bg-staff-bg grid flex-1 content-start gap-3 overflow-y-auto p-4 *:min-w-0 lg:p-6">
-        {nav}
-        {table.openMinutes !== null && (
-          <p className="text-staff-label2 m-0 flex items-center gap-1.5 text-[0.9375rem]">
-            <Clock aria-hidden="true" className="size-4 shrink-0" />
-            <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
-          </p>
-        )}
+      <div className="grid flex-1 content-start gap-5 overflow-y-auto bg-white px-4 pt-3 pb-6 *:min-w-0 lg:px-6">
+        <div className="grid gap-1">
+          {nav}
+          {table.openMinutes !== null && (
+            <p className="text-staff-label2 m-0 flex items-center gap-1.5 text-[0.9375rem]">
+              <Clock aria-hidden="true" className="size-4 shrink-0" />
+              <span className="num">{t("panel.openFor", { minutes: table.openMinutes })}</span>
+            </p>
+          )}
+        </div>
 
         <CantMakeCards
           items={table.orders.flatMap((o) =>
@@ -132,46 +151,59 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
 
         <RewardCards rewards={p.rewards} onResolve={p.onReward} />
 
-        {age?.kind === "quiet" && (
-          <p
-            data-testid="quiet-alert"
-            className="text-amber-text m-0 flex items-start gap-2 rounded-2xl bg-white px-4 py-3 text-[0.9375rem] font-semibold"
-          >
-            <Clock aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
-            {t("timeline.quiet", { minutes: age.minutes })}
-          </p>
-        )}
-        {table.call && (
-          <div
-            data-testid="call-alert"
-            className="border-pomegranate bg-pom-tint text-pomegranate flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 font-semibold"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <BellRing aria-hidden="true" className="size-5 shrink-0" />
-              {table.call.minutes > 0
-                ? t("panel.callAgo", { minutes: table.call.minutes })
-                : t("panel.callNow")}
-            </span>
-            <button
-              type="button"
-              className={button("destructive", "flex-none")}
-              onClick={() => table.call && p.onAction({ kind: "resolve", requestId: table.call.id })}
-            >
-              {t("panel.going")}
-            </button>
-          </div>
-        )}
-        {table.bill && (
-          <div
-            data-testid="bill-alert"
-            className="bg-ink flex items-center gap-2 rounded-2xl px-4 py-3 font-semibold text-white"
-          >
-            <StateIcon state="bill" payment={table.bill.payment} className="size-5 shrink-0" />
-            {table.bill.payment === "card"
-              ? t("panel.billCard")
-              : table.bill.payment === "cash"
-                ? t("panel.billCash")
-                : t("panel.billRequested")}
+        {(age?.kind === "quiet" || table.call || table.bill) && (
+          <div className="grid gap-px">
+            {age?.kind === "quiet" && (
+              <p
+                data-testid="quiet-alert"
+                className={clsx(
+                  BLEED,
+                  "bg-amber-tint text-amber-text m-0 flex min-h-14 items-center gap-2 py-2 text-[1.0625rem] font-semibold",
+                )}
+              >
+                <Clock aria-hidden="true" className="size-5 shrink-0" />
+                {t("timeline.quiet", { minutes: age.minutes })}
+              </p>
+            )}
+            {table.call && (
+              <div
+                data-testid="call-alert"
+                className={clsx(
+                  BLEED,
+                  "bg-pom-tint text-pomegranate flex min-h-14 items-center justify-between gap-3 py-1.5 text-[1.0625rem] font-semibold",
+                )}
+              >
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <span aria-hidden="true" className="bg-pomegranate size-2.5 shrink-0 rounded-full" />
+                  {table.call.minutes > 0
+                    ? t("panel.callAgo", { minutes: table.call.minutes })
+                    : t("panel.callNow")}
+                </span>
+                <button
+                  type="button"
+                  className={button("destructive", "flex-none")}
+                  onClick={() => table.call && p.onAction({ kind: "resolve", requestId: table.call.id })}
+                >
+                  {t("panel.going")}
+                </button>
+              </div>
+            )}
+            {table.bill && (
+              <div
+                data-testid="bill-alert"
+                className={clsx(
+                  BLEED,
+                  "bg-pom-tint text-pomegranate flex min-h-14 items-center gap-2.5 py-2 text-[1.0625rem] font-semibold",
+                )}
+              >
+                <StateIcon state="bill" payment={table.bill.payment} className="size-5 shrink-0" />
+                {table.bill.payment === "card"
+                  ? t("panel.billCard")
+                  : table.bill.payment === "cash"
+                    ? t("panel.billCash")
+                    : t("panel.billRequested")}
+              </div>
+            )}
           </div>
         )}
 
@@ -179,7 +211,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
           <section
             data-testid="waiting-party"
             aria-labelledby="waiting-title"
-            className="border-amber-text grid gap-3 rounded-2xl border-2 bg-white p-4"
+            className={clsx(BLEED, "bg-amber-tint grid gap-3 py-4")}
           >
             <h3
               id="waiting-title"
@@ -206,7 +238,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
                 {t("waiting.sameParty")}
               </button>
             </div>
-            <h4 className="text-staff-label2 m-0 text-[0.8125rem] font-semibold">{t("waiting.orders")}</h4>
+            <h4 className="text-staff-label2 m-0 text-[0.9375rem] font-semibold">{t("waiting.orders")}</h4>
             {table.waiting.orders.map((o) => (
               <OrderCard
                 key={o.id}
@@ -231,42 +263,82 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
             order={o}
             tableLabel={p.table.label}
             locale={locale}
+            answeredBelow={o.id === pendingOrder?.id}
             onAction={p.onAction}
             onReject={setRejecting}
             onCancel={setCancelling}
           />
         ))}
+        {/* Another round: a quiet outline at the end of the list, the close stays below. */}
+        <button type="button" className={button("outline", "min-h-14")} onClick={p.onOpenPad}>
+          <Plus aria-hidden="true" />
+          {t("panel.addOrder")}
+        </button>
         <TableTimeline table={table} timeZone={p.timeZone} />
       </div>
 
-      <div className="border-staff-sep grid gap-3 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:px-6">
-        <div className="flex items-baseline justify-between gap-3 text-[1.375rem] font-bold">
-          <span>{t("panel.total")}</span>
-          <span data-testid="table-total" className="num">
-            {formatAmd(table.total, locale)}
-          </span>
+      {/* One bar: the total on the left, the one thing to do on the right. */}
+      <div className="border-staff-sep grid gap-2 border-t bg-white px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] lg:px-6">
+        <div className="flex min-h-14 items-center gap-3">
+          {onlyPending ? (
+            // The chip on the order already says «Սպասում է հաստատման»: the
+            // bar keeps its usual «Ընդամենը» and marks the figure as not yet
+            // accepted.
+            <div data-testid="table-pending" className="grid min-w-0 flex-1 leading-tight">
+              <span className="text-staff-label2 text-[0.9375rem] font-semibold">{t("panel.total")}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <b className="num text-amber-text text-[1.5rem] font-bold">{formatAmd(pendingAmount, locale)}</b>
+                <span className="text-amber-text text-[0.9375rem] font-semibold">{t("panel.pendingSuffix")}</span>
+              </span>
+            </div>
+          ) : (
+            <div className="grid min-w-0 flex-1 leading-tight">
+              <span className="text-staff-label2 text-[0.9375rem] font-semibold">{t("panel.total")}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <b data-testid="table-total" className="num text-[1.5rem] font-bold">
+                  {formatAmd(table.total, locale)}
+                </b>
+                {pendingAmount > 0 && (
+                  <span className="num text-amber-text text-[0.9375rem] font-semibold">
+                    {t("panel.pendingTotal", { amount: formatAmd(pendingAmount, locale) })}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+          {blocker !== "pending" && (
+            <button
+              type="button"
+              className={button(toServe ? "outline" : "primary", "min-h-14 shrink-0")}
+              disabled={blocker !== null}
+              onClick={() => table.sessionId && p.onSettle(table.sessionId)}
+            >
+              <Receipt aria-hidden="true" />
+              {t("panel.close")}
+            </button>
+          )}
         </div>
-        {/* One button per row: the labels never wrap, the main action is last, nearest the thumb. */}
-        <div className="grid gap-2">
-          <button type="button" className={button("secondary", "min-h-14")} onClick={p.onOpenPad}>
-            <Plus aria-hidden="true" />
-            {t("panel.addOrder")}
-          </button>
-          <button
-            type="button"
-            className={button("primary", "min-h-14")}
-            disabled={blocker !== null}
-            onClick={() => table.sessionId && p.onSettle(table.sessionId)}
-          >
-            <Receipt aria-hidden="true" />
-            {t("panel.close")}
-          </button>
-        </div>
-        {blocker === "pending" && (
-          <p className="text-amber-text m-0 flex items-center gap-1.5 text-[0.9375rem]">
-            <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
-            {t("panel.closeBlocked")}
-          </p>
+        {blocker === "pending" && pendingOrder && (
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
+            <button
+              type="button"
+              className={button("outline", "min-h-14 px-4!")}
+              disabled={pendingOrder.pending}
+              onClick={() => setRejecting(pendingOrder)}
+            >
+              {t("order.reject")}
+            </button>
+            <button
+              type="button"
+              className={button("primary", "min-h-14 px-4! whitespace-nowrap")}
+              disabled={pendingOrder.pending}
+              onClick={() => p.onAction({ kind: "accept", orderId: pendingOrder.id })}
+            >
+              {pendingOrder.number === null
+                ? t("order.accept")
+                : t("panel.acceptOrder", { number: pendingOrder.number })}
+            </button>
+          </div>
         )}
       </div>
 
@@ -303,6 +375,7 @@ function OrderCard({
   tableLabel,
   locale,
   held,
+  answeredBelow,
   onAction,
   onReject,
   onCancel,
@@ -311,6 +384,8 @@ function OrderCard({
   tableLabel: string;
   locale: Locale;
   held?: boolean;
+  /** Accept and Reject for this order sit in the panel's bottom bar. */
+  answeredBelow?: boolean;
   onAction: (action: WaiterAction) => void;
   onReject: (order: WaiterOrder) => void;
   onCancel: (line: WaiterLine) => void;
@@ -324,23 +399,34 @@ function OrderCard({
   const stationLabel = (name: string | null) => name ?? t("order.kitchen");
 
   return (
-    <article
-      data-testid="order"
-      data-order-id={order.id}
-      data-status={order.status}
-      className={clsx(
-        "grid gap-3 rounded-2xl bg-white p-4",
-        placed ? "ring-amber-text ring-2" : "ring-staff-sep ring-1",
-      )}
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <strong className="text-[1.25rem] leading-tight">
+    // A section of the panel, not a card: the heading row (number, where it came
+    // from, print), the state, then the dishes as 56 px rows split by hairlines.
+    <article data-testid="order" data-order-id={order.id} data-status={order.status} className="grid gap-2">
+      <div className="flex min-h-11 items-center gap-2">
+        <h3 className="m-0 text-[1.375rem] leading-tight font-bold">
           {order.number === null ? t("order.unsent") : t("order.title", { number: order.number })}
-        </strong>
+        </h3>
         <span className={clsx(chip.base, chip.plain)}>{t(`order.source.${order.source}`)}</span>
+        {order.number !== null && order.lines.length > 0 && (
+          <PrintTicketButton
+            label={tPrint("button")}
+            iconOnly
+            className="text-ink hover:bg-staff-fill -mr-2 ml-auto grid size-11 shrink-0 place-items-center rounded-full"
+          >
+            <TicketSheet
+              table={tableLabel}
+              orderNumber={order.number}
+              time={new Date(order.placedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+              lines={order.lines
+                .filter((l) => l.quantity > 0)
+                .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
+              note={order.note}
+            />
+          </PrintTicketButton>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 empty:hidden">
         {placed && (
           <span className={clsx(chip.base, chip.wait)}>
             <Clock aria-hidden="true" />
@@ -385,12 +471,12 @@ function OrderCard({
         )}
       </div>
 
-      <ul className="m-0 grid list-none p-0">
+      <ul className="border-staff-sep m-0 grid list-none border-t p-0">
         {order.lines.map((l) => (
           <li
             key={l.id}
             data-testid="line"
-            className="border-staff-sep flex min-h-12 items-center justify-between gap-3 border-t py-1.5 first:border-t-0"
+            className="border-staff-sep flex min-h-14 items-center justify-between gap-3 border-b py-2"
           >
             <span
               className={clsx(
@@ -427,16 +513,19 @@ function OrderCard({
                 </span>
               )}
             </span>
-            <span className="flex flex-none items-center gap-1">
-              <span className="num text-[0.9375rem]">{formatAmd(l.lineTotal, locale)}</span>
+            {/* Cancelling is a quiet «…» 12 px past the price: it opens the
+                sheet that asks how many and why, never a one-tap removal. */}
+            <span className="flex flex-none items-center gap-3">
+              <span className="num text-[1.0625rem] font-semibold">{formatAmd(l.lineTotal, locale)}</span>
               {live && l.quantity > 0 && !order.pending && (
                 <button
                   type="button"
                   aria-label={t("order.cancelLine", { name: l.name.text })}
+                  aria-haspopup="dialog"
                   onClick={() => onCancel(l)}
-                  className="text-staff-label2 hover:bg-staff-fill -mr-2 grid size-12 place-items-center rounded-full"
+                  className="text-staff-label2 hover:bg-staff-fill -mr-2 grid size-11 place-items-center rounded-full"
                 >
-                  <X aria-hidden="true" className="size-5" />
+                  <Ellipsis aria-hidden="true" className="size-5" />
                 </button>
               )}
             </span>
@@ -446,29 +535,13 @@ function OrderCard({
       {order.note && (
         <p className="text-amber-text m-0 text-[0.9375rem]">{t("order.note", { note: order.note })}</p>
       )}
-      {order.number !== null && order.lines.length > 0 && (
-        <PrintTicketButton
-          label={tPrint("button")}
-          className="border-staff-sep text-ink inline-flex min-h-11 items-center gap-2 self-start rounded-xl border px-4 text-[0.9375rem] font-semibold"
-        >
-          <TicketSheet
-            table={tableLabel}
-            orderNumber={order.number}
-            time={new Date(order.placedAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-            lines={order.lines
-              .filter((l) => l.quantity > 0)
-              .map((l) => ({ quantity: l.quantity, name: l.name.text, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
-            note={order.note}
-          />
-        </PrintTicketButton>
-      )}
       {order.status === "rejected" && order.rejectReason && (
         <p className="text-staff-label2 m-0 text-[0.9375rem]">
           {t("order.reason", { reason: order.rejectReason })}
         </p>
       )}
 
-      {placed && (
+      {placed && !answeredBelow && (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"

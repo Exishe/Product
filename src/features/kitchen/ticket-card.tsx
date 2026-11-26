@@ -14,17 +14,25 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { PrintTicketButton, TicketSheet } from "../print-ticket/print-ticket";
 import { lineKey, type BoardLine, type KitchenAction, type ShownTicket } from "./board-model";
-import { ageLabel, classifyLateness, type Lateness } from "./lateness";
+import { ageLabel, classifyLateness, elapsedMinutes, type AgeLabel, type Lateness } from "./lateness";
+
+// A plate on the pass goes cold: its Ready timer turns amber after 3 minutes
+// and red after 6. The ticket itself is never "late" there (ADR-056).
+const READY_HURRY_MIN = 3;
+const READY_LATE_MIN = 6;
+// How long "can't make" stays out after a cook touched a ticket's dishes.
+const ARMED_MS = 8_000;
 
 // A ticket on the light kitchen board (ADR-056), readable at 1.5 m: table
 // number 64 px, quantity boxes and dish names 26 px, one big 72 px action.
 // The head band is the timer: grey while on time, amber with an hourglass and
 // «Շտապ» from 8 minutes, red with an alert sign and «Ուշանում է» from 12
-// (lateness.ts), and the ticket's border takes the same colour. Every state
-// has a word and an icon as well as a colour. In the narrow Ready column
+// (lateness.ts); the band alone carries it, the ticket has no coloured frame.
+// Every state has an icon as well as a colour, and a word for screen
+// readers. In the narrow Ready column
 // everything is a size smaller. The quantity has its own column, so a long
 // name wraps beside it and never pushes it out of sight.
 
@@ -40,11 +48,14 @@ const BAND: Record<Lateness | "void", string> = {
   late: "bg-late-on-dark text-white",
   void: "bg-pom-tint text-pomegranate",
 };
-const BORDER: Record<Lateness | "void", string> = {
-  normal: "border-(--kds-frame)",
-  hurry: "border-apricot-deep",
-  late: "border-late-on-dark",
-  void: "border-late-on-dark",
+// The head band alone carries the state; the ticket has no coloured frame
+// (benchmark: drop the outline border). An on-time ticket keeps a 1 px
+// hairline so white on the board's grey still has an edge.
+const FRAME: Record<Lateness | "void", string> = {
+  normal: "border border-(--kds-frame)",
+  hurry: "border-0",
+  late: "border-0",
+  void: "border-0",
 };
 
 function Root({
@@ -80,11 +91,12 @@ function Root({
       data-allergy={allergy || undefined}
       data-highlighted={highlighted || undefined}
       className={clsx(
-        "bg-basalt-3 text-slip relative grid shrink-0 overflow-hidden rounded-2xl border-4 transition-colors duration-200",
-        BORDER[kind === "void" ? "void" : lateness],
-        pending && "border-dashed",
+        "bg-basalt-3 text-slip relative grid min-w-0 shrink-0 content-start overflow-hidden rounded-[1rem] transition-colors duration-200",
+        FRAME[kind === "void" ? "void" : lateness],
+        // Waiting for the connection: a dashed outline, not a second frame.
+        pending && "outline-slip-dim outline-2 -outline-offset-2 outline-dashed",
         // A dish picked in «Ընդհանուր» outlines every ticket that has it.
-        highlighted && "outline-slip outline-4 outline-offset-2",
+        highlighted && "outline-slip outline-4 outline-offset-2 outline-solid",
       )}
     >
       {children}
@@ -92,44 +104,63 @@ function Root({
   );
 }
 
+// One row: «Սեղան» and the number on the left, the timer on the right; the
+// order and where it came from on a short second line, with the print icon at
+// its end. About 96 px, 72 in the narrow Ready lane.
 function Head({
   table,
   number,
   compact,
   tone,
+  timer,
   meta,
 }: {
   table: string | null;
   number: number;
   compact: boolean;
   tone: Lateness | "void";
+  timer: ReactNode;
   meta: ReactNode;
 }) {
   const t = useTranslations("kitchen.ticket");
   return (
     <div
-      className={clsx(
-        "flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-3 transition-colors duration-200",
-        BAND[tone],
-      )}
+      data-testid="ticket-head"
+      className={clsx("grid px-4 transition-colors duration-200", compact ? "py-1.5" : "py-2", BAND[tone])}
     >
-      <span className="grid min-w-0 leading-none">
-        <small className="text-base font-semibold">{table ? t("table") : t("noTable")}</small>
-        <b
-          data-testid="ticket-table"
-          className={clsx(
-            "num font-bold tracking-[-0.01em] [overflow-wrap:anywhere]",
-            table !== null && table.length > 4
-              ? "text-4xl leading-[1.05]"
-              : compact
-                ? "text-5xl"
-                : "text-kds-number",
-          )}
-        >
-          {table ?? number}
-        </b>
-      </span>
-      <span className="ml-auto grid justify-items-end gap-1 text-right">{meta}</span>
+      <div className="flex flex-nowrap items-center justify-between gap-3">
+        <span className="flex min-w-0 items-baseline gap-2">
+          {/* The same head in every lane: «Սեղան» beside the number. The
+              narrow Ready lane sets both a size down so the time on the pass
+              still shares the row. */}
+          <small className={clsx("shrink-0 font-semibold", compact ? "text-[0.9375rem]" : "text-[1.0625rem]")}>
+            {table ? t("table") : t("noTable")}
+          </small>
+          <b
+            data-testid="ticket-table"
+            className={clsx(
+              "num min-w-0 font-bold tracking-[-0.01em]",
+              table !== null && table.length > 4 ? "[overflow-wrap:anywhere]" : "whitespace-nowrap",
+              table !== null && table.length > 4
+                ? "text-4xl leading-[1.05]"
+                : compact
+                  ? "text-[2.75rem] leading-[0.95]"
+                  : "text-kds-number leading-[0.95]",
+            )}
+          >
+            {table ?? number}
+          </b>
+        </span>
+        <span className="shrink-0">{timer}</span>
+      </div>
+      <div
+        className={clsx(
+          "flex min-h-6 min-w-0 items-center justify-between gap-2 font-semibold",
+          compact ? "text-[0.9375rem]" : "text-[1.0625rem]",
+        )}
+      >
+        {meta}
+      </div>
     </div>
   );
 }
@@ -174,8 +205,9 @@ function Note({
       data-testid={testId}
       data-allergy={allergy || undefined}
       className={clsx(
-        "text-ink inline-flex items-start gap-2 justify-self-start rounded-lg border-2 px-2 py-0.5 font-semibold [overflow-wrap:anywhere]",
-        "border-(--kds-note-edge) bg-(--kds-note)",
+        // A note is a tinted run of text, not a box inside the ticket.
+        "text-ink inline-flex items-start gap-2 justify-self-start rounded-md px-1.5 py-0.5 font-semibold [overflow-wrap:anywhere]",
+        "bg-(--kds-note)",
         compact ? "text-base" : "text-xl",
         className,
       )}
@@ -216,8 +248,20 @@ function Lines({
   // One line at a time asks "are you sure?"; a sent one waits for the board to refresh.
   const [asking, setAsking] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // "Can't make" stays out of sight until a cook touches this ticket's dishes
+  // (or hovers them with a mouse, or tabs to it): six ⊘ marks down every
+  // ticket read as noise beside the food.
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timer = window.setTimeout(() => setArmed(false), ARMED_MS);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
   return (
-    <ul className="m-0 grid list-none gap-3 p-0">
+    <ul
+      className="group/lines m-0 grid list-none gap-3 p-0"
+      onPointerDown={onCantMake ? () => setArmed(true) : undefined}
+    >
       {lines.map((l) => {
         const gone = struck || l.quantity === 0;
         const bumped = !gone && !!done?.has(lineKey(ticketId, l.id));
@@ -226,13 +270,16 @@ function Lines({
         const body = (
           <>
             <span className="grid justify-items-stretch gap-0.5 text-center">
+              {/* A solid ink badge; once the dish is struck it goes quiet with
+                  the name, so the loudest thing on a row is what is left to cook. */}
               <span
                 data-testid="line-qty"
                 className={clsx(
-                  "num rounded-lg border-2 font-bold",
-                  compact ? "text-xl leading-[30px]" : "text-[1.875rem] leading-10",
-                  gone && "line-through decoration-[3px]",
-                  bumped ? "bg-tarragon-on-dark border-tarragon-on-dark text-white" : "border-slip",
+                  "num grid place-items-center rounded-lg font-bold",
+                  compact ? "h-9 text-xl" : "h-11 text-[1.75rem]",
+                  gone || bumped
+                    ? "bg-basalt-4 text-slip-dim line-through decoration-[3px]"
+                    : "bg-slip text-white",
                 )}
               >
                 {gone && !struck ? l.orderedQuantity : l.quantity}
@@ -313,14 +360,17 @@ function Lines({
           </>
         );
         const grid = clsx(
-          "grid items-baseline gap-x-3 gap-y-1",
-          compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[52px_minmax(0,1fr)]",
+          "grid items-center gap-x-3 gap-y-1",
+          compact ? "grid-cols-[40px_minmax(0,1fr)]" : "grid-cols-[44px_minmax(0,1fr)]",
         );
-        const canAsk = onCantMake !== undefined && !gone;
+        // Not on a struck dish: it is done.
+        const canAsk = onCantMake !== undefined && !gone && !bumped;
         return (
           <li key={l.id} data-testid="ticket-line" data-done={bumped || undefined}>
-            {/* "Can't make" is a quiet icon at the end of the dish's row, not a second big button. */}
-            <div className={clsx(canAsk && "flex items-start gap-1")}>
+            {/* "Can't make" is a quiet icon 12 px past the dish's tap area,
+                shown once the ticket's dishes are touched, and the row stops at
+                34rem so it stays next to the name on a wide lane. */}
+            <div className={clsx("max-w-[34rem]", canAsk && "flex items-start gap-3")}>
               {tappable ? (
                 // Item-level bump: tap a dish when it's plated (56 px row).
                 <button
@@ -330,7 +380,7 @@ function Lines({
                   className={clsx(
                     grid,
                     "-ml-2 min-h-14 min-w-0 rounded-xl py-1 pl-2 text-left",
-                    canAsk ? "flex-1 pr-1" : "-mr-2 w-[calc(100%+1rem)] pr-2",
+                    canAsk ? "flex-1 pr-2" : "-mr-2 w-[calc(100%+1rem)] pr-2",
                   )}
                 >
                   {body}
@@ -344,10 +394,14 @@ function Lines({
                   data-testid="cant-make"
                   aria-label={t("cantMakeLabel", { name: l.name })}
                   title={t("cantMake")}
-                  className="text-slip-dim -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
+                  className={clsx(
+                    "text-slip-dim -mr-2 grid size-11 shrink-0 place-items-center rounded-xl transition-opacity duration-150",
+                    "group-hover/lines:opacity-100 focus-visible:opacity-100",
+                    armed ? "opacity-100" : "opacity-0",
+                  )}
                   onClick={() => setAsking(l.id)}
                 >
-                  <Ban aria-hidden="true" className="size-6" />
+                  <Ban aria-hidden="true" className="size-5" />
                 </button>
               )}
             </div>
@@ -445,7 +499,26 @@ export function OrderTicketCard({
     onAction({ kind: "set_ticket_status", ticketId: ticket.id, expected: ticket.status, next });
   const locale = useLocale();
   const tPrint = useTranslations("print");
-  const TimerIcon = lateness === "late" ? CircleAlert : lateness === "hurry" ? Hourglass : Clock;
+  // In Ready, the time since the food stood on the pass (a tap still on its
+  // way counts as just now).
+  const readyAge = compact && ticket.readyAt !== null && ticket.readyAt <= now ? now - ticket.readyAt : 0;
+  const readyLabel = ageLabel(readyAge);
+  const readyMinutes = elapsedMinutes(readyAge);
+  const cooling: Lateness = !compact
+    ? "normal"
+    : readyMinutes >= READY_LATE_MIN
+      ? "late"
+      : readyMinutes >= READY_HURRY_MIN
+        ? "hurry"
+        : "normal";
+  const shownLateness = compact ? cooling : lateness;
+  const TimerIcon = shownLateness === "late" ? CircleAlert : shownLateness === "hurry" ? Hourglass : Clock;
+  const timeText = (x: AgeLabel) =>
+    x.unit === "now"
+      ? t("justNow")
+      : x.unit === "minutes"
+        ? t("minutes", { minutes: x.value })
+        : t("hours", { hours: x.value });
   // The allergy, spelled out once in the red band: the order's note, and each
   // dish's note with the dish's name in front of it.
   const allergyText = [
@@ -465,7 +538,11 @@ export function OrderTicketCard({
     <TicketCard.Root
       id={ticket.id}
       number={ticket.number}
-      label={t("tableLabel", { table: ticket.table ?? ticket.number })}
+      label={
+        ticket.table
+          ? t("tableLabel", { table: ticket.table })
+          : t("orderLabel", { number: ticket.number })
+      }
       kind="order"
       lateness={lateness}
       pending={ticket.pending}
@@ -477,43 +554,56 @@ export function OrderTicketCard({
         number={ticket.number}
         compact={compact}
         tone={lateness}
-        meta={
-          <>
+        timer={
+          compact ? (
+            // On the pass the number that matters is how long the food has
+            // stood there: amber after 3 minutes, red after 6.
             <span
               className={clsx(
-                "flex items-center gap-2 font-bold",
-                compact ? "text-xl" : "text-[1.875rem] leading-tight",
+                "flex items-center gap-1.5 rounded-lg text-[1.0625rem] leading-tight font-bold whitespace-nowrap",
+                cooling === "late"
+                  ? "bg-late-on-dark px-2 py-0.5 text-white"
+                  : cooling === "hurry"
+                    ? "bg-apricot text-ink px-2 py-0.5"
+                    : undefined,
               )}
             >
-              <TimerIcon aria-hidden="true" className={compact ? "size-5" : "size-7"} />
+              <TimerIcon aria-hidden="true" className="size-5 shrink-0" />
               <span data-testid="ticket-timer" className="num whitespace-nowrap">
-                {label.unit === "now"
-                  ? t("justNow")
-                  : label.unit === "minutes"
-                    ? t("minutes", { minutes: label.value })
-                    : t("hours", { hours: label.value })}
+                {t("readyFor", { time: timeText(readyLabel) })}
               </span>
             </span>
-            {lateness !== "normal" && (
-              <span
-                data-testid="ticket-age"
-                className={clsx(
-                  "rounded-md px-2 py-0.5 text-lg leading-tight font-bold",
-                  lateness === "late" ? "text-pomegranate bg-white" : "bg-ink text-apricot",
-                )}
-              >
-                {lateness === "late" ? t("late") : t("hurry")}
+          ) : (
+            <span className="flex items-center gap-2 text-[1.875rem] leading-tight font-bold">
+              <TimerIcon aria-hidden="true" className="size-7 shrink-0" />
+              <span data-testid="ticket-timer" className="num whitespace-nowrap">
+                {timeText(label)}
               </span>
-            )}
-            <span className="flex items-center gap-1 text-base font-semibold">
-              {t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })}
-              {/* Printing is occasional: an icon in the head, not a second big button. */}
-              <PrintTicketButton
-                label={tPrint("button")}
-                iconOnly
-                className="-my-2.5 -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
-              >
-                <TicketSheet
+              {/* The band's colour and the icon already say it; the word is for screen readers. */}
+              {lateness !== "normal" && (
+                <span data-testid="ticket-age" className="sr-only">
+                  {lateness === "late" ? t("late") : t("hurry")}
+                </span>
+              )}
+            </span>
+          )
+        }
+        meta={
+          <>
+            {/* With no table the big number already is the order's: the line
+                under it names only where it came from. */}
+            <span className="min-w-0 truncate">
+              {ticket.table
+                ? t("order", { number: ticket.number, source: t(`source.${ticket.source}`) })
+                : t(`source.${ticket.source}`)}
+            </span>
+            {/* Printing is occasional: an icon at the end of the order line, not a second big button. */}
+            <PrintTicketButton
+              label={tPrint("button")}
+              iconOnly
+              className="-my-2.5 -mr-2 grid size-11 shrink-0 place-items-center rounded-xl"
+            >
+              <TicketSheet
                 table={ticket.table}
                 orderNumber={ticket.number}
                 time={new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
@@ -522,8 +612,7 @@ export function OrderTicketCard({
                   .map((l) => ({ quantity: l.quantity, name: l.name, modifiers: l.modifiers.map((m) => m.text), substitute: l.substitute?.text ?? null, note: l.note }))}
                 note={ticket.orderNote}
               />
-              </PrintTicketButton>
-            </span>
+            </PrintTicketButton>
           </>
         }
       />
@@ -531,7 +620,10 @@ export function OrderTicketCard({
         <p
           data-testid="ticket-allergy"
           className={clsx(
-            "bg-late-on-dark m-0 flex items-start gap-2 px-4 py-2 leading-snug font-bold text-white [overflow-wrap:anywhere]",
+            // A red tint with red-ink text: never the colour of any head
+            // (grey, amber, red), so on a late ticket the warning stays its own
+            // line instead of merging into the red band above it.
+            "bg-pom-tint text-pomegranate m-0 flex items-start gap-2 px-4 py-2 leading-snug font-bold [overflow-wrap:anywhere]",
             compact ? "text-lg" : "text-xl",
           )}
         >
@@ -637,15 +729,13 @@ export function VoidTicketCard({
         number={ticket.number}
         compact={false}
         tone="void"
-        meta={
-          <>
-            <span className="flex items-center gap-2 text-2xl font-bold">
-              <Ban aria-hidden="true" className="size-7 shrink-0" />
-              {t("void")}
-            </span>
-            <span className="text-base font-semibold">{t("voidOrder", { number: ticket.number })}</span>
-          </>
+        timer={
+          <span className="flex items-center gap-2 text-2xl font-bold">
+            <Ban aria-hidden="true" className="size-7 shrink-0" />
+            {t("void")}
+          </span>
         }
+        meta={<span>{t("voidOrder", { number: ticket.number })}</span>}
       />
       <TicketCard.Body>
         <TicketCard.Lines ticketId={ticket.id} lines={ticket.lines} compact={false} struck />

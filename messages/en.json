@@ -461,6 +461,7 @@
     "ticket": {
       "table": "Table",
       "tableLabel": "Table {table}",
+      "orderLabel": "Order {number}",
       "noTable": "Order",
       "order": "Order {number}, {source}",
       "source": {
@@ -499,9 +500,10 @@
       "cantMakePaid": "This order is already paid. Tell the waiter.",
       "cantMakeForbidden": "Food that was served is for a manager to cancel.",
       "allergyNote": "Allergy: {note}",
-      "allergyLine": "{dish}: {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Allergy",
-      "cantMakeLabel": "Can't make {name}"
+      "cantMakeLabel": "Can't make {name}",
+      "readyFor": "Ready: {time}"
     },
     "connection": {
       "online": "Online",
@@ -523,7 +525,8 @@
         "mid": "Middle",
         "low": "Low"
       },
-      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound."
+      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound.",
+      "confirmEnd": "End shift?"
     },
     "conflict": "Already changed",
     "actionFailed": "That didn't work. The screen has been refreshed.",
@@ -578,7 +581,8 @@
       "cooking": "Nothing cooking",
       "ready": "Nothing ready"
     },
-    "tools": "Tools"
+    "tools": "Tools",
+    "more": "More tools"
   },
   "waiter": {
     "alert": {
@@ -593,6 +597,7 @@
     "floorMap": "Floor map",
     "areas": "Areas",
     "otherArea": "Other tables",
+    "areaNeeds": "{count, plural, one {# table waiting} other {# tables waiting}}",
     "need": "Waiting: {count, plural, one {# table} other {# tables}}",
     "allServed": "Everyone is looked after",
     "state": {
@@ -629,7 +634,10 @@
       "closeBlocked": "Accept or reject the new order first.",
       "noOrders": "No orders yet.",
       "now": "Now",
-      "allClear": "All good."
+      "allClear": "All good.",
+      "pendingTotal": "waiting: {amount}",
+      "pendingSuffix": "not accepted yet",
+      "acceptOrder": "Accept order {number}"
     },
     "waiting": {
       "title": "Table {label}: new guests?",
@@ -709,6 +717,8 @@
       "soldOut": "Sold out",
       "less": "One fewer {name}",
       "more": "One more {name}",
+      "rowLess": "One less: {name}",
+      "rowMore": "One more: {name}",
       "options": "Choose",
       "required": "required",
       "addWithOptions": "Add",
@@ -719,7 +729,9 @@
       "close": "Close",
       "sent": "Table {label}: order sent.",
       "queued": "No connection. The order will go out when it's back.",
-      "addItem": "<hidden>Add </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Add </hidden><dish>{name}</dish>",
+      "overline": "New order",
+      "items": "{count, plural, one {# dish} other {# dishes}}"
     },
     "settle": {
       "title": "How did they pay?",
@@ -771,7 +783,13 @@
       "ago": "{minutes} min ago",
       "now": "just now",
       "action": "{action}, table {label}",
-      "closeBill": "Close the bill"
+      "closeBill": "Close the bill",
+      "quick": {
+        "accept": "Accept",
+        "serve": "Served",
+        "going": "On my way",
+        "settle": "Close the bill"
+      }
     },
     "quiet": "quiet {time}",
     "timeline": {
@@ -813,6 +831,8 @@
       "open": "My shift",
       "title": "My shift",
       "subtitle": "Business day {date}. Only what you recorded.",
+      "money": "Payments",
+      "work": "Work",
       "tables": "Tables closed",
       "cash": "Cash to hand over",
       "card": "Paid by card",
@@ -854,7 +874,17 @@
       "soundOnTest": "Sound on. Tap to hear it.",
       "notificationBody": "Open the waiter app",
       "sound": "Sound",
-      "summary": "{count, plural, one {# table} other {# tables}} waiting"
+      "summary": "{count, plural, one {# table} other {# tables}} waiting",
+      "openShort": "Open"
+    },
+    "more": "More",
+    "stateShort": {
+      "free": "Free",
+      "busy": "Seated",
+      "new": "New",
+      "ready": "Ready",
+      "call": "Calling",
+      "bill": "Bill"
     }
   },
   "menu": {

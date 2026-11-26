@@ -52,7 +52,7 @@ export function ShiftSheet({
 
   return (
     <Sheet labelledBy={id} onClose={onClose}>
-      <div className="grid gap-4 p-5 sm:p-6">
+      <div className="grid gap-6 bg-white p-5 sm:p-6">
         <div className="grid gap-1">
           <h2 id={id} className="m-0 text-[1.375rem] leading-tight font-bold">
             {t("title")}
@@ -72,18 +72,30 @@ export function ShiftSheet({
           </p>
         )}
         {state.kind === "ok" && (
+          // Two groups of hairline rows straight on the sheet, each under its
+          // heading: no card frames, the sheet is the one surface.
           <>
-            <dl data-testid="shift-money" className="m-0 grid overflow-hidden rounded-2xl bg-white">
-              <Row label={t("cash")} value={money(state.data.cash)} strong />
-              <Row testId="shift-card" label={t("card")} value={money(state.data.card)} />
-              <Row label={t("total")} value={money(state.data.cash + state.data.card)} />
-            </dl>
-            <dl data-testid="shift-work" className="m-0 grid overflow-hidden rounded-2xl bg-white">
-              <Row label={t("tables")} value={String(state.data.tables)} />
-              <Row label={t("entered")} value={String(state.data.entered)} />
-              <Row label={t("accepted")} value={String(state.data.accepted)} />
-              <Row label={t("acceptTime")} value={minutes(state.data.acceptMinutes)} />
-            </dl>
+            <section aria-labelledby={`${id}-money`} className="grid gap-1">
+              <h3 id={`${id}-money`} className="m-0 text-[1.25rem] leading-tight font-bold">
+                {t("money")}
+              </h3>
+              <dl data-testid="shift-money" className="border-staff-sep m-0 grid border-t">
+                <Row label={t("cash")} value={money(state.data.cash)} strong />
+                <Row testId="shift-card" label={t("card")} value={money(state.data.card)} />
+                <Row label={t("total")} value={money(state.data.cash + state.data.card)} />
+              </dl>
+            </section>
+            <section aria-labelledby={`${id}-work`} className="grid gap-1">
+              <h3 id={`${id}-work`} className="m-0 text-[1.25rem] leading-tight font-bold">
+                {t("work")}
+              </h3>
+              <dl data-testid="shift-work" className="border-staff-sep m-0 grid border-t">
+                <Row label={t("tables")} value={String(state.data.tables)} />
+                <Row label={t("entered")} value={String(state.data.entered)} />
+                <Row label={t("accepted")} value={String(state.data.accepted)} />
+                <Row label={t("acceptTime")} value={minutes(state.data.acceptMinutes)} />
+              </dl>
+            </section>
           </>
         )}
         <button type="button" className={button("secondary")} onClick={onClose}>
@@ -106,7 +118,7 @@ function Row({
   testId?: string;
 }) {
   return (
-    <div className="border-staff-sep flex min-h-12 items-center justify-between gap-4 border-b px-4 py-2 last:border-b-0">
+    <div className="border-staff-sep flex min-h-14 items-center justify-between gap-4 border-b py-2 last:border-b-0">
       <dt className="text-[1.0625rem]">{label}</dt>
       <dd
         data-testid={testId}

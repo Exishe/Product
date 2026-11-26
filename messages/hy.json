@@ -461,6 +461,7 @@
     "ticket": {
       "table": "Սեղան",
       "tableLabel": "Սեղան {table}",
+      "orderLabel": "Պատվեր {number}",
       "noTable": "Պատվեր",
       "order": "Պատվեր {number}, {source}",
       "source": {
@@ -499,9 +500,10 @@
       "cantMakePaid": "Պատվերն արդեն վճարված է։ Ասեք մատուցողին։",
       "cantMakeForbidden": "Մատուցված ուտեստը կարող է չեղարկել միայն կառավարիչը։",
       "allergyNote": "Ալերգիա՝ {note}",
-      "allergyLine": "{dish}՝ {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Ալերգիա",
-      "cantMakeLabel": "Չենք կարող պատրաստել՝ {name}"
+      "cantMakeLabel": "Չենք կարող պատրաստել՝ {name}",
+      "readyFor": "Պատրաստ՝ {time}"
     },
     "connection": {
       "online": "Առցանց",
@@ -523,7 +525,8 @@
         "mid": "Միջին",
         "low": "Ցածր"
       },
-      "toneHint": "Կողք կողքի էկրաններին տվեք տարբեր ձայներ։ Ալերգիայով պատվերն ու չեղարկումն իրենց ձայնն ունեն։"
+      "toneHint": "Կողք կողքի էկրաններին տվեք տարբեր ձայներ։ Ալերգիայով պատվերն ու չեղարկումն իրենց ձայնն ունեն։",
+      "confirmEnd": "Ավարտե՞լ"
     },
     "conflict": "Արդեն փոխվել է",
     "actionFailed": "Չհաջողվեց։ Էկրանը թարմացվեց։",
@@ -578,7 +581,8 @@
       "cooking": "Ոչինչ չի պատրաստվում",
       "ready": "Պատրաստ ուտեստ չկա"
     },
-    "tools": "Գործիքներ"
+    "tools": "Գործիքներ",
+    "more": "Այլ գործիքներ"
   },
   "waiter": {
     "alert": {
@@ -593,6 +597,7 @@
     "floorMap": "Սեղանների քարտեզ",
     "areas": "Տարածքներ",
     "otherArea": "Այլ սեղաններ",
+    "areaNeeds": "{count} սեղան սպասում է",
     "need": "Սպասում են՝ {count} սեղան",
     "allServed": "Բոլորը սպասարկված են",
     "state": {
@@ -629,7 +634,10 @@
       "closeBlocked": "Նախ ընդունեք կամ մերժեք նոր պատվերը։",
       "noOrders": "Պատվերներ դեռ չկան։",
       "now": "Հիմա",
-      "allClear": "Ամեն ինչ կարգին է։"
+      "allClear": "Ամեն ինչ կարգին է։",
+      "pendingTotal": "սպասում է՝ {amount}",
+      "pendingSuffix": "չհաստատված",
+      "acceptOrder": "Ընդունել պատվեր {number}"
     },
     "waiting": {
       "title": "Սեղան {label}․ նոր հյուրե՞ր",
@@ -709,6 +717,8 @@
       "soldOut": "Չկա",
       "less": "Պակասեցնել՝ {name}",
       "more": "Ավելացնել քանակը՝ {name}",
+      "rowLess": "Մեկով պակաս՝ {name}",
+      "rowMore": "Մեկով ավելի՝ {name}",
       "options": "Ընտրեք",
       "required": "պարտադիր",
       "addWithOptions": "Ավելացնել",
@@ -719,7 +729,9 @@
       "close": "Փակել",
       "sent": "Սեղան {label}՝ պատվերն ուղարկվեց։",
       "queued": "Կապ չկա։ Պատվերը կուղարկենք, երբ կապը վերականգնվի։",
-      "addItem": "<hidden>Ավելացնել՝ </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Ավելացնել՝ </hidden><dish>{name}</dish>",
+      "overline": "Նոր պատվեր",
+      "items": "{count} ուտեստ"
     },
     "settle": {
       "title": "Ինչպե՞ս վճարեցին",
@@ -771,7 +783,13 @@
       "ago": "{minutes} ր առաջ",
       "now": "հենց նոր",
       "action": "{action}, սեղան {label}",
-      "closeBill": "Փակել հաշիվը"
+      "closeBill": "Փակել հաշիվը",
+      "quick": {
+        "accept": "Ընդունել",
+        "serve": "Մատուցված",
+        "going": "Գնում եմ",
+        "settle": "Փակել հաշիվը"
+      }
     },
     "quiet": "լուռ է {time}",
     "timeline": {
@@ -813,6 +831,8 @@
       "open": "Իմ հերթափոխը",
       "title": "Իմ հերթափոխը",
       "subtitle": "Աշխատանքային օր՝ {date}։ Միայն ձեր գրանցածը։",
+      "money": "Վճարումներ",
+      "work": "Աշխատանք",
       "tables": "Փակված սեղաններ",
       "cash": "Հանձնելու կանխիկ",
       "card": "Վճարված քարտով",
@@ -854,7 +874,17 @@
       "soundOnTest": "Ձայնը միացված է։ Հպեք՝ լսելու համար։",
       "notificationBody": "Բացեք մատուցողի հավելվածը",
       "sound": "Ձայն",
-      "summary": "{count} սեղան սպասում է"
+      "summary": "{count} սեղան սպասում է",
+      "openShort": "Բացել"
+    },
+    "more": "Ավելին",
+    "stateShort": {
+      "free": "Ազատ",
+      "busy": "Զբաղված",
+      "new": "Նոր",
+      "ready": "Պատրաստ",
+      "call": "Կանչում են",
+      "bill": "Հաշիվ"
     }
   },
   "menu": {

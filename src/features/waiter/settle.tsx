@@ -72,7 +72,7 @@ export function SettleSheet({
           {t("panel.table", { label })}
         </h2>
         {oldBill && <p className="text-staff-label2 m-0 font-semibold">{t("settle.oldBill")}</p>}
-        {onReward && <RewardCards rewards={rewards} onResolve={onReward} />}
+        {onReward && <RewardCards rewards={rewards} onResolve={onReward} inset />}
         <h3 className="m-0 text-[1.25rem] font-bold">{t("settle.title")}</h3>
         <div role="group" aria-label={t("settle.modes")} className="grid grid-cols-3 gap-2">
           {MODES.map((m) => {

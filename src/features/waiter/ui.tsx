@@ -13,21 +13,34 @@ import type { Connection } from "@/features/kitchen/connection";
 export const btn = {
   base: "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0",
   primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
+  // White with an inside hairline: flat, like every group (ADR-093).
   secondary:
-    "bg-white text-ink shadow-[var(--shadow-soft)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
+    "bg-white text-ink ring-1 ring-staff-field/50 ring-inset disabled:bg-staff-fill disabled:text-staff-label2 disabled:ring-0",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
+  // A second action on the page itself: an inside ink line, no fill, no shadow.
+  outline:
+    "bg-transparent text-ink ring-[1.5px] ring-ink ring-inset disabled:text-staff-label2 disabled:ring-staff-sep",
 };
+
+// A row in a header «…» menu: 56 px, icon and words, no frame.
+export const MENU_ROW =
+  "text-ink hover:bg-staff-fill flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-[1.0625rem] font-semibold disabled:opacity-60 [&_svg]:size-5 [&_svg]:shrink-0";
+
+// The header's round tools: 44 px, white, one hairline, no shadow (the
+// kitchen's are the same shape at 48 px).
+export const HEADER_ICON =
+  "border-staff-sep text-ink grid size-11 shrink-0 place-items-center rounded-full border bg-white";
 export const button = (kind: keyof Omit<typeof btn, "base">, extra?: string) =>
   clsx(btn.base, btn[kind], extra);
 
 // A choice in a list (reason, payment): selected is tinted, ringed and ticked,
 // so it never relies on colour alone.
 export const choice =
-  "inline-flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink shadow-[var(--shadow-soft)] ring-0 aria-pressed:bg-ink aria-pressed:text-white aria-pressed:ring-2 aria-pressed:ring-ink [&_svg]:size-5 [&_svg]:shrink-0";
+  "inline-flex min-h-12 items-center justify-between gap-2 rounded-xl bg-white px-4 text-left text-[1.0625rem] font-semibold text-ink ring-1 ring-staff-field/50 ring-inset aria-pressed:bg-ink aria-pressed:text-white aria-pressed:ring-2 aria-pressed:ring-ink [&_svg]:size-5 [&_svg]:shrink-0";
 
 export const chip = {
-  base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",
+  base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.9375rem] leading-6 font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   plain: "bg-staff-fill text-staff-label2",
   wait: "bg-amber text-ink",
   ready: "bg-tarragon text-white",
@@ -122,8 +135,9 @@ export function Toasts({ toasts, onDismiss }: { toasts: readonly Toast[]; onDism
 }
 
 // The count of waiting taps is not repeated here: the «Չուղարկված» chip next
-// to it shows it, online or not, and opens the list. A quiet dot and a word
-// while all is well; a red fill only when the connection is gone.
+// to it shows it, online or not, and opens the list. A quiet dot while all is
+// well (the word beside it from 640 px; screen readers always hear it); a red
+// fill with the word when the connection is gone.
 export function ConnectionPill({ state }: { state: Connection }) {
   const t = useTranslations("waiter.connection");
   const label = state === "online" ? t("online") : state === "connecting" ? t("connecting") : t("offline");
@@ -148,7 +162,7 @@ export function ConnectionPill({ state }: { state: Connection }) {
           )}
         />
       )}
-      <span className="min-w-0 truncate">{label}</span>
+      <span className={clsx("min-w-0 truncate", state !== "offline" && "max-sm:sr-only")}>{label}</span>
     </span>
   );
 }

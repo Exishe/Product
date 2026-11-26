@@ -461,6 +461,7 @@
     "ticket": {
       "table": "Стол",
       "tableLabel": "Стол {table}",
+      "orderLabel": "Заказ {number}",
       "noTable": "Заказ",
       "order": "Заказ {number}, {source}",
       "source": {
@@ -499,9 +500,10 @@
       "cantMakePaid": "Заказ уже оплачен. Скажите официанту.",
       "cantMakeForbidden": "Блюдо уже подано: отменить его может только управляющий.",
       "allergyNote": "Аллергия: {note}",
-      "allergyLine": "{dish}: {note}",
+      "allergyLine": "{note} ({dish})",
       "allergyMark": "Аллергия",
-      "cantMakeLabel": "Не можем приготовить: {name}"
+      "cantMakeLabel": "Не можем приготовить: {name}",
+      "readyFor": "Готово: {time}"
     },
     "connection": {
       "online": "На связи",
@@ -523,7 +525,8 @@
         "mid": "Средний",
         "low": "Низкий"
       },
-      "toneHint": "Экранам, которые стоят рядом, дайте разные звуки. У заказа с аллергией и у отмены свой звук."
+      "toneHint": "Экранам, которые стоят рядом, дайте разные звуки. У заказа с аллергией и у отмены свой звук.",
+      "confirmEnd": "Закончить?"
     },
     "conflict": "Уже изменено",
     "actionFailed": "Не получилось. Экран обновлён.",
@@ -578,7 +581,8 @@
       "cooking": "Ничего не готовится",
       "ready": "Готовых блюд нет"
     },
-    "tools": "Инструменты"
+    "tools": "Инструменты",
+    "more": "Другие инструменты"
   },
   "waiter": {
     "alert": {
@@ -593,6 +597,7 @@
     "floorMap": "Карта зала",
     "areas": "Зоны",
     "otherArea": "Другие столы",
+    "areaNeeds": "{count, plural, one {# стол ждёт} few {# стола ждут} many {# столов ждут} other {# стола ждут}}",
     "need": "Ждут: {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
     "allServed": "Все обслужены",
     "state": {
@@ -629,7 +634,10 @@
       "closeBlocked": "Сначала примите или отклоните новый заказ.",
       "noOrders": "Заказов пока нет.",
       "now": "Сейчас",
-      "allClear": "Всё в порядке."
+      "allClear": "Всё в порядке.",
+      "pendingTotal": "ждёт: {amount}",
+      "pendingSuffix": "не подтверждено",
+      "acceptOrder": "Принять заказ {number}"
     },
     "waiting": {
       "title": "Стол {label}: новые гости?",
@@ -709,6 +717,8 @@
       "soldOut": "Нет",
       "less": "Уменьшить: {name}",
       "more": "Увеличить: {name}",
+      "rowLess": "На одну меньше: {name}",
+      "rowMore": "Ещё одну: {name}",
       "options": "Выберите",
       "required": "обязательно",
       "addWithOptions": "Добавить",
@@ -719,7 +729,9 @@
       "close": "Закрыть",
       "sent": "Стол {label}: заказ отправлен.",
       "queued": "Нет связи. Отправим заказ, когда связь восстановится.",
-      "addItem": "<hidden>Добавить: </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Добавить: </hidden><dish>{name}</dish>",
+      "overline": "Новый заказ",
+      "items": "{count, plural, one {# блюдо} few {# блюда} many {# блюд} other {# блюда}}"
     },
     "settle": {
       "title": "Как оплатили?",
@@ -771,7 +783,13 @@
       "ago": "{minutes} мин назад",
       "now": "только что",
       "action": "{action}, стол {label}",
-      "closeBill": "Закрыть счёт"
+      "closeBill": "Закрыть счёт",
+      "quick": {
+        "accept": "Принять",
+        "serve": "Подано",
+        "going": "Иду",
+        "settle": "Закрыть счёт"
+      }
     },
     "quiet": "тихо {time}",
     "timeline": {
@@ -813,6 +831,8 @@
       "open": "Моя смена",
       "title": "Моя смена",
       "subtitle": "Рабочий день {date}. Только ваши записи.",
+      "money": "Оплаты",
+      "work": "Работа",
       "tables": "Закрыто столов",
       "cash": "Наличные к сдаче",
       "card": "Оплачено картой",
@@ -854,7 +874,17 @@
       "soundOnTest": "Звук включён. Нажмите, чтобы услышать.",
       "notificationBody": "Откройте приложение официанта",
       "sound": "Звук",
-      "summary": "Ждут {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}"
+      "summary": "Ждут {count, plural, one {# стол} few {# стола} many {# столов} other {# стола}}",
+      "openShort": "Открыть"
+    },
+    "more": "Ещё",
+    "stateShort": {
+      "free": "Свободен",
+      "busy": "Занят",
+      "new": "Новый",
+      "ready": "Готово",
+      "call": "Зовут",
+      "bill": "Счёт"
     }
   },
   "menu": {

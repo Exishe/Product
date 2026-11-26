@@ -15,9 +15,12 @@ import { button } from "./ui";
 export function RewardCards({
   rewards,
   onResolve,
+  inset,
 }: {
   rewards: WaiterReward[];
   onResolve: (id: string, action: "applied" | "dismissed") => Promise<DirectResult>;
+  /** Inside a sheet: a rounded band instead of a row across the panel. */
+  inset?: boolean;
 }) {
   const t = useTranslations("waiter.reward");
   const locale = useLocale();
@@ -39,7 +42,11 @@ export function RewardCards({
         <div
           key={r.id}
           data-testid="reward-card"
-          className="border-tarragon bg-tarragon-tint grid gap-3 rounded-2xl border-2 px-4 py-3"
+          className={
+            inset
+              ? "bg-tarragon-tint grid gap-3 rounded-xl px-4 py-3"
+              : "bg-tarragon-tint -mx-4 grid gap-3 px-4 py-3 lg:-mx-6 lg:px-6"
+          }
         >
           <p className="text-ink m-0 flex items-start gap-2 font-semibold">
             <Gift aria-hidden="true" className="text-tarragon mt-0.5 size-5 shrink-0" />

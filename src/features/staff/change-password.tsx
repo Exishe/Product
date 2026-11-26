@@ -13,9 +13,12 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 export function ChangePassword({
   triggerClassName,
   tone,
+  withLabel,
 }: {
   triggerClassName: string;
   tone: "staff" | "kitchen";
+  /** The words next to the key, for a row in a menu or sheet. */
+  withLabel?: boolean;
 }) {
   const t = useTranslations("staffAccount");
   const [open, setOpen] = useState(false);
@@ -64,12 +67,13 @@ export function ChangePassword({
       <button
         type="button"
         data-testid="change-password-open"
-        aria-label={t("changePassword")}
-        title={t("changePassword")}
+        aria-label={withLabel ? undefined : t("changePassword")}
+        title={withLabel ? undefined : t("changePassword")}
         onClick={() => setOpen(true)}
         className={triggerClassName}
       >
         <KeyRound aria-hidden="true" className="size-5 shrink-0" />
+        {withLabel && t("changePassword")}
       </button>
       <dialog
         ref={ref}

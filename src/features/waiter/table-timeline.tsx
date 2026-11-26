@@ -55,10 +55,10 @@ export function TableTimeline({ table, timeZone }: { table: FloorTable; timeZone
 
   return (
     <section aria-labelledby="timeline-title" data-testid="timeline" className="grid gap-2">
-      <h3 id="timeline-title" className="text-staff-label2 m-0 px-1 text-[0.8125rem] font-semibold">
+      <h3 id="timeline-title" className="text-staff-label2 m-0 text-[0.9375rem] font-semibold">
         {t("title")}
       </h3>
-      <ol className="m-0 grid list-none rounded-2xl bg-white px-4 py-2">
+      <ol className="m-0 grid list-none p-0">
         {events.map((e, i) => {
           const Icon = e.kind === "placed" && e.source === "waiter" ? SquarePen : ICON[e.kind];
           const last = i === events.length - 1;
