@@ -30,14 +30,15 @@ export default async function NotFound() {
             <a href={`/${locale}/m/pativ-demo/main`} className={link}>
               {t("common.notFoundDemo")}
             </a>
-            <Link href="/login" className={link}>
+            <a href={`/login?lang=${locale}`} className={link}>
               {t("common.notFoundSignIn")}
-            </Link>
+            </a>
           </nav>
         </>
       }
     >
-      <Link href="/" className={button("primary", "min-h-14 w-full self-start px-6 sm:w-auto")}>
+      {/* Home in the page's language: "/" alone would pick Armenian. */}
+      <Link href={`/${locale}`} className={button("primary", "min-h-14 w-full self-start px-6 sm:w-auto")}>
         {t("common.backHome")}
       </Link>
     </AuthShell>

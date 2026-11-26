@@ -6,14 +6,16 @@
   },
   "landing": {
     "metaTitle": "Pativ: QR menu and ordering for cafés",
-    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's tablet.",
+    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter's phone.",
     "title": "Orders go from the guest's phone straight to the kitchen",
-    "lead": "Guests order from the QR on the table, and the kitchen and the waiter see it at once. No more reprinting menus.",
+    "lead": "Runs on the phones you already have, no new devices. We build the menu in three languages from a photo of your paper one.",
     "ctaDemo": "Open the demo menu",
     "ctaSignup": "Add your café",
+    "trial": "The first month is free. No card needed.",
     "signIn": "Sign in",
     "nav": {
-      "pricing": "Pricing"
+      "pricing": "Pricing",
+      "signup": "Sign up"
     },
     "heroAlt": "The demo café's menu on a guest's phone",
     "features": {
@@ -136,7 +138,7 @@
       "password": "Password",
       "submit": "Sign in",
       "pending": "Checking…",
-      "error": "Wrong email, username or password.",
+      "error": "Wrong email, username or password. Check the keyboard language and Caps Lock.",
       "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
       "signupLink": "Sign up",
@@ -413,7 +415,7 @@
     "error": "That didn't work. Try again, or sign in again first."
   },
   "pair": {
-    "title": "Connect this device",
+    "title": "Connect a device",
     "code": "Six-digit code",
     "submit": "Connect",
     "pending": "Connecting…",
@@ -426,6 +428,7 @@
       "format": "Enter 6 digits."
     },
     "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
+    "note": "The device opens as the kitchen screen or the waiter app, depending on the code.",
     "loginLink": "Sign in with email instead"
   },
   "invite": {

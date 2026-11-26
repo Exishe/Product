@@ -1,5 +1,6 @@
 "use client";
 
+import { clsx } from "clsx";
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 export type ShowcasePanel = {
@@ -22,10 +23,11 @@ export type ShowcasePanel = {
 // The landing page's product showcase (benchmark 2.1): one row of tabs and one
 // screenshot straight on the band, instead of a grid of boxed cards. One
 // subject per tab, shown at 1:1 from lg up so the text in it reads at 14 px
-// or more: a phone screen, or a 720 px crop of the kitchen board. Every
-// picture sits in a 45:43 stage (720x688 at xl) and, from lg, on the stage's
-// right edge, which is the container's: switching tabs never moves the page
-// or the picture's right edge. Tabs follow the WAI-ARIA tabs pattern: arrows, Home and End move
+// or more: a phone screen, or a 720 px crop of the kitchen board. On tablets
+// every picture sits in a 45:43 stage; from lg every picture has one height
+// (688 px at xl) and sits on the container's right edge, with the text taking
+// the rest of the row: switching tabs never moves the page, the picture's
+// right edge or the text's left edge. Tabs follow the WAI-ARIA tabs pattern: arrows, Home and End move
 // between them and select at once. On narrow phones the row scrolls sideways
 // (snapping, no scrollbar) rather than squeezing the labels together. A new
 // panel fades in over 200 ms (off under reduced motion). Hidden panels keep
@@ -107,11 +109,19 @@ export function Showcase({
           id={`${base}-panel-${p.id}`}
           aria-labelledby={`${base}-tab-${p.id}`}
           hidden={i !== active}
-          className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_40rem] lg:items-start lg:gap-12 xl:grid-cols-[minmax(0,1fr)_45rem]"
+          className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-12"
         >
-          {/* The stage: 45:43 from md (720x688 at xl), the picture filling its
-              height; centred on tablets, on the right edge from lg. */}
-          <div className="md:flex md:aspect-[45/43] md:justify-center lg:order-2 lg:justify-end">
+          {/* The stage: 45:43 on tablets, the picture filling its height and
+              centred. From lg the stage is exactly as wide as its picture (one
+              height for all: 612 px at lg, 688 at xl), on the container's
+              right edge, so a phone screen leaves its spare width to the
+              text instead of to an empty gap between the two. */}
+          <div
+            className={clsx(
+              "md:flex md:aspect-[45/43] md:justify-center lg:order-2 lg:aspect-auto",
+              p.wide ? "lg:w-[40rem] xl:w-[45rem]" : "lg:w-[23.375rem] xl:w-[26.25rem]",
+            )}
+          >
             <picture className="contents">
               {p.wide && (
                 <source
@@ -129,20 +139,20 @@ export function Showcase({
                 alt={p.alt}
                 loading={i === 0 ? "eager" : "lazy"}
                 decoding="async"
-                className="block h-auto w-full rounded-[20px] md:h-full md:w-auto md:max-w-full"
+                className="block h-auto w-full rounded-[20px] md:h-full md:w-auto md:max-w-full lg:h-auto lg:w-full"
               />
             </picture>
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
             <h3 className="text-subtitle m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>
-            <p className="text-slate text-name m-0 max-w-[34ch] leading-normal text-pretty">{p.text}</p>
-            <ul className="text-name [&>li]:before:text-slate m-0 mt-2 flex max-w-[36ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
+            <p className="text-slate text-name m-0 max-w-[40ch] leading-normal text-pretty">{p.text}</p>
+            <ul className="text-name [&>li]:before:text-slate m-0 mt-2 flex max-w-[40ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
               {p.points.map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>
             {p.note && (
-              <p className="text-slate text-label m-0 mt-1 max-w-[36ch] leading-normal text-pretty">
+              <p className="text-slate text-label m-0 mt-1 max-w-[40ch] leading-normal text-pretty">
                 {p.note}
               </p>
             )}

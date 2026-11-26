@@ -83,6 +83,8 @@ export function PairForm() {
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <TextField
         label={t("code")}
+        // What the device becomes is set by the code the owner made.
+        hint={t("note")}
         error={badFormat ? t("errors.format") : null}
         onChange={(event) => {
           // Digits only: a letter or a space never appears in the field. No

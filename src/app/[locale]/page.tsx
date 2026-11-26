@@ -69,12 +69,13 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   const guest = await getTranslations("guest");
 
   const demoHref = `/${locale}/${DEMO_MENU}`;
-  // Plain links, not client navigation: sign-in, sign-up and pairing take
-  // their language from the cookie LandingEffects writes, and a full page
-  // load gives them the right <html lang>.
-  const signupHref = "/signup";
-  const loginHref = "/login";
-  const pairHref = "/pair";
+  // Plain links, not client navigation: sign-in, sign-up and pairing have no
+  // locale in their URL, so `?lang=` hands them this page's language (the
+  // proxy remembers it and redirects to the clean URL; LandingEffects also
+  // writes it), and a full page load gives them the right <html lang>.
+  const signupHref = `/signup?lang=${locale}`;
+  const loginHref = `/login?lang=${locale}`;
+  const pairHref = `/pair?lang=${locale}`;
 
   const panels: ShowcasePanel[] = SURFACES.map((s) => ({
     id: s,
@@ -121,10 +122,14 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
 
   return (
     <div className="landing-page text-ink relative min-h-dvh bg-white">
-      <LandingEffects locale={locale} headerId="landing-header" />
+      <LandingEffects locale={locale} headerId="landing-header" ctaId="landing-hero-cta" />
+      {/* Sticky header. Once the hero's buttons have scrolled away, phones
+          swap the language links (also in the footer, and back on scrolling
+          up) for a short sign-up pill, so starting is never more than one
+          tap away; from sm both always fit. */}
       <header
         id="landing-header"
-        className="data-scrolled:border-hairline sticky top-0 z-20 border-b border-transparent bg-white transition-colors duration-200"
+        className="group data-scrolled:border-hairline sticky top-0 z-20 border-b border-transparent bg-white transition-colors duration-200"
       >
         <div className={`${container} flex h-16 items-center justify-between gap-2`}>
           <BrandLink href={`/${locale}`} name={brand("name")} />
@@ -135,16 +140,19 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             >
               {t("nav.pricing")}
             </a>
-            {languages("nav")}
-            <span aria-hidden="true" className="bg-hairline mx-1 h-5 w-px" />
+            <div className="flex items-center max-sm:group-data-cta:hidden">
+              {languages("nav")}
+              <span aria-hidden="true" className="bg-hairline mx-1 h-5 w-px" />
+            </div>
             <a href={loginHref} className={`${textLink} min-w-11 justify-center px-2`}>
               {t("signIn")}
             </a>
             <a
               href={signupHref}
-              className="bg-ink text-label ml-1 hidden min-h-11 items-center rounded-full px-4 font-semibold text-white no-underline sm:inline-flex"
+              className="bg-ink text-label motion-safe:animate-in motion-safe:fade-in ml-1 hidden min-h-11 items-center rounded-full px-4 font-semibold whitespace-nowrap text-white no-underline group-data-cta:inline-flex motion-safe:duration-200 sm:inline-flex"
             >
-              {t("ctaSignup")}
+              <span className="sm:hidden">{t("nav.signup")}</span>
+              <span className="hidden sm:inline">{t("ctaSignup")}</span>
             </a>
           </div>
         </div>
@@ -163,7 +171,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <p className="text-slate mt-5 mb-0 max-w-[34ch] text-lg leading-normal text-pretty md:mt-8 md:text-xl">
               {t("lead")}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-10">
+            <div id="landing-hero-cta" className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-10">
               <a
                 href={demoHref}
                 className="bg-ink inline-flex min-h-14 items-center justify-center rounded-full px-6 text-base font-semibold text-white no-underline"
@@ -177,6 +185,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 {t("ctaSignup")}
               </a>
             </div>
+            <p className="text-slate text-label m-0 mt-4">{t("trial")}</p>
           </div>
           <div className="relative z-10 -mb-16 lg:col-span-5 lg:col-start-8 lg:-mb-24">
             <a
