@@ -810,17 +810,20 @@ export function GuestMenu({
               // first screen shows names, prices and "+" (ADR-095).
               (() => {
                 const clusters = groupSections(shown);
-                // The pictured dishes come first (a row with a photo on a phone; a
-                // photo card, three across on a tablet, two beside the rail from 1024 px
-                // and three again from 1280 px), then the dishes without a photo.
-                // A section with photos is one grid on one set of columns: its
-                // photo-less dishes carry on in the same columns, right after the
-                // last photo (no empty slot, no second set of column edges). A
-                // section without photos is a two-column list on hairlines.
-                // Within each, the café's own order stays.
+                // The pictured dishes come first, then the dishes without a photo;
+                // within each, the café's own order stays. A section where every
+                // dish has a photo is a grid of photo cards from 768 px (three
+                // across on a tablet, two beside the rail from 1024 px, three again
+                // from 1280 px). Any other section is a list of phone rows on
+                // hairlines (name, meta, description and price on the left, a
+                // 112 px photo or the bare "+" on the right): two columns on a
+                // tablet, one beside the rail from 1024 px, two again from 1360 px.
+                // Mixing a tall card with short rows left holes and "+" at
+                // different heights (judge round 4).
                 const rows = (list: GuestItem[]) => {
                   const pictured = list.filter((i) => i.image);
                   const plain = list.filter((i) => !i.image);
+                  const cards = plain.length === 0;
                   const card = (item: GuestItem, i: number) => (
                     <DishRow
                       key={item.id}
@@ -833,19 +836,17 @@ export function GuestMenu({
                       onOpen={setSheet}
                       onQuickAdd={quickAdd}
                       onDecrease={decrease}
+                      listed={!cards}
                     />
                   );
-                  return pictured.length > 0 ? (
-                    <ul
-                      // A photo-less dish beside a photo keeps its own height (its price
-                      // under its name), not the photo card's.
-                      className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3 md:[&>li:not([data-photo])]:self-start"
-                      data-mixed={plain.length > 0 || undefined}
-                    >
-                      {[...pictured, ...plain].map(card)}
+                  return cards ? (
+                    <ul className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3">
+                      {pictured.map(card)}
                     </ul>
                   ) : (
-                    <ul className="grid gap-3 md:grid-cols-2 md:gap-x-6">{plain.map(card)}</ul>
+                    <ul className="grid gap-3 md:grid-cols-2 md:gap-x-8 lg:grid-cols-1 min-[1360px]:grid-cols-2" data-list>
+                      {[...pictured, ...plain].map(card)}
+                    </ul>
                   );
                 };
                 // Each group after the first, and each section after the first,

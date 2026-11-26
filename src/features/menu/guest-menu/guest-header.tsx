@@ -243,6 +243,7 @@ export function GuestHeader({
   tools,
   compact = false,
   width = "max-w-[1120px]",
+  oneRow = false,
   home,
 }: {
   cafeName: string;
@@ -257,6 +258,8 @@ export function GuestHeader({
   compact?: boolean;
   /** The compact bar's column (the order page's 48rem, so the bar and the page share one column). */
   width?: string;
+  /** The compact bar in one row from 1024 px, as on the menu (GuestBar `oneRow`). */
+  oneRow?: boolean;
   /** The café's name and wordmark lead to the menu. */
   home?: HomeLink;
 }) {
@@ -279,6 +282,7 @@ export function GuestHeader({
           languages={languages}
           tools={tools}
           width={width}
+          oneRow={oneRow}
         />
       </header>
     );

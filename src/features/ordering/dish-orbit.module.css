@@ -170,9 +170,10 @@
   text-align: center;
 }
 
-/* A 360 px phone: the heading keeps its one line; the arrows stay, the
-   «2 / 9» goes (screen readers hear the position from the live line). */
-@container (max-width: 349px) {
+/* A phone (360 to 390 px): the heading keeps its one line beside the two
+   arrows and their 8 px gap; the «2 / 9» goes (screen readers hear the
+   position from the live line). */
+@container (max-width: 399px) {
   .count {
     display: none;
   }
@@ -465,11 +466,13 @@
     margin-top: 12px;
   }
 
+  /* 8 px between each circle and the «2 / 9» (and between the two circles
+     when a 360 px phone drops the count), so they never touch. */
   .counter {
     display: flex;
     flex: none;
     align-items: center;
-    gap: 0;
+    gap: 8px;
     color: var(--guest-muted);
     font-size: 15px;
     font-weight: 600;

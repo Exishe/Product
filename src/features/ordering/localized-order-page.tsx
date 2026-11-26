@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { useGuestI18n } from "./guest-i18n-context";
-import { ORDER_COLUMN, OrderStatusView } from "./order-status-view";
+import { ORDER_BAR, OrderStatusView } from "./order-status-view";
 
 type ViewProps = ComponentProps<typeof OrderStatusView>;
 
@@ -30,7 +30,7 @@ export function LocalizedOrderPage({
   wait,
   pairs,
 }: {
-  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact" | "width">;
+  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact" | "width" | "oneRow">;
   texts: Partial<Record<Locale, OrderTexts>>;
   /** The menu's address without the language: /m/{café}/{location}. */
   path: string;
@@ -63,8 +63,13 @@ export function LocalizedOrderPage({
         {...header}
         // A short bar: the order starts near the top of the screen.
         compact
-        // The bar on the page's own column, so «Order more» sits over the order.
-        width={ORDER_COLUMN}
+        // The bar on the page's own column on a phone and a tablet, so «Order
+        // more» sits over the order. From 1024 px it is the menu's own bar:
+        // one row on the menu's 1440 px width (the café and its table, then
+        // the colour switch, «Order more» in the order button's place and the
+        // languages), so nothing in the chrome moves between menu and order.
+        width={ORDER_BAR}
+        oneRow
         home={{ href: menuHref }}
         // Order something new: an outline pill with its words, beside the
         // table (not on the empty page, whose own button does it).

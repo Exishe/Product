@@ -13,8 +13,11 @@ import { sizesOf, type GuestItem } from "./view-model";
 // name, sizes, one quiet meta line (portion and tags), two lines of
 // description and the price on the left, a fixed 104 px square photo on the
 // right. From 768 px a pictured dish stands in the grid with its photo across
-// the top and the text on the photo's own left edge. Every dish has the same
-// shape: no larger "lead" card.
+// the top and the text on the photo's own left edge, when every dish of its
+// section has a photo; a section that mixes pictured and photo-less dishes
+// stays a list of rows on hairlines (`listed`, a 112 px photo on the right), so
+// no tall card stands beside short ones. Every dish has the same shape: no
+// larger "lead" card.
 //
 // The add control has one place (ADR-095): with a photo it sits inside the
 // photo's bottom-right corner, 4 px in, ringed in the page colour; without a
@@ -57,6 +60,7 @@ export function DishRow({
   onDecrease,
   inCart = 0,
   index = 0,
+  listed = false,
 }: {
   item: GuestItem;
   canOrder: boolean;
@@ -72,12 +76,19 @@ export function DishRow({
   inCart?: number;
   /** Place in its section: the first cards rise in one after another. */
   index?: number;
+  /**
+   * Keep the phone row from 768 px too (a section that mixes pictured and
+   * photo-less dishes): the 112 px square photo on the right, a hairline above.
+   */
+  listed?: boolean;
 }) {
   const { t, locale } = useGuestI18n();
   const needsChoice = item.groups.some((g) => g.min > 0);
   const muted = item.soldOut ? "text-muted" : "";
   const sizes = sizesOf(item);
   const photo = Boolean(item.image);
+  // A pictured dish becomes a photo card from 768 px, unless its section is a list.
+  const card = photo && !listed;
   const orderable = canOrder && !item.soldOut;
   const dimmed = !canOrder && preview && !item.soldOut;
   const control = orderable || dimmed;
@@ -156,6 +167,7 @@ export function DishRow({
       data-testid="dish"
       data-dish-id={item.id}
       data-layout="row"
+      data-listed={listed || undefined}
       data-photo={photo || undefined}
       data-in-cart={inCart > 0 || undefined}
       data-warning={warning ? (warning.strong ? "contains" : "unknown") : undefined}
@@ -165,15 +177,19 @@ export function DishRow({
         disabled={item.soldOut}
         onClick={() => onOpen(item)}
         className={`rounded-card flex min-h-11 w-full min-w-0 flex-1 px-[var(--dish-pad)] py-4 text-left disabled:cursor-default ${
-          photo
+          card
             ? "flex-row-reverse items-start gap-3 md:flex-col md:items-stretch md:gap-0 md:p-[var(--dish-pad)]"
-            : "flex-col md:py-[max(0.75rem,var(--dish-pad))]"
+            : photo
+              ? "flex-row-reverse items-start gap-3 md:gap-4"
+              : listed
+                ? "flex-col"
+                : "flex-col md:py-[max(0.75rem,var(--dish-pad))]"
         }`}
       >
         {item.image && (
           <span
             data-part="photo"
-            className="bg-plate rounded-guest-md relative block size-[104px] flex-none overflow-hidden md:aspect-[4/3] md:size-auto md:w-full"
+            className={`bg-plate rounded-guest-md relative block size-[104px] flex-none overflow-hidden ${card ? "md:aspect-[4/3] md:size-auto md:w-full" : "md:size-[112px]"}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
             <img
@@ -186,7 +202,7 @@ export function DishRow({
             />
           </span>
         )}
-        <span className={`flex min-w-0 flex-1 flex-col self-stretch ${photo ? "md:pt-3" : ""}`}>
+        <span className={`flex min-w-0 flex-1 flex-col self-stretch ${card ? "md:pt-3" : ""}`}>
           <Txt
             value={item.name}
             locale={locale}
@@ -260,13 +276,13 @@ export function DishRow({
         (photo ? (
           // The photo's footprint, so the control sits in its bottom-right corner.
           <span
-            className="pointer-events-none absolute top-4 right-[var(--dish-pad)] size-[104px] md:inset-x-[var(--dish-pad)] md:top-[var(--dish-pad)] md:aspect-[4/3] md:size-auto"
+            className={`pointer-events-none absolute top-4 right-[var(--dish-pad)] size-[104px] ${card ? "md:inset-x-[var(--dish-pad)] md:top-[var(--dish-pad)] md:aspect-[4/3] md:size-auto" : "md:size-[112px]"}`}
           >
             <span className="pointer-events-auto absolute right-1 bottom-1">{addControl}</span>
           </span>
         ) : (
           <span
-            className={`absolute right-[var(--dish-pad)] ${onSizes ? "" : "bottom-4 md:bottom-[max(0.75rem,var(--dish-pad))]"}`}
+            className={`absolute right-[var(--dish-pad)] ${onSizes ? "" : listed ? "bottom-4" : "bottom-4 md:bottom-[max(0.75rem,var(--dish-pad))]"}`}
             style={onSizes ? { top: sizeTop ?? 12 } : undefined}
           >
             {addControl}

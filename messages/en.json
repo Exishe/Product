@@ -1239,7 +1239,7 @@
     },
     "games": {
       "title": "Games while you wait",
-      "subtitle": "While the kitchen makes your order.",
+      "subtitle": "Short games, nothing to download.",
       "start": "Start",
       "loading": "Loading…",
       "loadFailed": "The game didn't load. Check your connection and try again.",
@@ -1275,6 +1275,8 @@
       },
       "sound": "Sound",
       "play": "Play",
+      "prev": "Previous game",
+      "next": "Next game",
       "fab": "Play while you wait",
       "cooking": "Your order is being made",
       "soundOff": "Turn sound on",

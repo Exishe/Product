@@ -170,8 +170,9 @@ export default async function OrderStatusPage({
               .filter((l) => published?.location.locales.includes(l))
               .map((l) => ({ locale: l, href: `/${l}/m/${restaurant}/${location}/order${query}` }))}
             home={{ href: menuHref }}
-            // The order page's column (ORDER_COLUMN in order-status-view.tsx).
-            width="max-w-[48rem]"
+            // The order page's bar (ORDER_BAR in order-status-view.tsx).
+            width="max-w-[48rem] lg:max-w-[1440px]"
+            oneRow
           />
           <main className="mx-auto grid w-full max-w-[48rem] content-start gap-2 px-4 pt-4 pb-10 md:px-8 md:pt-8">
             {token ? (

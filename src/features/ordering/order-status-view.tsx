@@ -319,6 +319,11 @@ function OrderCard({
   const status = displayStatus(order);
   const lines = [...order.order_items].sort((a, b) => a.sort - b.sort);
   const Title = latest ? "h2" : "h3";
+  const voided = status === "rejected" || status === "cancelled";
+  // An earlier order of one dish: its line already says the amount, so no
+  // «Total» under it repeats it (the page's «All orders» sums the rounds).
+  const active = lines.filter((l) => l.quantity > l.cancelled_quantity);
+  const oneLine = !latest && !voided && active.length === 1 && active[0]!.line_total === order.total;
   const statusBlock =
     status === "rejected" ? (
       <div className="my-4 grid gap-1">
@@ -456,14 +461,14 @@ function OrderCard({
           );
         })}
       </ul>
-      <div className="flex items-baseline justify-between py-4 text-name font-semibold">
-        <span>{t("order.total")}</span>
-        <span className="num">
-          {formatAmd(status === "rejected" || status === "cancelled" ? 0 : order.total, locale as Locale)}
-        </span>
-      </div>
-      {onRepeat && status !== "rejected" && status !== "cancelled" && repeatLines(order).length > 0 && (
-        <p className={latest ? "-mt-1 pb-4" : "-mt-2 pb-2"}>
+      {!oneLine && (
+        <div className="flex items-baseline justify-between py-4 text-name font-semibold">
+          <span>{t("order.total")}</span>
+          <span className="num">{formatAmd(voided ? 0 : order.total, locale as Locale)}</span>
+        </div>
+      )}
+      {onRepeat && !voided && repeatLines(order).length > 0 && (
+        <p className={latest ? "-mt-1 pb-4" : oneLine ? "pt-2 pb-2" : "-mt-2 pb-2"}>
           <button
             type="button"
             onClick={() => onRepeat(order)}
@@ -483,6 +488,8 @@ function OrderCard({
 // safety poll, plus "call the waiter" and "ask for the bill".
 /** The order page's column: 44rem of content inside the 16/32 px gutters, centred; its bar uses it too. */
 export const ORDER_COLUMN = "max-w-[48rem]";
+/** The order pages' bar: the order's column, then the menu bar's 1440 px from 1024 px. */
+export const ORDER_BAR = "max-w-[48rem] lg:max-w-[1440px]";
 
 export function OrderStatusView({
   tableId,
@@ -1097,7 +1104,7 @@ export function OrderStatusView({
                   cantMake={cantMake}
                 />
               ))}
-              <div className="border-line flex items-baseline justify-between border-t py-4 text-name font-semibold">
+              <div className="border-line flex items-baseline justify-between border-t pt-4 text-name font-semibold">
                 <span>{t("order.allRounds")}</span>
                 <span className="num">{formatAmd(grand, locale as Locale)}</span>
               </div>
@@ -1111,7 +1118,8 @@ export function OrderStatusView({
           {latest && <OrderCard order={latest} latest part="status" wait={wait} readyMark={banner} />}
         </aside>
       </div>
-      <div className="border-line mt-10 border-t pt-6">
+      {/* 32 px each side of the hairline, the page's one section gap. */}
+      <div className="border-line mt-8 border-t pt-8">
         <Rise>
           <RecommendedCard
             dishes={dishes}
