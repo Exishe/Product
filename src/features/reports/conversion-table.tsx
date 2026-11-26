@@ -12,7 +12,7 @@ type Item = Conversion["items"][number];
 
 const PHONE_ROWS = 8;
 
-// "Viewed but not ordered" (ADR-073): one accessible table per group. The
+// "From view to order" (ADR-073): one accessible table per group. The
 // flagged dishes come first in their own highlighted block; the reason is a
 // data key from the database, turned into a sentence here.
 export async function ConversionTable({ data, locale }: { data: Conversion; locale: Locale }) {
@@ -133,56 +133,93 @@ function Rows({
           </ul>
         </details>
       )}
-    <div className="relative overflow-x-auto max-sm:hidden">
-      <table className="num w-full min-w-[20rem] border-collapse text-label">
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col" className={clsx(head, "!text-left")}>
-              {t("colDish")}
-            </th>
-            <th scope="col" className={head}>
-              {t("colViews")}
-            </th>
-            <th scope="col" className={head}>
-              {t("colAdded")}
-            </th>
-            <th scope="col" className={head}>
-              {t("colOrdered")}
-            </th>
-            {showShare && (
-              <th scope="col" className={head}>
-                {t("colShare")}
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((i) => (
-            <tr
-              key={i.id}
-              className={clsx("border-staff-sep border-t align-top", highlight && "border-black/10")}
-            >
-              <th scope="row" className="py-2.5 pr-2 text-left font-semibold">
-                <span className="break-words" lang={dishNameLocale(i.name, locale)}>
-                  {dishName(i.name, locale)}
-                </span>
-                {reason(i) && (
-                  <span className="text-staff-label2 mt-0.5 block text-label font-normal break-words">
-                    {reason(i)}
-                  </span>
+      {/* From 640 px: one table capped at a reading width, so the figures
+          sit next to their dish instead of 1,000 px away. The first eight
+          rows show; the rest open in place under the same "Show all" as the
+          phone. They are a second body of the same table, shown while the
+          disclosure under it is open, so the columns stay lined up. */}
+      <div className="group/conv flex max-w-[44rem] min-w-0 flex-col gap-2 max-sm:hidden">
+        <div className="relative overflow-x-auto">
+          <table className="num w-full min-w-[20rem] border-collapse text-label">
+            <caption className="sr-only">{caption}</caption>
+            <thead>
+              <tr>
+                <th scope="col" className={clsx(head, "!text-left")}>
+                  {t("colDish")}
+                </th>
+                <th scope="col" className={head}>
+                  {t("colViews")}
+                </th>
+                <th scope="col" className={head}>
+                  {t("colAdded")}
+                </th>
+                <th scope="col" className={head}>
+                  {t("colOrdered")}
+                </th>
+                {showShare && (
+                  <th scope="col" className={head}>
+                    {t("colShare")}
+                  </th>
                 )}
-              </th>
-              <td className="px-2 py-2.5 text-right">{formatInteger(i.views, locale)}</td>
-              <td className="px-2 py-2.5 text-right">{formatInteger(i.adds, locale)}</td>
-              <td className="px-2 py-2.5 text-right">{formatInteger(i.orders, locale)}</td>
-              {showShare && <td className="py-2.5 pl-2 text-right">{share(i)}</td>}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              </tr>
+            </thead>
+            <tbody>
+              {items.slice(0, PHONE_ROWS).map((i) => (
+                <TableRow key={i.id} i={i} locale={locale} share={share(i)} reason={reason(i)} showShare={showShare} highlight={highlight} />
+              ))}
+            </tbody>
+            {items.length > PHONE_ROWS && (
+              <tbody className="hidden group-has-[details[open]]/conv:table-row-group">
+                {items.slice(PHONE_ROWS).map((i) => (
+                  <TableRow key={i.id} i={i} locale={locale} share={share(i)} reason={reason(i)} showShare={showShare} highlight={highlight} />
+                ))}
+              </tbody>
+            )}
+          </table>
+        </div>
+        {items.length > PHONE_ROWS && (
+          <details className="group">
+            <summary
+              className={textAction("ink", "-ml-2 w-fit list-none group-open:hidden [&::-webkit-details-marker]:hidden")}
+            >
+              {t("showAll", { count: items.length })}
+              <ChevronDown aria-hidden="true" />
+            </summary>
+          </details>
+        )}
+      </div>
     </>
+  );
+}
+
+function TableRow({
+  i,
+  locale,
+  share,
+  reason,
+  showShare,
+  highlight,
+}: {
+  i: Item;
+  locale: Locale;
+  share: string;
+  reason: string | false;
+  showShare: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <tr className={clsx("border-staff-sep border-t align-top", highlight && "border-black/10")}>
+      <th scope="row" className="py-2.5 pr-2 text-left font-semibold">
+        <span className="break-words" lang={dishNameLocale(i.name, locale)}>
+          {dishName(i.name, locale)}
+        </span>
+        {reason && <span className="text-staff-label2 mt-0.5 block text-label font-normal break-words">{reason}</span>}
+      </th>
+      <td className="px-2 py-2.5 text-right">{formatInteger(i.views, locale)}</td>
+      <td className="px-2 py-2.5 text-right">{formatInteger(i.adds, locale)}</td>
+      <td className="px-2 py-2.5 text-right">{formatInteger(i.orders, locale)}</td>
+      {showShare && <td className="py-2.5 pl-2 text-right">{share}</td>}
+    </tr>
   );
 }
 

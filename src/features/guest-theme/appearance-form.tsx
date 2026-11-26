@@ -1,5 +1,6 @@
 "use client";
 
+import { clsx } from "clsx";
 import { AlertTriangle, Check, Eye, ImagePlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/features/admin-ui/toast";
@@ -525,17 +526,20 @@ export function AppearanceForm({
               {wordmarkSlots.map((slot) => {
                 const path = brand[slot.key];
                 return (
-                  // One 64 px row per background: a chip in that colour (with
-                  // the picture once there is one), the name, then the actions.
+                  // One 64 px row per background, the same shape as the
+                  // section covers below: a swatch in that colour (with the
+                  // picture once there is one), the name, then the actions.
+                  // On a phone the actions are 44 px icons named by their
+                  // controls, so the row never breaks onto a second line.
                   <div
                     key={slot.key}
                     role="group"
                     aria-labelledby={`${ids}-${slot.key}`}
-                    className="border-staff-sep flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b py-2 last:border-0"
+                    className="border-staff-sep flex min-h-16 min-w-0 items-center gap-3 border-b py-2 last:border-0"
                     data-testid={`slot-${slot.key}`}
                   >
                     <span
-                      className="grid h-12 w-24 shrink-0 place-items-center rounded-xl p-1.5 shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]"
+                      className="grid size-12 shrink-0 place-items-center rounded-xl p-1 shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)] sm:w-24 sm:p-1.5"
                       style={{ background: slot.chip }}
                       data-testid={`chip-${slot.key}`}
                     >
@@ -545,22 +549,30 @@ export function AppearanceForm({
                           src={logoUrl(path)}
                           alt=""
                           height={36}
-                          className="h-9 w-auto max-w-full object-contain"
+                          className="h-auto max-h-9 w-auto max-w-full object-contain"
                         />
                       )}
                     </span>
-                    <h3 id={`${ids}-${slot.key}`} className="m-0 min-w-0 flex-1 basis-32 text-name font-semibold">
+                    <h3 id={`${ids}-${slot.key}`} className="m-0 min-w-0 flex-1 text-name font-semibold">
                       {slot.title}
                     </h3>
-                    <div className="flex items-center gap-1">
-                      <label className={fileLabel}>
+                    <div className="flex shrink-0 items-center gap-1 max-sm:-mr-2">
+                      <label
+                        className={clsx(
+                          fileLabel,
+                          upload !== "uploading" &&
+                            "max-sm:min-h-11 max-sm:w-11 max-sm:bg-transparent max-sm:px-0 max-sm:shadow-none max-sm:hover:bg-staff-fill",
+                        )}
+                      >
                         <ImagePlus aria-hidden="true" />
-                        {upload === "uploading" ? t("uploading") : b("wordmarkChoose")}
+                        <span className={upload === "uploading" ? undefined : "max-sm:sr-only"} aria-hidden="true">
+                          {upload === "uploading" ? t("uploading") : b("wordmarkChoose")}
+                        </span>
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
                           className="sr-only"
-                          aria-describedby={`${ids}-${slot.key}`}
+                          aria-label={`${b("wordmarkChoose")}: ${slot.title}`}
                           disabled={upload === "uploading" || !brandReady}
                           onChange={(e) =>
                             void uploadImage(e.target.files?.[0], "brand", (uploaded) =>
@@ -573,10 +585,13 @@ export function AppearanceForm({
                         <button
                           type="button"
                           onClick={() => change({ [slot.key]: null })}
-                          className={textAction("danger")}
+                          className={textAction("danger", "max-sm:w-11 max-sm:justify-center max-sm:px-0")}
+                          aria-label={slot.remove}
                         >
                           <Trash2 aria-hidden="true" />
-                          {slot.remove}
+                          <span className="max-sm:sr-only" aria-hidden="true">
+                            {slot.remove}
+                          </span>
                         </button>
                       )}
                     </div>
