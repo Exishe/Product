@@ -8,6 +8,7 @@ test.describe("staff and devices at the demo café", () => {
     const label = `E2E խոհանոց ${unique()}`;
     await signInAsDemoOwner(page);
     await page.goto("/admin/staff");
+    await page.getByRole("button", { name: "Միացնել սարք" }).click();
     await page.getByLabel("Սարքի անունը").fill(label);
     await page.getByRole("button", { name: "Ստանալ կոդը" }).click();
     const code = (await page.getByTestId("pairing-code").textContent())?.trim() ?? "";
@@ -40,6 +41,7 @@ test.describe("staff and devices at the demo café", () => {
   test("an invited manager signs up from the link and joins the café", async ({ page, browser }) => {
     await signInAsDemoOwner(page);
     await page.goto("/admin/staff");
+    await page.getByRole("button", { name: "Հրավիրել էլ․ փոստով" }).click();
     await page.getByRole("button", { name: "Ստանալ հղումը" }).click();
     const link = await page.getByTestId("invite-link").inputValue();
     expect(link).toMatch(/\/invite\/[A-Za-z0-9_-]{32}$/);
@@ -50,7 +52,7 @@ test.describe("staff and devices at the demo café", () => {
     await person.getByRole("link", { name: "Գրանցվել" }).click();
     await person.getByLabel("Ձեր անունը").fill("Մարիամ");
     await person.getByLabel("Էլ․ փոստ").fill(`e2e-${unique()}@pativ.test`);
-    await person.getByLabel("Գաղտնաբառ (առնվազն 8 նիշ)").fill("e2e-password-123");
+    await person.getByLabel("Գաղտնաբառ", { exact: true }).fill("e2e-password-123");
     await person.getByRole("button", { name: "Գրանցվել" }).click();
     await expect(person).toHaveURL(/\/invite\//);
     await person.getByLabel("Ձեր անունը").fill("Մարիամ");

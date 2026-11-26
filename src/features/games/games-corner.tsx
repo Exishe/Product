@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConciergeBell, Gamepad2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ConciergeBell } from "lucide-react";
 import dynamic from "next/dynamic";
+import { SECTION_TITLE } from "@/features/menu/guest-menu/ui";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { applyBrand, bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
 import type { RewardCtx } from "./reward-client";
@@ -42,6 +43,37 @@ export function GamesCorner({
 }) {
   const { t } = useGuestI18n();
   const [open, setOpen] = useState<GameId | null>(null);
+  // From 768 px three cards show of five and a mouse wheel does not scroll
+  // sideways: a ‹ › pair on the heading's row (as on the dish suggestion)
+  // moves the strip by one card. Each arrow is off at its end, and an edge
+  // fades only while there is more that way.
+  const strip = useRef<HTMLUListElement>(null);
+  const [ends, setEnds] = useState({ start: true, end: false });
+  const measure = useCallback(() => {
+    const ul = strip.current;
+    if (!ul) return;
+    const start = ul.scrollLeft <= 2;
+    const end = ul.scrollLeft + ul.clientWidth >= ul.scrollWidth - 2;
+    setEnds((was) => (was.start === start && was.end === end ? was : { start, end }));
+  }, []);
+  useEffect(() => {
+    const ul = strip.current;
+    if (!ul) return;
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(ul);
+    return () => observer.disconnect();
+  }, [measure]);
+  const step = (dir: 1 | -1) => {
+    const ul = strip.current;
+    const card = ul?.querySelector("li");
+    if (!ul || !card) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // One card and the gap between cards (12 px).
+    ul.scrollBy({ left: dir * (card.getBoundingClientRect().width + 12), behavior: still ? "auto" : "smooth" });
+  };
+  const arrow =
+    "border-line-strong bg-page text-ink hover:bg-chip grid size-11 flex-none place-items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent";
   return (
     <>
       <section
@@ -51,25 +83,64 @@ export function GamesCorner({
         aria-labelledby="games-title"
         data-testid="games"
       >
-        <div className="flex items-center gap-3">
-          <Gamepad2 size={26} strokeWidth={1.75} className="text-accent-text flex-none" aria-hidden />
-          <div>
-            <h3 id="games-title" className="text-[14px] leading-tight font-semibold">
+        {/* The page's one section heading (ADR-098), no icon; the line under it at 15 px. */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 id="games-title" className={SECTION_TITLE}>
               {t("games.title")}
-            </h3>
-            <p className="text-muted text-[12px]">{t("games.subtitle")}</p>
+            </h2>
+            <p className="text-muted text-label mt-0.5">{t("games.subtitle")}</p>
           </div>
+          {!(ends.start && ends.end) && (
+            <div className="hidden flex-none gap-2 md:flex">
+              <button
+                type="button"
+                className={arrow}
+                aria-label={t("games.prev")}
+                aria-controls="games-strip"
+                disabled={ends.start}
+                onClick={() => step(-1)}
+              >
+                <ChevronLeft size={20} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={arrow}
+                aria-label={t("games.next")}
+                aria-controls="games-strip"
+                disabled={ends.end}
+                onClick={() => step(1)}
+              >
+                <ChevronRight size={20} aria-hidden />
+              </button>
+            </div>
+          )}
         </div>
-        <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden">
+        {/* A strip that runs on past the column: the right edge fades, as the
+            menu's tab row does, so the cut reads as "more this way". */}
+        <ul
+          id="games-strip"
+          ref={strip}
+          onScroll={measure}
+          className={`-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden ${
+            ends.start
+              ? ends.end
+                ? ""
+                : "[mask-image:linear-gradient(to_right,#000_calc(100%-2.5rem),transparent)]"
+              : ends.end
+                ? "[mask-image:linear-gradient(to_right,transparent,#000_2.5rem)]"
+                : "[mask-image:linear-gradient(to_right,transparent,#000_2.5rem,#000_calc(100%-2.5rem),transparent)]"
+          }`}
+        >
           {GAMES.map((g) => (
-            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[12.5rem]">
+            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[13.5rem]">
               <button
                 type="button"
                 onClick={() => setOpen(g.id)}
                 data-testid={`game-${g.id}`}
                 className="group bg-surface hover:border-line-strong block w-full overflow-hidden rounded-[14px] border [border-color:var(--guest-card-border)] text-left transition-transform active:scale-[0.97]"
               >
-                <span className="bg-plate relative block aspect-[4/3] overflow-hidden">
+                <span className="bg-plate relative block aspect-[4/3] overflow-hidden rounded-[14px]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- small static thumbnails, no optimizer needed */}
                   <img
                     src={`/games/${g.id}.webp`}
@@ -81,9 +152,11 @@ export function GamesCorner({
                     className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </span>
-                <span className="flex items-center justify-between gap-2 p-3">
-                  <span className="min-w-0 text-[13px] leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-                  <span className="rounded-pill bg-add text-on-add flex-none px-3 py-1 text-[12px] font-semibold">
+                {/* The name on its own line, «Play» under it, on the photo's own
+                    left edge (the column's one edge): the whole card is the button. */}
+                <span className="grid justify-items-start gap-2 px-0 pt-3 pb-1">
+                  <span className="max-w-full text-label leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
+                  <span className="rounded-pill bg-add text-on-add px-3 py-1 text-meta font-semibold">
                     {t("games.play")}
                   </span>
                 </span>
@@ -267,7 +340,7 @@ function GameLayer({
           {/* A quiet line that the kitchen is still on it: the game yields to the real wait. */}
           {waiting && !ready && (
             <span
-              className="text-slip-dim block max-h-[2lh] overflow-hidden text-xs leading-tight text-balance"
+              className="text-slip-dim block max-h-[2lh] overflow-hidden text-meta leading-tight text-balance"
               data-testid="game-cooking"
             >
               <span
@@ -288,7 +361,7 @@ function GameLayer({
         >
           <SpeakerIcon on={sound} />
         </button>
-        <span className="max-w-[7rem] flex-none text-right text-sm leading-tight">
+        <span className="max-w-[7rem] flex-none text-right text-body leading-tight">
           <span className="text-slip-dim block truncate">{t("games.best", { score: best })}</span>
           <span className="num text-apricot-on-dark block text-lg font-semibold" aria-live="off">
             {score}
@@ -344,7 +417,7 @@ function GameLayer({
                 type="button"
                 onClick={() => setSound((on) => !on)}
                 aria-pressed={sound}
-                className="text-slip-dim hover:bg-basalt-3 aria-pressed:text-apricot-on-dark flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold"
+                className="text-slip-dim hover:bg-basalt-3 aria-pressed:text-apricot-on-dark flex min-h-11 items-center gap-2 rounded-full px-4 text-body font-semibold"
                 data-testid="game-sound-intro"
               >
                 <SpeakerIcon on={sound} />

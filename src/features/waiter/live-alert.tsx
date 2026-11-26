@@ -4,20 +4,18 @@ import { clsx } from "clsx";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { STATE_BADGE, StateIcon } from "./floor-map";
 import type { FloorTable } from "./floor-model";
 import { alertEvents, freshEvents, mergeEvents, type AlertEvent, type AlertKind } from "./live-alert-model";
 import styles from "./live-alert.module.css";
 
 const SHOW_MS = 8_000;
-const MAX_ROWS = 3;
 
-// The card's frame takes the colour of its most urgent line.
-const FRAME: Record<AlertKind, string> = {
-  call: "border-pomegranate",
-  ready: "border-tarragon",
-  new: "border-amber-text",
-  bill: "border-ink",
+// A dot in the colour of its most urgent event, the tile's own fill.
+const DOT: Record<AlertKind, string> = {
+  call: "bg-pomegranate",
+  ready: "bg-tarragon",
+  new: "bg-amber",
+  bill: "bg-pomegranate",
 };
 
 // [start s, frequency Hz, length s]: a call rings three times, the rest twice.
@@ -35,18 +33,22 @@ const CHIME: Record<"urgent" | "plain", readonly (readonly [number, number, numb
 
 // The live alert of the waiter app (the pop-up with a sound that ordering
 // dashboards give staff): when a guest calls, a plate is ready, a guest's order
-// waits to be accepted or a bill is asked for, a card drops in at the top with
-// the table and what happened, the phone chimes and buzzes. A tap on a line
-// opens that table; the card goes by itself after 8 seconds. What was on the
+// waits to be accepted or a bill is asked for, a one-row card floats in over
+// the header's top row with the table and what happened («+N» for the rest),
+// the phone chimes and buzzes. A tap opens that table; the card goes by itself
+// after 8 seconds. What was on the
 // floor when the app opened is not announced. The browser lets sound play only
 // after the first tap anywhere in the app.
 export function WaiterAlert({
   tables,
   onOpen,
   kinds,
+  openTableId = null,
 }: {
   tables: readonly FloorTable[];
   onOpen: (tableId: string) => void;
+  /** The table whose panel is open: it already shows what happened there. */
+  openTableId?: string | null;
   /** Only these events; calls and bills have their own banners that ring until answered (ADR-088). */
   kinds?: readonly AlertKind[];
 }) {
@@ -100,7 +102,10 @@ export function WaiterAlert({
     setShown((cur) => ({ id: Date.now(), events: mergeEvents(fresh, cur?.events ?? []) }));
     play(audio.current, fresh[0]?.kind === "call" ? "urgent" : "plain");
     try {
-      navigator.vibrate?.(fresh[0]?.kind === "call" ? [180, 90, 180, 90, 180] : [180, 90, 180]);
+      // Before the first tap on a fresh page the browser refuses to buzz and
+      // logs an error, so it is not asked until it can.
+      if (navigator.userActivation?.hasBeenActive !== false)
+        navigator.vibrate?.(fresh[0]?.kind === "call" ? [180, 90, 180, 90, 180] : [180, 90, 180]);
     } catch {
       // Not every browser can buzz.
     }
@@ -113,69 +118,60 @@ export function WaiterAlert({
   }, [shown]);
 
   if (!shown) return null;
-  const first = shown.events[0];
+  const events = shown.events.filter((e) => e.tableId !== openTableId);
+  const first = events[0];
   if (!first) return null;
-  const rows = shown.events.slice(0, MAX_ROWS);
-  const more = shown.events.length - rows.length;
+  const more = events.length - 1;
+  // An overlay over the header's top row (café, clock, tools): it takes no
+  // room, so nothing under it moves when it comes or goes, and it never
+  // covers the call bar or a tile. A floating white surface with a dot in the
+  // event's colour, not a second framed banner.
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 grid justify-items-center px-3 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]">
-      <div
-        key={shown.id}
-        role="alert"
-        data-testid="waiter-alert"
-        className={clsx(
-          "text-ink shadow-float pointer-events-auto relative grid w-full max-w-md overflow-hidden rounded-2xl border-[3px] bg-white",
-          FRAME[first.kind],
-          styles.drop,
-        )}
+    <div
+      key={shown.id}
+      role="alert"
+      data-testid="waiter-alert"
+      className={clsx(
+        // A phone: the whole top row, edge to edge. From 768 px: over the
+        // café and connection block on the left, well short of the clock, so
+        // no word under it is cut in half.
+        "text-ink fixed inset-x-2 top-1 z-30 mx-auto flex min-h-[3.25rem] max-w-[30rem] items-center overflow-hidden rounded-2xl bg-white shadow-float md:right-auto md:mx-0 md:w-[28rem] lg:left-4",
+        styles.drop,
+      )}
+    >
+      <button
+        type="button"
+        data-testid="waiter-alert-row"
+        data-kind={first.kind}
+        onClick={() => {
+          onOpen(first.tableId);
+          setShown(null);
+        }}
+        className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 py-1 pr-1 pl-4 text-left"
       >
-        <ul className="m-0 list-none p-0">
-          {rows.map((e) => (
-            <li key={e.key} className="border-staff-sep border-b last:border-b-0">
-              <button
-                type="button"
-                data-testid="waiter-alert-row"
-                data-kind={e.kind}
-                onClick={() => {
-                  onOpen(e.tableId);
-                  setShown(null);
-                }}
-                className="flex min-h-16 w-full items-center gap-3 py-2 pr-14 pl-3 text-left"
-              >
-                <span
-                  aria-hidden="true"
-                  className={clsx(
-                    "grid size-11 shrink-0 place-items-center rounded-full",
-                    STATE_BADGE[e.kind],
-                  )}
-                >
-                  <StateIcon state={e.kind} payment={e.payment} className="size-6" />
-                </span>
-                <span className="min-w-0 text-[1.0625rem] leading-snug font-semibold [overflow-wrap:anywhere]">
-                  {t(e.kind, { label: e.label })}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <span aria-hidden="true" className={clsx("size-3 shrink-0 rounded-full", DOT[first.kind])} />
+        <span className="line-clamp-2 min-w-0 flex-1 text-[1.0625rem] leading-tight font-semibold [text-wrap:pretty]">
+          {t(first.kind, { label: first.label })}
+        </span>
         {more > 0 && (
-          <p className="text-staff-label2 bg-staff-fill m-0 px-4 py-1.5 text-[0.9375rem] font-semibold">
-            {t("more", { count: more })}
-          </p>
+          <span className="num text-staff-label2 shrink-0 text-[0.9375rem] font-semibold">
+            <span aria-hidden="true">+{more}</span>
+            <span className="sr-only">{t("more", { count: more })}</span>
+          </span>
         )}
-        <button
-          type="button"
-          aria-label={t("close")}
-          onClick={() => setShown(null)}
-          className="text-staff-label2 hover:bg-staff-fill absolute top-2 right-2 grid size-11 place-items-center rounded-full"
-        >
-          <X aria-hidden="true" className="size-5" />
-        </button>
-        <span
-          aria-hidden="true"
-          className={clsx("bg-staff-sep absolute inset-x-0 bottom-0 h-1 origin-left", styles.timer)}
-        />
-      </div>
+      </button>
+      <button
+        type="button"
+        aria-label={t("close")}
+        onClick={() => setShown(null)}
+        className="text-staff-label2 hover:bg-staff-fill grid size-11 shrink-0 place-items-center rounded-full"
+      >
+        <X aria-hidden="true" className="size-5" />
+      </button>
+      <span
+        aria-hidden="true"
+        className={clsx("bg-staff-sep absolute inset-x-0 bottom-0 h-1 origin-left", styles.timer)}
+      />
     </div>
   );
 }

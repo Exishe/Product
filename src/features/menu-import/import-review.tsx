@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Tabs, tabPanel } from "@/features/admin-ui/tabs";
-import { button, check, field as baseField } from "@/features/admin-ui/styles";
+import { button, check, field as baseField, textAction } from "@/features/admin-ui/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -87,7 +87,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
     return (
       <div className="flex flex-col gap-8">
         <ImportSteps current="publish" />
-        <section role="status" className="flex flex-col items-start gap-4 rounded-2xl bg-white p-6 sm:p-8">
+        <section role="status" className="flex flex-col items-start gap-4 py-4">
           <CircleCheck aria-hidden="true" className="text-tarragon size-10" />
           <h2 className="m-0 text-[1.75rem] leading-tight font-bold">
             {result.published ? t("doneTitle") : t("addedTitle", { count: result.dishes })}
@@ -201,7 +201,7 @@ export function ImportReview({ importId, initial, photos }: Props) {
             const sectionChecked = category.items.every((i) => i.reviewed);
             return (
               <section key={ci} aria-labelledby={`section-${ci}`} className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-white p-3">
+                <div className="flex flex-wrap items-end gap-3">
                   <label className="flex min-w-0 flex-1 flex-col gap-1">
                     <span id={`section-${ci}`} className="sr-only">
                       {t("sectionName")}
@@ -466,7 +466,7 @@ function DishRow({
 
       {hasDescription && (
         <details>
-          <summary className="text-ink inline-flex min-h-11 cursor-pointer items-center rounded-lg text-[0.9375rem] font-semibold underline underline-offset-4">
+          <summary className={textAction("ink", "-ml-2 w-fit")}>
             {t("descriptions")}
           </summary>
           <div className="mt-2 grid gap-2">

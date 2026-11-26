@@ -1,7 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { AdminNav, type NavLink } from "@/features/admin-nav/admin-nav";
 import { ToastProvider } from "@/features/admin-ui/toast";
+import { routing } from "@/i18n/routing";
 import { pickMembership, type Membership } from "@/lib/auth/membership";
 import { RESTAURANT_COOKIE } from "@/lib/auth/require-member";
 import { createClient } from "@/lib/supabase/server";
@@ -40,30 +41,51 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
   if (!member) return children;
 
-  const [{ data: restaurant }, t, brand] = await Promise.all([
+  const [{ data: restaurant }, t, brand, lang, roles, locale] = await Promise.all([
     supabase.from("restaurants").select("name").eq("id", member.restaurantId).single(),
     getTranslations("adminNav"),
     getTranslations("brand"),
+    getTranslations("guest.language"),
+    getTranslations("staff.roles"),
+    getLocale(),
   ]);
+  // Eight one-line items (ADR-094, plus the POS connection). Reports and Export are reached
+  // from Sales, Import from the menu page.
   const links: NavLink[] = [
-    { href: "/admin/dashboard", label: t("dashboard"), icon: "dashboard" },
-    { href: "/admin/reports", label: t("reports"), icon: "reports" },
+    { href: "/admin", label: t("home"), icon: "home" },
+    { href: "/admin/dashboard", label: t("dashboard"), icon: "dashboard", also: ["/admin/reports", "/admin/export"] },
     { href: "/admin/menu", label: t("menu"), icon: "menu" },
-    { href: "/admin/menu/import", label: t("import"), icon: "import", sub: true },
     { href: "/admin/tables", label: t("tables"), icon: "tables" },
     { href: "/admin/staff", label: t("staff"), icon: "staff" },
     { href: "/admin/look", label: t("look"), icon: "look" },
     { href: "/admin/telegram", label: t("telegram"), icon: "telegram" },
     { href: "/admin/pos", label: t("pos"), icon: "pos" },
-    { href: "/admin/export", label: t("export"), icon: "export" },
     ...(admin ? [{ href: "/platform", label: t("platform"), icon: "platform" as const }] : []),
   ];
 
   // Staff screens are neutral grey (ADR-054, ADR-055); the guest themes never reach here.
   return (
-    <div className="admin-shell bg-staff-bg text-ink flex min-h-dvh flex-col lg:flex-row print:bg-white">
-      <AdminNav brand={brand("name")} cafe={restaurant?.name ?? ""} label={t("label")} links={links} />
-      <div className="min-w-0 flex-1">
+    // ADR-094: the "inverted L". The navigation sits flush on the grey; the
+    // content is one white column, so a view reads as one page, not as cards.
+    <div className="admin-shell text-ink flex min-h-dvh flex-col bg-white lg:flex-row lg:bg-staff-bg print:bg-white">
+      <AdminNav
+        brand={brand("name")}
+        cafe={restaurant?.name ?? ""}
+        label={t("label")}
+        menuLabel={t("open")}
+        closeLabel={t("close")}
+        links={links}
+        account={{
+          name: member.displayName,
+          role: roles(member.role === "manager" ? "manager" : "owner"),
+          locale,
+          languageLabel: t("language"),
+          languageNames: Object.fromEntries(routing.locales.map((l) => [l, lang(l)])),
+          signOutLabel: t("signOut"),
+          accountLabel: t("account"),
+        }}
+      />
+      <div className="min-w-0 flex-1 bg-white">
         <ToastProvider>{children}</ToastProvider>
       </div>
     </div>

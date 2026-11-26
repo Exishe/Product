@@ -44,8 +44,8 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await egg.getByLabel("Հիմնական բաղադրիչ").check();
   await egg.getByLabel("Կարող է փոխարինվել").selectOption({ label: "Կարագ" });
   await egg.getByLabel("Գնի փոփոխություն, դրամ").fill("-300");
-  await egg.getByRole("button", { name: "Պահել", exact: true }).click();
-  // The row has two status lines (the ingredient's and the calories editor's); only the one just saved shows text.
+  await egg.getByRole("button", { name: "Պահել բաղադրիչը", exact: true }).click();
+  // One Save per ingredient row, with its result on the same line.
   await expect(egg.getByRole("status").filter({ hasText: "Պահված է" })).toHaveCount(1, { timeout: 15_000 });
 
   await page.reload();
@@ -60,7 +60,9 @@ test("the owner gives a dish its ingredients, a replacement and the out rule", a
   await expect(saved.getByLabel("Կարող է փոխարինվել")).toHaveValue(/.+/);
   await expect(saved.getByLabel("Գնի փոփոխություն, դրամ")).toHaveValue("-300");
 
-  // The out rule: show a dish without a replacement as sold out.
+  // The out rule: show a dish without a replacement as sold out. It is a
+  // closed setting at the bottom of the menu page.
+  await page.getByTestId("menu-settings").locator("summary").click();
   const setting = page.getByTestId("out-ingredient-setting");
   await setting.getByLabel("Ցույց տալ որպես սպառված").check();
   await expect(setting.getByRole("status")).toContainText("Պահված է", { timeout: 15_000 });

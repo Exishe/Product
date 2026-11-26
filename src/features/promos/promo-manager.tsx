@@ -1,10 +1,10 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState, useTransition } from "react";
-import { button, chip, fieldLabel, input } from "@/features/admin-ui/styles";
+import { button, chip, fieldLabel, input, textAction } from "@/features/admin-ui/styles";
 import { deletePromo, savePromo, setPromoOn, type SaveResult } from "./actions";
 
 type ErrorKey = Extract<SaveResult, { ok: false }>["error"];
@@ -71,6 +71,7 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
       const r = await deletePromo(id);
       if (!r.ok) return setError("failed");
       setConfirmDelete(null);
+      setDraft(null);
       setPromos((all) => all.filter((x) => x.id !== id));
     });
   }
@@ -112,83 +113,69 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
 
   return (
     <div className="flex flex-col gap-4" data-testid="promo-manager">
-      {promos.length === 0 && !draft && <p className="m-0 text-[1.0625rem]">{t("empty")}</p>}
+      {promos.length === 0 && !draft && <p className="text-staff-label2 m-0 text-name">{t("empty")}</p>}
 
       {promos.length > 0 && (
-        <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        // The section's own rule opens the list: no second hairline on top.
+        <ul className="m-0 -mt-3 flex list-none flex-col p-0">
           {promos.map((p) => {
             const live = isLiveNow(p, now);
+            const title = titleOf(p);
+            // "15:00–17:00" as a badge repeats a title that already says it.
+            const badge = p.badge && !title.includes(p.badge) ? p.badge : null;
             return (
-              <li key={p.id} className={"bg-staff-bg flex flex-col gap-3 rounded-2xl p-4"} data-testid="promo-row">
-                <div className="flex items-start gap-3">
-                  <Megaphone aria-hidden="true" className={clsx("mt-0.5 size-5 shrink-0", live ? "text-tarragon" : "text-staff-label2")} />
-                  <div className="min-w-0 flex-1">
-                    <p className="m-0 text-[1.0625rem] font-semibold [overflow-wrap:anywhere]" data-testid="promo-row-title">
-                      {titleOf(p)}
-                      {p.badge && <span className={clsx(chip.base, chip.plain, "ml-2 align-middle")}>{p.badge}</span>}
-                    </p>
-                    <p className="text-staff-label2 m-0 text-[0.9375rem]" role="status" data-testid="promo-status">
-                      {live ? t("statusLive") : p.isOn ? t("statusWaiting") : t("statusOff")}
-                    </p>
-                  </div>
+              <li key={p.id} className="border-staff-sep flex items-start gap-3 border-b py-3" data-testid="promo-row">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <p className="m-0 text-name font-semibold [overflow-wrap:anywhere]" data-testid="promo-row-title">
+                    {title}
+                    {badge && <span className={clsx(chip.base, chip.plain, "ml-2 align-middle")}>{badge}</span>}
+                  </p>
+                  <p
+                    className={clsx("m-0 text-label", live ? "text-tarragon font-semibold" : "text-staff-label2")}
+                    role="status"
+                    data-testid="promo-status"
+                  >
+                    {live ? t("statusLive") : p.isOn ? t("statusWaiting") : t("statusOff")}
+                  </p>
                   <button
                     type="button"
-                    role="switch"
-                    aria-checked={p.isOn}
-                    aria-label={t("switchLabel", { title: titleOf(p) })}
                     disabled={pending}
-                    onClick={() => toggle(p)}
-                    data-testid="promo-switch"
-                    className="group -m-1 grid min-h-11 min-w-14 flex-none place-items-center p-1 disabled:opacity-60"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmDelete(null);
+                      setDraft(draftOf(p));
+                    }}
+                    className={textAction("ink", "-ml-2 w-fit")}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={clsx(
-                        "relative h-8 w-14 rounded-full transition-colors duration-150",
-                        p.isOn ? "bg-tarragon" : "bg-staff-field",
-                      )}
-                    >
-                      <span
-                        className={clsx(
-                          "absolute top-1 size-6 rounded-full bg-white shadow transition-[left] duration-150",
-                          p.isOn ? "left-7" : "left-1",
-                        )}
-                      />
-                    </span>
+                    <Pencil aria-hidden="true" />
+                    {t("edit")}
                   </button>
                 </div>
-                {confirmDelete === p.id ? (
-                  <div className="flex flex-col gap-2">
-                    <p className="m-0 text-[1.0625rem]">{t("deleteConfirm", { title: titleOf(p) })}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" disabled={pending} onClick={() => remove(p.id)} className={button("destructive", "flex-1 sm:flex-none")}>
-                        {t("deleteYes")}
-                      </button>
-                      <button type="button" disabled={pending} onClick={() => setConfirmDelete(null)} className={button("tinted", "flex-1 sm:flex-none")}>
-                        {t("cancel")}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => {
-                        setError(null);
-                        setDraft(draftOf(p));
-                      }}
-                      className={button("secondary", "flex-1 sm:flex-none")}
-                    >
-                      <Pencil aria-hidden="true" />
-                      {t("edit")}
-                    </button>
-                    <button type="button" disabled={pending} onClick={() => setConfirmDelete(p.id)} className={button("danger", "flex-1 sm:flex-none")}>
-                      <Trash2 aria-hidden="true" />
-                      {t("delete")}
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={p.isOn}
+                  aria-label={t("switchLabel", { title })}
+                  disabled={pending}
+                  onClick={() => toggle(p)}
+                  data-testid="promo-switch"
+                  className="group -m-1 grid min-h-11 min-w-14 flex-none place-items-center p-1 disabled:opacity-60"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={clsx(
+                      "relative h-8 w-14 rounded-full transition-colors duration-150",
+                      p.isOn ? "bg-tarragon" : "bg-staff-field",
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        "absolute top-1 size-6 rounded-full bg-white shadow transition-[left] duration-150",
+                        p.isOn ? "left-7" : "left-1",
+                      )}
+                    />
+                  </span>
+                </button>
               </li>
             );
           })}
@@ -197,15 +184,15 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
 
       {draft ? (
         <form
-          className={"bg-staff-bg flex flex-col gap-4 rounded-2xl p-4"}
+          className="flex max-w-[40rem] flex-col gap-4"
           data-testid="promo-form"
           onSubmit={(e) => {
             e.preventDefault();
             save();
           }}
         >
-          <h3 className="m-0 text-[1.0625rem] font-bold">{draft.id ? t("editTitle") : t("newTitle")}</h3>
-          <p className="text-staff-label2 -mt-2 mb-0 text-[0.9375rem]">{t("requiredNote")}</p>
+          <h3 className="m-0 text-name font-semibold">{draft.id ? t("editTitle") : t("newTitle")}</h3>
+          <p className="text-staff-label2 -mt-2 mb-0 text-label">{t("requiredNote")}</p>
           {LANGS.map((l) => (
             <label key={`t-${l}`} htmlFor={`${uid}-t-${l}`} className="flex flex-col gap-1.5">
               <span className={fieldLabel}>
@@ -281,9 +268,9 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
               />
             </label>
           </div>
-          <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("windowHint")}</p>
+          <p className="text-staff-label2 m-0 text-label">{t("windowHint")}</p>
           {error && (
-            <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+            <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
               {t(`error.${error}`)}
             </p>
           )}
@@ -298,11 +285,46 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
                 setDraft(null);
                 setError(null);
               }}
-              className={button("tinted", "flex-1 sm:flex-none")}
+              className={button("secondary", "flex-1 sm:flex-none")}
             >
               {t("cancel")}
             </button>
+            {/* Delete lives in the editor, away from the everyday switch. */}
+            {draft.id && confirmDelete !== draft.id && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setConfirmDelete(draft.id)}
+                className={textAction("danger", "sm:ml-auto")}
+              >
+                <Trash2 aria-hidden="true" />
+                {t("delete")}
+              </button>
+            )}
           </div>
+          {draft.id && confirmDelete === draft.id && (
+            <div className="border-staff-sep flex flex-col gap-2 border-t pt-4">
+              <p className="m-0 text-name">{t("deleteConfirm", { title: draft.title.hy || draft.title.ru || draft.title.en })}</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => draft.id && remove(draft.id)}
+                  className={button("destructive", "flex-1 sm:flex-none")}
+                >
+                  {t("deleteYes")}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setConfirmDelete(null)}
+                  className={button("secondary", "flex-1 sm:flex-none")}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       ) : (
         <div className="flex flex-col gap-2">
@@ -321,12 +343,12 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
               {t("add")}
             </button>
           </div>
-          {full && <p className="text-staff-label2 m-0 text-[0.9375rem]">{t("limit", { count: PROMO_LIMIT })}</p>}
+          {full && <p className="text-staff-label2 m-0 text-label">{t("limit", { count: PROMO_LIMIT })}</p>}
         </div>
       )}
 
       {!draft && error && (
-        <p role="alert" className="text-pomegranate m-0 text-[0.9375rem] font-semibold">
+        <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
           {t(`error.${error}`)}
         </p>
       )}

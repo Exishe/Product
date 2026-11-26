@@ -33,7 +33,8 @@ test.describe("guest menu at the demo café", () => {
     expect(results[2]).toEqual(results[0]);
 
     await search.fill("պիցցա");
-    await expect(page.getByText("Այդպիսի ուտեստ չգտանք։ Փորձեք այլ բառ։")).toBeVisible();
+    await expect(page.getByText("Այդպիսի ուտեստ չգտանք", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Մաքրել որոնումը" })).toBeVisible();
     await search.fill("");
     await expect(page.getByTestId("dish")).toHaveCount(41);
     await noHorizontalScroll(page);
@@ -44,17 +45,17 @@ test.describe("guest menu at the demo café", () => {
     await page.goto(`/hy/m/demo-cafe/main?t=${token}`);
     await expect(tableChip(page)).toHaveText("Սեղան 9");
 
-    // A section group in the bar opens its sections; one jumps there, and the group is marked.
+    // A section tab jumps there, and its group is marked.
     const drinks = page.getByTestId("group-drinks");
-    await drinks.click();
-    await page.getByTestId("section-panel").getByRole("link", { name: /Սուրճ և թեյ/ }).click();
+    await page.getByRole("navigation", { name: "Ճաշացանկի բաժիններ" }).getByRole("link", { name: /Սուրճ և թեյ/ }).click();
     await expect(page.getByRole("heading", { level: 3, name: /^Սուրճ և թեյ/ })).toBeInViewport();
     await expect(drinks).toHaveAttribute("aria-current", "true");
 
     // Cappuccino: size is required with 250 ml preselected; milk is optional, one at most.
     await dish(page, "Կապուչինո").getByRole("button", { name: "Ավելացնել՝ Կապուչինո" }).click();
     const sheet = page.getByRole("dialog", { name: "Կապուչինո" });
-    const add = sheet.getByRole("button", { name: "Ավելացնել", exact: true });
+    // «Ավելացնել · 1 300 ֏»: the add button carries the total.
+    const add = sheet.getByRole("button", { name: /^Ավելացնել \d/ });
     const total = sheet.getByTestId("sheet-total");
     await expect(sheet.getByRole("radio", { name: "250 մլ" })).toBeChecked();
     await expect(total).toContainText(formatAmd(1300, "hy"));
@@ -168,7 +169,7 @@ test.describe("guest menu edge cases at a fresh café", () => {
     await expect(trout.getByRole("button", { name: /Sevan trout/ })).toBeDisabled();
     await expect(trout.getByRole("button", { name: "Add Sevan trout" })).toHaveCount(0);
     await expect(dish(page, "Tolma")).toContainText("300 g");
-    await expect(dish(page, "Tolma")).toContainText("popular");
+    await expect(dish(page, "Tolma")).toContainText("Popular");
 
     await dish(page, "Armenian coffee").getByRole("button", { name: "Add Armenian coffee" }).click();
     const sheet = page.getByRole("dialog", { name: "Armenian coffee" });

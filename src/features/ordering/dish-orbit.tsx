@@ -1,14 +1,22 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Plate, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
 import { useGuestI18n } from "./guest-i18n-context";
 import styles from "./dish-orbit.module.css";
 
-export type OrbitDish = { id: string; name: string; image: string | null; price: number; description?: string };
+export type OrbitDish = {
+  id: string;
+  name: string;
+  image: string | null;
+  price: number;
+  description?: string;
+  /** The dish has required choices: it is chosen on the menu, not added from here. */
+  choose?: boolean;
+};
 
 // «Recommended for you»: the owner's Dish Orbit Carousel (21st.dev), as our own
 // code. One dish is shown large; changing dish swings its plate out over the top
@@ -19,7 +27,12 @@ export type OrbitDish = { id: string; name: string; image: string | null; price:
 // itself every few seconds while it is on screen, and an arrow, a dot, a
 // thumbnail or a swipe jumps. The original is driven by gsap and the page
 // scroll; this one is plain Web Animations (no library, nothing pinned), and
-// under reduced motion the dish just changes.
+// under reduced motion the dish just changes. ADR-094 area pass: no ranking
+// eyebrow and no decorative swoosh; the dish reads name, price, description,
+// then one outline «Add · price» (a filled button would compete with the
+// page's one primary); in the stacked layout (the order page's column, a
+// phone) a «‹ 1 / 9 ›» counter with two 44 px arrows sits on the heading's
+// row instead of the dots (ADR-098), so the dish itself has one control.
 const SWING = 50; // degrees a plate travels round the orbit's pivot
 const ORBIT = { x: 299, y: -450, r: 650, w: 118 }; // the band's circle, in canvas px
 const REST = [
@@ -65,7 +78,19 @@ function titleParts(name: string): [string, string] {
 
 const fit = (chars: number, max: number, width: number, em: number) => Math.min(max, width / (Math.max(1, chars) * em));
 
-export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref: string }) {
+export function DishOrbit({
+  dishes,
+  menuHref,
+  onAdd,
+  heading,
+}: {
+  dishes: OrbitDish[];
+  menuHref: string;
+  /** The section's heading; the stacked layout puts the counter on its row. */
+  heading?: ReactNode;
+  /** Puts a dish without required choices in this table's cart and opens it on the menu. */
+  onAdd?: (itemId: string) => void;
+}) {
   const { t, locale } = useGuestI18n();
   const n = dishes.length;
   const [index, setIndex] = useState(0);
@@ -83,7 +108,7 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const reduced = useRef(false);
 
-  // The canvas is scaled to the card's width; on a phone it is stacked instead.
+  // The canvas is scaled to the card's width; under 768 px (the order page's column, a phone) it is stacked instead.
   useEffect(() => {
     const el = root.current;
     if (!el) return;
@@ -214,7 +239,6 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
   const go = (to: number) => setIndex(wrap(to, n));
   const start = Math.max(0, Math.min(index - 1, n - 4));
   const current = dishes[index] ?? dishes[0]!;
-  const eyebrow = (i: number) => `#${i + 1} ${t("order.recommended")}`;
   const status = `${index + 1} / ${n}: ${current.name}`;
 
   return (
@@ -248,6 +272,20 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - s.y) * 1.4) go(index + (dx < 0 ? 1 : -1));
       }}
     >
+      <div className={styles.top}>
+        {heading}
+        <div className={styles.counter}>
+          <button type="button" className={styles.step} aria-label={t("order.recPrev")} onClick={() => go(index - 1)}>
+            <ChevronLeft size={20} aria-hidden />
+          </button>
+          <span className={`num ${styles.count}`} aria-hidden="true">
+            {index + 1} / {n}
+          </span>
+          <button type="button" className={styles.step} aria-label={t("order.recNext")} onClick={() => go(index + 1)}>
+            <ChevronRight size={20} aria-hidden />
+          </button>
+        </div>
+      </div>
       <div className={styles.scaler}>
         <div className={styles.canvas}>
           <svg className={styles.arc} viewBox="0 0 960 520" aria-hidden="true">
@@ -300,7 +338,6 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
                   data-on={i === 0 ? "" : undefined}
                   aria-hidden={i !== index}
                 >
-                  <p className={styles.eye}>{eyebrow(i)}</p>
                   <h3 style={{ margin: 0, font: "inherit" }}>
                     {a && (
                       <span data-t1="" className={styles.t1} style={{ fontSize: `${fit(a.length, 22, 330, 0.5)}px` } as CSSProperties}>
@@ -317,12 +354,24 @@ export function DishOrbit({ dishes, menuHref }: { dishes: OrbitDish[]; menuHref:
           </div>
 
           <div className={styles.acts}>
-            <a
-              href={menuHref}
-              className="bg-add text-on-add rounded-pill inline-flex min-h-11 items-center px-6 font-semibold transition-transform duration-150 hover:-translate-y-0.5 active:scale-95"
-            >
-              {t("order.orderMore")}
-            </a>
+            {onAdd && !current.choose ? (
+              <button
+                type="button"
+                onClick={() => onAdd(current.id)}
+                className="border-line-strong text-ink hover:bg-chip rounded-pill inline-flex min-h-12 items-center gap-2 border px-6 font-semibold transition-transform duration-150 active:scale-95"
+              >
+                {t("sheet.add")}
+                <span aria-hidden="true">·</span>
+                <span className="num whitespace-nowrap">{formatAmd(current.price, locale as Locale)}</span>
+              </button>
+            ) : (
+              <a
+                href={menuHref}
+                className="border-line-strong text-ink hover:bg-chip rounded-pill inline-flex min-h-12 items-center border px-6 font-semibold transition-transform duration-150 active:scale-95"
+              >
+                {t("order.toMenu")}
+              </a>
+            )}
           </div>
 
           <div className={styles.card}>

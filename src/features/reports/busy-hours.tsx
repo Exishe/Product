@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { FadeScroll } from "@/features/admin-ui/fade-scroll";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { formatAmd } from "@/lib/format/money";
@@ -44,15 +45,15 @@ export async function BusyHours({
   return (
     <section
       aria-labelledby="busy-title"
-      className="flex min-w-0 flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5"
+      className="flex min-w-0 flex-col gap-4"
       data-testid="reports-busy"
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <div className="border-staff-sep flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b pb-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <h2 id="busy-title" className="m-0 text-[1.25rem] leading-tight font-bold">
+          <h2 id="busy-title" className="m-0 text-heading font-semibold">
             {t("title")}
           </h2>
-          <p className="text-staff-label2 m-0 max-w-prose text-[0.9375rem]">
+          <p className="text-staff-label2 m-0 max-w-prose text-label">
             {t(metric === "orders" ? "hintOrders" : "hintRevenue")}
           </p>
         </div>
@@ -91,7 +92,8 @@ export async function BusyHours({
                 })}
               </li>
             )}
-            {grid.quietest && (
+            {/* A quietest hour of "about 0" says nothing: then it is left out. */}
+            {grid.quietest && show(grid.quietest.value) !== show(0) && (
               <li className="text-staff-label2">
                 {t("quietest", {
                   ...span(grid.quietest.dow, grid.quietest.hour),
@@ -100,8 +102,10 @@ export async function BusyHours({
               </li>
             )}
           </ul>
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <table className="num w-full border-separate border-spacing-[3px] text-[0.75rem]">
+          {/* On a phone the grid scrolls sideways; the right edge fades while
+              more hours are hidden there. */}
+          <FadeScroll className="relative -mx-1 overflow-x-auto px-1 pb-1">
+            <table className="num w-full border-separate border-spacing-[3px] text-meta">
               <caption className="sr-only">{t(metric === "orders" ? "hintOrders" : "hintRevenue")}</caption>
               <thead>
                 <tr>
@@ -125,7 +129,7 @@ export async function BusyHours({
                   <tr key={d}>
                     <th
                       scope="row"
-                      className="text-staff-label2 pr-1.5 text-left text-[0.8125rem] font-semibold whitespace-nowrap"
+                      className="text-staff-label2 pr-1.5 text-left text-meta font-semibold whitespace-nowrap"
                     >
                       {days[d]}
                     </th>
@@ -148,8 +152,8 @@ export async function BusyHours({
                 ))}
               </tbody>
             </table>
-          </div>
-          <div aria-hidden="true" className="text-staff-label2 flex items-center gap-1.5 text-[0.8125rem]">
+          </FadeScroll>
+          <div aria-hidden="true" className="text-staff-label2 flex items-center gap-1.5 text-meta">
             {t("less")}
             {LEVEL.map((c) => (
               <span key={c} className={clsx("size-4 rounded-[3px]", c)} />
@@ -177,19 +181,19 @@ export async function BusyHours({
                 <tr>
                   <th
                     scope="col"
-                    className="text-staff-label2 px-2 py-1.5 text-left text-[0.8125rem] font-semibold"
+                    className="text-staff-label2 px-2 py-1.5 text-left text-label font-semibold"
                   >
                     {tt("colDay")}
                   </th>
                   <th
                     scope="col"
-                    className="text-staff-label2 px-2 py-1.5 text-right text-[0.8125rem] font-semibold"
+                    className="text-staff-label2 px-2 py-1.5 text-right text-label font-semibold"
                   >
                     {tt("colTime")}
                   </th>
                   <th
                     scope="col"
-                    className="text-staff-label2 px-2 py-1.5 text-right text-[0.8125rem] font-semibold"
+                    className="text-staff-label2 px-2 py-1.5 text-right text-label font-semibold"
                   >
                     {tt("colTables")}
                   </th>

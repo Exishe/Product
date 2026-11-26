@@ -1,11 +1,11 @@
-import { CircleAlert, Download, Grid2x2, Receipt } from "lucide-react";
+import { ChartLine, CircleAlert, Download, Grid2x2, ReceiptText } from "lucide-react";
 import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AdminPage, Notice } from "@/features/admin-ui/page";
+import { MoreMenu } from "@/features/admin-ui/more-menu";
 import { button } from "@/features/admin-ui/styles";
-import { PlanBanner } from "@/features/billing/plan-banner";
 import { parseDashboard } from "@/features/dashboard/model";
 import { businessDate, parseDateInput, resolveRange } from "@/features/dashboard/range";
 import { RangePicker } from "@/features/dashboard/range-picker";
@@ -48,9 +48,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   ]);
   const data = error ? null : parseDashboard(json);
   const day = (iso: string) => formatDate(new Date(`${iso}T12:00:00Z`), locale);
+  // Before the business day starts (06:00), "today" is still yesterday's
+  // date: say so, or the owner reads the date as a mistake.
+  const calendarToday = businessDate(new Date(), location.timezone, "00:00");
   const period =
     range.from === range.to && range.to === today
-      ? t("soFar", { time: formatTime(new Date(), location.timezone) })
+      ? today === calendarToday
+        ? t("soFar", { time: formatTime(new Date(), location.timezone) })
+        : t("soFarBusinessDay", {
+            date: day(today),
+            start: String(location.business_day_starts ?? "").slice(0, 5),
+            time: formatTime(new Date(), location.timezone),
+          })
       : range.from === range.to
         ? day(range.from)
         : t("period", { from: day(range.from), to: day(range.to) });
@@ -65,32 +74,48 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </p>
       }
       width="lg"
+      inlineActions
       actions={
-        <div className="flex flex-wrap gap-2">
+        <>
+          {/* Below 1280 px the three links fold into one «More» on the
+              title's line, so the figures come first on a phone. */}
+          <MoreMenu
+            label={t("more")}
+            compact
+            className="xl:hidden"
+            items={[
+              { href: "/admin/reports", label: t("reports"), icon: <ChartLine aria-hidden="true" /> },
+              { href: "/admin/dashboard/menu", label: t("menuAnalysis"), icon: <Grid2x2 aria-hidden="true" /> },
+              { href: "/admin/export", label: t("export"), icon: <Download aria-hidden="true" /> },
+            ]}
+          />
+          <Link href="/admin/reports" className={button("secondary", "max-xl:hidden")} data-testid="reports-link">
+            <ChartLine aria-hidden="true" />
+            {t("reports")}
+          </Link>
           <Link
             href="/admin/dashboard/menu"
-            className={button("secondary", "min-h-11 text-[0.9375rem]")}
+            className={button("secondary", "max-xl:hidden")}
             data-testid="menu-analysis-link"
           >
-            <Grid2x2 aria-hidden="true" className="!size-4" />
+            <Grid2x2 aria-hidden="true" />
             {t("menuAnalysis")}
           </Link>
-          <Link href="/admin/export" className={button("secondary", "min-h-11 text-[0.9375rem]")}>
-            <Download aria-hidden="true" className="!size-4" />
+          <Link href="/admin/export" className={button("secondary", "max-xl:hidden")}>
+            <Download aria-hidden="true" />
             {t("export")}
           </Link>
-        </div>
+        </>
       }
     >
-      {me.role === "owner" && <PlanBanner restaurantId={me.restaurantId} locale={locale} />}
       <RangePicker range={range} today={today} />
       {!data ? (
         <Notice tone="alert" role="alert" icon={<CircleAlert aria-hidden="true" />}>
           <p className="m-0 font-semibold">{t("error")}</p>
         </Notice>
       ) : empty ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-4 py-12 text-center">
-          <Receipt aria-hidden="true" className="text-staff-label2 size-8" />
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <ReceiptText aria-hidden="true" className="text-staff-label2 size-8" />
           <p data-testid="dashboard-empty" className="text-staff-label2 m-0 text-[1.0625rem]">
             {range.preset === "today" ? t("empty") : t("emptyRange")}
           </p>

@@ -44,7 +44,8 @@ test.describe("calling the waiter without a connection", () => {
       .filter({ visible: true })
       .first()
       .click();
-    await page.getByRole("button", { name: "Այո, կանչել" }).click();
+    // The Waiter item opens two choices; calling the waiter is the first.
+    await page.getByTestId("call-waiter").getByRole("button", { name: "Կանչել մատուցողին" }).click();
   }
 
   test("kept across a reload, sent when the connection returns, one open request", async ({

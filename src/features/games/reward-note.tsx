@@ -40,7 +40,7 @@ export default function RewardNote({ ctx }: { ctx: RewardCtx }) {
         <Gift size={26} strokeWidth={1.75} aria-hidden className="flex-none" />
         <span className="min-w-0 leading-snug">
           <span className="block font-semibold">{t("games.reward.earned")}</span>
-          <span className="block text-sm">
+          <span className="block text-body">
             {claim.status === "applied"
               ? t("games.reward.applied", { reward: rewardLine(claim, locale, word) })
               : t("games.reward.show", { reward: rewardLine(claim, locale, word) })}
@@ -51,7 +51,7 @@ export default function RewardNote({ ctx }: { ctx: RewardCtx }) {
   }
   if (!offer.on) return null;
   return (
-    <p className="text-muted mt-3 flex items-center gap-2 text-[12px]" data-testid="reward-offer">
+    <p className="text-muted mt-3 flex items-center gap-2 text-meta" data-testid="reward-offer">
       <Gift size={18} strokeWidth={1.75} aria-hidden className="text-accent-text flex-none" />
       <span>
         {t(offer.game ? "games.reward.offerGame" : "games.reward.offer", {

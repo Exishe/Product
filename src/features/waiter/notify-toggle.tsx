@@ -22,10 +22,13 @@ export function NotifyToggle({
   restaurantId,
   vapidPublicKey,
   locale,
+  rowClassName,
 }: {
   restaurantId: string;
   vapidPublicKey: string | null;
   locale: "hy" | "ru" | "en";
+  /** Drawn as a row of the header's «…» menu: the words always show. */
+  rowClassName?: string;
 }) {
   const t = useTranslations("waiter.notify");
   const [state, setState] = useState<State>("loading");
@@ -112,24 +115,25 @@ export function NotifyToggle({
           disabled={busy}
           onClick={() => void (state === "on" ? turnOff() : turnOn())}
           className={clsx(
-            "inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-full px-3 text-[0.8125rem] font-semibold disabled:opacity-60",
-            state === "on" ? "bg-tarragon-tint text-tarragon" : "bg-staff-fill text-ink",
+            rowClassName ??
+              "border-staff-sep text-ink inline-flex size-11 shrink-0 items-center justify-center gap-2 rounded-full border bg-white text-[0.875rem] font-semibold disabled:opacity-60 lg:w-auto lg:px-3.5",
+            state === "on" ? "[&_svg]:text-tarragon" : "[&_svg]:text-staff-label2",
           )}
         >
           {state === "on" ? <Bell aria-hidden="true" className="size-5" /> : <BellOff aria-hidden="true" className="size-5" />}
           {/* Icon only on phones; the switch keeps its name and state for screen readers. */}
-          <span className="max-lg:sr-only">
+          <span className={rowClassName ? undefined : "max-lg:sr-only"}>
             {t("label")} <span className="font-normal">{state === "on" ? t("on") : t("off")}</span>
           </span>
         </button>
       )}
       {note && (
-        <span role="status" className="basis-full text-[0.8125rem] text-staff-label2 lg:basis-auto">
+        <span role="status" className="basis-full px-3 py-1 text-[0.9375rem] text-staff-label2 lg:basis-auto">
           {note}
         </span>
       )}
       {error && (
-        <span role="alert" className="basis-full text-[0.8125rem] text-pomegranate lg:basis-auto">
+        <span role="alert" className="basis-full px-3 py-1 text-[0.9375rem] text-pomegranate lg:basis-auto">
           {t("error")}
         </span>
       )}

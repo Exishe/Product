@@ -5,13 +5,17 @@ import { BellRing, Check, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { entryLabel, summarizeAlert, type NewOrderAlert } from "./new-order-alert";
 
-// A cook across the room must see that an order arrived: huge type, high
-// contrast, and it stays until someone taps it. It sits in the board's own grid
-// (never over the tickets) and is capped at 40% of the screen height.
-// The border pulses slowly (one beat per 1.6 s) and only if motion is allowed.
+// A cook across the room must see that an order arrived, without losing the
+// board under it: one row on the board's own white, at most 96 px (18% of the
+// screen), in the board's grid and never over the tickets. The bell, how many,
+// the tables (an allergy first, red with its shield), and «Տեսա» on the right.
+// Only that button dismisses it, so a sleeve brushing the row does not. The
+// apricot frame breathes once per 1.6 s, only if motion is allowed.
 export function NewOrderBanner({ alert, onAck }: { alert: NewOrderAlert; onAck: () => void }) {
   const t = useTranslations("kitchen");
-  const { count, shown, more, allergy } = summarizeAlert(alert);
+  // Allergy orders first, so the red chip is always one of those shown.
+  const sorted = { ...alert, entries: [...alert.entries].sort((a, b) => Number(b.allergy) - Number(a.allergy)) };
+  const { count, shown, more, allergy } = summarizeAlert(sorted);
   const tableLabel = (table: string) => t("ticket.tableLabel", { table });
   const title = count > 1 ? t("newOrder.titleMany", { count }) : t("newOrder.title");
   // Read out by the live region: "New order. Table 4 · #12".
@@ -22,6 +26,16 @@ export function NewOrderBanner({ alert, onAck }: { alert: NewOrderAlert; onAck: 
   ]
     .filter(Boolean)
     .join(". ");
+  // One chip on a portrait tablet, two from 1024 px, three from 1536 px; the
+  // rest are counted, so a chip is never cut in half.
+  const VISIBLE = ["", "max-lg:hidden", "max-2xl:hidden"];
+  const hiddenAt = (visible: number) => more + Math.max(0, shown.length - visible);
+  const counts = [
+    { n: hiddenAt(1), className: "lg:hidden" },
+    { n: hiddenAt(2), className: "max-lg:hidden 2xl:hidden" },
+    { n: hiddenAt(3), className: "max-2xl:hidden" },
+  ];
+  const allergyChip = shown.findIndex((x) => x.allergy);
 
   return (
     <div
@@ -29,61 +43,69 @@ export function NewOrderBanner({ alert, onAck }: { alert: NewOrderAlert; onAck: 
       aria-live="assertive"
       aria-atomic="true"
       data-testid="new-order-alert"
-      className="max-h-[40dvh] min-h-0 px-4 pt-3"
+      className="px-4 pt-3 lg:px-6"
     >
-      <button
-        type="button"
-        onClick={onAck}
-        data-testid="new-order-ack"
-        aria-label={`${spoken}. ${t("newOrder.ack")}`}
+      <div
         className={clsx(
-          "bg-slip focus-visible:outline-apricot-deep grid max-h-[calc(40dvh-0.75rem)] w-full cursor-pointer gap-2 overflow-hidden rounded-2xl border-[6px] border-(--color-apricot) p-4 text-left text-white outline-offset-4 focus-visible:outline-[6px] sm:p-5",
+          "text-slip flex max-h-[18dvh] min-h-0 items-center gap-x-4 overflow-hidden rounded-2xl border-4 border-(--color-apricot) bg-white py-2 pr-2 pl-4",
           "motion-safe:animate-[new-order-pulse_1.6s_ease-in-out_infinite]",
         )}
       >
-        <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          <BellRing
-            aria-hidden="true"
-            className="size-[clamp(2.5rem,7vw,4.5rem)] shrink-0 text-(--color-apricot) max-sm:hidden"
-          />
-          <span className="text-[clamp(2.5rem,min(8vw,9dvh),5rem)] leading-none font-black tracking-tight">
-            {title}
-          </span>
-          <span className="ml-auto inline-flex min-h-14 items-center gap-2 rounded-full bg-white px-6 text-2xl font-bold text-(--color-ink) sm:min-h-16 sm:px-8 sm:text-3xl">
-            <Check aria-hidden="true" className="size-8" />
-            {t("newOrder.ack")}
-          </span>
+        <BellRing aria-hidden="true" className="text-apricot-deep size-10 shrink-0 max-sm:hidden" />
+        {/* The button's name says it all once; the row is drawn for the eyes. */}
+        <span
+          aria-hidden="true"
+          className="shrink-0 text-[clamp(1.75rem,3.4vw,3rem)] leading-none font-extrabold tracking-tight whitespace-nowrap"
+        >
+          {title}
         </span>
-        {allergy && (
-          <span
-            data-testid="new-order-allergy"
-            className="bg-late-on-dark flex items-center gap-3 rounded-xl px-4 py-2 text-[clamp(1.5rem,min(5vw,5dvh),3rem)] leading-tight font-black text-white"
-          >
-            <ShieldAlert aria-hidden="true" className="size-[1.1em] shrink-0" />
-            {t("newOrder.allergy")}
-          </span>
-        )}
-        <span className="flex flex-wrap gap-x-3 gap-y-1.5">
-          {shown.map((x) => (
+        <span aria-hidden="true" className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+          {shown.map((x, i) => (
             <span
               key={x.id}
               data-allergy={x.allergy || undefined}
               className={clsx(
-                "num inline-flex items-center gap-2 rounded-xl px-4 py-0.5 text-[clamp(1.25rem,min(4.2vw,4.5dvh),2.75rem)] leading-tight font-extrabold",
-                x.allergy ? "bg-late-on-dark text-white" : "bg-white/15 text-white",
+                "num inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-1 text-[clamp(1.25rem,2.1vw,1.75rem)] leading-tight font-extrabold whitespace-nowrap",
+                x.allergy ? "bg-late-on-dark text-white" : "bg-basalt-4 text-slip",
+                VISIBLE[i],
               )}
             >
-              {x.allergy && <ShieldAlert aria-hidden="true" className="size-[1em] shrink-0" />}
+              {i === allergyChip && (
+                <span data-testid="new-order-allergy" className="inline-flex">
+                  <ShieldAlert aria-hidden="true" className="size-[1em] shrink-0" />
+                  <span className="sr-only">{t("newOrder.allergy")}</span>
+                </span>
+              )}
+              {x.allergy && i !== allergyChip && <ShieldAlert aria-hidden="true" className="size-[1em] shrink-0" />}
               {entryLabel(x, tableLabel)}
             </span>
           ))}
-          {more > 0 && (
-            <span className="num inline-flex items-center rounded-xl bg-white px-4 py-1 text-[clamp(1.25rem,min(4.2vw,4.5dvh),2.75rem)] leading-tight font-extrabold text-(--color-ink)">
-              {t("newOrder.more", { count: more })}
-            </span>
+          {counts.map(
+            (c, i) =>
+              c.n > 0 && (
+                <span
+                  key={i}
+                  className={clsx(
+                    "num text-slip-dim shrink-0 px-1 text-[clamp(1.25rem,2.1vw,1.75rem)] leading-tight font-extrabold",
+                    c.className,
+                  )}
+                >
+                  {t("newOrder.more", { count: c.n })}
+                </span>
+              ),
           )}
         </span>
-      </button>
+        <button
+          type="button"
+          onClick={onAck}
+          data-testid="new-order-ack"
+          aria-label={`${spoken}. ${t("newOrder.ack")}`}
+          className="bg-slip focus-visible:outline-apricot-deep ml-auto inline-flex min-h-16 shrink-0 cursor-pointer items-center gap-2 rounded-full px-7 text-[1.75rem] leading-none font-bold text-white outline-offset-4 focus-visible:outline-4"
+        >
+          <Check aria-hidden="true" className="size-8 shrink-0" />
+          {t("newOrder.ack")}
+        </button>
+      </div>
     </div>
   );
 }

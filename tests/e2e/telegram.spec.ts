@@ -28,16 +28,16 @@ test.describe("Telegram alerts page", () => {
       await expect(page.getByTestId("telegram-link")).toBeVisible();
     } else {
       await expect(page.getByTestId("bot-not-ready")).toHaveText(
-        "Telegram բոտը դեռ պատրաստ չէ։ Մինչ այդ կարող եք միացնել ծանուցումներն այս հեռախոսում։",
+        "Telegram բոտը դեռ պատրաստ չէ։ Մինչ այդ կարող եք միացնել ծանուցումներն այս սարքում։",
       );
       await expect(connect).toBeDisabled();
     }
 
     const push = page.getByTestId("push-section");
-    await expect(push.getByRole("heading", { level: 2 })).toHaveText("Ծանուցումներ այս հեռախոսում");
+    await expect(push.getByRole("heading", { level: 2 })).toHaveText("Ծանուցումներ այս սարքում");
     // Without VAPID keys on this server the toggle says it isn't available yet.
     if (!process.env.VAPID_PUBLIC_KEY) {
-      await expect(push.getByTestId("push-status")).toHaveText("Ծանուցումները հեռախոսում դեռ հասանելի չեն։");
+      await expect(push.getByTestId("push-status")).toHaveText("Ծանուցումներն այս սարքում դեռ հասանելի չեն։");
     }
 
     const overflow = await page.evaluate(

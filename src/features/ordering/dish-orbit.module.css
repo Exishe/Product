@@ -1,5 +1,5 @@
 /* Dish orbit (dish-orbit.tsx). One 960 x 520 design canvas scaled to the card's
-   width; on a phone (card under 640 px) the same pieces stack in one column. */
+   width; in the order page's 44rem column and on a phone (card under 768 px, ADR-097) the same pieces stack in one column. */
 .root {
   position: relative;
   width: 100%;
@@ -25,7 +25,10 @@
   transform-origin: 0 0;
 }
 
+/* The swoosh behind the plate is gone (ADR-094 area pass: no decoration); its
+   tween in dish-orbit.tsx keeps running on a hidden path. */
 .arc {
+  display: none;
   position: absolute;
   top: 0;
   left: 0;
@@ -82,13 +85,6 @@
   visibility: visible;
 }
 
-.eye {
-  margin: 0 0 4px 2px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--guest-muted);
-}
-
 .t1,
 .t2 {
   display: block;
@@ -140,27 +136,68 @@
   visibility: visible;
 }
 
+/* The price as the menu sets it: the price colour, no chip. */
 .badge {
   display: inline-block;
-  min-width: 46px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  /* The menu's price colour on a quiet chip. */
-  background: var(--guest-chip);
   color: var(--guest-accent-text);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
-  transition: background-color 1100ms ease-in-out;
 }
 
 .desc {
-  min-height: 56px;
-  margin: 14px 0 0;
+  min-height: 48px;
+  margin: 8px 0 0;
   color: var(--guest-muted);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* The heading's row: the section's title, and in the stacked layout the
+   «‹ 1 / 9 ›» counter on its right (the dots are for the wide canvas only). */
+.top {
+  display: flex;
+  min-height: 44px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 12px;
+}
+
+.count {
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+/* A phone (360 to 390 px): the heading keeps its one line beside the two
+   arrows and their 8 px gap; the «2 / 9» goes (screen readers hear the
+   position from the live line). */
+@container (max-width: 399px) {
+  .count {
+    display: none;
+  }
+}
+
+.counter {
+  display: none;
+}
+
+.step {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--guest-line-strong);
+  border-radius: 999px;
+  background: var(--guest-page);
+  color: var(--guest-ink);
+  cursor: pointer;
 }
 
 .strip {
@@ -222,7 +259,7 @@
 
 .thName {
   max-width: 80px;
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.25;
   text-align: center;
@@ -259,8 +296,8 @@
 
 .dot {
   display: grid;
-  width: 18px;
-  height: 12px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
   background: none;
@@ -270,11 +307,10 @@
 
 .dot i {
   display: block;
-  width: 3px;
-  height: 3px;
-  border-radius: 3px;
-  background: var(--guest-ink);
-  opacity: 0.45;
+  width: 6px;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--guest-line-strong);
   transition:
     height 450ms cubic-bezier(0.3, 0.7, 0.2, 1),
     opacity 300ms;
@@ -286,7 +322,7 @@
 
 .dot[aria-current] i {
   height: 22px;
-  opacity: 0.9;
+  background: var(--guest-ink);
 }
 
 .sr {
@@ -298,95 +334,148 @@
   white-space: nowrap;
 }
 
-/* A phone: the pieces stack, no canvas. */
-@container (max-width: 639px) {
+/* A phone (ADR-096, ADR-098): laid out like a dish row: the name, the price,
+   two lines of description and the outline «Add · price» on the left, the
+   plate (no drop shadow) on the right; the «‹ n / 9 ›» counter is on the
+   heading's row above. One control row. No canvas. */
+@container (max-width: 767px) {
   .scaler {
     aspect-ratio: auto;
   }
 
   .canvas {
     position: relative;
-    display: flex;
+    display: grid;
     width: 100%;
     height: auto;
-    flex-direction: column;
-    align-items: center;
-    padding: 12px 8px 8px;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-rows: auto auto 1fr;
+    column-gap: 12px;
+    align-items: start;
+    padding: 8px 0 0;
     transform: none;
   }
 
-  .arc {
-    top: -20px;
-    left: -60%;
-    width: 200%;
-    height: auto;
-  }
-
-  .pager {
-    position: relative;
-    top: auto;
-    left: auto;
-    order: 5;
-    flex-direction: row;
-    margin-top: 10px;
-  }
-
-  .dot {
-    width: 12px;
-    height: 18px;
-  }
-
-  .dot[aria-current] {
-    width: 28px;
-    height: 18px;
-  }
-
-  .dot i {
-    width: 3px;
-    height: 3px;
-  }
-
-  .dot[aria-current] i {
-    width: 22px;
-    height: 3px;
+  .arc,
+  .pager,
+  .strip {
+    display: none;
   }
 
   .plates {
     position: relative;
     top: auto;
     left: auto;
-    width: min(62vw, 15rem);
-    height: min(62vw, 15rem);
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: start;
+    width: 104px;
+    height: 104px;
+  }
+
+  .orbit {
+    filter: none;
+  }
+
+  .plates .orbit > span {
+    box-shadow: none;
+  }
+
+  /* The photo fills the plate: no rim around it. */
+  .plates .orbit img {
+    width: 100%;
+  }
+
+  /* Only the dish on screen takes room, so the price sits right under its name. */
+  .hd:not([data-on]),
+  .body:not([data-on]) {
+    display: none;
   }
 
   .head {
     position: relative;
     top: auto;
     left: auto;
-    width: 100%;
-    height: 132px;
-    margin-top: 12px;
-    text-align: center;
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: auto;
+    display: grid;
   }
 
-  .acts {
+  .hd {
     position: relative;
-    top: auto;
-    left: auto;
-    margin-top: 2px;
+    grid-area: 1 / 1;
+    inset: auto;
+  }
+
+  .hd h3 {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+  }
+
+  .t1,
+  .t2 {
+    display: inline;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit !important;
+    font-weight: inherit;
+    line-height: inherit;
+    white-space: normal;
+  }
+
+  .t1::after {
+    content: " ";
   }
 
   .card {
     position: relative;
     top: auto;
     left: auto;
-    width: 100%;
-    max-width: 22rem;
+    grid-column: 1;
+    grid-row: 2;
+    width: auto;
+    margin-top: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .badge {
+    font-size: 16px;
+  }
+
+  .desc {
+    display: -webkit-box;
+    min-height: 0;
+    margin-top: 2px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .acts {
+    position: relative;
+    top: auto;
+    left: auto;
+    grid-column: 1;
+    grid-row: 3;
+    align-self: end;
     margin-top: 12px;
   }
 
-  .strip {
-    display: none;
+  /* 8 px between each circle and the «2 / 9» (and between the two circles
+     when a 360 px phone drops the count), so they never touch. */
+  .counter {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    color: var(--guest-muted);
+    font-size: 15px;
+    font-weight: 600;
   }
 }
 

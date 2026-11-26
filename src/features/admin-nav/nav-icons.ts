@@ -5,6 +5,7 @@ import {
   ChartColumn,
   ChartLine,
   Download,
+  House,
   Palette,
   QrCode,
   ScanText,
@@ -15,6 +16,7 @@ import {
 
 // One Lucide icon per admin section, shared by the navigation and the home page.
 export const NAV_ICONS = {
+  home: House,
   dashboard: ChartColumn,
   reports: ChartLine,
   menu: BookOpen,

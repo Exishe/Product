@@ -1,4 +1,4 @@
-import { BellRing, Check, ChevronLeft, Minus, Plus, QrCode, X } from "./icons";
+import { BellRing, Check, ChefHat, ChevronLeft, Heart, Minus, Plus, QrCode, X } from "./icons";
 import type { ElementType, ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import type { GuestTag, Text } from "./view-model";
@@ -34,12 +34,33 @@ export function scriptLang(text: string): Locale | undefined {
 
 // Icons are Lucide (ISC licence), imported one by one so only these ship.
 const ICON = { size: 22, strokeWidth: 2, "aria-hidden": true } as const;
+/**
+ * The one section heading of the guest pages' long pages (the status page's
+ * «Ձեր պատվերը», «Նախորդ պատվերները», «Կարող եք ավելացնել», «Խաղեր սպասելիս»):
+ * 20 px in the display face.
+ */
+export const SECTION_TITLE = "display-face text-heading leading-[1.2]";
+/**
+ * The order screens' column (the cart and the status page): 44rem of content
+ * inside the 16/32 px gutters, centred; their bar uses it too, so the café's
+ * name, the title, the lines and the button share one left edge.
+ */
+export const ORDER_COLUMN = "max-w-[48rem]";
+/** The order screens' bar: the order's column, then the menu bar's 1440 px from 1024 px. */
+export const ORDER_BAR = "max-w-[48rem] lg:max-w-[1440px]";
+
 export const PlusIcon = () => <Plus {...ICON} />;
 export const MinusIcon = () => <Minus {...ICON} />;
 export const BackIcon = () => <ChevronLeft {...ICON} />;
 export const CloseIcon = () => <X {...ICON} />;
 export const CheckIcon = () => <Check size={16} strokeWidth={3} aria-hidden />;
 export const BellIcon = () => <BellRing size={20} strokeWidth={2} aria-hidden />;
+
+/** The dish's first letter, for a line or a plate without a photo. */
+export function initial(name: string, locale: string): string {
+  const first = Array.from(name.trim())[0] ?? "";
+  return first.toLocaleUpperCase(locale);
+}
 
 // Public URL of a dish photo in the menu-images bucket (public read). Reads
 // the inlined env value directly: publicEnv() would pull zod into the guest
@@ -82,7 +103,7 @@ export function Stepper({
       >
         <MinusIcon />
       </button>
-      <output className="num min-w-7 text-center text-lg font-semibold" aria-label={labels.quantity}>
+      <output className="num min-w-7 text-center text-name font-semibold" aria-label={labels.quantity}>
         {value}
       </output>
       <button
@@ -98,22 +119,59 @@ export function Stepper({
   );
 }
 
-const DIET = "bg-success-tint text-success";
-const TAG_STYLES: Record<GuestTag, string> = {
-  popular: "bg-chip text-ink",
-  spicy: "bg-alert-tint text-alert",
-  vegan: DIET,
-  vegetarian: DIET,
-  gluten_free: DIET,
-  lactose_free: DIET,
-  new: "bg-badge text-on-badge",
-  chefs_pick: "bg-badge text-on-badge",
-};
+// Tags (owner, Nov 2026: no pill badges everywhere; ADR-094 area pass: one
+// treatment). Every tag is a word in the dish's meta line, joined with « · ».
+// The two that single a dish out, «Սիրված» and the chef's pick, lead the line
+// as a label (ADR-097): capitalised, in the accent colour, at the meta's own
+// size and weight, after a small mark (a heart, a chef's hat), so they never
+// read as a second line of the dish's name. No box, no pill, no corner label
+// clipped on a narrow photo. The same on a row, a card and the sheet.
+export const BADGE_TAGS: readonly GuestTag[] = ["popular", "chefs_pick"];
+export const isBadgeTag = (tag: GuestTag) => BADGE_TAGS.includes(tag);
 
-export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
+/** The badge tags first, in their fixed order, then the rest as the café set them. */
+export const orderTags = (tags: readonly GuestTag[]): GuestTag[] => [
+  ...BADGE_TAGS.filter((b) => tags.includes(b)),
+  ...tags.filter((tag) => !isBadgeTag(tag)),
+];
+
+export function TagBadge({ tag, label }: { tag: GuestTag; label: string }) {
+  const Mark = tag === "chefs_pick" ? ChefHat : Heart;
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs leading-5 font-semibold ${TAG_STYLES[tag]}`}>
+    <span className="text-accent-text inline-flex items-baseline gap-1" data-badge={tag}>
+      <Mark size={14} strokeWidth={2.25} className="flex-none translate-y-[2px] self-start" />
       {label}
+    </span>
+  );
+}
+
+/** A tag in a meta line: a label for the two badge tags, a plain muted word otherwise. */
+export function TagChip({ tag, label }: { tag: GuestTag; label: string }) {
+  return isBadgeTag(tag) ? <TagBadge tag={tag} label={label} /> : <span>{label}</span>;
+}
+
+/**
+ * Short facts in one muted 15 px line, joined with « · » (portion, tags, sold
+ * out). Each fact keeps its words together, and its « · » travels with it: a
+ * fact that wraps takes its dot to the next line, where the line's start
+ * clips it (the row is shifted left by one gap inside a clipping box), so no
+ * line ever ends or starts with a dangling dot.
+ */
+export function MetaLine({ parts, className = "" }: { parts: ReactNode[]; className?: string }) {
+  const shown = parts.filter(Boolean);
+  if (shown.length === 0) return null;
+  return (
+    <span className={`text-muted block overflow-hidden text-label leading-[1.4] ${className}`}>
+      <span className="-ml-[1.125rem] flex flex-wrap gap-y-0.5">
+        {shown.map((part, i) => (
+          <span
+            key={i}
+            className="relative pl-[1.125rem] whitespace-nowrap before:absolute before:left-[0.375rem] before:[content:'·'_/_'']"
+          >
+            {part}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }
@@ -134,7 +192,7 @@ export function Notice({
     alert: "border-alert bg-alert-tint text-ink",
   };
   return (
-    <p className={`rounded-card border px-4 py-3 text-[0.9375rem] leading-snug ${tones[tone]}`}>
+    <p className={`rounded-card border px-4 py-3 text-body leading-[1.45] ${tones[tone]}`}>
       {tone === "info" && <QrCode size={22} strokeWidth={1.75} aria-hidden className="flex-none" />}
       {tone === "info" ? <span>{children}</span> : children}
     </p>

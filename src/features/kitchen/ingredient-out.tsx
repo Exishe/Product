@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CircleAlert, PackageX, X } from "lucide-react";
+import { CircleAlert, PackageX, Search, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { pickIngredientName } from "@/features/ingredients/names";
@@ -16,7 +16,17 @@ const DEBOUNCE_MS = 250;
 
 type Found = { id: string; name: string };
 
-export function IngredientOut({ locationId }: { locationId: string }) {
+export function IngredientOut({
+  locationId,
+  rowClassName,
+  onCount,
+}: {
+  locationId: string;
+  /** Drawn as a row of the header's «…» menu instead of a pill. */
+  rowClassName?: string;
+  /** How many ingredients are out, for a badge on the menu button. */
+  onCount?: (count: number) => void;
+}) {
   const t = useTranslations("kitchen.ingredients");
   const locale = useLocale() as Locale;
   const dialog = useRef<HTMLDialogElement>(null);
@@ -56,6 +66,10 @@ export function IngredientOut({ locationId }: { locationId: string }) {
       .gt("until", new Date().toISOString());
     if (!res.error) setOutIds(new Set((res.data ?? []).map((r) => r.ingredient_id)));
   }, [locationId, locale]);
+
+  useEffect(() => {
+    onCount?.(outIds.size);
+  }, [outIds, onCount]);
 
   // Opening the list reads what is out now.
   useEffect(() => {
@@ -116,17 +130,20 @@ export function IngredientOut({ locationId }: { locationId: string }) {
           setIsOpen(true);
           dialog.current?.showModal();
         }}
-        className={clsx(
-          "bg-basalt-3 text-slip inline-flex min-h-14 items-center gap-2 rounded-full px-5 text-lg font-semibold",
-          outIds.size > 0 && "ring-pom-on-dark ring-2",
-        )}
+        className={
+          rowClassName ??
+          clsx(
+            "bg-basalt-3 text-slip inline-flex min-h-12 items-center gap-2 rounded-full px-4 text-[1.0625rem] font-semibold",
+            outIds.size > 0 && "ring-pom-on-dark ring-2",
+          )
+        }
       >
         <PackageX aria-hidden="true" className="size-5 shrink-0" />
-        {t("button")}
+        <span className={rowClassName ? "min-w-0 flex-1" : "max-sm:sr-only"}>{t("button")}</span>
         {outIds.size > 0 && (
           <span
             data-testid="ingredient-out-count"
-            className="num bg-pom-on-dark grid h-7 min-w-7 place-items-center rounded-full px-2 text-base font-bold text-white"
+            className="num bg-pom-on-dark grid h-6 min-w-6 shrink-0 place-items-center rounded-full px-1.5 text-sm font-bold text-white"
           >
             {outIds.size}
           </span>
@@ -141,18 +158,19 @@ export function IngredientOut({ locationId }: { locationId: string }) {
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
             <div>
-              <h2 id={titleId} className="text-2xl font-bold">
+              <h2 id={titleId} className="text-2xl font-semibold">
                 {t("title")}
               </h2>
-              <p className="text-slip-dim mt-1 text-base">{t("hint")}</p>
+              <p className="text-slip-dim mt-1 text-[1.0625rem] leading-snug">{t("hint")}</p>
             </div>
             <button
               type="button"
+              aria-label={t("close")}
+              title={t("close")}
               onClick={() => dialog.current?.close()}
-              className="bg-slip inline-flex min-h-14 shrink-0 items-center gap-2 rounded-xl px-4 text-lg font-bold text-white"
+              className="bg-basalt-3 text-slip grid size-12 shrink-0 place-items-center rounded-full"
             >
-              <X aria-hidden="true" className="size-5 shrink-0" />
-              {t("close")}
+              <X aria-hidden="true" className="size-6" />
             </button>
           </div>
 
@@ -160,15 +178,21 @@ export function IngredientOut({ locationId }: { locationId: string }) {
             <label htmlFor={searchId} className="text-slip-dim text-base font-bold">
               {t("search")}
             </label>
-            <input
-              id={searchId}
-              type="search"
-              autoComplete="off"
-              value={query}
-              placeholder={t("searchPlaceholder")}
-              onChange={(e) => setQuery(e.target.value)}
-              className="bg-basalt-3 text-slip placeholder:text-slip-dim focus-visible:border-slip h-14 w-full min-w-0 rounded-xl border-2 border-transparent px-4 text-xl"
-            />
+            <span className="relative block">
+              <Search
+                aria-hidden="true"
+                className="text-slip-dim pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2"
+              />
+              <input
+                id={searchId}
+                type="search"
+                autoComplete="off"
+                value={query}
+                placeholder={t("searchPlaceholder")}
+                onChange={(e) => setQuery(e.target.value)}
+                className="text-slip placeholder:text-slip-dim focus-visible:border-slip h-14 w-full min-w-0 rounded-xl border-2 border-(--kds-edge) bg-white pr-4 pl-12 text-lg"
+              />
+            </span>
             {failed && (
               <p
                 role="alert"

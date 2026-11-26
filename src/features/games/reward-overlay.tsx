@@ -75,12 +75,12 @@ export default function RewardOverlay({
           <Gift size={28} strokeWidth={1.75} aria-hidden className="flex-none" />
           <p className="m-0 min-w-0 flex-1 leading-snug">
             <span className="block font-semibold">{t("games.reward.earned")}</span>
-            <span className="block text-sm">{t("games.reward.show", { reward: reward(claim) })}</span>
+            <span className="block text-body">{t("games.reward.show", { reward: reward(claim) })}</span>
           </p>
           <button
             type="button"
             onClick={() => setSeen(true)}
-            className="min-h-11 flex-none rounded-full border border-white/70 px-4 text-sm font-semibold hover:bg-white/10"
+            className="min-h-11 flex-none rounded-full border border-white/70 px-4 text-body font-semibold hover:bg-white/10"
           >
             {t("games.reward.ok")}
           </button>
@@ -92,7 +92,7 @@ export default function RewardOverlay({
   if (!claim && eligible && offer) {
     return (
       <p
-        className="bg-basalt/80 text-slip-dim rounded-pill pointer-events-none absolute top-2 left-1/2 z-10 max-w-[92%] -translate-x-1/2 px-3 py-1 text-center text-xs"
+        className="bg-basalt/80 text-slip-dim rounded-pill pointer-events-none absolute top-2 left-1/2 z-10 max-w-[92%] -translate-x-1/2 px-3 py-1 text-center text-meta"
         data-testid="reward-goal"
       >
         {t("games.reward.goal", { level, goal: offer.level })}

@@ -1,14 +1,15 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CircleAlert, RefreshCw, TriangleAlert, Wifi, WifiOff } from "lucide-react";
+import { CircleAlert, TriangleAlert, WifiOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { formatTime } from "@/lib/format/date";
 import type { Connection } from "./connection";
 
-// Top-bar connection label (R1, RB1): green, amber while (re)connecting, red
-// «Կապ չկա» with the number of taps waiting and the time of the last data.
+// Top-bar connection label (R1, RB1): a green dot and a word while all is
+// well, an amber dot while (re)connecting, and a red «Կապ չկա» block with the
+// number of taps waiting and the time of the last data.
 export function ConnectionPill({
   state,
   waiting,
@@ -29,25 +30,27 @@ export function ConnectionPill({
         : waiting > 0
           ? t("offlineWaiting", { count: waiting })
           : t("offline");
-  const Icon = state === "online" ? Wifi : state === "connecting" ? RefreshCw : WifiOff;
   return (
     <span
       role="status"
       data-testid="connection"
       data-state={state}
       className={clsx(
-        "inline-flex min-h-14 items-center gap-2 rounded-full px-4 py-1 text-lg font-semibold",
-        state === "offline"
-          ? "bg-late-on-dark text-white"
-          : state === "connecting"
-            ? "bg-apricot text-ink"
-            : "bg-basalt-3 text-slip",
+        "inline-flex items-center gap-2 text-lg font-semibold",
+        state === "offline" ? "bg-late-on-dark min-h-12 rounded-xl px-4 py-1 text-white" : "text-slip-dim",
       )}
     >
-      <Icon
-        aria-hidden="true"
-        className={clsx("size-5 shrink-0", state === "online" && "text-tarragon-on-dark")}
-      />
+      {state === "offline" ? (
+        <WifiOff aria-hidden="true" className="size-5 shrink-0" />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={clsx(
+            "size-2.5 shrink-0 rounded-full",
+            state === "online" ? "bg-tarragon-on-dark" : "bg-apricot-deep",
+          )}
+        />
+      )}
       <span className="grid leading-tight">
         <span data-testid="connection-label">{label}</span>
         {state === "offline" && lastSyncAt !== null && (

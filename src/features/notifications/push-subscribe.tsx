@@ -1,9 +1,10 @@
 "use client";
 
-import { BellOff, BellRing, CircleCheck, Smartphone } from "lucide-react";
+import { BellOff, BellRing, CircleCheck, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Section } from "@/features/admin-ui/page";
 import { button } from "@/features/admin-ui/styles";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { deletePushSubscription, isPushSubscribed, savePushSubscription } from "./actions";
 import {
   currentSubscription,
@@ -25,7 +26,14 @@ async function detect(vapidPublicKey: string | null): Promise<Status> {
   return "off";
 }
 
-export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | null }) {
+export function PushSubscribe({
+  vapidPublicKey,
+  children,
+}: {
+  vapidPublicKey: string | null;
+  /** This person's subscribed devices, listed under the switch. */
+  children?: ReactNode;
+}) {
   const t = useTranslations("push");
   const [status, setStatus] = useState<Status>("loading");
   const [busy, setBusy] = useState(false);
@@ -87,23 +95,17 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
   };
 
   return (
-    <section
-      className="flex flex-col gap-4 rounded-2xl bg-white p-4 sm:p-5"
-      aria-labelledby="push-title"
-      data-testid="push-section"
-    >
-      <h2 id="push-title" className="m-0 flex items-center gap-2 text-[1.25rem] font-bold">
-        <Smartphone aria-hidden="true" className="text-ink size-5 shrink-0" />
-        {t("title")}
-      </h2>
-      <p className="text-staff-label2 m-0">{t("hint")}</p>
+    // The shared group header (heading, hint, hairline), as on every admin page.
+    <Section title={t("title")} hint={t("hint")} id="push-title" testId="push-section">
       {note[status] && (
-        <p role="status" className="bg-staff-bg m-0 rounded-xl px-4 py-3" data-testid="push-status">
+        // A plain status line with an icon, not a grey box under the heading.
+        <p role="status" className="text-ink m-0 flex items-start gap-2" data-testid="push-status">
+          <Info aria-hidden="true" className="text-staff-label2 mt-0.5 size-5 shrink-0" />
           {note[status]}
         </p>
       )}
       {status === "off" && (
-        <button type="button" onClick={turnOn} disabled={busy} className={button("primary")}>
+        <button type="button" onClick={turnOn} disabled={busy} className={button("primary", "self-start max-sm:w-full")}>
           <BellRing aria-hidden="true" />
           {t("turnOn")}
         </button>
@@ -118,7 +120,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
             <CircleCheck aria-hidden="true" className="size-5 shrink-0" />
             {t("on")}
           </p>
-          <button type="button" onClick={turnOff} disabled={busy} className={button("danger")}>
+          <button type="button" onClick={turnOff} disabled={busy} className={button("danger", "self-start max-sm:w-full")}>
             <BellOff aria-hidden="true" />
             {t("turnOff")}
           </button>
@@ -129,6 +131,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
           {t("error")}
         </p>
       )}
-    </section>
+      {children}
+    </Section>
   );
 }

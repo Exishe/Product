@@ -7,7 +7,10 @@ export const requestKey = (tableId: string, kind: RequestKind) => `pativ:request
 
 export function hasRequestLeft(storage: Pick<Storage, "getItem">, tableId: string): boolean {
   try {
-    return storage.getItem(requestKey(tableId, "call_waiter")) !== null;
+    return (
+      storage.getItem(requestKey(tableId, "call_waiter")) !== null ||
+      storage.getItem(requestKey(tableId, "bring_bill")) !== null
+    );
   } catch {
     return false;
   }

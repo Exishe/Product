@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AdminPage, Notice } from "@/features/admin-ui/page";
 import { parseMatrix } from "@/features/dashboard/insights-model";
-import { MenuMatrix } from "@/features/dashboard/menu-matrix";
+import { MenuMatrixSummary } from "@/features/dashboard/menu-matrix";
 import { businessDate, parseDateInput, resolveRange } from "@/features/dashboard/range";
 import { RangePicker } from "@/features/dashboard/range-picker";
 import { BusyHours } from "@/features/reports/busy-hours";
@@ -27,7 +27,8 @@ function safe<T>(parse: (json: unknown) => T, json: unknown, error: unknown): T 
   }
 }
 
-// Owner reports (ADR-073): viewed but not ordered, menu engineering, busy
+// Owner reports (ADR-073): viewed but not ordered, a menu engineering summary
+// (the full matrix is on Menu analysis), busy
 // hours with table time, and suggestions, for one chosen period (the last 30
 // days unless the address says otherwise). Each section loads on its own, so a
 // database without the migration shows notices instead of failing the page.
@@ -60,6 +61,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     api.rpc("last_weekly_digest", { p_location_id: location.id, p_locale: locale }),
     getTranslations("reports"),
   ]);
+  const nav = await getTranslations("adminNav");
   const conversion = safe(parseConversion, convRes.data, convRes.error);
   const matrix = safe(parseMatrix, matrixRes.data, matrixRes.error);
   const busy = safe(parseBusy, busyRes.data, busyRes.error);
@@ -90,6 +92,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return (
     <AdminPage
+      back={{ href: "/admin/dashboard", label: nav("dashboard") }}
       title={t("title")}
       subtitle={
         <>
@@ -101,7 +104,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       }
       width="lg"
     >
-      {digest ? <DigestCard digest={digest} /> : null}
+      {/* The period first, right under the title: everything below reads it. */}
       <RangePicker
         range={range}
         today={today}
@@ -109,8 +112,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         defaultPreset="30d"
         hidden={metric === "revenue" ? { metric } : undefined}
       />
+      {digest ? <DigestCard digest={digest} /> : null}
       {conversion ? <ConversionTable data={conversion} locale={locale} /> : unavailable}
-      {matrix ? <MenuMatrix matrix={matrix} locale={locale} /> : unavailable}
+      {/* The matrix itself lives on Menu analysis; here, its counts and the way there. */}
+      {matrix ? <MenuMatrixSummary matrix={matrix} href="/admin/dashboard/menu" /> : unavailable}
       {busy ? (
         <BusyHours
           busy={busy}

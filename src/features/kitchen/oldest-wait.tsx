@@ -31,23 +31,23 @@ export function OldestWait({ tickets, now }: { tickets: readonly ShownTicket[]; 
           .querySelector(`[data-ticket-id="${oldest.id}"]`)
           ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" })
       }
+      // One line the line cook reads from two metres: the icon, the table and
+      // the minutes at 20 px. What it is («Ամենաերկար սպասողը») is the name
+      // and the tooltip, not a second, small line.
+      title={t("oldest")}
+      aria-label={`${t("oldest")}: ${where} · ${t("ticket.minutes", { minutes: elapsedMinutes(age) })}`}
       className={clsx(
-        "inline-flex min-h-14 items-center gap-2 rounded-full px-4 text-left text-lg font-semibold",
+        "inline-flex min-h-12 items-center gap-2 self-center rounded-xl px-3 py-1 text-left text-xl leading-tight font-semibold",
         lateness === "late"
           ? "bg-late-on-dark text-white"
           : lateness === "hurry"
             ? "bg-apricot text-ink"
-            : "bg-basalt-3 text-slip",
+            : "text-slip",
       )}
     >
-      <Icon aria-hidden="true" className="size-5 shrink-0" />
-      <span className="grid leading-tight">
-        <span className={clsx("text-sm font-semibold", lateness === "normal" && "text-slip-dim")}>
-          {t("oldest")}
-        </span>
-        <span className="num whitespace-nowrap">
-          {where} · {t("ticket.minutes", { minutes: elapsedMinutes(age) })}
-        </span>
+      <Icon aria-hidden="true" className="size-6 shrink-0" />
+      <span className="num whitespace-nowrap">
+        {where} · {t("ticket.minutes", { minutes: elapsedMinutes(age) })}
       </span>
     </button>
   );

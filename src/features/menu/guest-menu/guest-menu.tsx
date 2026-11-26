@@ -1,6 +1,16 @@
 "use client";
 
-import { ConciergeBell, Search, ShieldAlert, ShoppingBag, UtensilsCrossed } from "./icons";
+import {
+  ChevronDown,
+  ChevronRight,
+  ConciergeBell,
+  QrCode,
+  ReceiptText,
+  Search,
+  ShoppingBag,
+  SlidersHorizontal,
+  UtensilsCrossed,
+} from "./icons";
 import {
   Suspense,
   lazy,
@@ -26,20 +36,20 @@ import type { SubInfo } from "@/features/ordering/substitutions-parse";
 import { NO_HINTS, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
 import { matchesDiet, type DietFilter } from "./diet-filter";
-import { useCallWaiter } from "./call-waiter-state";
+import { dismiss as dismissWaiter, useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
 import { SectionList } from "./section-list";
-import { DishRow } from "./dish-row";
+import { DishRow, SCAN_HINT_EVENT } from "./dish-row";
+import styles from "./guest.module.css";
 import { groupSections } from "./section-groups";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "./guest-dock";
 import { GuestHeader, type LanguageLink } from "./guest-header";
-import { MenuBar } from "./menu-bar";
-import styles from "./guest.module.css";
+import { MENU_GRID, MenuBar } from "./menu-bar";
 import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
-import { CheckIcon, Notice, dishPhotoUrl } from "./ui";
-import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
+import { CloseIcon, Notice, ORDER_BAR, dishPhotoUrl } from "./ui";
+import { sameNamed, searchRank, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
   { kind: "ok"; id: string; label: string; token: string } | { kind: "none" } | { kind: "invalid" };
@@ -91,8 +101,15 @@ const warmSheet = () => {
 
 const CART_HASH = "#cart";
 
-/** The guest pages' content column: full width on a phone, centred on a desktop. */
-const COLUMN = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
+// The guest pages' content column: full width on a phone, centred on a desktop
+// and as wide as the menu bar (menu-bar.tsx, 1440 px), so they line up. From
+// 1024 px it holds three columns that start on one line under the band: the
+// section list, the dishes (the notices and promos at their top) and the order
+// rail. From 1280 px the dishes run three across (ADR-096).
+const COLUMN = "mx-auto w-full max-w-[1440px] px-4 md:px-8";
+const THREE_UP = MENU_GRID;
+/** Where the desktop's side columns stick: just under the sticky band, level with the first heading. */
+const SIDE_TOP = "top-[calc(var(--guest-sticky,4rem)+1.25rem)]";
 
 const smooth = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -155,8 +172,11 @@ export function GuestMenu({
   const [view, setView] = useState<"menu" | "cart">("menu");
   // The dish just added, which asks the server for "goes well with" ideas.
   const [suggest, setSuggest] = useState<{ id: string; cart: string[]; n: number } | null>(null);
-  const [suggestShown, setSuggestShown] = useState(false);
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
+  // No table: a tap on a "+" shows how to order in a toast (dish-row.tsx).
+  const [scanHint, setScanHint] = useState(0);
+  // The add whose idea a phone showed (-1: one showed earlier in this tab).
+  const [ideaShownOn, setIdeaShownOn] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
   // What the guest avoids (kept on this phone for every café) and whether
   // the chooser is open.
@@ -180,6 +200,9 @@ export function GuestMenu({
   const [leftUnsent, setLeftUnsent] = useState(false);
   const [askedBefore, setAskedBefore] = useState(false);
   if (waiter.state !== "idle" && !askedBefore) setAskedBefore(true);
+  // The rail's «Waiter» row: focus comes back to it when its choices close.
+  const waiterRow = useRef<HTMLButtonElement>(null);
+  const backToWaiterRow = useCallback(() => waiterRow.current?.focus({ preventScroll: true }), []);
 
   const items = useMemo(
     () => Object.fromEntries(menu.categories.flatMap((c) => c.items.map((i) => [i.id, i]))),
@@ -206,6 +229,12 @@ export function GuestMenu({
     [items, soldOutNow],
   );
   const summary = useMemo(() => cartSummary(lines, cartMenu), [lines, cartMenu]);
+  // How many of each dish the order holds: the rows show it on their add control.
+  const inCart = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of lines) counts[l.itemId] = (counts[l.itemId] ?? 0) + l.quantity;
+    return counts;
+  }, [lines]);
   const subs = useMemo(
     () =>
       Object.fromEntries(
@@ -223,7 +252,8 @@ export function GuestMenu({
     () => false,
   );
 
-  // Dishes by name in any script; a section's own name («սպիտակ գինի»,
+  // Dishes by name in any script, then by description («սուրճ» finds the
+  // espresso); a section's own name («սպիտակ գինի»,
   // "white wine") brings the whole section. Results stay under their section
   // titles, so a found wine says which list it is on. While searching,
   // sections show without their cover photos.
@@ -241,7 +271,16 @@ export function GuestMenu({
           .map((c) =>
             c.search.includes(q)
               ? { ...c, cover: null }
-              : { ...c, cover: null, items: c.items.filter((i) => i.search.includes(q)) },
+              : {
+                  ...c,
+                  cover: null,
+                  // Names first, then dishes found by their description.
+                  items: c.items
+                    .map((i) => [i, searchRank(i, q)] as const)
+                    .filter((x): x is readonly [GuestItem, 0 | 1] => x[1] !== null)
+                    .sort((a, b) => a[1] - b[1])
+                    .map(([i]) => i),
+                },
           )
           .filter((c) => c.items.length)
       : base;
@@ -270,6 +309,24 @@ export function GuestMenu({
   }, [callsWaiter]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setAvoidState(loadAvoid(window.localStorage)), []);
+  const ideaKey = `pativ:idea-shown:${menu.locationId}`;
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
+      if (window.sessionStorage.getItem(ideaKey)) setIdeaShownOn(-1);
+    } catch {
+      // storage blocked: one idea per page view instead
+    }
+  }, [ideaKey]);
+  const suggestN = suggest?.n ?? null;
+  const ideaShown = useCallback(() => {
+    setIdeaShownOn((on) => on ?? suggestN);
+    try {
+      window.sessionStorage.setItem(ideaKey, "1");
+    } catch {
+      // storage blocked: one idea per page view instead
+    }
+  }, [ideaKey, suggestN]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- read once after hydration (storage is browser-only)
   useEffect(() => setHasLast(hasLastOrder(window.localStorage, menu.locationId)), [menu.locationId]);
   useEffect(() => {
@@ -337,6 +394,17 @@ export function GuestMenu({
     return () => clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    const show = () => setScanHint(Date.now());
+    window.addEventListener(SCAN_HINT_EVENT, show);
+    return () => window.removeEventListener(SCAN_HINT_EVENT, show);
+  }, []);
+  useEffect(() => {
+    if (!scanHint) return;
+    const timer = setTimeout(() => setScanHint(0), 3200);
+    return () => clearTimeout(timer);
+  }, [scanHint]);
+
   const onSoldOut = useCallback(
     (itemId: string) => setSoldOutNow((ids) => (ids.includes(itemId) ? ids : [...ids, itemId])),
     [],
@@ -354,10 +422,18 @@ export function GuestMenu({
     via?: "suggest",
   ) => {
     updateCart((current) => addLine(current, { itemId: item.id, ...add }, newId));
-    track("item_add", item.id, via ? { qty: Math.min(add.quantity, 99), via } : { qty: Math.min(add.quantity, 99) });
+    track(
+      "item_add",
+      item.id,
+      via ? { qty: Math.min(add.quantity, 99), via } : { qty: Math.min(add.quantity, 99) },
+    );
     // A dish added from a suggestion does not start another round of ideas.
     if (!via && canOrder) {
-      setSuggest({ id: item.id, cart: [...new Set([...lines.map((l) => l.itemId), item.id])], n: Date.now() });
+      setSuggest({
+        id: item.id,
+        cart: [...new Set([...lines.map((l) => l.itemId), item.id])],
+        n: Date.now(),
+      });
     }
     setToast({ key: Date.now(), text: t("menu.added", { name: item.name.text }) });
   };
@@ -385,6 +461,12 @@ export function GuestMenu({
     },
     [lines, updateCart, closeCart],
   );
+  // «−» on a dish's pill: one less of its newest line; at one, the line goes.
+  const decrease = (item: GuestItem) => {
+    const line = lines.findLast((l) => l.itemId === item.id);
+    if (!line) return;
+    if (changeQuantity(line.id, line.quantity - 1).length === 0) setSuggest(null);
+  };
   const quickAdd = (item: GuestItem, from: HTMLElement, quantity = 1, via?: "suggest") =>
     gate(item, () => {
       sparkFrom(from);
@@ -399,10 +481,6 @@ export function GuestMenu({
         via,
       );
     });
-  const findDish = () => {
-    search.current?.scrollIntoView({ behavior: smooth(), block: "center" });
-    search.current?.focus({ preventScroll: true });
-  };
 
   const orderingNotice =
     table.kind === "invalid" ? (
@@ -421,9 +499,10 @@ export function GuestMenu({
   // The first featured photo on the page is fetched at once (likely the LCP).
   const orderLabel = count > 0 ? t("nav.orderCount", { count }) : t("nav.order");
   const iconButton =
-    "bg-surface text-ink shadow-card relative grid size-12 flex-none place-items-center rounded-full border [border-color:var(--guest-card-border)] disabled:opacity-60";
+    "bg-surface text-ink relative grid size-11 flex-none place-items-center rounded-full border [border-color:var(--guest-line-strong)] disabled:opacity-60 max-lg:hidden";
+  // From 1024 px only: a phone and a tablet have the cart bar and the Order tab.
   const tools = (
-    <span className="flex flex-none items-center gap-2">
+    <span className="flex flex-none items-center gap-2 empty:hidden max-lg:hidden">
       {(canOrder || lines.length > 0) && (
         <button
           type="button"
@@ -434,7 +513,7 @@ export function GuestMenu({
         >
           <ShoppingBag size={20} aria-hidden />
           {count > 0 && (
-            <span className="num bg-badge text-on-badge absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-bold">
+            <span className="num bg-badge text-on-badge absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-meta font-bold">
               {count}
             </span>
           )}
@@ -442,8 +521,11 @@ export function GuestMenu({
       )}
     </span>
   );
-  const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-10 items-center gap-2 border border-line px-3 text-[13px] font-semibold";
+  // The rail's quiet actions: plain 48 px rows on hairlines (no box, no fill
+  // but the hover's underline), so they never wrap.
+  const railRow = "text-ink flex min-h-12 items-center gap-3 text-body font-semibold underline-offset-4 hover:underline";
+  const railAction = `${railRow} border-line border-b last:border-b-0`;
+  const waiterOpen = waiter.state === "confirm" || waiter.state === "sending";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -461,12 +543,18 @@ export function GuestMenu({
       home={home}
       cafeName={menu.restaurantName}
       logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
-      wordmarkUrl={menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null}
+      wordmarkUrl={
+        menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
+      }
       tableLabel={table.kind === "ok" ? table.label : null}
       languages={languages}
       tools={view === "menu" ? tools : undefined}
-      // The order view keeps the screen for the order: a short bar.
+      // The order view keeps the screen for the order: a short bar, on the
+      // order's column like the status page's (one left edge from the café's
+      // name down to the button), one row from 1024 px as on the menu.
       compact={view === "cart" && lines.length > 0}
+      width={ORDER_BAR}
+      oneRow
     />
   );
   const sender =
@@ -493,24 +581,25 @@ export function GuestMenu({
           {
             key: "menu",
             label: t("nav.menu"),
-            icon: <UtensilsCrossed size={22} aria-hidden />,
+            icon: <UtensilsCrossed size={24} aria-hidden />,
             current: view === "menu",
-            onClick: () => window.scrollTo({ top: 0, behavior: smooth() }),
+            onClick: () => (view === "cart" ? closeCart() : window.scrollTo({ top: 0, behavior: smooth() })),
           },
           lines.length > 0 || !orderHref
             ? {
                 key: "order",
                 label: t("nav.order"),
                 ariaLabel: orderLabel,
-                icon: <ShoppingBag size={22} aria-hidden />,
+                icon: <ShoppingBag size={24} aria-hidden />,
                 badge: count,
+                current: view === "cart",
                 disabled: lines.length === 0,
-                onClick: openCart,
+                onClick: () => (view === "cart" ? window.scrollTo({ top: 0, behavior: smooth() }) : openCart()),
               }
             : {
                 key: "order",
                 label: t("nav.order"),
-                icon: <ShoppingBag size={22} aria-hidden />,
+                icon: <ShoppingBag size={24} aria-hidden />,
                 href: orderHref,
               },
           ...(canOrder
@@ -518,8 +607,8 @@ export function GuestMenu({
                 {
                   key: "waiter",
                   label: t("nav.waiter"),
-                  icon: <ConciergeBell size={22} aria-hidden />,
-                  pressed: waiter.state !== "idle",
+                  icon: <ConciergeBell size={24} aria-hidden />,
+                  expanded: waiter.state === "confirm" || waiter.state === "sending",
                   onClick: waiter.ask,
                   testId: "call-waiter-nav",
                 },
@@ -527,6 +616,47 @@ export function GuestMenu({
             : []),
         ]
       : [];
+
+  // The waiter's choices and what came of them: above the bar on a phone and
+  // tablet; from 1024 px under the rail's «Waiter» row, where the guest clicked.
+  const showWaiter = canOrder && table.kind === "ok" && (askedBefore || leftUnsent);
+  const waiterShown = showWaiter && waiter.shown;
+  const waiterPrompt = (place: "dock" | "rail") =>
+    showWaiter && (
+      <Suspense fallback={null}>
+        <CallWaiterPrompt
+          token={table.token}
+          tableId={table.id}
+          place={place}
+          onLeave={place === "rail" ? backToWaiterRow : undefined}
+        />
+      </Suspense>
+    );
+  // A phone shows "goes well with" for one add per visit: the add whose idea
+  // showed first (kept for the tab's session). After that the bottom panel is
+  // the cart bar and the tabs only, about 130 px (ADR-096).
+  const phoneIdea = (autoHide: boolean) =>
+    !autoHide || ideaShownOn === null || ideaShownOn === suggest?.n;
+  const suggestions = (autoHide: boolean) =>
+    canOrder &&
+    suggest &&
+    lines.length > 0 &&
+    phoneIdea(autoHide) && (
+      <Suspense fallback={null}>
+        <Suggestions
+          locationId={menu.locationId}
+          trigger={suggest}
+          cartIds={lines.map((l) => l.itemId)}
+          items={items}
+          soldOut={soldOutNow}
+          track={track}
+          onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
+          onChoose={setSheet}
+          autoHide={autoHide}
+          onShown={autoHide ? ideaShown : undefined}
+        />
+      </Suspense>
+    );
 
   if (view === "cart" && lines.length > 0) {
     return (
@@ -550,164 +680,263 @@ export function GuestMenu({
             onBack={closeCart}
           />
         </Suspense>
+        {/* The tabs stay on the order view too: back to the menu, and the waiter. */}
+        <GuestDock items={dockItems} above={waiterPrompt("dock")} />
       </>
     );
   }
 
+  // One 48 px filled pill (benchmark §2.1: Wolt): the magnifier, the field at
+  // 16 px, its own clear ×, and the filters as a 44 px icon inside the right
+  // end, with a dot while one is on. No border box. While the guest types,
+  // the pill turns to the page colour inside a 1.5 px ink line (no outer
+  // ring); the buttons inside keep the usual keyboard ring.
   const searchRow = (
-    <div className="flex items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <label className="sr-only" htmlFor="menu-search">
-          {t("menu.search")}
-        </label>
-        <Search
-          size={16}
-          aria-hidden
-          className="text-muted pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2"
-        />
-        <input
-          ref={search}
-          id="menu-search"
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!fold) void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
+    <div className="group/search bg-chip focus-within:bg-page relative flex min-h-12 min-w-[min(100%,14rem)] items-center rounded-full transition-[background-color,box-shadow] duration-150 focus-within:shadow-[inset_0_0_0_1.5px_var(--color-ink)]">
+      <label className="sr-only" htmlFor="menu-search">
+        {t("menu.search")}
+      </label>
+      <Search size={18} aria-hidden className="text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2" />
+      <input
+        ref={search}
+        id="menu-search"
+        type="search"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          if (!fold) void import("@/lib/format/search").then((m) => setFold(() => m.normalizeForSearch));
+        }}
+        placeholder={t("menu.searchPlaceholder")}
+        autoComplete="off"
+        enterKeyHint="search"
+        className="placeholder:text-muted min-h-12 w-full min-w-0 flex-1 rounded-full bg-transparent pr-2 pl-11 text-base outline-none [&::-webkit-search-cancel-button]:appearance-none"
+      />
+      {query && (
+        <button
+          type="button"
+          aria-label={t("menu.clearSearch")}
+          onClick={() => {
+            setQuery("");
+            search.current?.focus();
           }}
-          placeholder={t("menu.searchPlaceholder")}
-          autoComplete="off"
-          enterKeyHint="search"
-          className="placeholder:text-soft focus:border-accent rounded-pill bg-surface min-h-11 w-full border pr-4 pl-10 text-[14px] [border-color:var(--guest-line-strong)]"
-        />
-      </div>
+          className="text-muted hover:text-ink grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
+        >
+          <CloseIcon />
+        </button>
+      )}
       {offerFilter && (
         <button
           type="button"
           aria-haspopup="dialog"
           aria-pressed={filterCount > 0}
+          aria-label={filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
+          title={t("diet.open")}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border px-3.5 text-[13px] font-semibold [border-color:var(--guest-line-strong)]"
+          className="text-ink hover:bg-page group-focus-within/search:hover:bg-chip relative mr-0.5 grid size-11 flex-none place-items-center rounded-full"
         >
-          <ShieldAlert size={15} aria-hidden />
-          {filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
+          <SlidersHorizontal size={20} />
+          {filterCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="bg-badge absolute top-2 right-2 size-2.5 rounded-full ring-2 ring-[var(--guest-chip)] group-focus-within/search:ring-[var(--guest-page)]"
+            />
+          )}
         </button>
       )}
     </div>
   );
+  // No table: the menu says how to order, in the line under the café's name.
+  const scanNote =
+    table.kind === "none" && menu.ordering ? (
+      <span
+        className="text-muted flex min-h-11 min-w-0 flex-1 basis-0 items-center gap-2 rounded-lg py-1 text-label leading-[1.35]"
+        data-testid="scan-note"
+        id="scan-note"
+      >
+        <QrCode size={18} strokeWidth={1.75} className="flex-none" />
+        <span className="min-w-0">{t("menu.noTable")}</span>
+      </span>
+    ) : null;
   return (
     <>
       <MenuBar
         cafeName={menu.restaurantName}
         logoUrl={menu.logo ? dishPhotoUrl(menu.logo) : null}
         wordmarkUrl={
-          menu.wordmarkBar ? dishPhotoUrl(menu.wordmarkBar) : menu.wordmark ? dishPhotoUrl(menu.wordmark) : null
+          menu.wordmarkBar
+            ? dishPhotoUrl(menu.wordmarkBar)
+            : menu.wordmark
+              ? dishPhotoUrl(menu.wordmark)
+              : null
         }
         home={home}
         tableLabel={table.kind === "ok" ? table.label : null}
+        note={scanNote}
         languages={languages}
         nav={<CategoryNav categories={shown} />}
         tools={tools}
         search={searchRow}
       />
       <div className={`${COLUMN} flex-1 ${lines.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE} lg:pb-24`}>
-        {(menu.promos.length > 0 || orderingNotice || menu.kitchenBusy) && (
-          <div className="grid gap-2 pt-4">
-            {promoBanners}
-            {orderingNotice}
-            {menu.kitchenBusy && canOrder && (
-              <Notice tone="busy">
-                {menu.kitchenBusy.minutes
-                  ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
-                  : t("menu.kitchenBusyNoTime")}
-              </Notice>
-            )}
-          </div>
-        )}
-        {canOrder && hasLast && lines.length === 0 && (
-          <Suspense fallback={null}>
-            <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
-          </Suspense>
-        )}
-        {avoid.length > 0 && (
-          <p className="text-muted pb-1 text-sm" role="status">
-            {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
-          </p>
-        )}
-        {diet.length > 0 && (
-          <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-sm" role="status">
-            <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
-            <button type="button" onClick={() => setDiet([])} className="min-h-11 font-semibold underline">
-              {t("diet.showAll")}
-            </button>
-          </p>
-        )}
-        <div className="lg:grid lg:grid-cols-[11.5rem_minmax(0,1fr)_16rem] lg:gap-6 xl:grid-cols-[12.5rem_minmax(0,1fr)_17rem]">
-          <SectionList categories={shown} />
+        <div className={THREE_UP}>
+          <SectionList categories={shown} stick={SIDE_TOP} />
           <main className="min-w-0">
-            {shown.length === 0 ? (
-              <p className="text-muted py-12 text-center" role="status">
-                {t("menu.noResults")}
+            {((menu.promos.length > 0 && !query) || orderingNotice || menu.kitchenBusy) && (
+              <div className="grid gap-2 pt-4 lg:pt-5">
+                {!query && promoBanners}
+                {orderingNotice}
+                {menu.kitchenBusy && canOrder && (
+                  <Notice tone="busy">
+                    {menu.kitchenBusy.minutes
+                      ? t("menu.kitchenBusy", { minutes: menu.kitchenBusy.minutes })
+                      : t("menu.kitchenBusyNoTime")}
+                  </Notice>
+                )}
+              </div>
+            )}
+            {canOrder && hasLast && lines.length === 0 && (
+              <Suspense fallback={null}>
+                <OrderAgain locationId={menu.locationId} items={items} menu={cartMenu} onAdd={addAgain} />
+              </Suspense>
+            )}
+            {avoid.length > 0 && (
+              <p className="text-muted pt-3 pb-1 text-body" role="status">
+                {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
               </p>
+            )}
+            {diet.length > 0 && (
+              <p className="text-muted flex flex-wrap items-center gap-x-3 pt-2 pb-1 text-body" role="status">
+                <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
+                <button
+                  type="button"
+                  onClick={() => setDiet([])}
+                  className="min-h-11 font-semibold underline"
+                >
+                  {t("diet.showAll")}
+                </button>
+              </p>
+            )}
+            {shown.length === 0 ? (
+              // One headline, one sentence, one way out (benchmark §2.3 empty states).
+              <div className="grid justify-items-start gap-2 py-10" role="status">
+                <p className="text-heading font-semibold">{t("menu.noResultsTitle")}</p>
+                <p className="text-muted text-body">{t("menu.noResultsHint")}</p>
+                {(query || diet.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setDiet([]);
+                      search.current?.focus();
+                    }}
+                    className="border-line-strong hover:bg-chip mt-2 inline-flex min-h-12 items-center rounded-full border px-5 text-body font-semibold"
+                  >
+                    {t("menu.clearSearch")}
+                  </button>
+                )}
+              </div>
             ) : (
               // One compact page: the four clusters (food, desserts, drinks, wine) one
-              // after another, each with its sections and their dishes as small cards.
-              // No cover photos and no big titles, so nothing jumps while scrolling.
+              // after another, each with its sections and their dishes. No cover
+              // photos and no lead card: every dish has the same shape, so the
+              // first screen shows names, prices and "+" (ADR-096).
               (() => {
                 const clusters = groupSections(shown);
-                // In a longer section the first pictured dish leads as a large card
-                // on a phone, so the list of rows changes pace (design merge from A).
+                // The pictured dishes come first, then the dishes without a photo;
+                // within each, the café's own order stays. A section where every
+                // dish has a photo is a grid of photo cards from 768 px (three
+                // across on a tablet, two beside the rail from 1024 px, three again
+                // from 1280 px). Any other section is a list of phone rows on
+                // hairlines (name, meta, description and price on the left, a
+                // 112 px photo or the bare "+" on the right): two columns on a
+                // tablet, one beside the rail from 1024 px, two again from 1360 px.
+                // Mixing a tall card with short rows left holes and "+" at
+                // different heights (judge round 4).
                 const rows = (list: GuestItem[]) => {
-                  const lead = list.length >= 3 ? list.find((i) => i.image && !i.soldOut)?.id : undefined;
-                  return [...list]
-                    .sort((a, b) => Number(b.id === lead) - Number(a.id === lead))
-                    .map((item, i) => (
-                      <DishRow
-                        key={item.id}
-                        item={item}
-                        canOrder={canOrder}
-                        warning={warningFor(item)}
-                        index={i}
-                        feature={item.id === lead}
-                        onOpen={setSheet}
-                        onQuickAdd={quickAdd}
-                      />
-                    ));
+                  const pictured = list.filter((i) => i.image);
+                  const plain = list.filter((i) => !i.image);
+                  const cards = plain.length === 0;
+                  const card = (item: GuestItem, i: number) => (
+                    <DishRow
+                      key={item.id}
+                      item={item}
+                      canOrder={canOrder}
+                      preview={table.kind === "none" && menu.ordering}
+                      warning={warningFor(item)}
+                      index={i}
+                      inCart={inCart[item.id] ?? 0}
+                      onOpen={setSheet}
+                      onQuickAdd={quickAdd}
+                      onDecrease={decrease}
+                      listed={!cards}
+                    />
+                  );
+                  return cards ? (
+                    <ul className="grid gap-3 md:grid-cols-3 md:gap-x-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3">
+                      {pictured.map(card)}
+                    </ul>
+                  ) : (
+                    <ul className="grid gap-3 md:grid-cols-2 md:gap-x-8 lg:grid-cols-1 min-[1360px]:grid-cols-2" data-list>
+                      {[...pictured, ...plain].map(card)}
+                    </ul>
+                  );
                 };
-                return clusters.map(({ group, sections }) => (
-                  <div key={group} id={`group-${group}`} className="scroll-mt-48 pt-5" data-group={group}>
-                    {clusters.length > 1 && (
-                      <h2 className="display-face text-title text-[1.25rem] leading-[1.2]">
-                        {t(`menu.groups.${group}`)}
-                      </h2>
-                    )}
-                    {sections.map((c) => (
-                      <section
-                        key={c.id}
-                        id={sectionId(c.id)}
-                        aria-labelledby={`h-${c.id}`}
-                        className="scroll-mt-48 pt-4"
-                      >
-                        {c.name && (
-                          <h3
-                            id={`h-${c.id}`}
-                            lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-2.5 flex items-baseline gap-2 text-[15px] leading-[1.25] font-semibold"
-                          >
-                            {c.name.text}
-                            <span className="num text-soft text-[12px] font-normal">{c.items.length}</span>
-                          </h3>
-                        )}
-                        <ul className="grid items-start gap-2.5 md:grid-cols-2">{rows(c.items)}</ul>
-                      </section>
-                    ))}
-                  </div>
-                ));
+                // Each group after the first, and each section after the first,
+                // starts under one hairline with 32 px of air, so a new section
+                // reads at a glance while scrolling. The space above the hairline
+                // is the rows' own gap (about 32 px), not a hole at each section end.
+                const rule = "border-line border-t pt-8 md:mt-5";
+                return clusters.map(({ group, sections }, gi) => {
+                  const titled =
+                    clusters.length > 1 &&
+                    !(
+                      sections.length === 1 &&
+                      sections[0]!.name?.text.trim().toLocaleLowerCase() ===
+                        t(`menu.groups.${group}`).trim().toLocaleLowerCase()
+                    );
+                  return (
+                    <div
+                      key={group}
+                      id={`group-${group}`}
+                      className={`scroll-mt-2 ${gi > 0 ? rule : "pt-6 lg:pt-5"}`}
+                      data-group={group}
+                    >
+                      {titled && (
+                        <h2 className="display-face text-large mb-2 leading-[1.15]">
+                          {t(`menu.groups.${group}`)}
+                        </h2>
+                      )}
+                      {sections.map((c, si) => (
+                        <section
+                          key={c.id}
+                          id={sectionId(c.id)}
+                          aria-labelledby={`h-${c.id}`}
+                          className={`scroll-mt-2 ${si > 0 ? rule : titled ? "pt-4" : ""}`}
+                        >
+                          {c.name && (
+                            <h3
+                              id={`h-${c.id}`}
+                              lang={c.name.lang === locale ? undefined : c.name.lang}
+                              className="display-face text-ink mb-1 flex items-baseline gap-2.5 text-subtitle leading-[1.25] md:mb-4"
+                            >
+                              {c.name.text}
+                              <span className="num text-muted font-ui text-label font-normal">
+                                {c.items.length}
+                              </span>
+                            </h3>
+                          )}
+                          {rows(c.items)}
+                        </section>
+                      ))}
+                    </div>
+                  );
+                });
               })()
             )}
           </main>
           <div className="hidden pt-5 lg:block">
-            <div className="sticky top-44">
+            <div className={`sticky ${SIDE_TOP}`}>
               {/* Only where the rail is on screen: a phone sends from the order view. */}
               {wide && (
                 <Suspense fallback={null}>
@@ -719,25 +948,53 @@ export function GuestMenu({
                     onQuantity={changeQuantity}
                     onOpen={openCart}
                     send={summary.blocked ? null : sender}
+                    ideas={suggestions(false)}
                     below={
                       table.kind === "ok" && (canOrder || orderHref) ? (
                         <>
                           {canOrder && (
-                            <button
-                              type="button"
-                              aria-pressed={waiter.state !== "idle"}
-                              onClick={waiter.ask}
-                              data-testid="call-waiter-rail"
-                              className={railAction}
-                            >
-                              <ConciergeBell size={18} aria-hidden />
-                              {t("order.callWaiter")}
-                            </button>
+                            // The row opens its choices right under itself
+                            // (CallWaiterPrompt place="rail"); while anything
+                            // shows there (the choices, «called», «not sent
+                            // yet») its chevron gives way to a × that clears it.
+                            <div className="border-line border-b last:border-b-0">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  ref={waiterRow}
+                                  id="rail-waiter"
+                                  type="button"
+                                  aria-expanded={waiterOpen}
+                                  onClick={waiter.ask}
+                                  data-testid="call-waiter-rail"
+                                  className={`${railRow} min-w-0 flex-1 text-left`}
+                                >
+                                  <ConciergeBell size={20} aria-hidden />
+                                  <span className="flex-1">{t("nav.waiter")}</span>
+                                  {!waiterShown && <ChevronDown size={18} aria-hidden className="text-muted" />}
+                                </button>
+                                {waiterShown && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      dismissWaiter(table.id);
+                                      // From a key: back to the row (it replaces the ×).
+                                      if (e.detail === 0) backToWaiterRow();
+                                    }}
+                                    aria-label={t("sheet.close")}
+                                    className="text-muted hover:bg-chip hover:text-ink -mr-2 grid size-11 flex-none place-items-center rounded-full [&_svg]:size-5"
+                                  >
+                                    <CloseIcon />
+                                  </button>
+                                )}
+                              </div>
+                              {wide && waiterPrompt("rail")}
+                            </div>
                           )}
                           {orderHref && (
                             <a href={orderHref} className={railAction}>
-                              <CheckIcon />
-                              {t("panel.sent")}
+                              <ReceiptText size={20} aria-hidden />
+                              <span className="flex-1">{t("panel.sent")}</span>
+                              <ChevronRight size={18} aria-hidden className="text-muted" />
                             </a>
                           )}
                         </>
@@ -754,26 +1011,8 @@ export function GuestMenu({
         items={dockItems}
         above={
           <>
-            {canOrder && table.kind === "ok" && (askedBefore || leftUnsent) && (
-              <Suspense fallback={null}>
-                <CallWaiterPrompt token={table.token} tableId={table.id} />
-              </Suspense>
-            )}
-            {canOrder && suggest && lines.length > 0 && (
-              <Suspense fallback={null}>
-                <Suggestions
-                  locationId={menu.locationId}
-                  trigger={suggest}
-                  cartIds={lines.map((l) => l.itemId)}
-                  items={items}
-                  soldOut={soldOutNow}
-                  track={track}
-                  onAdd={(item, from) => quickAdd(item, from, 1, "suggest")}
-                  onChoose={setSheet}
-                  onVisible={setSuggestShown}
-                />
-              </Suspense>
-            )}
+            {!wide && waiterPrompt("dock")}
+            {!wide && suggestions(true)}
             {lines.length > 0 && (
               <div className="lg:hidden">
                 <CartBar summary={summary} items={items} onOpen={openCart} />
@@ -822,19 +1061,26 @@ export function GuestMenu({
           />
         </Suspense>
       )}
-      {/* On a phone and a tablet; a desktop sees the dish land in the order rail. */}
-      {toast && (
-        <p
-          key={toast.key}
-          aria-hidden="true"
-          className={`bg-deep text-deep-ink shadow-float rounded-card fixed ${suggestShown ? "bottom-[calc(380px+env(safe-area-inset-bottom,0px))]" : "bottom-[calc(172px+env(safe-area-inset-bottom,0px))]"} left-1/2 z-40 w-[calc(100%-32px)] max-w-[360px] -translate-x-1/2 px-5 py-3 text-center lg:hidden ${styles.toast}`}
-        >
-          {toast.text}
-        </p>
-      )}
+      {/* The add itself is the feedback: the dish flies to the order, the row's
+          "+" turns into its count and the cart bar's total moves. Screen
+          readers hear it here. */}
       <p className="sr-only" role="status" aria-live="polite">
         {toast?.text}
       </p>
+      {/* No table: what a tap on a "+" gets (dish-row.tsx pointToScanNote),
+          right above the bottom edge where the thumb is. Each tap starts it
+          again (the key), so a second tap is answered too. */}
+      {scanHint > 0 && (
+        <p
+          key={scanHint}
+          role="status"
+          data-testid="scan-toast"
+          className={`bg-ink text-page shadow-float rounded-full fixed bottom-[calc(16px+var(--guest-bottom,0px)+env(safe-area-inset-bottom,0px))] left-1/2 z-40 m-0 flex min-h-12 w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2.5 py-2.5 pr-5 pl-4 text-body font-semibold ${styles.toast}`}
+        >
+          <QrCode size={20} strokeWidth={1.75} className="flex-none" />
+          <span className="min-w-0">{t("menu.noTable")}</span>
+        </p>
+      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeHref } from "./active";
+import { activeHref, activeLink } from "./active";
 
 const hrefs = [
   "/admin/dashboard",
@@ -24,5 +24,24 @@ describe("activeHref", () => {
 
   it("matches nothing on the admin home", () => {
     expect(activeHref("/admin", hrefs)).toBeNull();
+  });
+});
+
+describe("activeLink", () => {
+  const links = [
+    { href: "/admin" },
+    { href: "/admin/dashboard", also: ["/admin/reports", "/admin/export"] },
+    { href: "/admin/menu" },
+  ];
+
+  it("marks Home only on the home page itself", () => {
+    expect(activeLink("/admin", links)).toBe("/admin");
+    expect(activeLink("/admin/menu/import", links)).toBe("/admin/menu");
+  });
+
+  it("lets a link stand for pages outside its folder", () => {
+    expect(activeLink("/admin/reports", links)).toBe("/admin/dashboard");
+    expect(activeLink("/admin/export", links)).toBe("/admin/dashboard");
+    expect(activeLink("/admin/dashboard/menu", links)).toBe("/admin/dashboard");
   });
 });

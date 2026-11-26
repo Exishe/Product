@@ -2,10 +2,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { CircleCheck, Flame, Inbox, Power, type LucideIcon } from "lucide-react";
+import { CircleCheck, Flame, Inbox, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { dealTickets, laneColumns, stacks, type LaneDeal } from "./lane-deal";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
 import { OutboxProvider, useOutbox } from "@/lib/offline/outbox-provider";
@@ -43,6 +44,7 @@ import {
   type TicketStatus,
 } from "./board-model";
 import { ChangePassword } from "@/features/staff/change-password";
+import { EndShiftRow, MENU_ROW, ToolsMenu } from "./board-tools";
 import { BusySwitch } from "./busy-switch";
 import { nextBusinessDayStart } from "./business-day";
 import type { SoundId } from "@/lib/sounds/library";
@@ -82,6 +84,7 @@ const HEARTBEAT_MS = 60_000;
 const TOAST_MS = 6_000;
 const FRESH_MS = 1_500;
 const LIVE: readonly TicketStatus[] = ["new", "cooking", "ready"];
+
 const COLUMN_ICON: Record<"new" | "cooking" | "ready", LucideIcon> = {
   new: Inbox,
   cooking: Flame,
@@ -139,6 +142,7 @@ function Board(p: KitchenBoardProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [revoked, setRevoked] = useState(false);
   const [trouble, setTrouble] = useState<number | null>(null);
+  const [ingredientsOut, setIngredientsOut] = useState(0);
 
   const nowRef = useRef(now);
   const ticketsRef = useRef(tickets);
@@ -458,76 +462,68 @@ function Board(p: KitchenBoardProps) {
   return (
     <div
       lang={locale}
-      className={clsx(
-        "kitchen-light staff-shell bg-basalt text-slip grid h-dvh overflow-hidden",
-        shownAlert ? "grid-rows-[auto_auto_auto_minmax(0,1fr)]" : "grid-rows-[auto_auto_minmax(0,1fr)]",
-      )}
+      className="kitchen-light staff-shell bg-basalt text-slip flex h-dvh flex-col overflow-hidden"
     >
-      <header className="bg-basalt-2 flex min-h-20 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 shadow-[var(--shadow-soft)] lg:gap-x-4 lg:px-6">
-        <h1 className="page-title mr-2 text-[2.25rem]">{p.station.title}</h1>
-        {p.otherStations.length > 0 && (
-          <nav aria-label={t("stations")} className="flex flex-wrap gap-2">
-            {p.otherStations.map((s) => (
-              <Link
-                key={s.id}
-                href={`/kitchen/${s.id}`}
-                className="bg-basalt-3 text-slip-dim inline-flex min-h-14 items-center rounded-full px-5 text-lg font-semibold"
-              >
-                {s.title}
-              </Link>
-            ))}
-          </nav>
-        )}
-        <ConnectionPill
-          state={connection}
-          waiting={outbox.entries.length}
-          lastSyncAt={lastSyncAt}
-          timeZone={p.location.timeZone}
-        />
-        <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
-        <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
-        {p.ingredientsSupported && <IngredientOut locationId={p.location.id} />}
-        <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
-        <div className="ml-auto flex items-center gap-3">
-          <span data-testid="clock" className="num text-[2.25rem] leading-none font-bold">
-            {clock}
-          </span>
-          {p.canChangePassword && (
-            <ChangePassword
-              tone="kitchen"
-              triggerClassName="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center rounded-full px-4"
+      {/* One 64 px bar, as on Toast, Square and Fresh: the station and how it
+          stands (the other stations, the longest wait) on the left; the
+          connection, the clock and the two tools a cook reaches for on the
+          right, the rest behind «…». The all-day count is a bar at the bottom. */}
+      <header className="bg-basalt-2 shrink-0 border-b border-(--kds-frame)">
+        <div className="flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 lg:px-6">
+          <h1 className="m-0 text-[1.375rem] leading-tight font-semibold">{p.station.title}</h1>
+          {p.otherStations.length > 0 && (
+            <nav aria-label={t("stations")} className="flex flex-wrap gap-1">
+              {p.otherStations.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/kitchen/${s.id}`}
+                  className="text-slip-dim inline-flex min-h-12 items-center rounded-xl px-2 text-lg font-semibold underline decoration-(--kds-frame) decoration-2 underline-offset-4"
+                >
+                  {s.title}
+                </Link>
+              ))}
+            </nav>
+          )}
+          <OldestWait tickets={[...columns.new, ...columns.cooking]} now={now} />
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2">
+            <ConnectionPill
+              state={connection}
+              waiting={outbox.entries.length}
+              lastSyncAt={lastSyncAt}
+              timeZone={p.location.timeZone}
             />
-          )}
-          {shift.on && (
-            <button
-              type="button"
-              onClick={shift.end}
-              className="bg-basalt-3 text-slip-dim inline-flex min-h-14 min-w-14 items-center justify-center gap-2 rounded-full px-4 text-lg font-semibold"
-            >
-              <Power aria-hidden="true" className="size-5 shrink-0" />
-              {/* Icon only below 1280 px, so the bar stays one row on a 1024 px tablet. */}
-              <span className="max-xl:sr-only">{t("shift.end")}</span>
-            </button>
-          )}
+            <span data-testid="clock" className="num text-[1.75rem] leading-none font-bold">
+              {clock}
+            </span>
+            <div role="toolbar" aria-label={t("tools")} className="flex items-center gap-2">
+              <BusySwitch busy={busy} now={now} timeZone={p.location.timeZone} onSet={onSetBusy} />
+              <StopList sections={p.dishes} soldOut={soldOutIds} onToggle={onToggleSoldOut} />
+              {(p.ingredientsSupported || p.canChangePassword || shift.on) && (
+                <ToolsMenu badge={ingredientsOut}>
+                  {p.ingredientsSupported && (
+                    <IngredientOut locationId={p.location.id} rowClassName={MENU_ROW} onCount={setIngredientsOut} />
+                  )}
+                  {p.canChangePassword && <ChangePassword tone="kitchen" triggerClassName={MENU_ROW} withLabel />}
+                  {shift.on && <EndShiftRow onEnd={shift.end} />}
+                </ToolsMenu>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
-      <AllDayStrip
-        stationId={p.station.id}
-        rows={allDayRows}
-        selected={pickedRow?.key ?? null}
-        onSelect={setPicked}
-      />
-
       {shownAlert && <NewOrderBanner alert={shownAlert} onAck={() => setAlert(null)} />}
 
-      <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-none sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,0.8fr)]">
+      {/* One board: the lanes share its colour and are split by a 1 px line.
+          New and In progress flow their tickets into as many columns as fit
+          (two each on a 1920 px screen); Ready is a narrow single column. */}
+      <main className="grid min-h-0 flex-1 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:grid-rows-[minmax(0,1fr)_auto] sm:overflow-hidden sm:portrait:max-lg:grid-rows-none sm:portrait:max-lg:overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(16rem,0.8fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-0 lg:px-3 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,22rem)]">
         {(["new", "cooking", "ready"] as const).map((col) => (
           <BoardColumn
             key={col}
             column={col}
             title={t(`columns.${col}`)}
-            empty={t("empty")}
+            empty={t(`columnEmpty.${col}`)}
             tickets={columns[col]}
             now={now}
             fresh={fresh}
@@ -539,6 +535,15 @@ function Board(p: KitchenBoardProps) {
           />
         ))}
       </main>
+
+      {allDayRows.length > 0 && (
+        <AllDayStrip
+          stationId={p.station.id}
+          rows={allDayRows}
+          selected={pickedRow?.key ?? null}
+          onSelect={setPicked}
+        />
+      )}
 
       {!shift.on && !revoked && (
         <StartShiftOverlay
@@ -581,19 +586,57 @@ function BoardColumn({
 }) {
   const strip = column === "ready"; // a horizontal strip under the other two on a portrait tablet
   const Icon = COLUMN_ICON[column];
+  // New and Cooking are N stacks of tickets, as many 20 rem stacks as fit,
+  // so a short ticket never leaves a hole under it (ADR-101). Until the lane
+  // is measured it is the plain grid the server drew.
+  const lane = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState<number | null>(null);
+  useEffect(() => {
+    const el = lane.current;
+    if (!el || strip) return;
+    const ro = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      setColumns(laneColumns(entry.contentRect.width, rem));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [strip]);
+  const [deal, setDeal] = useState<LaneDeal | null>(null);
+  const nextDeal = columns === null ? null : dealTickets(deal, tickets, columns);
+  if (nextDeal !== null && nextDeal !== deal) setDeal(nextDeal);
+  const card = (ticket: ShownTicket) =>
+    ticket.kind === "void" ? (
+      <VoidTicketCard key={ticket.id} ticket={ticket} fresh={fresh.has(ticket.id)} onAction={onAction} />
+    ) : (
+      <OrderTicketCard
+        key={ticket.id}
+        ticket={ticket}
+        column={column}
+        now={now}
+        fresh={fresh.has(ticket.id)}
+        highlighted={highlighted.has(ticket.id)}
+        done={bumped}
+        onToggleLine={onToggleLine}
+        onCantMake={onCantMake}
+        onAction={onAction}
+      />
+    );
+  const stacked = !strip && nextDeal !== null && tickets.length > 0;
   return (
     <section
       aria-labelledby={`column-${column}`}
       data-testid={`column-${column}`}
       className={clsx(
         // On a portrait tablet the board scrolls as a whole: a column is as tall as its tickets.
-        "bg-basalt-2 flex min-h-0 flex-col rounded-2xl sm:portrait:max-lg:min-h-fit",
+        "flex min-h-0 min-w-0 flex-col sm:portrait:max-lg:min-h-fit",
+        column !== "new" && "lg:border-l lg:border-(--kds-frame)",
         strip && "sm:col-span-2 lg:col-span-1",
       )}
     >
       <h2
         id={`column-${column}`}
-        className="flex items-center justify-between gap-2 px-4 py-3 text-2xl font-bold"
+        className="flex items-center justify-between gap-2 px-3 pt-1 pb-3 text-2xl font-bold"
       >
         <span className="flex min-w-0 items-center gap-2">
           <Icon
@@ -613,38 +656,29 @@ function BoardColumn({
         </b>
       </h2>
       <div
+        ref={lane}
         className={clsx(
-          "flex min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] flex-col gap-3 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
-          strip &&
-            "sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72",
+          "min-h-0 flex-1 [scrollbar-color:var(--color-basalt-4)_transparent] gap-4 px-3 pt-1 pb-3 sm:overflow-y-auto sm:portrait:max-lg:flex-none sm:portrait:max-lg:overflow-y-visible",
+          strip
+            ? "flex flex-col sm:max-lg:flex-row sm:max-lg:items-start sm:max-lg:overflow-x-auto sm:max-lg:overflow-y-hidden sm:max-lg:*:w-72"
+            : stacked
+              ? "flex items-start"
+              : // Before the lane is measured: as many ticket columns as fit, none under 20rem.
+                "grid auto-rows-max grid-cols-[repeat(auto-fill,minmax(min(20rem,100%),1fr))] content-start items-start",
         )}
       >
         {tickets.length === 0 ? (
-          <p className="text-slip-dim m-0 px-2 py-6 text-xl">{empty}</p>
+          <p className="text-slip-dim col-span-full m-0 grid flex-1 place-items-center px-2 py-6 text-center text-lg">
+            {empty}
+          </p>
+        ) : stacked ? (
+          stacks(nextDeal, tickets).map((stack, i) => (
+            <div key={i} data-testid="ticket-stack" className="flex min-w-0 flex-1 flex-col gap-4">
+              {stack.map(card)}
+            </div>
+          ))
         ) : (
-          tickets.map((ticket) =>
-            ticket.kind === "void" ? (
-              <VoidTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                fresh={fresh.has(ticket.id)}
-                onAction={onAction}
-              />
-            ) : (
-              <OrderTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                column={column}
-                now={now}
-                fresh={fresh.has(ticket.id)}
-                highlighted={highlighted.has(ticket.id)}
-                done={bumped}
-                onToggleLine={onToggleLine}
-                onCantMake={onCantMake}
-                onAction={onAction}
-              />
-            ),
-          )
+          tickets.map(card)
         )}
       </div>
     </section>

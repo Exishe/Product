@@ -108,6 +108,8 @@ export type GuestItem = {
   image: string | null;
   /** Every language's name, normalized for cross-script search (one per line). */
   search: string;
+  /** Every language's description, normalized the same way; searched after the names. */
+  about: string;
   /** A wine's grape and region, when its description is that and nothing else. */
   origin: { grape: string; region: string } | null;
 };
@@ -168,6 +170,17 @@ export function localized(names: I18n, locale: Locale): Text | null {
     if (text) return { text, lang };
   }
   return null;
+}
+
+/**
+ * Does a dish answer the guest's search (`q` already normalized)? 0: by name
+ * (or a wine's grape and region), 1: only by its description («սուրճ» finds
+ * an espresso «...աղացած սուրճից»), null: not at all. Name matches go first.
+ */
+export function searchRank(item: Pick<GuestItem, "search" | "about">, q: string): 0 | 1 | null {
+  if (!q) return 0;
+  if (item.search.includes(q)) return 0;
+  return item.about.includes(q) ? 1 : null;
 }
 
 function searchKey(names: I18n): string {
@@ -301,6 +314,7 @@ export function buildGuestMenu(
       search: origin
         ? `${searchKey(raw.name)}\n${normalizeForSearch(`${origin.grape} ${origin.region}`)}`
         : searchKey(raw.name),
+      about: searchKey(raw.description),
       origin,
     };
   };

@@ -5,6 +5,11 @@ import { BrandFonts } from "./brand-fonts";
 import { brandTokens, googleFontsHref, pickWordmark, wordmarkBackgrounds, type Brand } from "./brand";
 import type { GuestTheme } from "./themes";
 
+/** A real dish of the café for the preview: its name, formatted price and photo. */
+export type PreviewDish = { name: string; price: string; image: string | null };
+/** The section the sample dishes come from, and the one after it (the second tab). */
+export type PreviewSections = { current: string; next: string | null };
+
 const storageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-images/${path}`;
 
@@ -18,7 +23,13 @@ export function BrandPreview({
   cafeName,
   logo,
   cover,
+  sample = [],
+  sections = null,
 }: {
+  /** Set when the sample is the café's own: the heading names their section. */
+  sections?: PreviewSections | null;
+  /** The café's first dishes with photos; placeholders fill in when there are fewer than two. */
+  sample?: PreviewDish[];
   theme: GuestTheme;
   brand: Brand;
   legacyColor: string | null;
@@ -32,7 +43,14 @@ export function BrandPreview({
   const fonts = googleFontsHref(brand);
   // The picture that reads on the header band, as on the guest page (ADR-065).
   const wordmark = pickWordmark(brand, wordmarkBackgrounds(theme, brand).header);
-  const dishes = [t("previewDish1"), t("previewDish2")];
+  const placeholders: PreviewDish[] = [
+    { name: t("previewDish1"), price: t("previewPrice"), image: null },
+    { name: t("previewDish2"), price: t("previewPrice"), image: null },
+  ];
+  const dishes = [...sample, ...placeholders].slice(0, 2);
+  // The heading and the tabs always match the dishes under them.
+  const section = sections?.current ?? t("previewSection");
+  const nextTab = sections?.next ?? null;
   return (
     <div
       aria-hidden="true"
@@ -52,10 +70,10 @@ export function BrandPreview({
             // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
             <img src={storageUrl(logo)} alt="" className="bg-surface size-8 rounded-full object-cover" />
           )}
-          <span className="border-line-strong/60 rounded-pill border px-2 py-0.5 text-xs font-semibold">
+          <span className="border-line-strong/60 rounded-pill text-meta border px-2 py-0.5 font-semibold">
             {g("table", { label: "7" })}
           </span>
-          <span className="text-muted ml-auto flex gap-2 text-xs font-semibold">
+          <span className="text-muted text-meta ml-auto flex gap-2 font-semibold">
             {(["hy", "ru", "en"] as const).map((l) => (
               <span key={l} lang={l}>
                 {g(`language.${l}`)}
@@ -76,16 +94,18 @@ export function BrandPreview({
           </span>
         )}
         <span className="display-face guest-flourish text-title mt-2 block text-[1.375rem] leading-tight">
-          {t("previewSection")}
+          {section}
         </span>
       </div>
       <div className="flex gap-2 overflow-hidden px-4 pt-3">
-        <span className="bg-tab text-on-tab rounded-pill px-3 py-1.5 text-xs font-semibold">
-          {t("previewSection")}
+        <span className="bg-tab text-on-tab rounded-pill text-meta px-3 py-1.5 font-semibold whitespace-nowrap">
+          {section}
         </span>
-        <span className="text-muted rounded-pill border [border-color:var(--guest-tab-border)] px-3 py-1.5 text-xs font-semibold">
-          {dishes[1]}
-        </span>
+        {nextTab && (
+          <span className="text-muted rounded-pill text-meta border [border-color:var(--guest-tab-border)] px-3 py-1.5 font-semibold whitespace-nowrap">
+            {nextTab}
+          </span>
+        )}
       </div>
       <div className="px-4 pt-4 pb-5">
         {cover && (
@@ -96,28 +116,32 @@ export function BrandPreview({
             className="rounded-card bg-plate mb-3 block aspect-[21/9] w-full object-cover"
           />
         )}
-        <span className="display-face text-title block text-[1.75rem] leading-none">
-          {t("previewSection")}
-        </span>
+        <span className="display-face text-title block text-[1.75rem] leading-none">{section}</span>
         <span className="mt-3 grid grid-cols-2 gap-3">
-          {dishes.map((name) => (
+          {dishes.map((dish, i) => (
             <span
-              key={name}
-              className="bg-surface shadow-card rounded-card flex flex-col items-center gap-1.5 border [border-color:var(--guest-card-border)] p-3 text-center"
+              key={i}
+              className="bg-surface shadow-card rounded-card flex min-w-0 flex-col items-center gap-1.5 border [border-color:var(--guest-card-border)] p-3 text-center"
             >
-              <span className="bg-dish shadow-plate grid size-16 place-items-center rounded-full">
-                <span className="grid size-[82%] place-items-center rounded-full border [border-color:var(--guest-dish-rim)]">
-                  <span className="display-face text-dish-ink text-2xl leading-none">{name.slice(0, 1)}</span>
-                </span>
+              <span className="bg-dish shadow-plate grid size-20 place-items-center rounded-full">
+                {dish.image ? (
+                  // The café's own photo on the plate it chose, as guests see it.
+                  // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                  <img src={storageUrl(dish.image)} alt="" className="block size-[82%] rounded-full object-cover" />
+                ) : (
+                  <span className="grid size-[82%] place-items-center rounded-full border [border-color:var(--guest-dish-rim)]">
+                    <span className="display-face text-dish-ink text-2xl leading-none">{dish.name.slice(0, 1)}</span>
+                  </span>
+                )}
               </span>
-              <span className="display-face text-[1.0625rem] leading-tight">{name}</span>
-              <span className="text-accent-text text-sm font-semibold">{t("previewPrice")}</span>
+              <span className="display-face line-clamp-2 text-[1.0625rem] leading-tight">{dish.name}</span>
+              <span className="text-accent-text text-label num font-semibold">{dish.price}</span>
             </span>
           ))}
         </span>
-        <span className="bg-accent text-on-accent rounded-pill mt-4 flex h-10 items-center justify-center text-sm font-semibold">
+        <span className="bg-accent text-on-accent rounded-pill text-label mt-4 flex h-11 items-center justify-center font-semibold">
           {t("previewAdd")}
-          <span className="bg-badge text-on-badge ml-2 grid size-5 place-items-center rounded-full text-[0.6875rem]">
+          <span className="bg-badge text-on-badge text-meta ml-2 grid size-6 place-items-center rounded-full">
             {2}
           </span>
         </span>

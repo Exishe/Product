@@ -1,23 +1,21 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Check, ChevronRight, CircleAlert, Clock, Footprints, HandPlatter, Receipt, type LucideIcon } from "lucide-react";
+import { ChevronRight, CircleAlert, CircleCheck, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { STATE_BADGE, StateIcon } from "./floor-map";
-import { quickAction, type InboxRow, type QuickAction, type WaiterAction } from "./floor-model";
+import { quickAction, type InboxRow, type WaiterAction } from "./floor-model";
 import { button } from "./ui";
 
-const QUICK_ICON: Record<QuickAction["kind"], LucideIcon> = {
-  accept: Check,
-  serve: HandPlatter,
-  going: Footprints,
-  settle: Receipt,
-};
+// Short verbs, so every button reads as an action in the same column (the
+// row's badge already shows what kind of thing it is). «Նշել մատուցված» is the
+// table panel's own words for the same step, so one action has one name and
+// the pill never reads like the «Մատուցված է» state.
 const QUICK_LABEL = {
-  accept: "order.accept",
-  serve: "order.serve",
-  going: "panel.going",
-  settle: "inbox.closeBill",
+  accept: "inbox.quick.accept",
+  serve: "inbox.quick.serve",
+  going: "inbox.quick.going",
+  settle: "inbox.quick.settle",
 } as const;
 
 // Minutes after which a row's wait turns red with an alert sign: a call or a
@@ -49,14 +47,17 @@ export function InboxList({
     return (
       <p
         data-testid="inbox-empty"
-        className="text-staff-label2 m-0 rounded-2xl bg-white px-4 py-6 text-center text-[1.0625rem]"
+        className="text-staff-label2 m-0 flex items-center gap-3 py-4 text-[1.0625rem]"
       >
+        <CircleCheck aria-hidden="true" className="size-6 shrink-0" />
         {empty}
       </p>
     );
   }
+  // Rows on the page itself, split by hairlines; the action is a fixed
+  // column, so every button lines up and reads at a glance.
   return (
-    <ul data-testid="inbox" className="m-0 list-none overflow-hidden rounded-2xl bg-white p-0">
+    <ul data-testid="inbox" className="border-staff-sep m-0 list-none border-t p-0">
       {rows.map((row) => {
         const label =
           row.kind === "bill" && row.table.bill?.payment
@@ -66,7 +67,6 @@ export function InboxList({
         // A guest waving or a plate going cold can't wait like a bill can.
         const overdue = row.minutes >= (row.kind === "call" || row.kind === "ready" ? OVERDUE_FAST : OVERDUE_SLOW);
         const TimeIcon = overdue ? CircleAlert : Clock;
-        const QuickIcon = quick ? QUICK_ICON[quick.kind] : null;
         const quickText = quick ? t(QUICK_LABEL[quick.kind]) : "";
         const run = () => {
           if (!quick) return;
@@ -79,14 +79,14 @@ export function InboxList({
             data-testid="inbox-row"
             data-table={row.table.label}
             data-kind={row.kind}
-            className="border-staff-sep aria-[current=true]:bg-staff-fill flex items-center gap-1 border-b pr-3 last:border-b-0"
+            className="border-staff-sep aria-[current=true]:bg-staff-fill grid min-h-[4.5rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b"
             aria-current={selected === row.table.id ? "true" : undefined}
           >
             <button
               type="button"
               data-testid="inbox-open"
               onClick={() => onSelect(row.table.id)}
-              className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left"
+              className="flex min-h-[4.5rem] min-w-0 items-center gap-3 py-2 text-left"
             >
               <span
                 aria-hidden="true"
@@ -114,20 +114,22 @@ export function InboxList({
               </span>
               {!quick && <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />}
             </button>
-            {quick && QuickIcon && (
+            {quick && (
               <button
                 type="button"
                 data-testid="inbox-quick"
                 data-quick={quick.kind}
                 aria-label={t("inbox.action", { action: quickText, label: row.table.label })}
                 onClick={run}
+                // Ink like every row action: red belongs to the state circle
+                // and the overdue time, never to a button.
                 className={button(
-                  row.kind === "call" ? "destructive" : "primary",
-                  "max-w-[50%] shrink-0 px-4 py-1.5 text-center text-[0.9375rem]",
+                  "primary",
+                  "max-w-44 min-w-32 shrink-0 px-3! text-center text-[0.9375rem] leading-tight",
                 )}
               >
-                <QuickIcon aria-hidden="true" />
-                <span className="min-w-0">{quickText}</span>
+                {/* «Փակել հաշիվը» widens the pill a little, or takes two lines; never cut. */}
+                <span className="min-w-0 [text-wrap:balance]">{quickText}</span>
               </button>
             )}
           </li>

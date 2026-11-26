@@ -193,10 +193,11 @@ test.describe("kitchen board", () => {
       await expect(s).toHaveAttribute("data-lateness", "hurry");
       await expect(s.getByTestId("ticket-age")).toHaveText("Շտապ");
       await expect(s.getByTestId("ticket-timer")).toHaveText("8 ր");
+      // The head band carries the state (the ticket has no coloured frame).
       // The colour fades in over 200 ms (ADR-054), so wait for it to settle.
       await expect
-        .poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor))
-        .toBe("rgb(201, 120, 15)");
+        .poll(() => s.getByTestId("ticket-head").evaluate((el) => getComputedStyle(el).backgroundColor))
+        .toBe("rgb(242, 162, 58)");
       await board.context.close();
 
       board = await openBoard(browser, device, cafe, viewportSize, consoleErrors, {
@@ -208,7 +209,7 @@ test.describe("kitchen board", () => {
       await expect(s.getByTestId("ticket-timer")).toHaveText("12 ր");
       // The board's one deep red (ADR-062): white text on it 6.7:1.
       await expect
-        .poll(() => s.evaluate((el) => getComputedStyle(el).borderLeftColor))
+        .poll(() => s.getByTestId("ticket-head").evaluate((el) => getComputedStyle(el).backgroundColor))
         .toBe("rgb(176, 33, 58)");
 
       // Ready food waits for the waiter: never marked late.
@@ -314,11 +315,13 @@ test.describe("kitchen board", () => {
       await startShift(page);
       const beepsAtStart = await page.evaluate(() => (window as unknown as { __beeps: number }).__beeps);
 
-      // Allergy: a red banner with a word and a shield, and the note itself red-edged.
+      // Allergy: one red band with a shield that spells out the guest's note
+      // with the dish in brackets; the dish itself keeps a small red «Ալերգիա» mark.
       const sa = slip(page, a.ticketId);
       await expect(sa).toHaveAttribute("data-allergy", "true");
-      await expect(sa.getByTestId("ticket-allergy")).toHaveText("Ալերգիա․ կարդացեք նշումը");
+      await expect(sa.getByTestId("ticket-allergy")).toHaveText(`Ալերգիա ընկույզի նկատմամբ (${dish!.name.hy})`);
       await expect(sa.getByTestId("line-note")).toHaveAttribute("data-allergy", "true");
+      await expect(sa.getByTestId("line-note")).toHaveText("Ալերգիա");
       const sb = slip(page, b.ticketId);
       await expect(sb.getByTestId("ticket-allergy")).toHaveCount(0);
       await expect(sb.getByTestId("line-note")).not.toHaveAttribute("data-allergy");

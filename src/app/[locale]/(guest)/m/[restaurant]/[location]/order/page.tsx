@@ -8,6 +8,8 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu, dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
+import { OrderEmpty } from "@/features/ordering/order-empty";
+import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestCatalog, type GuestMessages } from "@/features/ordering/guest-i18n-context";
 import { LocalizedOrderPage, type OrderTexts } from "@/features/ordering/localized-order-page";
@@ -100,6 +102,7 @@ export default async function OrderStatusPage({
         image: i.image,
         price: i.price,
         description: i.description?.text.slice(0, 120),
+        choose: i.groups.some((g) => g.min > 0),
       }));
     return {
       dishes: recommend,
@@ -144,6 +147,7 @@ export default async function OrderStatusPage({
             path={`/m/${restaurant}/${location}`}
             query={query}
             tableId={table.table_id}
+            token={token ?? null}
             vapidPublicKey={vapidPublicKey}
             // The kitchen's own "busy" wait wins over the usual one.
             wait={busy ? null : hints.wait}
@@ -151,12 +155,36 @@ export default async function OrderStatusPage({
           />
         </GuestI18nProvider>
       ) : (
-        <main className="mx-auto grid w-full max-w-[720px] gap-4 px-4 py-10 md:px-8">
-          <Notice tone={token ? "alert" : "info"}>{token ? t("menu.badTable") : t("menu.noTable")}</Notice>
-          <a href={menuHref} className="text-accent-text inline-flex min-h-12 items-center font-semibold">
-            {t("order.toMenu")}
-          </a>
-        </main>
+        // No table (or a dead QR code): the café's bar with its languages, one
+        // headline, one sentence and one 56 px button back to the menu
+        // (benchmark §2.3; ADR-096: no second back link above it).
+        <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
+          <GuestHeader
+            compact
+            cafeName={published?.restaurant.name ?? ""}
+            logoUrl={look?.logo ? dishPhotoUrl(look.logo) : null}
+            wordmarkUrl={wordmark ? dishPhotoUrl(wordmark) : null}
+            tableLabel={null}
+            languages={routing.locales
+              .filter((l) => published?.location.locales.includes(l))
+              .map((l) => ({ locale: l, href: `/${l}/m/${restaurant}/${location}/order${query}` }))}
+            home={{ href: menuHref }}
+            // The order page's bar (ORDER_BAR in order-status-view.tsx).
+            width="max-w-[48rem] lg:max-w-[1440px]"
+            oneRow
+          />
+          <main className="mx-auto w-full max-w-[48rem] flex-1 px-4 pb-10 md:px-8">
+            <OrderEmpty
+              heading="h1"
+              notice={token ? <Notice tone="alert">{t("menu.badTable")}</Notice> : undefined}
+              title={t("order.empty")}
+              sentence={t("order.emptyHint")}
+              qrHint={token ? undefined : t("menu.noTable")}
+              menuHref={menuHref}
+              menuLabel={t("order.toMenu")}
+            />
+          </main>
+        </GuestI18nProvider>
       )}
     </GuestThemeScope>
   );

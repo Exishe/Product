@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { useGuestI18n } from "./guest-i18n-context";
-import { OrderStatusView } from "./order-status-view";
+import { ORDER_BAR, OrderStatusView } from "./order-status-view";
 
 type ViewProps = ComponentProps<typeof OrderStatusView>;
 
@@ -25,17 +25,20 @@ export function LocalizedOrderPage({
   path,
   query,
   tableId,
+  token = null,
   vapidPublicKey,
   wait,
   pairs,
 }: {
-  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact">;
+  header: Omit<ComponentProps<typeof GuestHeader>, "tools" | "home" | "compact" | "width" | "oneRow">;
   texts: Partial<Record<Locale, OrderTexts>>;
   /** The menu's address without the language: /m/{café}/{location}. */
   path: string;
   /** "?t=<token>" or "". */
   query: string;
   tableId: string;
+  /** The table's QR token (the waiter's choices before any order). */
+  token?: string | null;
   vapidPublicKey: string | null;
   wait: ViewProps["wait"];
   pairs: ViewProps["pairs"];
@@ -60,21 +63,30 @@ export function LocalizedOrderPage({
         {...header}
         // A short bar: the order starts near the top of the screen.
         compact
+        // The bar on the page's own column on a phone and a tablet, so «Order
+        // more» sits over the order. From 1024 px it is the menu's own bar:
+        // one row on the menu's 1440 px width (the café and its table, then
+        // the colour switch, «Order more» in the order button's place and the
+        // languages), so nothing in the chrome moves between menu and order.
+        width={ORDER_BAR}
+        oneRow
         home={{ href: menuHref }}
-        // Top right: order something new.
+        // Order something new: an outline pill with its words, beside the
+        // table (not on the empty page, whose own button does it).
         tools={
           <a
             href={menuHref}
-            aria-label={t("order.orderMore")}
-            className="bg-add text-on-add rounded-pill inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 font-semibold whitespace-nowrap transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 md:px-5"
+            data-order-more=""
+            className="border-line-strong text-ink hover:bg-chip rounded-pill inline-flex min-h-11 items-center justify-center gap-1.5 border pr-4 pl-3 text-label font-semibold whitespace-nowrap transition-transform duration-150 active:scale-95"
           >
-            <Plus size={20} aria-hidden />
-            <span className="hidden md:inline">{t("order.orderMore")}</span>
+            <Plus size={18} aria-hidden />
+            {t("order.orderMore")}
           </a>
         }
       />
       <OrderStatusView
         tableId={tableId}
+        token={token}
         menuHref={menuHref}
         vapidPublicKey={vapidPublicKey}
         wait={wait}

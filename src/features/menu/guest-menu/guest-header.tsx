@@ -23,7 +23,7 @@ function Home({ home, label, children }: { home?: HomeLink; label: string; child
       href={home.href}
       aria-label={label}
       data-testid="home-link"
-      className="inline-flex max-w-full items-center rounded-lg transition-opacity hover:opacity-80 active:opacity-60"
+      className="inline-flex min-h-11 max-w-full items-center rounded-lg transition-opacity hover:opacity-80 active:opacity-60"
       onClick={(e) => {
         if (!home.onGo || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
         e.preventDefault();
@@ -35,10 +35,10 @@ function Home({ home, label, children }: { home?: HomeLink; label: string; child
   );
 }
 
-// The café in a bar: its wordmark at the bar's height, or its mark and the
-// full name set small (wrapping to a second line, never cut with an
-// ellipsis). Used by the short header and by the slim bar that follows the
-// scroll.
+// The café in a bar: its wordmark at the bar's height (never narrower than
+// 88 px), or its mark and the full name at 20 px. The name keeps whole words
+// (it wraps between words only, never cut with an ellipsis); the bar gives it
+// at least 9.5rem before anything sits beside it.
 export function BrandMark({
   cafeName,
   logoUrl,
@@ -111,43 +111,39 @@ function Flip({ children }: { children: ReactNode }) {
   );
 }
 
-/** The table label in the menu bar: plain text that turns over like the languages. */
+/** The table under the café's name: one quiet 15 px line, «Սեղան 5», with a table mark. */
 export function TableChip({ label }: { label: string }) {
   const { t } = useGuestI18n();
   return (
-    <span
-      className={`text-ink grid min-h-11 flex-none place-items-center text-[12px] font-semibold whitespace-nowrap ${styles.flip}`}
-      data-testid="table-chip"
-    >
-      <Flip>
-        <span className="bg-chip inline-flex h-8 items-center gap-1.5 rounded-[10px] px-2.5">
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 9h18M5 9v10M19 9v10M8 9V6h8v3" />
-          </svg>
-          {t("table", { label })}
-        </span>
-      </Flip>
+    <span className="text-muted flex min-h-11 min-w-0 items-center text-label" data-testid="table-chip">
+      <span className="inline-flex items-center gap-1.5">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="flex-none"
+        >
+          <path d="M3 9h18M5 9v10M19 9v10M8 9V6h8v3" />
+        </svg>
+        {t("table", { label })}
+      </span>
     </span>
   );
 }
 
-/** Հայ · Рус · Eng, keeping the table token: a small segmented switch, the current one on beige. */
+/** Հայ · Рус · Eng, keeping the table token: three 44 px tabs 4 px apart, the current one filled. */
 export function LanguageNav({ languages }: { languages: readonly LanguageLink[] }) {
   const { t, locale, switchLocale } = useGuestI18n();
   const offered = routing.locales.flatMap((l) => languages.filter((x) => x.locale === l));
   if (offered.length <= 1) return null;
   return (
-    <nav aria-label={t("language.label")} className="flex flex-none items-center">
+    <nav aria-label={t("language.label")} className="flex flex-none items-center gap-1">
       {offered.map(({ locale: l, href }) => (
         <a
           key={l}
@@ -162,16 +158,71 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[12px] aria-[current=true]:font-semibold ${styles.flip}`}
+          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center text-label aria-[current=true]:font-semibold ${styles.flip}`}
         >
           <Flip>
-            <span className="group-aria-[current=true]:bg-chip rounded-[8px] px-2 py-1">
+            <span className="group-aria-[current=true]:bg-chip rounded-guest-sm px-2 py-1">
               {t(`language.${l}`)}
             </span>
           </Flip>
         </a>
       ))}
     </nav>
+  );
+}
+
+// The guest bar (ADR-094 area pass), the same on the menu, the order view and
+// the status page: one row with the café (its wordmark or name, given room
+// first) and the languages, then one quiet meta row: the table, or what the
+// guest needs to know without one, with the demo's colour switch and the
+// page's own tools on the right. Nothing in it squeezes the name; at large
+// text sizes the languages and tools wrap under it instead of off the screen.
+export function GuestBar({
+  brand,
+  tableLabel,
+  note = null,
+  languages,
+  tools,
+  width = "max-w-[1240px]",
+  oneRow = false,
+}: {
+  brand: ReactNode;
+  tableLabel: string | null;
+  /** Shown in the meta row when there is no table (scan the QR code). */
+  note?: ReactNode;
+  languages: readonly LanguageLink[];
+  /** Buttons on the right of the meta row (order more; the cart from 1024 px). */
+  tools?: ReactNode;
+  width?: string;
+  /**
+   * From 1024 px the two rows become one (the menu): the café and its table
+   * on the left, the colour switch, the tools and the languages on the right.
+   */
+  oneRow?: boolean;
+}) {
+  const lg = (cls: string) => (oneRow ? cls : "");
+  return (
+    <div className={`mx-auto w-full ${width} min-w-0 px-4 md:px-8 ${lg("lg:flex lg:min-h-16 lg:items-center lg:gap-x-5 lg:pt-2")}`}>
+      <div className={`flex min-h-14 flex-wrap items-center gap-x-3 pt-1 ${lg("lg:contents")}`}>
+        <div className={`flex min-w-[min(9.5rem,45vw)] flex-1 items-center ${lg("lg:min-w-0 lg:flex-initial")}`}>
+          {brand}
+        </div>
+        {/* ml-auto at every width: the languages stay at the right edge in
+            one-row mode too, whatever the meta row holds (or when it is hidden). */}
+        <div
+          className={`ml-auto flex max-w-full flex-none flex-wrap items-center justify-end ${lg("lg:order-last")}`}
+        >
+          <LanguageNav languages={languages} />
+        </div>
+      </div>
+      <div className={`guest-meta flex min-h-11 flex-wrap items-center gap-x-2 pb-1 ${lg("lg:contents")}`}>
+        {tableLabel ? <TableChip label={tableLabel} /> : note}
+        {/* The note takes the free room itself (it wraps beside the switch). */}
+        {(tableLabel || !note) && <span aria-hidden="true" className="flex-1" />}
+        <DemoPalette />
+        {tools}
+      </div>
+    </div>
   );
 }
 
@@ -193,6 +244,8 @@ export function GuestHeader({
   languages,
   tools,
   compact = false,
+  width = "max-w-[1120px]",
+  oneRow = false,
   home,
 }: {
   cafeName: string;
@@ -205,6 +258,10 @@ export function GuestHeader({
   tools?: ReactNode;
   /** One short bar instead of the large name (order and status views). */
   compact?: boolean;
+  /** The compact bar's column (the order page's 48rem, so the bar and the page share one column). */
+  width?: string;
+  /** The compact bar in one row from 1024 px, as on the menu (GuestBar `oneRow`). */
+  oneRow?: boolean;
   /** The café's name and wordmark lead to the menu. */
   home?: HomeLink;
 }) {
@@ -221,12 +278,14 @@ export function GuestHeader({
   if (compact)
     return (
       <header className={`guest-head text-ink ${styles.bar}`} data-compact="">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1120px] min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-8">
-          <BrandMark as="h1" cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} />
-          {tableChip}
-          {languageNav}
-          {tools}
-        </div>
+        <GuestBar
+          brand={<BrandMark as="h1" cafeName={cafeName} logoUrl={logoUrl} wordmarkUrl={wordmarkUrl} home={home} />}
+          tableLabel={tableLabel}
+          languages={languages}
+          tools={tools}
+          width={width}
+          oneRow={oneRow}
+        />
       </header>
     );
 

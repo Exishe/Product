@@ -16,7 +16,7 @@ test("a new owner signs up, creates a café and lands on its admin", async ({ pa
   await page.getByRole("button", { name: "Ստեղծել" }).click();
   await expect(page).toHaveURL(/\/admin$/, { timeout: 30_000 });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Թեստ սրճարան ${id}`);
-  await expect(page.getByText("Բարի գալուստ, Արամ")).toBeVisible();
+  await expect(page.getByText(/^Բարի գալուստ · /)).toBeVisible();
 });
 
 test("a taken page address shows the message in Armenian", async ({ page }) => {

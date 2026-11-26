@@ -47,14 +47,14 @@ export function PromoShell({
     <aside
       aria-label={label}
       data-testid="promo-banner"
-      className="rounded-card border-glow bg-surface text-ink shadow-card flex items-start gap-3 border py-3 pr-1 pl-4"
+      className="text-ink border-line flex items-start gap-3 border-b pb-3"
     >
-      <div className="min-w-0 flex-1 py-0.5">{children}</div>
+      <div className="min-w-0 flex-1 pt-2.5">{children}</div>
       <button
         type="button"
         onClick={close}
         aria-label={closeLabel}
-        className="text-muted grid size-11 flex-none place-items-center rounded-full"
+        className="text-muted hover:text-ink hover:bg-chip -mr-2.5 grid size-11 flex-none place-items-center rounded-full"
       >
         <X size={20} aria-hidden />
       </button>

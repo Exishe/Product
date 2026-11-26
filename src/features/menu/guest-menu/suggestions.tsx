@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "@/features/analytics/track";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
@@ -13,13 +13,18 @@ import {
   type Suggestion,
   type VisitMemory,
 } from "./suggestions-logic";
-import { CloseIcon, Plate, Txt, dishPhotoUrl } from "./ui";
+import { CloseIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
-// "Goes well with" strip (ADR-077 data, ADR-080 screen). Loaded on the first
-// dish added, never at first paint. A calm panel above the order bar, not a
-// dialog: ordering carries on underneath. It is fixed to the bottom with the
-// dock, so showing it moves nothing on the page.
+// "Goes well with" (ADR-077 data, ADR-080 screen; ADR-094 area pass). Loaded
+// on the first dish added, never at first paint. One idea at a time, as one
+// 64 px row inside the bottom panel right above the cart bar (no card, no
+// shadow of its own): a 40 px plate, the name and price at 16 px, a 44 px «+»
+// and a 44 px ×. On a phone it leaves by itself after 6 seconds or 200 px of
+// scrolling, so it never sits over the menu; the next idea shows after one is
+// added or declined. A phone shows ideas for one add per visit only (the menu
+// asks with `onShown`, ADR-096), so the bottom panel stays the cart bar and the
+// tabs. On a desktop it sits in the order rail under the total.
 export type SuggestTrigger = {
   /** The dish just added. */
   id: string;
@@ -53,7 +58,8 @@ export function Suggestions({
   track,
   onAdd,
   onChoose,
-  onVisible,
+  autoHide = false,
+  onShown,
 }: {
   locationId: string;
   trigger: SuggestTrigger;
@@ -66,8 +72,10 @@ export function Suggestions({
   onAdd: (item: GuestItem, from: HTMLElement) => void;
   /** A dish with required choices opens its sheet instead. */
   onChoose: (item: GuestItem) => void;
-  /** Whether the strip is on screen, so the toast can stay clear of it. */
-  onVisible: (shown: boolean) => void;
+  /** Leaves after 6 s or 200 px of scrolling (the phone's bottom panel). */
+  autoHide?: boolean;
+  /** Told once an idea is on screen. */
+  onShown?: () => void;
 }) {
   const { t, locale } = useGuestI18n();
   // The answer belongs to the trigger it was fetched for, so a new add of the
@@ -106,15 +114,31 @@ export function Suggestions({
     [list, items, trigger.id, cartIds, soldOut, dismissed],
   );
 
+  // The phone's row goes away on its own: after 6 s, or once the guest scrolls on.
+  const [gone, setGone] = useState<SuggestTrigger | null>(null);
+  const shown = cards.length > 0 && gone !== trigger;
   useEffect(() => {
-    onVisible(cards.length > 0);
-    return () => onVisible(false);
-  }, [cards.length, onVisible]);
+    if (!autoHide || !shown) return;
+    const from = window.scrollY;
+    const leave = () => setGone(trigger);
+    const timer = setTimeout(leave, 6000);
+    const onScroll = () => Math.abs(window.scrollY - from) > 200 && leave();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [autoHide, shown, trigger]);
+
+  useEffect(() => {
+    if (shown) onShown?.();
+  }, [shown, onShown]);
 
   // Counted once per (dish, suggestion) for the visit, not each time it re-renders.
   useEffect(() => {
     const mem = memoryFor(locationId);
-    for (const { item } of cards) {
+    // Only the one on screen counts as shown.
+    for (const { item } of cards.slice(0, 1)) {
       const key = `${trigger.id}>${item.id}`;
       if (tracked.current.has(key) || mem.wasShown(trigger.id, item.id)) continue;
       tracked.current.add(key);
@@ -123,65 +147,87 @@ export function Suggestions({
     }
   }, [cards, locationId, trigger.id, track]);
 
-  if (cards.length === 0) return null;
+  if (!shown) return null;
   const dismiss = (id: string) => {
     memoryFor(locationId).dismiss(id);
     setDismissed((d) => new Set(d).add(id));
   };
+  const { item, suggestion } = cards[0]!;
+  const reason = reasonText(suggestion, items, trigger.id);
+  const needsChoice = item.groups.some((g) => g.min > 0);
   return (
-    <section
-      aria-label={t("suggest.title")}
-      data-testid="suggestions"
-      className={`bg-surface text-ink shadow-float rounded-card pointer-events-auto border px-3 pt-2 pb-1 [border-color:var(--guest-card-border)] ${styles.suggest}`}
-    >
-      <h2 className="text-muted px-1 text-[0.8125rem] font-semibold">{t("suggest.title")}</h2>
+    <section aria-label={t("suggest.title")} data-testid="suggestions" className={`text-ink ${styles.suggest}`}>
+      <h2 className="sr-only">{t("suggest.title")}</h2>
       <ul>
-        {cards.map(({ item, suggestion }) => {
-          const reason = reasonText(suggestion, items, trigger.id);
-          const needsChoice = item.groups.some((g) => g.min > 0);
-          return (
-            <li
-              key={item.id}
-              data-testid="suggestion"
-              data-dish={item.id}
-              className="border-line flex items-center gap-2 border-b py-1.5 last:border-b-0"
-            >
-              {item.image && <Plate src={dishPhotoUrl(item.image)} size={44} className="size-11 flex-none" />}
-              <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                <Txt value={item.name} locale={locale} className="font-semibold break-words" />
-                <span className="text-muted text-[0.8125rem]" data-testid="suggestion-reason">
-                  {t(reason.key, reason.vars)}
-                </span>
-                <span className="num text-accent-text text-sm font-semibold">{formatAmd(item.price, locale)}</span>
-              </span>
-              <button
-                type="button"
-                data-testid="suggestion-add"
-                aria-label={t("menu.add", { name: item.name.text })}
-                aria-haspopup={needsChoice ? "dialog" : undefined}
-                onClick={(e) => {
-                  if (needsChoice) return onChoose(item);
-                  track("suggestion_accepted", item.id, { from: trigger.id });
-                  onAdd(item, e.currentTarget);
-                }}
-                className="bg-accent text-on-accent rounded-pill min-h-11 flex-none px-4 text-sm font-semibold"
-              >
-                {t("suggest.add")}
-              </button>
-              <button
-                type="button"
-                data-testid="suggestion-dismiss"
-                aria-label={t("suggest.dismiss", { name: item.name.text })}
-                title={t("suggest.noThanks")}
-                onClick={() => dismiss(item.id)}
-                className="text-muted hover:bg-chip grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
-              >
-                <CloseIcon />
-              </button>
-            </li>
-          );
-        })}
+        <li key={item.id} data-testid="suggestion" data-dish={item.id} className="flex min-h-14 items-center gap-3">
+          {item.image && <Plate src={dishPhotoUrl(item.image)} size={40} className="size-10 flex-none" />}
+          <span className="flex min-w-0 flex-1 flex-col leading-tight">
+            <ReasonLine
+              long={t(reason.key, reason.vars)}
+              short={reason.key === "suggest.reason.pairs_with_dish" ? t(`${reason.key}_short`, reason.vars) : null}
+            />
+            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-body">
+              <Txt value={item.name} locale={locale} className="min-w-0 font-semibold break-words" />
+              <span className="num text-accent-text flex-none font-semibold">{formatAmd(item.price, locale)}</span>
+            </span>
+          </span>
+          <button
+            type="button"
+            data-testid="suggestion-add"
+            aria-label={t("menu.add", { name: item.name.text })}
+            aria-haspopup={needsChoice ? "dialog" : undefined}
+            onClick={(e) => {
+              if (needsChoice) return onChoose(item);
+              track("suggestion_accepted", item.id, { from: trigger.id });
+              onAdd(item, e.currentTarget);
+            }}
+            className="bg-add text-on-add grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
+          >
+            <PlusIcon />
+          </button>
+          <button
+            type="button"
+            data-testid="suggestion-dismiss"
+            aria-label={t("suggest.dismiss", { name: item.name.text })}
+            title={t("suggest.noThanks")}
+            onClick={() => dismiss(item.id)}
+            className="text-muted hover:bg-chip hover:text-ink grid size-11 flex-none place-items-center rounded-full [&_svg]:size-[18px]"
+          >
+            <CloseIcon />
+          </button>
+        </li>
       </ul>
     </section>
+  );
+}
+
+// The reason in one line. When «Լավ զուգակցվում է՝ «Օմլետ»» doesn't fit (a
+// 360 px phone), the short form «Լավ զույգ՝ «Օմլետ»» takes its place, so the
+// dish it pairs with, the part that matters, is what stays on screen.
+function ReasonLine({ long, short }: { long: string; short: string | null }) {
+  const box = useRef<HTMLSpanElement>(null);
+  const probe = useRef<HTMLSpanElement>(null);
+  const [fits, setFits] = useState(true);
+  useLayoutEffect(() => {
+    const el = box.current;
+    const p = probe.current;
+    if (!el || !p) return;
+    const check = () => setFits(p.offsetWidth <= el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [long, short]);
+  return (
+    <span ref={box} className="text-muted relative flex min-w-0 text-meta">
+      <span className="min-w-0 truncate" data-testid="suggestion-reason">
+        {short !== null && !fits ? short : long}
+      </span>
+      {short !== null && (
+        <span ref={probe} aria-hidden="true" className="invisible absolute top-0 left-0 whitespace-nowrap">
+          {long}
+        </span>
+      )}
+    </span>
   );
 }

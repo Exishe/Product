@@ -3,19 +3,25 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import { clearGuestSession, loadGuestSession, saveGuestSession } from "./guest-session";
 import { classifyOrderError } from "./order-errors";
 
-// Calling the waiter from the menu, before any order: the same anonymous
-// session and guest session (api.guest_join_table) the order uses, then
-// api.guest_service_request. A second call while one is open returns the open
-// request, so a double tap never rings twice.
+// Calling the waiter or asking for the bill from the menu, before or without
+// an order: the same anonymous session and guest session
+// (api.guest_join_table) the order uses, then api.guest_service_request with
+// the kind (and, for the bill, cash or card). A second request of a kind while
+// one is open returns the open one, so a double tap never rings twice.
 export type CallResult = "called" | "offline" | "rate_limited" | "failed";
 
 const TIMEOUT_MS = 15_000;
+
+export type ServiceKind = "call_waiter" | "bring_bill";
 
 export async function callWaiter(args: {
   token: string;
   tableId: string;
   locale: Locale;
+  kind?: ServiceKind;
+  payment?: "card" | "cash" | null;
 }): Promise<CallResult> {
+  const kind = args.kind ?? "call_waiter";
   const storage = window.localStorage;
   const supabase = getBrowserClient();
 
@@ -51,7 +57,11 @@ export async function callWaiter(args: {
 
     const asked = await supabase
       .schema("api")
-      .rpc("guest_service_request", { p_guest_session_id: guestSessionId, p_kind: "call_waiter" })
+      .rpc("guest_service_request", {
+        p_guest_session_id: guestSessionId,
+        p_kind: kind,
+        ...(kind === "bring_bill" && args.payment ? { p_payment_preference: args.payment } : {}),
+      })
       .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
     if (!asked.error) return "called";
 

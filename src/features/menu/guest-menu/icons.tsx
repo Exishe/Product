@@ -1,6 +1,6 @@
 import { createElement } from "react";
 
-// The guest pages' icons: the twelve Lucide shapes they use (ISC licence,
+// The guest pages' icons: the Lucide shapes they use (ISC licence,
 // https://lucide.dev), drawn here instead of through lucide-react, whose icon
 // factory would add about 1.6 KB of JavaScript to every first load. Same
 // markup as lucide-react's.
@@ -40,6 +40,45 @@ export const BellRing = draw([
   ["path", { d: "M4 2C2.8 3.7 2 5.7 2 8" }],
 ]);
 export const Check = draw([["path", { d: "M20 6 9 17l-5-5" }]]);
+export const ChevronRight = draw([["path", { d: "m9 18 6-6-6-6" }]]);
+export const ChevronDown = draw([["path", { d: "m6 9 6 6 6-6" }]]);
+export const ReceiptText = draw([
+  ["path", { d: "M13 16H8" }],
+  ["path", { d: "M14 8H8" }],
+  ["path", { d: "M16 12H8" }],
+  [
+    "path",
+    {
+      d: "M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z",
+    },
+  ],
+]);
+export const SlidersHorizontal = draw([
+  ["path", { d: "M10 5H3" }],
+  ["path", { d: "M12 19H3" }],
+  ["path", { d: "M14 3v4" }],
+  ["path", { d: "M16 17v4" }],
+  ["path", { d: "M21 12h-9" }],
+  ["path", { d: "M21 19h-5" }],
+  ["path", { d: "M21 5h-7" }],
+  ["path", { d: "M8 10v4" }],
+  ["path", { d: "M8 12H3" }],
+]);
+export const ChefHat = draw([
+  [
+    "path",
+    {
+      d: "M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z",
+    },
+  ],
+  ["path", { d: "M6 17h12" }],
+]);
+export const Heart = draw([
+  [
+    "path",
+    { d: "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" },
+  ],
+]);
 export const ChevronLeft = draw([["path", { d: "m15 18-6-6 6-6" }]]);
 export const ConciergeBell = draw([
   ["path", { d: "M3 20a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1Z" }],

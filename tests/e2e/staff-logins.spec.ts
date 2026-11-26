@@ -20,18 +20,24 @@ async function signInWithUsername(browser: Browser, username: string, password: 
   const page = await context.newPage();
   await page.goto("/login");
   await page.getByLabel("Էլ․ փոստ կամ մուտքանուն").fill(username);
-  await page.getByLabel("Գաղտնաբառ").fill(password);
+  await page.getByLabel("Գաղտնաբառ", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Մուտք գործել" }).click();
   return { context, page };
 }
 
 const createForm = (page: Page) =>
-  page.locator("form").filter({ has: page.getByRole("heading", { name: "Ավելացնել մուտք" }) });
+  page.locator("form").filter({ has: page.getByRole("heading", { name: "Ավելացնել աշխատակից" }) });
 
 async function createLogin(page: Page, role: "waiter" | "kitchen", ending: string) {
+  // The form opens in a sheet from the page's primary button and stays open.
+  if ((await createForm(page).count()) === 0) await page.getByTestId("add-person").click();
   const form = createForm(page);
-  await form.getByLabel("Ում համար").selectOption(role);
-  await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill(ending);
+  // The role is a segmented pair of radios; the visible label is what one taps.
+  await form
+    .getByRole("group", { name: "Ում համար" })
+    .getByText(role === "waiter" ? "Մատուցող" : "Խոհանոց", { exact: true })
+    .click();
+  await form.getByLabel("Մուտքանուն", { exact: true }).fill(ending);
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
   // The result of an earlier creation stays on screen until this one answers, so wait for this ending.
   const created = form.getByTestId("created-username");
@@ -66,7 +72,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await expect(list.getByTestId("staff-login-row")).toHaveCount(4);
   // The same ending twice is refused in the owner's language.
   const form = createForm(page);
-  await form.getByLabel("Մուտքանվան վերջը (ըստ ցանկության)").fill("sal");
+  await form.getByLabel("Մուտքանուն", { exact: true }).fill("sal");
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
   // Remote writes: up to 15 s on a loaded dev database.
   await expect(form.getByRole("alert").filter({ hasText: "արդեն զբաղված է" })).toBeVisible({ timeout: 15_000 });
@@ -83,9 +89,12 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   expect((await k.page.goto("/admin/staff"))?.status()).toBe(403);
   await k.context.close();
 
+  // Close the sheet to work with the list again.
+  await page.getByRole("dialog").getByRole("button", { name: "Փակել" }).click();
+
   // A new password set by the owner works, and the old one stops working.
   const row = (name: string) => list.locator(`[data-username="${name}"]`);
-  await row(kitchen.username).getByText("Նշել նոր գաղտնաբառ").click();
+  await row(kitchen.username).getByText("Նոր գաղտնաբառ", { exact: true }).click();
   await row(kitchen.username).getByRole("button", { name: "Նշել գաղտնաբառը" }).click();
   const fresh = (await row(kitchen.username).getByTestId("staff-password").textContent())?.trim() ?? "";
   expect(fresh).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
@@ -110,6 +119,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
   await expect(back.page).toHaveURL(/\/waiter$/, { timeout: 30_000 });
 
   // The waiter changes their own password from the waiter screen.
+  await back.page.getByTestId("waiter-more").click();
   await back.page.getByTestId("change-password-open").click();
   const dialog = back.page.getByRole("dialog");
   await dialog.getByLabel("Նոր գաղտնաբառ (առնվազն 8 նիշ)").fill("Nine-Plums-42");

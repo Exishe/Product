@@ -17,7 +17,9 @@ import {
   type Selection,
 } from "./selection";
 import styles from "./guest.module.css";
-import { CloseIcon, Stepper, TagChip, Txt, dishPhotoUrl } from "./ui";
+import { ShieldAlert } from "./icons";
+import { QtyPill } from "./qty-pill";
+import { CloseIcon, MetaLine, isBadgeTag, orderTags, TagChip, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
 const NOTE_COUNTER_FROM = 160;
@@ -25,7 +27,12 @@ const NOTE_COUNTER_FROM = 160;
 // The item sheet: options with their rules, a note for the kitchen, quantity
 // and an add button with the live price. A native <dialog> gives focus
 // trapping, Escape and an inert page behind it. A bottom sheet on a phone, a
-// centred dialog from 768 px.
+// centred dialog from 768 px. ADR-094 area pass (benchmark §2.2): the price
+// under the 24 px title follows the chosen size; options are 52 px rows with
+// 22 px controls; the allergens are plain text on the sheet, not a box; and
+// everything a thumb needs is in the sticky footer: − n + on the left and
+// one 56 px «Add · total» that reads «Choose …» (and scrolls there) until the
+// required choices are made.
 export function DishSheet({
   item,
   canOrder,
@@ -47,7 +54,10 @@ export function DishSheet({
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
   const valid = isSelectionValid(item.groups, selection);
-  const price = unitPrice(item.price, item.groups, selection) * quantity;
+  const unit = unitPrice(item.price, item.groups, selection);
+  const price = unit * quantity;
+  // The first required group still without its choice (the add button says so).
+  const missing = valid ? undefined : item.groups.find((g) => (selection[g.id]?.length ?? 0) < g.min);
 
   // The sheet is keyed by dish, so this runs once per opening: a view.
   useEffect(() => {
@@ -73,110 +83,124 @@ export function DishSheet({
     <dialog
       ref={dialog}
       aria-labelledby="dish-sheet-title"
-      onClose={onClose}
+      // A close event that arrives while the dialog is open again is stale
+      // (React's dev double mount closes and reopens it): only a real close counts.
+      onClose={() => !dialog.current?.open && onClose()}
       onClick={(e) => {
         if (e.target === dialog.current) onClose(); // a tap on the backdrop
       }}
-      className={`bg-surface text-ink md:shadow-float mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[560px] rounded-t-[20px] md:rounded-[20px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
+      className={`bg-surface text-ink md:shadow-float rounded-t-guest-lg md:rounded-guest-lg mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-[560px] overflow-hidden border-0 p-0 backdrop:bg-black/55 md:m-auto md:max-h-[88dvh] md:w-[calc(100%-4rem)] ${styles.sheet}`}
     >
       <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-0 md:max-h-[88dvh] md:px-6">
         {/* A big photo across the top with a round × floating on it; without a photo
-            the × sits on its own above the name. */}
-        <div
-          className={`relative -mx-4 overflow-hidden md:-mx-6 ${item.image ? "bg-plate aspect-[16/10]" : "flex justify-end px-4 pt-3 md:px-6"}`}
-        >
-          {item.image && (
-            // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
-            <img
-              src={dishPhotoUrl(item.image)}
-              alt=""
-              width={800}
-              height={500}
-              className="size-full object-cover"
-            />
-          )}
-          <span aria-hidden="true" className="absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-white/85 md:hidden" />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("sheet.close")}
-            className={`text-ink bg-surface grid size-10 flex-none place-items-center rounded-full [&_svg]:size-4 ${
-              item.image ? "absolute top-3 right-3" : "relative"
-            }`}
-          >
-            <CloseIcon />
-          </button>
+            the × sits at the end of the name's row (ADR-096), no empty band. */}
+        {(() => {
+          const close = (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("sheet.close")}
+              className={`text-ink grid size-11 flex-none place-items-center rounded-full [&_svg]:size-4 ${
+                item.image ? "bg-surface absolute top-3 right-3" : "bg-chip -mr-1"
+              }`}
+            >
+              <CloseIcon />
+            </button>
+          );
+          return (
+            <>
+              <div
+                className={`relative -mx-4 overflow-hidden md:-mx-6 ${item.image ? "bg-plate aspect-[16/10]" : "h-3"}`}
+              >
+                {item.image && (
+                  // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                  <img
+                    src={dishPhotoUrl(item.image)}
+                    alt=""
+                    width={800}
+                    height={500}
+                    className="size-full object-cover"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-2 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full md:hidden ${item.image ? "bg-white/85" : "bg-line"}`}
+                />
+                {item.image && close}
+              </div>
+              <div className={`min-w-0 ${item.image ? "mt-4" : "mt-3 flex items-start gap-3"}`}>
+                <h2
+                  ref={title}
+                  id="dish-sheet-title"
+                  tabIndex={-1}
+                  className={`min-w-0 outline-none ${item.image ? "" : "flex-1 pt-1.5"}`}
+                >
+                  <Txt
+                    value={item.name}
+                    locale={locale}
+                    className="display-face text-headline block leading-[1.2] break-words hyphens-auto"
+                  />
+                </h2>
+                {!item.image && close}
+              </div>
+            </>
+          );
+        })()}
+        <div className="min-w-0">
+          <p className="num text-accent-text mt-1 text-name font-semibold" data-testid="sheet-price">
+            {formatAmd(unit, locale)}
+          </p>
         </div>
-        <div className="mt-4 flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h2 ref={title} id="dish-sheet-title" tabIndex={-1} className="min-w-0 outline-none">
-              <Txt
-                value={item.name}
-                locale={locale}
-                className="display-face block text-[1.125rem] leading-[1.25] break-words hyphens-auto"
-              />
-            </h2>
-            <p className="num text-accent-text mt-1 text-[15px] font-semibold">
-              {formatAmd(item.price, locale)}
-            </p>
-          </div>
-          {canOrder && (
-            <Stepper
-              value={quantity}
-              max={MAX_QUANTITY}
-              onChange={setQuantity}
-              labels={{
-                decrease: t("sheet.decrease"),
-                increase: t("sheet.increase"),
-                quantity: t("sheet.quantity"),
-              }}
-              button="size-10"
+        {(item.portion || item.tags.length > 0) && (
+          <p className="mt-2">
+            <MetaLine
+              parts={[
+                ...orderTags(item.tags).filter(isBadgeTag).map((tag) => (
+                  <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
+                )),
+                item.portion && t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount }),
+                ...item.tags
+                  .filter((tag) => !isBadgeTag(tag))
+                  .map((tag) => <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />),
+              ]}
             />
-          )}
-        </div>
-        <p className="text-muted mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-          {item.portion && (
-            <span className={styles.portion}>
-              {t(`menu.units.${item.portion.unit}`, { amount: item.portion.amount })}
-            </span>
-          )}
-          {item.tags.map((tag) => (
-            <TagChip key={tag} tag={tag} label={t(`menu.tags.${tag}`)} />
-          ))}
-        </p>
+          </p>
+        )}
         {item.description && (
           <Txt
             value={item.description}
             locale={locale}
             as="p"
-            className="text-muted mt-2 text-[13px] leading-relaxed"
+            className="text-muted mt-2 text-body leading-[1.45]"
           />
         )}
         {item.kcal !== null && (
-          <p className="num text-muted mt-2 text-[12px]" data-testid="kcal">
+          <p className="num text-muted mt-2 text-label" data-testid="kcal">
             {formatKcal(item.kcal, (value) => t("menu.kcal", { value }), locale)}
           </p>
         )}
         {/* Allergens as the café listed them; when it listed none, say so
             (an empty list is not "free of"), and always send serious
-            allergies to the waiter. */}
-        <p className="bg-chip text-muted mt-3 rounded-[12px] px-3 py-2.5 text-[12px] leading-snug" data-testid="allergens">
+            allergies to the waiter. Whose data it is goes once, on its own
+            line, small. */}
+        <div className="text-ink mt-4 flex gap-2.5 text-body leading-[1.45]" data-testid="allergens">
+          <ShieldAlert size={18} className="text-muted mt-[3px] flex-none" />
+          <div className="min-w-0">
           {item.allergens.length > 0 ? (
-            <>
-              <span className="text-ink font-semibold">
+            <p>
+              <span className="font-semibold">
                 {t("diet.contains", {
                   list: item.allergens.map((a) => t(`allergens.${a}`)).join(", "),
                 })}
               </span>{" "}
               {t("diet.tellWaiter")}
-            </>
-          ) : item.allergensConfirmed ? (
-            t("diet.sheetNoneDeclared")
+            </p>
           ) : (
-            t("diet.sheetNone")
-          )}{" "}
-          {t("diet.venueNote")}
-        </p>
+            <p>{item.allergensConfirmed ? t("diet.sheetNoneDeclared") : t("diet.sheetNone")}</p>
+          )}
+          <p className="text-muted mt-0.5 text-meta leading-[1.45]">{t("diet.venueNote")}</p>
+          </div>
+        </div>
 
         {item.groups.map((group) => {
           const chosen = selection[group.id] ?? [];
@@ -191,11 +215,16 @@ export function DishSheet({
             .filter(Boolean)
             .join(", ");
           return (
-            <fieldset key={group.id} className="mt-5 min-w-0" data-testid="option-group">
-              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-[14px] font-semibold">
+            <fieldset
+              key={group.id}
+              id={`group-${group.id}`}
+              className="mt-5 min-w-0 scroll-mt-4"
+              data-testid="option-group"
+            >
+              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-name font-semibold">
                 {group.name ? <Txt value={group.name} locale={locale} /> : <span />}
                 <span
-                  className={`rounded-[8px] px-1.5 py-0.5 text-[11px] ${group.min > 0 ? "bg-[#fbe9e0] text-[#8e3a1d] font-semibold" : "text-muted font-normal"}`}
+                  className={`text-label leading-[1.2] ${group.min > 0 ? "text-ink font-semibold" : "text-muted font-normal"}`}
                 >
                   {hint}
                 </span>
@@ -205,7 +234,7 @@ export function DishSheet({
                 return (
                   <label
                     key={m.id}
-                    className="border-line flex min-h-11 items-center gap-3 border-b text-[13px] has-disabled:opacity-60"
+                    className="border-line flex min-h-[52px] cursor-pointer items-center gap-3 border-b py-1.5 text-body has-disabled:opacity-60"
                   >
                     <input
                       type={single ? "radio" : "checkbox"}
@@ -214,16 +243,16 @@ export function DishSheet({
                       checked={on}
                       disabled={!on && group.max > 1 && chosen.length >= group.max}
                       onChange={() => setSelection((s) => toggleOption(s, group, m.id))}
-                      className="accent-accent size-[18px] flex-none"
+                      className="accent-accent size-[22px] flex-none"
                     />
                     <Txt value={m.name} locale={locale} className="min-w-0 flex-1" />
                     {asPrice ? (
-                      <span className="num text-muted text-[12px] whitespace-nowrap">
+                      <span className="num text-muted text-body whitespace-nowrap">
                         {formatAmd(item.price + m.delta, locale)}
                       </span>
                     ) : (
                       m.delta !== 0 && (
-                        <span className="num text-muted text-[12px] whitespace-nowrap">
+                        <span className="num text-muted text-body whitespace-nowrap">
                           {m.delta > 0 ? "+" : "−"}
                           {formatAmd(Math.abs(m.delta), locale)}
                         </span>
@@ -237,19 +266,19 @@ export function DishSheet({
         })}
 
         {canOrder && (
-          <label className="mt-5 grid gap-1.5 text-[14px] font-semibold" htmlFor="dish-note">
+          <label className="mt-5 grid gap-1.5 text-name font-semibold" htmlFor="dish-note">
             {t("sheet.note")}
             <textarea
               id="dish-note"
               value={note}
               maxLength={MAX_NOTE}
-              rows={2}
+              rows={1}
               placeholder={t("sheet.notePlaceholder")}
               onChange={(e) => setNote(e.target.value)}
-              className="rounded-field border-line-strong bg-surface min-h-[60px] resize-y border p-3 text-[13px] font-normal"
+              className="rounded-field border-line-strong bg-surface max-h-40 min-h-12 resize-none border px-3 py-2.5 text-base font-normal [field-sizing:content]"
             />
             {note.length >= NOTE_COUNTER_FROM && (
-              <span className="num text-muted justify-self-end text-[12px] font-normal" aria-live="polite">
+              <span className="num text-muted justify-self-end text-meta font-normal" aria-live="polite">
                 {note.length}/{MAX_NOTE}
               </span>
             )}
@@ -259,32 +288,53 @@ export function DishSheet({
         <div
           className={
             canOrder
-              ? "bg-surface border-line sticky bottom-0 -mx-4 mt-5 border-t px-4 pt-3 pb-[calc(14px+env(safe-area-inset-bottom,0px))] md:-mx-6 md:px-6 md:pb-5"
+              ? "bg-surface border-line sticky bottom-0 -mx-4 mt-5 border-t px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] md:-mx-6 md:px-6 md:pb-5"
               : "pb-[calc(24px+env(safe-area-inset-bottom,0px))]"
           }
         >
           {canOrder ? (
-            <div className="flex items-center gap-4">
-              <p className="grid flex-none leading-tight">
-                <span className="text-muted text-[12px]">{t("cart.total")}</span>
-                <span
-                  className="num text-[17px] font-semibold whitespace-nowrap"
-                  data-testid="sheet-total"
-                >
-                  {formatAmd(price, locale)}
-                </span>
-              </p>
+            <div className="flex items-center gap-3">
+              <QtyPill
+                value={quantity}
+                min={1}
+                max={MAX_QUANTITY}
+                size="lg"
+                valueLabel={t("sheet.quantity")}
+                decreaseLabel={t("sheet.decrease")}
+                increaseLabel={t("sheet.increase")}
+                onDecrease={() => setQuantity((n) => Math.max(1, n - 1))}
+                onIncrease={() => setQuantity((n) => Math.min(MAX_QUANTITY, n + 1))}
+              />
               <button
                 type="button"
-                disabled={!valid}
+                aria-disabled={!valid || undefined}
                 onClick={(e) => {
+                  if (missing) {
+                    // Not yet: show the guest which choice is missing.
+                    const at = document.getElementById(`group-${missing.id}`);
+                    at?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    at?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+                    return;
+                  }
                   sparkFrom(e.currentTarget);
                   flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className={`${styles.cta} flex min-h-12 min-w-0 flex-1 items-center justify-center gap-3 px-6 text-[14px] font-semibold`}
+                className={`${styles.cta} flex min-h-14 min-w-0 flex-1 items-center justify-center gap-2 px-4 text-body font-semibold aria-disabled:opacity-70`}
               >
-                {t("sheet.add")}
+                {missing ? (
+                  <span className="min-w-0 truncate">
+                    {t("sheet.chooseFirst", { name: missing.name?.text ?? t("sheet.required") })}
+                  </span>
+                ) : (
+                  <>
+                    {t("sheet.add")}
+                    <span aria-hidden="true">·</span>
+                    <span className="num whitespace-nowrap" data-testid="sheet-total">
+                      {formatAmd(price, locale)}
+                    </span>
+                  </>
+                )}
               </button>
             </div>
           ) : null}

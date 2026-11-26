@@ -120,7 +120,7 @@ test.describe("ordering at a fresh café", () => {
       await expect(order).toHaveAttribute("data-status", label, { timeout: 2_000 });
       console.log(`${info.project.name}: ${label} shown ${Date.now() - changed} ms after the kitchen's change`);
     }
-    await expect(page.getByTestId("tracker").getByText("Պատրաստ է, մատուցողը բերում է։")).toBeVisible();
+    await expect(page.getByTestId("tracker").getByText("Մատուցողը բերում է ձեր պատվերը։")).toBeVisible();
 
     // The cart is empty again; "order more" goes back to the menu at the same table.
     // The header's link (the recommended dishes below have one with the same words).

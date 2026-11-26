@@ -1,12 +1,141 @@
 {
   "brand": {
     "name": "Pativ",
-    "tagline": "Orders go from the guest's phone straight to the kitchen",
+    "tagline": "Orders go from the guest’s phone straight to the kitchen",
     "staffApp": "Kitchen screen and waiter tablet"
   },
+  "landing": {
+    "metaTitle": "Pativ: QR menu and ordering for cafés",
+    "metaDescription": "Guests scan the QR on the table, pick dishes, and the order appears on the kitchen screen and the waiter’s phone.",
+    "title": "Orders go from the guest’s phone straight to the kitchen",
+    "lead": "Runs on the phones you already have, no new devices. We build the menu in three languages from a photo of your paper one.",
+    "ctaDemo": "Open the demo menu",
+    "ctaSignup": "Add your café",
+    "trial": "The first month is free. No card needed.",
+    "signIn": "Sign in",
+    "nav": {
+      "pricing": "Pricing",
+      "signup": "Sign up"
+    },
+    "heroAlt": "The demo café’s menu on a guest’s phone",
+    "features": {
+      "title": "What’s in Pativ",
+      "menu": {
+        "tab": "Menu",
+        "title": "QR menu",
+        "text": "A menu with photos in three languages. Guests order from their own phone.",
+        "alt": "A dish open on the guest’s phone: a large photo, the price and an Add button with the total",
+        "p1": "Each dish opens with a large photo, its description and calories.",
+        "p2": "Guests pick the quantity, leave a note for the kitchen and see the total before adding.",
+        "p3": "Guests can call the waiter or ask for the bill from their phone."
+      },
+      "waiter": {
+        "tab": "Waiter",
+        "title": "Waiter app",
+        "text": "New orders, calls and bill requests, table by table.",
+        "alt": "The waiter app’s floor: nine tables, each coloured by what it needs",
+        "p1": "A table’s colour says what it needs: a new order, food to serve or the bill.",
+        "p2": "Under the number: how long the table has waited and its total so far.",
+        "p3": "Calls and bill requests ring, so nobody waves for long."
+      },
+      "kitchen": {
+        "tab": "Kitchen",
+        "title": "Kitchen screen",
+        "text": "Tickets arrive in order and turn red after 12 minutes.",
+        "alt": "The kitchen screen: an order waiting 13 minutes has turned red",
+        "note": "Each café picks its kitchen screen’s language: Armenian, Russian or English.",
+        "p1": "One tap moves a ticket on: New, Cooking, Ready.",
+        "p2": "The table that has waited longest is always shown at the top.",
+        "p3": "The cook can mark a dish as sold out, and guests can no longer order it."
+      },
+      "admin": {
+        "tab": "Admin",
+        "title": "Owner admin",
+        "text": "Menu, tables, staff and the day’s reports.",
+        "alt": "The owner admin’s menu on a phone: breakfast dishes with photos, prices and a Sold out today button",
+        "p1": "Every dish with its photo and price, section by section.",
+        "p2": "One tap on Sold out today hides a dish from guests, and the list clears in the morning.",
+        "p3": "Tables with their QR codes, staff logins and the day’s sales are here too."
+      }
+    },
+    "start": {
+      "title": "How to start",
+      "step1": {
+        "title": "Sign up",
+        "text": "Create an account and add your café. No card needed."
+      },
+      "step2": {
+        "title": "Add your menu",
+        "text": "Take photos of your paper menu. We read the dishes and prices and translate them, and you check everything before it goes live."
+      },
+      "step3": {
+        "title": "Print the QR codes",
+        "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
+      },
+      "why": {
+        "title": "Also built in",
+        "offline": {
+          "lead": "Works through Wi-Fi drops",
+          "text": "If the connection drops, the guest’s order waits on their phone and goes out by itself when it’s back."
+        },
+        "export": {
+          "lead": "Your data in Excel",
+          "text": "Download the menu, orders and bills as CSV files for Excel or Google Sheets."
+        },
+        "telegram": {
+          "lead": "Telegram alerts",
+          "text": "When a table waits too long, you and your team get a message."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "menu": {
+        "name": "Menu",
+        "price": "Free",
+        "term": "No time limit",
+        "note": "Guests see the menu but can’t order from it.",
+        "l1": "QR menu in three languages, with photos",
+        "l2": "Import from a photo of your paper menu",
+        "l3": "A sold-out list for the day",
+        "cta": "Start free"
+      },
+      "service": {
+        "name": "Service",
+        "price": "15 000 ֏",
+        "per": "a month",
+        "year": "or 150 000 ֏ a year, paid upfront",
+        "includes": "Everything in Menu, plus:",
+        "l1": "Ordering from the table",
+        "l2": "The waiter app and the kitchen screen",
+        "l3": "Telegram alerts",
+        "offer": "<b>The first month is free.</b>",
+        "founding": "<b>The first 10 cafés:</b> a free pilot, then 10 000 ֏ a month for the first year.",
+        "perks": "No card, no contract. In Yerevan we set it up in person, for free."
+      }
+    },
+    "footer": {
+      "copyright": "© 2026 Pativ · Yerevan",
+      "demo": "Demo menu",
+      "pair": "Connect a device",
+      "nav": "Links"
+    },
+    "proof": {
+      "text": "Every picture comes from Pativ Demo, our sample café.",
+      "link": "Open its menu as a guest"
+    },
+    "qr": {
+      "text": "Scan to open the demo menu on your phone.",
+      "alt": "QR code for the demo menu"
+    }
+  },
   "common": {
-    "notFound": "This page doesn't exist.",
-    "backHome": "Home"
+    "notFound": "This page doesn’t exist.",
+    "backHome": "Home",
+    "notFoundHint": "The link may be old or mistyped.",
+    "notFoundQr": "If you scanned a QR code at a café, ask the staff for a new one.",
+    "notFoundDemo": "Demo menu",
+    "notFoundSignIn": "Sign in"
   },
   "auth": {
     "login": {
@@ -15,36 +144,69 @@
       "password": "Password",
       "submit": "Sign in",
       "pending": "Checking…",
-      "error": "Wrong email, username or password.",
+      "error": "Wrong email, username or password. Check the keyboard language and Caps Lock.",
       "busy": "The server is busy right now. Try again in a few seconds.",
       "noAccount": "No account?",
-      "signupLink": "Sign up"
+      "signupLink": "Sign up",
+      "subtitle": "For owners and staff",
+      "pairLink": "Connect a device with a code",
+      "forgotLink": "Forgot your password?"
     },
     "signup": {
       "title": "Sign up",
       "name": "Your name",
       "email": "Email",
-      "password": "Password (at least 8 characters)",
+      "password": "Password",
       "submit": "Sign up",
       "pending": "Signing up…",
-      "error": "Couldn't sign up. There may already be an account with this email.",
+      "error": "Couldn’t sign up. There may already be an account with this email.",
       "haveAccount": "Already have an account?",
-      "loginLink": "Sign in"
+      "loginLink": "Sign in",
+      "subtitle": "Create an account, and then we’ll help you add your café and menu.",
+      "passwordHint": "At least 8 characters",
+      "trial": "The first month is free. No card needed."
+    },
+    "required": "Fill in this field.",
+    "emailFormat": "Check the email address.",
+    "showPassword": "Show password",
+    "forgot": {
+      "title": "Forgot your password?",
+      "staffTitle": "Waiter or kitchen login",
+      "staffText": "Ask the café owner. They set a new password in the admin, under Staff and devices.",
+      "ownerTitle": "Owner account",
+      "ownerText": "Enter your email, and we’ll send a link to set a new password.",
+      "email": "Email",
+      "submit": "Send the link",
+      "pending": "Sending…",
+      "sent": "If an account uses {email}, the link is on its way. Check your inbox, and the spam folder too.",
+      "error": "Couldn’t send the link. Wait a minute and try again.",
+      "back": "Back to sign-in"
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Use at least 8 characters.",
+      "password": "New password",
+      "again": "Repeat the password",
+      "submit": "Save and sign in",
+      "pending": "Saving…",
+      "checking": "Checking the link…",
+      "expiredTitle": "This link no longer works",
+      "expired": "It has expired or was already used. Ask for a new one and it will arrive by email.",
+      "newLink": "Get a new link",
+      "error": "Couldn’t save the password. Try again."
     }
   },
   "admin": {
     "home": {
-      "welcome": "Welcome, {name}",
+      "welcome": "Welcome",
       "date": "{date}, {time}",
       "today": "Today so far",
       "allSales": "All sales",
       "noSales": "Couldn't load today's sales. Open “All sales” to try again.",
-      "todo": "To do",
-      "allSet": "Nothing to do right now: the menu is published, tables and devices are set up.",
       "notPublished": "The menu isn't published yet. Guests can't see it.",
       "unpublished": "The menu has changes guests don't see yet. Publish them.",
       "noTables": "No tables yet. Add them to print the QR codes.",
-      "noDevices": "No kitchen or waiter device is paired yet.",
+      "noDevices": "The waiter and the kitchen haven't signed in yet.",
       "noPhotos": "{count, plural, one {# dish has} other {# dishes have}} no photo. Dishes with a photo get ordered more.",
       "stopList": "{count, plural, one {# dish is} other {# dishes are}} sold out today.",
       "ordering": "Guest orders",
@@ -57,13 +219,18 @@
       "rewards": "Game rewards",
       "rewardsHint": "A guest who reaches a level in a game while waiting earns a reward. Your waiter sees it at the table and gives it. Prices don't change.",
       "sounds": "Sounds",
-      "soundsHint": "Choose the sound for new kitchen orders and for guest calls. Press Listen to hear it."
+      "soundsHint": "Choose the sound for new kitchen orders and for guest calls. Press Listen to hear it.",
+      "settings": "Settings",
+      "alertsValue": "{minutes} min wait or {calls, plural, one {# call} other {# calls}}",
+      "soundsValue": "Kitchen: {order} · Waiter: {call}",
+      "rewardsOn": "On",
+      "rewardsOff": "Off",
+      "allClear": "All clear: nothing to do, and no table is waiting."
     },
     "controls": {
       "orderingOn": "Guests can order.",
       "pausedUntil": "Ordering is paused until {time}.",
       "pausedNoEnd": "Ordering is paused until you resume it.",
-      "resume": "Resume ordering",
       "howLong": "For how long?",
       "minutes": "{count} min",
       "untilResume": "Until I resume",
@@ -71,15 +238,15 @@
       "minutesInvalid": "Enter a number of minutes from 1 to 720.",
       "pause": "Pause",
       "cancel": "Cancel",
-      "pauseOrdering": "Pause ordering",
       "pauseHint": "Guests can still read the menu. Orders already sent are not affected.",
-      "kitchenOpen": "The kitchen is taking orders.",
       "closedUntil": "The kitchen is closed for today. Orders open again at {time}.",
-      "reopen": "Reopen the kitchen",
-      "closeKitchen": "Close kitchen for today",
       "closeConfirm": "Guests won't be able to order until the next opening. Close the kitchen for today?",
       "closeYes": "Yes, close",
-      "failed": "Couldn't save that. Check the connection and try again."
+      "failed": "Couldn't save that. Check the connection and try again.",
+      "segmentLabel": "Guest orders",
+      "segOn": "Taking orders",
+      "segPaused": "Paused",
+      "segClosed": "Closed today"
     },
     "promos": {
       "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
@@ -124,7 +291,7 @@
       "turnOff": "Turn off",
       "kind": "Reward",
       "kindPercent": "Percent off",
-      "kindText": "A gift or offer",
+      "kindText": "Gift or offer",
       "level": "Guest reaches level",
       "levelHint": "From {min} to {max}. The higher, the harder.",
       "percent": "Discount, %",
@@ -165,7 +332,7 @@
   },
   "staff": {
     "title": "Staff and devices",
-    "people": "People",
+    "people": "Owner and managers",
     "devices": "Devices",
     "roles": {
       "owner": "Owner",
@@ -191,16 +358,13 @@
     "lastSeen": "Last seen {time}",
     "neverSeen": "Not connected yet",
     "error": "That didn't work. Try again.",
-    "colName": "Name",
-    "colStatus": "Status",
-    "colAction": "Action",
     "active": "Active",
-    "noDevices": "No devices are connected. Get a code below and enter it on the kitchen screen or the waiter tablet.",
+    "noDevices": "No devices are connected. Tap Connect and enter the code on the kitchen screen or the waiter tablet.",
     "inviteRole": "Role",
     "copy": "Copy the link",
     "copied": "The link is copied",
     "logins": {
-      "title": "Staff logins",
+      "title": "Waiters and kitchen",
       "intro": "Each screen signs in with a username and a password. Your café already has one waiter login and one kitchen login. You never have to change anything.",
       "empty": "No logins yet.",
       "colLogin": "Login",
@@ -212,21 +376,21 @@
       "neverSignedIn": "Never signed in",
       "switchOff": "Switch off",
       "switchOn": "Switch on",
-      "setPassword": "Set a new password",
-      "passwordOwn": "Your own password (at least 8 characters)",
+      "setPassword": "New password",
+      "passwordOwn": "Password (at least 8 characters)",
       "passwordOwnHint": "Leave empty and we will make one for you.",
       "save": "Set the password",
       "passwordShown": "New password for {username}. Write it down now: it is shown only once.",
       "passwordSaved": "The password is saved.",
       "username": "Username",
       "password": "Password",
-      "createTitle": "Add a login",
+      "createTitle": "Add a staff member",
       "createRole": "For",
       "createWaiter": "Waiter",
       "createKitchen": "Kitchen",
       "createStation": "Kitchen station",
-      "createEnding": "End of the username (optional)",
-      "createEndingHint": "The username will be {prefix}-…",
+      "createEnding": "Username",
+      "createEndingHint": "Leave it empty and we'll pick one. Latin letters, digits or a hyphen only.",
       "createSubmit": "Create the login",
       "created": "The login is created.",
       "errors": {
@@ -237,7 +401,13 @@
       },
       "copyPassword": "Copy the password",
       "copied": "The password is copied"
-    }
+    },
+    "addPerson": "Add a staff member",
+    "inviteOpen": "Invite by email",
+    "close": "Close",
+    "inviteShort": "Invite",
+    "pairShort": "Connect",
+    "noDevicesOptional": "No devices are connected, and none are needed: the waiter and the kitchen sign in with their own logins. To connect a tablet without a password, tap Connect."
   },
   "staffAccount": {
     "changePassword": "Change password",
@@ -253,17 +423,21 @@
     "error": "That didn't work. Try again, or sign in again first."
   },
   "pair": {
-    "title": "Connect this device",
+    "title": "Connect a device",
     "code": "Six-digit code",
     "submit": "Connect",
     "pending": "Connecting…",
     "disconnected": "This device was disconnected. Enter a new code to connect it again.",
     "errors": {
       "invalid_pairing_code": "The code is wrong or has expired.",
-      "rate_limited": "Too many tries. Try again in 10 minutes.",
-      "anonymous_session_required": "This device is signed in to a personal account. Sign out first.",
-      "failed": "Couldn't connect. Try again."
-    }
+      "rate_limited": "Too many tries. Wait 10 minutes and enter the code again.",
+      "anonymous_session_required": "A personal account is open on this device. Sign out of it first.",
+      "failed": "Couldn’t connect. Try again.",
+      "format": "Enter 6 digits."
+    },
+    "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
+    "note": "The device opens as the kitchen screen or the waiter app, depending on the code.",
+    "loginLink": "Sign in with a username or email instead"
   },
   "invite": {
     "title": "Join the team",
@@ -292,10 +466,10 @@
       "ack": "Got it",
       "more": "+{count}"
     },
-    "empty": "Nothing here yet.",
     "ticket": {
       "table": "Table",
       "tableLabel": "Table {table}",
+      "orderLabel": "Order {number}",
       "noTable": "Order",
       "order": "Order {number}, {source}",
       "source": {
@@ -326,14 +500,18 @@
         "pcs": "{amount} pcs"
       },
       "hours": "{hours} h",
-      "allergy": "Allergy: read the note",
       "cantMake": "Can't make",
       "cantMakeAsk": "Can't make {name}? The guest will be told.",
       "cantMakeYes": "Yes, can't make it",
       "cantMakeNo": "Back",
       "cantMakeFailed": "That didn't work. Try again.",
       "cantMakePaid": "This order is already paid. Tell the waiter.",
-      "cantMakeForbidden": "Food that was served is for a manager to cancel."
+      "cantMakeForbidden": "Food that was served is for a manager to cancel.",
+      "allergyNote": "Allergy: {note}",
+      "allergyLine": "{note} ({dish})",
+      "allergyMark": "Allergy",
+      "cantMakeLabel": "Can't make {name}",
+      "readyFor": "Ready: {time}"
     },
     "connection": {
       "online": "Online",
@@ -355,7 +533,8 @@
         "mid": "Middle",
         "low": "Low"
       },
-      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound."
+      "toneHint": "Give screens that stand side by side different sounds. Allergy orders and cancellations have their own sound.",
+      "confirmEnd": "End shift?"
     },
     "conflict": "Already changed",
     "actionFailed": "That didn't work. The screen has been refreshed.",
@@ -389,7 +568,9 @@
       "title": "All day",
       "quantity": "{quantity}×",
       "plain": "{quantity} plain",
-      "empty": "Nothing to cook."
+      "moreVariants": "+{count}",
+      "moreVariantsLabel": "and {count, plural, one {# more option} other {# more options}}",
+      "next": "More dishes"
     },
     "ingredients": {
       "button": "Ingredient out",
@@ -405,7 +586,14 @@
       "failed": "That didn't work. Check the connection and try again.",
       "close": "Close"
     },
-    "oldest": "Waiting longest"
+    "oldest": "Waiting longest",
+    "columnEmpty": {
+      "new": "No new orders",
+      "cooking": "Nothing cooking",
+      "ready": "Nothing ready"
+    },
+    "tools": "Tools",
+    "more": "More tools"
   },
   "waiter": {
     "alert": {
@@ -420,6 +608,7 @@
     "floorMap": "Floor map",
     "areas": "Areas",
     "otherArea": "Other tables",
+    "areaNeeds": "{count, plural, one {# table waiting} other {# tables waiting}}",
     "need": "Waiting: {count, plural, one {# table} other {# tables}}",
     "allServed": "Everyone is looked after",
     "state": {
@@ -442,7 +631,7 @@
       "free": "Free",
       "freeHint": "Guests can order with the QR code, or you can take the order.",
       "openFor": "Open for {minutes} min",
-      "pick": "Pick a table on the map.",
+      "pickRow": "Pick a row to see the table.",
       "callAgo": "Called {minutes} min ago",
       "callNow": "Calling right now",
       "going": "On my way",
@@ -451,10 +640,15 @@
       "billCash": "Bill: cash",
       "total": "Total",
       "addOrder": "Add an order",
-      "takeOrder": "Take an order",
-      "close": "Close the table",
+      "takeOrder": "Take order",
+      "close": "Close the bill",
       "closeBlocked": "Accept or reject the new order first.",
-      "noOrders": "No orders yet."
+      "noOrders": "No orders yet.",
+      "now": "Now",
+      "allClear": "All good.",
+      "pendingTotal": "waiting: {amount}",
+      "pendingSuffix": "not accepted yet",
+      "acceptOrder": "Accept order {number}"
     },
     "waiting": {
       "title": "Table {label}: new guests?",
@@ -534,6 +728,8 @@
       "soldOut": "Sold out",
       "less": "One fewer {name}",
       "more": "One more {name}",
+      "rowLess": "One less: {name}",
+      "rowMore": "One more: {name}",
       "options": "Choose",
       "required": "required",
       "addWithOptions": "Add",
@@ -544,7 +740,9 @@
       "close": "Close",
       "sent": "Table {label}: order sent.",
       "queued": "No connection. The order will go out when it's back.",
-      "addItem": "<hidden>Add </hidden><dish>{name}</dish>"
+      "addItem": "<hidden>Add </hidden><dish>{name}</dish>",
+      "overline": "New order",
+      "items": "{count, plural, one {# dish} other {# dishes}}"
     },
     "settle": {
       "title": "How did they pay?",
@@ -596,7 +794,13 @@
       "ago": "{minutes} min ago",
       "now": "just now",
       "action": "{action}, table {label}",
-      "closeBill": "Close the bill"
+      "closeBill": "Close the bill",
+      "quick": {
+        "accept": "Accept",
+        "serve": "Mark served",
+        "going": "On my way",
+        "settle": "Close the bill"
+      }
     },
     "quiet": "quiet {time}",
     "timeline": {
@@ -638,6 +842,8 @@
       "open": "My shift",
       "title": "My shift",
       "subtitle": "Business day {date}. Only what you recorded.",
+      "money": "Payments",
+      "work": "Work",
       "tables": "Tables closed",
       "cash": "Cash to hand over",
       "card": "Paid by card",
@@ -669,15 +875,27 @@
     },
     "alerts": {
       "region": "Calls from tables",
-      "call": "Table {label} is calling the waiter",
-      "bill": "Table {label} asks for the bill",
+      "call": "Table {label} is calling",
+      "bill": "Table {label} wants the bill",
       "more": "and {count} more",
       "close": "Close",
       "open": "Open the table",
       "soundOff": "Turn on sound",
       "soundOn": "Sound on",
       "soundOnTest": "Sound on. Tap to hear it.",
-      "notificationBody": "Open the waiter app"
+      "notificationBody": "Open the waiter app",
+      "sound": "Sound",
+      "summary": "{count, plural, one {# table} other {# tables}} calling",
+      "openShort": "Open"
+    },
+    "more": "More",
+    "stateShort": {
+      "free": "Free",
+      "busy": "Seated",
+      "new": "New",
+      "ready": "Ready",
+      "call": "Calling",
+      "bill": "Bill"
     },
     "pos": {
       "sent": "Sent to the POS",
@@ -720,7 +938,7 @@
     "prepArea": "Prepared at",
     "prepAreaDefault": "Same as section",
     "optionGroups": "Options",
-    "manageOptions": "Manage options",
+    "manageOptions": "Options and add-ons",
     "tags": "Tags",
     "tag": {
       "popular": "Popular",
@@ -817,7 +1035,7 @@
       "priceChange": "Price change, AMD",
       "priceHint": "Use a minus sign to lower the price. Leave empty for no change.",
       "needReplacement": "Choose a replacement first.",
-      "save": "Save",
+      "save": "Save ingredient",
       "saved": "Saved",
       "saveFailed": "Could not save. Try again.",
       "invalidAmount": "Enter an amount above zero.",
@@ -834,7 +1052,6 @@
       "kcalPer100": "Calories, kcal per 100 {unit}",
       "gramsPerPiece": "Weight of one piece, g",
       "kcalHint": "Applies to every dish that uses this ingredient. Guests see the change after you publish.",
-      "kcalSave": "Save calories",
       "invalidKcal": "Enter calories from 0 to 1000.",
       "invalidPiece": "Enter a weight above zero.",
       "kcalShown": "Guests will see ≈ {value} kcal per portion after you publish.",
@@ -842,7 +1059,28 @@
       "weightMissing": "Add the weight of one piece for {names} to show a number.",
       "kcalNone": "Calories per portion"
     },
-    "managePairings": "Goes well with"
+    "managePairings": "Dishes that go well together",
+    "more": "More",
+    "importPhoto": "Import from a photo",
+    "settingsTitle": "Menu settings",
+    "photoAndPrice": "Photo and price",
+    "translations": "Translations",
+    "translationsMissing": "Some are missing",
+    "onMenu": "On the menu",
+    "shownOnMenu": "Show on the menu",
+    "shownOnMenuHint": "Saved at once; guests see it after you publish. If the dish is only out today, tap “Sold out today” in the list.",
+    "position": "Place in the list",
+    "dishUp": "Higher",
+    "dishDown": "Lower",
+    "toggleFailed": "Couldn't save. Check the connection and try again.",
+    "hiddenToast": "“{name}” hidden. Guests see it after you publish.",
+    "shownToast": "“{name}” is back on the menu. Guests see it after you publish.",
+    "soldOutToast": "“{name}”: sold out today.",
+    "soldOutHint": "If a dish is out today, tap <icon></icon>.",
+    "backToast": "“{name}” is available again.",
+    "undo": "Undo",
+    "positionDish": "Place in the section",
+    "editOptions": "Edit options"
   },
   "print": {
     "button": "Print ticket",
@@ -966,9 +1204,9 @@
     "save": "Save",
     "cancel": "Cancel",
     "saving": "Saving…",
-    "reprint": "Reprint QR",
+    "reprint": "New QR code",
     "reprintWarning": "This table's old QR code will stop working. You'll need to print and stick on the new one.",
-    "reprintConfirm": "Yes, reprint",
+    "reprintConfirm": "Yes, make a new code",
     "reprinted": "The new QR code is ready and the old one no longer works. Print it and stick it on.",
     "printOne": "Print",
     "printAll": "Print all QR codes",
@@ -985,7 +1223,8 @@
       "empty": "Nothing to print yet. Add tables first.",
       "notPublished": "The menu isn't published yet. Until it is, guests won't see a menu when they scan.",
       "sheet": "Sheet {n}"
-    }
+    },
+    "reprintHint": "Only if the code is lost or damaged. The old code on the table will stop working."
   },
   "qrCard": {
     "table": "Table",
@@ -1016,6 +1255,9 @@
       "searchPlaceholder": "Search",
       "categories": "Menu sections",
       "noResults": "No dish matches that. Try another word.",
+      "noResultsTitle": "No dish matches that",
+      "noResultsHint": "Try another word.",
+      "clearSearch": "Clear search",
       "soldOut": "Not today",
       "add": "Add {name}",
       "added": "Added: {name}",
@@ -1023,7 +1265,7 @@
       "viewOrder": "View order",
       "items": "{count, plural, one {# item} other {# items}}",
       "orderingOff": "Right now your waiter takes the orders.",
-      "noTable": "To order from your phone, scan the QR code on your table.",
+      "noTable": "Order with the table’s QR",
       "badTable": "This QR code no longer works. Ask your waiter for help.",
       "kitchenBusy": "The kitchen is busy right now. Your order will take about {minutes} minutes.",
       "kitchenBusyNoTime": "The kitchen is busy right now, so your order may take longer.",
@@ -1037,7 +1279,7 @@
         "vegan": "vegan",
         "spicy": "spicy",
         "new": "new",
-        "popular": "popular",
+        "popular": "Popular",
         "vegetarian": "vegetarian",
         "gluten_free": "gluten-free",
         "lactose_free": "lactose-free",
@@ -1063,7 +1305,11 @@
       "closedToday": "The kitchen is closed for today.",
       "promoLabel": "Offer",
       "promoClose": "Close this offer",
-      "kcal": "≈ {value} kcal"
+      "kcal": "≈ {value} kcal",
+      "loadFailedTitle": "The menu didn't open",
+      "loadFailedBody": "Check your connection and reload the page. If that doesn't help, ask your waiter.",
+      "reload": "Reload",
+      "loading": "Opening the menu…"
     },
     "sheet": {
       "required": "Required",
@@ -1072,6 +1318,7 @@
       "note": "Note for the kitchen",
       "notePlaceholder": "For example, no onion",
       "add": "Add",
+      "chooseFirst": "Choose {name}",
       "close": "Close",
       "quantity": "Quantity",
       "decrease": "Decrease quantity",
@@ -1122,7 +1369,7 @@
         "duplicate": "Someone at your table already ordered the same dishes. Your waiter will confirm.",
         "accepted": "Accepted. The kitchen will start on it soon.",
         "cooking": "The kitchen is cooking it now.",
-        "ready": "Ready. Your waiter is bringing it.",
+        "ready": "Your waiter is bringing your order.",
         "served": "Enjoy your meal.",
         "paid": "Thank you."
       },
@@ -1151,7 +1398,7 @@
       "retryRequest": "Try again",
       "orderMore": "Order more",
       "showcase": "From the menu",
-      "recommended": "Recommended for you",
+      "recommended": "You could add",
       "recPrev": "Previous dish",
       "recNext": "Next dish",
       "status": "Order status",
@@ -1181,7 +1428,7 @@
     },
     "games": {
       "title": "Games while you wait",
-      "subtitle": "While the kitchen makes your order.",
+      "subtitle": "Short games, nothing to download.",
       "start": "Start",
       "loading": "Loading…",
       "loadFailed": "The game didn't load. Check your connection and try again.",
@@ -1217,6 +1464,8 @@
       },
       "sound": "Sound",
       "play": "Play",
+      "prev": "Previous game",
+      "next": "Next game",
       "fab": "Play while you wait",
       "cooking": "Your order is being made",
       "soundOff": "Turn sound on",
@@ -1242,7 +1491,7 @@
     },
     "panel": {
       "empty": "Add dishes and they appear here.",
-      "sent": "Orders already sent"
+      "sent": "Track your order"
     },
     "allergens": {
       "gluten": "gluten",
@@ -1267,12 +1516,12 @@
       "hint": "We'll mark dishes that list these allergens, and dishes whose allergens aren't listed.",
       "done": "Done",
       "clear": "Clear",
-      "contains": "Contains {list}",
+      "contains": "Contains {list}.",
       "unknown": "Allergens not listed. Ask your waiter.",
       "active": "Marking dishes with {list}.",
-      "tellWaiter": "Tell your waiter about any allergy so the kitchen can check.",
-      "sheetNone": "Allergens aren't listed for this dish. If you have an allergy, tell your waiter.",
-      "sheetNoneDeclared": "No allergens declared by the venue.",
+      "tellWaiter": "Have an allergy? Tell your waiter.",
+      "sheetNone": "Allergens aren't listed. If you have an allergy, tell your waiter.",
+      "sheetNoneDeclared": "No allergens declared.",
       "filtersTitle": "Filters",
       "showOnly": "Show only",
       "chip": {
@@ -1300,6 +1549,7 @@
       "noThanks": "No thanks",
       "reason": {
         "pairs_with_dish": "Goes well with {name}",
+        "pairs_with_dish_short": "With {name}",
         "often_together": "Often ordered together",
         "time_rule": "A good pick right now",
         "generic": "Goes well with your order"
@@ -1327,7 +1577,7 @@
   "telegram": {
     "title": "Telegram alerts",
     "intro": "By default only exceptions arrive: late orders, a screen offline, a cancellation after serving and the day summary. You can turn on an alert for every new order below.",
-    "botNotReady": "The Telegram bot isn't ready yet. Meanwhile you can turn on notifications on this phone.",
+    "botNotReady": "The Telegram bot isn't ready yet. Meanwhile you can turn on notifications on this device.",
     "connectTitle": "New chat",
     "connectHint": "You'll get a one-time link. Open it in Telegram and press Start.",
     "connect": "Connect Telegram",
@@ -1365,14 +1615,14 @@
     "error": "That didn't work. Please try again."
   },
   "push": {
-    "title": "Notifications on this phone",
-    "hint": "No Telegram? The same alerts can come through your phone's browser.",
-    "turnOn": "Turn on for this phone",
-    "turnOff": "Turn off for this phone",
-    "on": "On for this phone.",
+    "title": "Notifications on this device",
+    "hint": "No Telegram? The same alerts can come through this device's browser.",
+    "turnOn": "Turn on for this device",
+    "turnOff": "Turn off for this device",
+    "on": "On for this device.",
     "unsupported": "This browser can't receive notifications.",
     "install": "On an iPhone, first add the admin to the Home Screen (Share → Add to Home Screen), then open it from there.",
-    "unconfigured": "Phone notifications aren't available yet.",
+    "unconfigured": "Notifications aren't available on this device yet.",
     "denied": "Notifications are blocked in the browser settings.",
     "error": "Couldn't turn them on. Please try again."
   },
@@ -1380,15 +1630,18 @@
     "label": "Admin sections",
     "dashboard": "Sales",
     "menu": "Menu",
-    "import": "Import from a photo",
     "tables": "Tables and QR",
-    "staff": "Staff and devices",
-    "telegram": "Telegram",
-    "pos": "POS connection",
-    "export": "Export",
+    "staff": "Staff",
+    "telegram": "Notifications",
     "platform": "Platform",
     "look": "Guest page look",
-    "reports": "Reports"
+    "home": "Home",
+    "open": "Pages",
+    "close": "Close",
+    "pos": "POS",
+    "language": "Language",
+    "signOut": "Sign out",
+    "account": "Account"
   },
   "billing": {
     "planName": {
@@ -1430,8 +1683,7 @@
         "closedAt": "Closed",
         "payments": "Payments"
       },
-      "colData": "Data",
-      "colFile": "File"
+      "downloadAs": "Download {format}"
     }
   },
   "dashboard": {
@@ -1440,7 +1692,8 @@
       "today": "Today",
       "yesterday": "Yesterday",
       "7d": "7 days",
-      "30d": "30 days"
+      "30d": "30 days",
+      "custom": "Other dates"
     },
     "rangeLabel": "Period",
     "from": "From",
@@ -1461,7 +1714,6 @@
     "deltaDown": "↓ {pct} %",
     "deltaSame": "No change",
     "openTables": "Open tables",
-    "openTablesValue": "{count, plural, one {# table} other {# tables}}, {total}",
     "openTablesHint": "Not in the revenue until the bill is closed.",
     "best": "Best dishes",
     "bestHint": "By revenue",
@@ -1486,6 +1738,8 @@
     "kitchenHint": "From the ticket to “Ready”",
     "kitchenAvg": "{minutes} min on average",
     "kitchenOver": "{over} of {tickets} over 20 min",
+    "kitchenNoneOver": "No order waited over 20 min",
+    "notOrdered": "Not ordered",
     "defaultStation": "Kitchen",
     "noKitchen": "No dishes were marked ready.",
     "cancellations": "Cancellations",
@@ -1508,7 +1762,11 @@
       "doneExcluded": "Left out {count, plural, one {# order} other {# orders}}.",
       "doneIncluded": "Counted again: {count, plural, one {# order} other {# orders}}.",
       "failed": "Couldn't change the orders. Try again."
-    }
+    },
+    "reports": "Reports",
+    "soFarBusinessDay": "Business day {date}: {start} to {time}",
+    "more": "More",
+    "noCompareAll": "Nothing to compare yet: there were no orders in the same period before."
   },
   "platform": {
     "title": "Cafés",
@@ -1543,19 +1801,20 @@
     "title": "Guest page look",
     "intro": "Choose how guests see your menu when they scan the QR code. The order and order status pages follow it.",
     "theme": "Theme",
-    "recommended": "Recommended",
+    "recommended": "Suggested",
+    "themeLine": "<b>{name}</b>: {hint}",
     "themes": {
       "evening": {
         "name": "Evening",
-        "hint": "Ivory page, black buttons, champagne details"
+        "hint": "ivory page, black buttons, champagne details"
       },
       "wine": {
         "name": "Wine",
-        "hint": "Dark wine page, burgundy cards and one bright red"
+        "hint": "dark wine page, burgundy cards and one bright red"
       },
       "soft": {
         "name": "Pure",
-        "hint": "Light grey page, white cards, dark plates and one amber accent"
+        "hint": "light grey page, white cards, dark plates and one amber accent"
       }
     },
     "previewTitle": "Menu",
@@ -1579,7 +1838,7 @@
       "title": "Brand",
       "intro": "Your own look on top of the theme: colours, fonts, plates and photos from your logo, website or menu. Anything you leave empty keeps the theme's.",
       "colors": "Brand colours",
-      "colorsHint": "Up to five colours. Each one has one job on the guest page.",
+      "colorsHint": "Up to five colours. Each one has one job on the guest page. Turn a switch on to pick your own colour; turn it off to go back to the theme's.",
       "roles": {
         "header": {
           "name": "Header and buttons",
@@ -1640,15 +1899,20 @@
       "previewPrice": "2 900 ֏",
       "previewAdd": "Add",
       "covers": "Section covers",
-      "coversHint": "A wide photo at the top of a section. It is saved at once: guests see it without publishing the menu again.",
+      "coversHint": "A wide photo at the top of a section. Saved at once, no Save needed.",
       "coverChoose": "Add a cover",
       "coverChange": "Change",
       "coverRemove": "Remove the cover for “{section}”",
       "coversEmpty": "There are no sections yet. Add them in the menu editor.",
       "coverSaved": "Cover saved",
       "untitled": "Section without a name",
-      "pending": "Brand settings start working after the next database update."
-    }
+      "pending": "Brand settings start working after the next database update.",
+      "readsWell": "Easy to read",
+      "readsPoorly": "Hard to read",
+      "themeColor": "now the theme's colour",
+      "previewClose": "Close"
+    },
+    "allSaved": "Saved"
   },
   "insights": {
     "title": "Menu analysis",
@@ -1668,7 +1932,7 @@
       "none": "No dishes here.",
       "sold": "{qty} sold",
       "perPortion": "{amount} per portion",
-      "more": "And {count} more",
+      "more": "Show {count} more",
       "star": {
         "title": "Ordered often, earn well",
         "action": "Keep them as they are and show them first in the section.",
@@ -1688,7 +1952,8 @@
         "title": "Ordered rarely, earn little",
         "action": "Think about taking them off the menu or reworking them.",
         "name": "Dogs"
-      }
+      },
+      "open": "Menu analysis"
     },
     "heatmap": {
       "title": "When you're busy",
@@ -1726,7 +1991,7 @@
     "unavailable": "This report isn't available yet. Try again later.",
     "defaultPeriod": "Last 30 days by default",
     "conversion": {
-      "title": "Viewed but not ordered",
+      "title": "From view to order",
       "hint": "For each dish: how often guests opened it, added it to the cart and ordered it. The share ordered is the share of views that became orders. Only guest orders made by QR count.",
       "empty": "No views in this period yet. They appear once guests open dishes in the menu.",
       "flaggedTitle": "Worth a look",
@@ -1744,7 +2009,11 @@
         "low_share": "{views, plural, one {# view} other {# views}}, {orders, plural, one {# order} other {# orders}}: check its photo or price.",
         "ok": "Ordered about as often as you'd expect.",
         "few_views": "Too few views to judge yet."
-      }
+      },
+      "fewViewsNote": "“–”: too few views to judge yet.",
+      "shareLaterNote": "The share who ordered appears once dishes have more views.",
+      "metaLine": "{views} views · {adds} added · {orders} ordered",
+      "showAll": "Show all ({count})"
     },
     "busy": {
       "title": "Busy hours",
@@ -1784,11 +2053,9 @@
       "hint": "The dishes guests saw under \"You might also like\" after adding a dish.",
       "empty": "No suggestions were shown in this period yet.",
       "shown": "Shown",
-      "accepted": "Accepted",
-      "rate": "Share accepted",
-      "rateHint": "of the suggestions shown",
-      "orders": "Orders with an accepted suggestion",
-      "revenue": "Sales from accepted suggestions",
+      "acceptedCount": "Accepted: {count}",
+      "noneAccepted": "Shown {shown, plural, one {# time} other {# times}}, nobody has accepted one yet.",
+      "revenue": "Sales",
       "note": "An order counts when the same phone placed it within 2 hours of accepting. Guests who haven't joined a table yet can't be matched to an order, so the real numbers may be higher.",
       "pairs": "Most shown suggestions",
       "pairRow": "{from} → {item}: shown {shown}, accepted {accepted}"
@@ -1825,7 +2092,10 @@
       "proposalsTitle": "Kinds we guessed from your section names. Untick what is wrong.",
       "proposalsEmpty": "Nothing to suggest. Either every dish already has a kind, or the section names are not clear enough.",
       "apply": "Save {count, plural, one {# kind} other {# kinds}}",
-      "applied": "Kinds saved: {count}"
+      "applied": "Kinds saved: {count}",
+      "dishCount": "{count, plural, one {# dish} other {# dishes}}",
+      "untyped": "{count} without a kind",
+      "suggestShort": "Suggest"
     },
     "pairings": {
       "title": "Your own pairings",
@@ -1844,7 +2114,10 @@
       "hint": "Under each kind, tick what we may suggest next. Your own pairings ignore this table.",
       "after": "When a guest adds: {kind}",
       "changed": "Changed",
-      "reset": "Reset to defaults"
+      "reset": "Reset to defaults",
+      "intro": "When a guest adds:",
+      "count": "{count, plural, one {# type} other {# types}}",
+      "resetShort": "Reset"
     },
     "timeRules": {
       "title": "By time of day",
@@ -1945,7 +2218,8 @@
       "save": "Save",
       "saved": "Saved.",
       "failed": "Couldn't save. Please try again.",
-      "note": "Each screen plays its sound after the staff member taps “Sound on” once."
+      "note": "Each screen plays its sound after the staff member taps “Sound on” once.",
+      "loudName": "{name} (loud)"
     }
   },
   "pos": {
@@ -2011,7 +2285,7 @@
     "saveMatches": "Save matching",
     "matchesSaved": "Matching saved.",
     "activeTitle": "Sending",
-    "activeOn": "Accepted orders go to the POS",
+    "activeOn": "Orders go to the POS",
     "activeOff": "Off: orders don't go to the POS",
     "turnOn": "Turn on",
     "turnOff": "Turn off",
