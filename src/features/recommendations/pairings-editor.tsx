@@ -1,11 +1,11 @@
 "use client";
 
-import { Lightbulb, Plus, RotateCcw, X } from "lucide-react";
+import { ChevronDown, Lightbulb, Plus, RotateCcw, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
 import { Notice, Section } from "@/features/admin-ui/page";
 import { useToast } from "@/features/admin-ui/toast";
-import { button, check, chip, field, fieldLabel, input, iconButton } from "@/features/admin-ui/styles";
+import { button, check, chip, field, fieldLabel, input, iconButton, textAction } from "@/features/admin-ui/styles";
 import {
   addPairing,
   applyItemTypes,
@@ -175,8 +175,8 @@ export function PairingsEditor({
         id="rec-types"
         testId="rec-types"
         actions={
-          <button type="button" data-testid="rec-suggest" className={button("secondary", "min-h-11 text-[0.9375rem]")} disabled={pending} onClick={suggest}>
-            <Lightbulb aria-hidden="true" className="!size-4" />
+          <button type="button" data-testid="rec-suggest" className={textAction("ink")} disabled={pending} onClick={suggest}>
+            <Lightbulb aria-hidden="true" />
             {t("types.suggest")}
           </button>
         }
@@ -216,7 +216,7 @@ export function PairingsEditor({
                   {t("types.apply", { count: proposals.filter((p) => p.on).length })}
                 </button>
               )}
-              <button type="button" className={button("tinted", "min-h-11 text-[0.9375rem]")} onClick={() => setProposals(null)}>
+              <button type="button" className={button("secondary", "min-h-11 text-[0.9375rem]")} onClick={() => setProposals(null)}>
                 {t("cancel")}
               </button>
             </div>
@@ -318,12 +318,12 @@ export function PairingsEditor({
                     <button
                       type="button"
                       data-testid={`rec-add-${d.id}`}
-                      className={button("tinted", "min-h-11 text-[0.9375rem]")}
+                      className={textAction("ink", "-mr-2")}
                       aria-label={t("pairings.add", { dish: nameIn(d.names, locale) })}
                       disabled={pending}
                       onClick={() => add(d.id)}
                     >
-                      <Plus aria-hidden="true" className="!size-4" />
+                      <Plus aria-hidden="true" />
                       {t("pairings.addShort")}
                     </button>
                   </li>
@@ -345,26 +345,36 @@ export function PairingsEditor({
           <button
             type="button"
             data-testid="rec-reset"
-            className={button("secondary", "min-h-11 text-[0.9375rem]")}
+            className={textAction("ink")}
             disabled={pending || !hasCustomRules(rows)}
             onClick={reset}
           >
-            <RotateCcw aria-hidden="true" className="!size-4" />
+            <RotateCcw aria-hidden="true" />
             {t("matrix.reset")}
           </button>
         }
       >
-        <div className="flex flex-col gap-3">
+        {/* The condition is said once; each type is a hairline row that opens
+            in place, with the count of types it may lead to at the right. */}
+        <div className="flex flex-col">
+          <p className="text-staff-label2 m-0 pb-1 text-label font-semibold">{t("matrix.intro")}</p>
           {rows.map((r) => (
-            <details key={r.from} className="border-staff-sep rounded-xl border">
+            <details key={r.from} className="group border-staff-sep border-b last:border-0">
               <summary
                 data-testid={`rec-after-${r.from}`}
-                className="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-3 text-[1rem] font-semibold"
+                aria-label={t("matrix.after", { kind: kindLabel(r.from) })}
+                className="flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden"
               >
-                <span className="min-w-0 break-words">{t("matrix.after", { kind: kindLabel(r.from) })}</span>
-                <span className={`${chip.base} ${chip.plain}`}>{r.cells.filter((c) => c.allowed).length}</span>
+                <span className="min-w-0 flex-1 text-name font-semibold break-words">{kindLabel(r.from)}</span>
+                <span className="num text-staff-label2 shrink-0 text-label">
+                  {t("matrix.count", { count: r.cells.filter((c) => c.allowed).length })}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="text-staff-label2 size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                />
               </summary>
-              <div className="grid grid-cols-1 gap-x-4 px-3 pb-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-4 pb-3 sm:grid-cols-2 lg:grid-cols-3">
                 {r.cells.map((c) => (
                   <label key={c.to} className="flex min-h-11 items-center gap-3 text-[1rem]">
                     <input

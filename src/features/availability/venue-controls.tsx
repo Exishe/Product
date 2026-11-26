@@ -79,22 +79,10 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
   return (
     <div className="flex flex-col gap-4" data-testid="venue-controls">
       <div className={row} data-testid="control-pause">
-        <p className={statusLine} role="status">
-          {pausedNow ? (
-            <CirclePause aria-hidden="true" className="text-pomegranate mt-0.5 size-5 shrink-0" />
-          ) : (
-            <CirclePlay aria-hidden="true" className="text-tarragon mt-0.5 size-5 shrink-0" />
-          )}
-          <span>
-            {pausedNow
-              ? state.pausedUntil
-                ? t("pausedUntil", { time: time(state.pausedUntil) })
-                : t("pausedNoEnd")
-              : t("orderingOn")}
-          </span>
-        </p>
         {/* One segmented switch (ADR-093): taking orders or paused. Paused
-            first asks for how long; taking orders again resumes at once. */}
+            first asks for how long; taking orders again resumes at once. The
+            switch is the state, so the only line with it is the one under it:
+            until when, or what guests can do now. */}
         <div
           role="group"
           aria-label={t("segmentLabel")}
@@ -127,6 +115,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
         </div>
         {choosing && !pausedNow && (
           <div className="flex flex-col gap-3">
+            <p className="text-staff-label2 m-0 text-label">{t("pauseHint")}</p>
             <p className={clsx(fieldLabel, "m-0")}>{t("howLong")}</p>
             <div className="flex flex-wrap gap-2">
               {QUICK.map((m) => (
@@ -184,7 +173,15 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
             )}
           </div>
         )}
-        {!pausedNow && !choosing && <p className="text-staff-label2 m-0 text-label">{t("pauseHint")}</p>}
+        {!choosing && (
+          <p role="status" className={clsx("m-0 text-label", pausedNow ? "text-ink font-semibold" : "text-staff-label2")}>
+            {pausedNow
+              ? state.pausedUntil
+                ? t("pausedUntil", { time: time(state.pausedUntil) })
+                : t("pausedNoEnd")
+              : t("orderingOn")}
+          </p>
+        )}
       </div>
 
       <div className={row} data-testid="control-kitchen">
@@ -253,7 +250,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
               type="button"
               disabled={pending}
               onClick={() => setConfirmClose(true)}
-              className={textAction("ink", "-ml-2 underline underline-offset-4")}
+              className={textAction("ink", "-ml-2")}
             >
               <ChefHat aria-hidden="true" />
               {t("closeKitchen")}

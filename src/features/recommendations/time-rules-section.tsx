@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
 import { Section } from "@/features/admin-ui/page";
 import { useToast } from "@/features/admin-ui/toast";
-import { button, check, chip, field, fieldLabel, iconButton, input } from "@/features/admin-ui/styles";
+import { button, check, chip, field, fieldLabel, iconButton, input, textAction } from "@/features/admin-ui/styles";
 import { removeTimeRule, saveTimeRule } from "./actions";
 import { groupByCategory, ITEM_TYPES, nameIn, type Category, type Dish, type ItemType } from "./model";
 import {
@@ -119,11 +119,11 @@ export function TimeRules({
           <button
             type="button"
             data-testid="time-rule-add"
-            className={button("secondary", "min-h-11 text-[0.9375rem]")}
+            className={textAction("ink")}
             disabled={pending || full}
             onClick={add}
           >
-            <Plus aria-hidden="true" className="!size-4" />
+            <Plus aria-hidden="true" />
             {t("timeRules.add")}
           </button>
         )
@@ -322,12 +322,12 @@ export function TimeRules({
                     <button
                       type="button"
                       data-testid="time-rule-edit"
-                      className={button("tinted", "min-h-11 text-[0.9375rem] max-sm:w-11 max-sm:px-0")}
+                      className={textAction("ink", "max-sm:w-11 max-sm:justify-center max-sm:px-0")}
                       aria-label={t("timeRules.editRule", { from: r.from, to: r.to })}
                       disabled={pending}
                       onClick={() => edit(r)}
                     >
-                      <Pencil aria-hidden="true" className="!size-4" />
+                      <Pencil aria-hidden="true" />
                       <span className="max-sm:sr-only">{t("timeRules.edit")}</span>
                     </button>
                     <button

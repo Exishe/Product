@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { button } from "@/features/admin-ui/styles";
 import { useActionState } from "react";
@@ -27,9 +27,16 @@ export function TelegramConnect({
         {t("connectTitle")}
       </h2>
       <p className="text-staff-label2 m-0">{t("connectHint")}</p>
-      <button type="submit" disabled={pending || !botReady} className={button("primary", "self-start")}>
+      <button type="submit" disabled={pending || !botReady} className={button("primary", "self-start max-sm:w-full")}>
         {t("connect")}
       </button>
+      {/* Why the button is off, right under it: no separate callout above. */}
+      {!botReady && (
+        <p role="status" className="text-ink m-0 flex items-start gap-2" data-testid="bot-not-ready">
+          <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
+          {t("botNotReady")}
+        </p>
+      )}
       {state.code && (
         <div className="flex flex-col gap-2" aria-live="polite" data-testid="telegram-link">
           {botUsername ? (

@@ -19,11 +19,13 @@ export default async function MenuPage() {
     <AdminPage
       title={t("title")}
       width="xl"
+      inlineActions
       actions={
         data.categories.length > 0 && (
           <MoreMenu
             label={t("more")}
             testId="menu-more"
+            compact
             items={[
               { href: "/admin/menu/import", label: t("importPhoto"), icon: <ScanText aria-hidden="true" /> },
               { href: "/admin/menu/pairings", label: t("managePairings"), icon: <Lightbulb aria-hidden="true" /> },

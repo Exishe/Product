@@ -1,4 +1,3 @@
-import { Info } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { AdminPage, Section } from "@/features/admin-ui/page";
 import { getTranslations } from "next-intl/server";
@@ -50,16 +49,6 @@ export default async function TelegramPage() {
   return (
     <AdminPage title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
       <NextIntlClientProvider>
-        {!botReady && (
-          <p
-            role="status"
-            className="bg-amber-tint m-0 flex items-start gap-3 rounded-xl px-4 py-3 text-name"
-            data-testid="bot-not-ready"
-          >
-            <Info aria-hidden="true" className="text-amber-text mt-0.5 size-5 shrink-0" />
-            {t("botNotReady")}
-          </p>
-        )}
         <TelegramConnect botReady={botReady} botUsername={env.TELEGRAM_BOT_USERNAME ?? null} />
         <Section title={t("chats")} id="chats-title" bare>
           {chats.length === 0 ? (

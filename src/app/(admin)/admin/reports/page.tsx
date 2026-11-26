@@ -103,7 +103,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       }
       width="lg"
     >
-      {digest ? <DigestCard digest={digest} /> : null}
+      {/* The period first, right under the title: everything below reads it. */}
       <RangePicker
         range={range}
         today={today}
@@ -111,6 +111,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         defaultPreset="30d"
         hidden={metric === "revenue" ? { metric } : undefined}
       />
+      {digest ? <DigestCard digest={digest} /> : null}
       {conversion ? <ConversionTable data={conversion} locale={locale} /> : unavailable}
       {matrix ? <MenuMatrix matrix={matrix} locale={locale} /> : unavailable}
       {busy ? (

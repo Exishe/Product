@@ -8,7 +8,7 @@ import {
   Plus,
   Printer,
   QrCode,
-  KeyRound,
+  RefreshCw,
   TriangleAlert,
 } from "lucide-react";
 import Link from "next/link";
@@ -165,10 +165,11 @@ function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
             <Pencil aria-hidden="true" />
             {t("edit")}
           </button>
-          {/* On a phone the label is read out but not shown: a 48 px printer button. */}
+          {/* A text action like Edit, so a long list is not a column of
+              pills. On a phone the label is read out but not shown. */}
           <Link
             href={`/admin/tables/print?table=${table.id}`}
-            className={btn("secondary", "px-4 max-sm:w-12 max-sm:px-0")}
+            className={textAction("ink", "max-sm:w-11 max-sm:justify-center max-sm:px-0")}
           >
             <Printer aria-hidden="true" />
             <span className="max-sm:sr-only">{t("printOne")}</span>
@@ -176,7 +177,18 @@ function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
         </div>
       ) : (
         <div className="flex flex-col gap-4 py-1">
+          {/* The editor keeps saying which table it is. */}
+          <h3 id={`table-${table.id}-title`} className="m-0 flex min-h-12 items-center gap-3 text-name font-semibold">
+            <span
+              aria-hidden="true"
+              className="bg-staff-fill text-ink grid size-12 shrink-0 place-items-center rounded-xl"
+            >
+              <Pencil className="size-5" />
+            </span>
+            {t("tableName", { label: table.label })}
+          </h3>
           <form
+            aria-labelledby={`table-${table.id}-title`}
             className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
             onSubmit={(e) => {
               e.preventDefault();
@@ -227,7 +239,7 @@ function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
                   setMode("confirm");
                 }}
               >
-                <KeyRound aria-hidden="true" />
+                <RefreshCw aria-hidden="true" />
                 {t("reprint")}
               </button>
               <p className="text-staff-label2 m-0 text-label">{t("reprintHint")}</p>

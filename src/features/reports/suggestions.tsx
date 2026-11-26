@@ -32,15 +32,19 @@ export async function Suggestions({ data, locale }: { data: Upsell; locale: Loca
         <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("empty")}</p>
       ) : (
         <>
-          <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-0">
+          {/* Figures first, labels under them: a label that wraps to two or
+              three lines can no longer push its figure off the row's line. */}
+          <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-0">
             {stats.map(([label, value, hint]) => (
               <div
                 key={label}
-                className="border-staff-sep flex min-w-0 flex-col gap-0.5 lg:border-l lg:px-5 lg:first:border-l-0 lg:first:pl-0"
+                className="border-staff-sep flex min-w-0 flex-col-reverse justify-end gap-1 lg:border-l lg:px-5 lg:first:border-l-0 lg:first:pl-0"
               >
-                <dt className="text-staff-label2 text-label font-semibold">{label}</dt>
+                <dt className="text-staff-label2 text-label leading-snug font-semibold">
+                  {label}
+                  {hint && <span className="block font-normal">{hint}</span>}
+                </dt>
                 <dd className="num m-0 text-large leading-tight font-bold break-words">{value}</dd>
-                {hint && <dd className="text-staff-label2 m-0 text-label">{hint}</dd>}
               </div>
             ))}
           </dl>
@@ -48,9 +52,12 @@ export async function Suggestions({ data, locale }: { data: Upsell; locale: Loca
           {data.pairs.length > 0 && (
             <div className="flex flex-col gap-1">
               <h3 className="m-0 text-name font-semibold">{t("pairs")}</h3>
-              <ul className="m-0 flex list-none flex-col gap-1 p-0 text-label">
+              <ul className="m-0 flex list-none flex-col p-0 text-body">
                 {data.pairs.map((p) => (
-                  <li key={`${p.from}-${p.item}`} className="num break-words">
+                  <li
+                    key={`${p.from}-${p.item}`}
+                    className="num border-staff-sep border-b py-2.5 break-words last:border-0"
+                  >
                     {t("pairRow", {
                       from: dishName(p.from_name, locale),
                       item: dishName(p.item_name, locale),

@@ -1,6 +1,6 @@
 "use client";
 
-import { BellOff, BellRing, CircleCheck } from "lucide-react";
+import { BellOff, BellRing, CircleCheck, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { button } from "@/features/admin-ui/styles";
 import { useEffect, useState } from "react";
@@ -97,12 +97,14 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
       </h2>
       <p className="text-staff-label2 m-0">{t("hint")}</p>
       {note[status] && (
-        <p role="status" className="bg-staff-bg m-0 rounded-xl px-4 py-3" data-testid="push-status">
+        // A plain status line with an icon, not a grey box under the heading.
+        <p role="status" className="text-ink m-0 flex items-start gap-2" data-testid="push-status">
+          <Info aria-hidden="true" className="text-staff-label2 mt-0.5 size-5 shrink-0" />
           {note[status]}
         </p>
       )}
       {status === "off" && (
-        <button type="button" onClick={turnOn} disabled={busy} className={button("primary")}>
+        <button type="button" onClick={turnOn} disabled={busy} className={button("primary", "self-start max-sm:w-full")}>
           <BellRing aria-hidden="true" />
           {t("turnOn")}
         </button>
@@ -117,7 +119,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
             <CircleCheck aria-hidden="true" className="size-5 shrink-0" />
             {t("on")}
           </p>
-          <button type="button" onClick={turnOff} disabled={busy} className={button("danger")}>
+          <button type="button" onClick={turnOff} disabled={busy} className={button("danger", "self-start max-sm:w-full")}>
             <BellOff aria-hidden="true" />
             {t("turnOff")}
           </button>

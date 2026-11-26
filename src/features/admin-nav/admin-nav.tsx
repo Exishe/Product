@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Menu } from "lucide-react";
+import { Check, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -40,15 +40,15 @@ export function AdminNav({
 
   return (
     <>
-      {/* Phones and tablets: one bar. On the home page the h1 is already the
-          café's name, so the bar shows the product's name there. */}
+      {/* Phones and tablets: one bar with the café's name on every page, so
+          the owner always sees whose admin this is. */}
       <header className="border-staff-sep sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-white pr-2 pl-4 lg:hidden print:hidden">
         <Link
           href="/admin"
           className="flex min-h-11 min-w-0 flex-1 items-center rounded-lg"
           data-testid="admin-bar-home"
         >
-          <span className="page-title truncate text-heading">{pathname === "/admin" ? brand : cafe}</span>
+          <span className="page-title truncate text-heading">{cafe || brand}</span>
         </Link>
         <button
           type="button"
@@ -115,15 +115,19 @@ function NavList({
                 className={clsx(
                   "flex items-center rounded-xl",
                   size === "sidebar" ? "min-h-11 gap-2.5 px-3 text-label" : "min-h-12 gap-3 px-3 text-name",
-                  // Current: a white row on the grey and ink text (Linear), not a black pill.
-                  current ? "text-ink bg-white font-semibold" : "text-ink font-medium hover:bg-black/[0.04]",
+                  // Current: on the grey sidebar a white row (Linear); in the white
+                  // sheet a tinted row and a check, never colour or weight alone.
+                  current
+                    ? clsx("text-ink font-semibold", size === "sidebar" ? "bg-white" : "bg-staff-fill")
+                    : "text-ink font-medium hover:bg-black/[0.04]",
                 )}
               >
                 <Icon
                   aria-hidden="true"
                   className={clsx("size-5 shrink-0", current ? "text-ink" : "text-staff-label2")}
                 />
-                <span className="min-w-0 truncate">{l.label}</span>
+                <span className="min-w-0 flex-1 truncate">{l.label}</span>
+                {current && size === "sheet" && <Check aria-hidden="true" className="text-ink size-5 shrink-0" />}
               </Link>
             </li>
           );

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Tabs, tabPanel } from "@/features/admin-ui/tabs";
-import { button, check, field as baseField } from "@/features/admin-ui/styles";
+import { button, check, field as baseField, textAction } from "@/features/admin-ui/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -466,7 +466,7 @@ function DishRow({
 
       {hasDescription && (
         <details>
-          <summary className="text-ink inline-flex min-h-11 cursor-pointer items-center rounded-lg text-[0.9375rem] font-semibold underline underline-offset-4">
+          <summary className={textAction("ink", "-ml-2 w-fit")}>
             {t("descriptions")}
           </summary>
           <div className="mt-2 grid gap-2">

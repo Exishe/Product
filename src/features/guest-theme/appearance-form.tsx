@@ -273,7 +273,9 @@ export function AppearanceForm({
           {THEME_CHOICES.map((id) => (
             <label
               key={id}
-              className="has-[:checked]:ring-ink has-[:focus-visible]:outline-ink relative flex cursor-pointer flex-col gap-3 rounded-[var(--radius-soft)] bg-white p-3 ring-1 ring-staff-sep has-[:checked]:ring-2 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
+              // No frame on the choices: the miniature is the tile. Only the
+              // chosen one gets a 2 px ink ring (and the tick below).
+              className="has-[:checked]:ring-ink has-[:focus-visible]:outline-ink hover:bg-staff-bg relative flex cursor-pointer flex-col gap-3 rounded-[var(--radius-soft)] bg-white p-3 has-[:checked]:ring-2 has-[:checked]:hover:bg-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
               data-testid={`theme-${id}`}
             >
               <input
@@ -521,11 +523,12 @@ export function AppearanceForm({
           </Group>
 
           <Group id={`${ids}-plate`} title={b("plate")} hint={b("plateHint")}>
-            <div role="radiogroup" aria-labelledby={`${ids}-plate`} className="grid gap-2 sm:grid-cols-2">
+            {/* A radio list on hairlines (ADR-093), not a grid of boxes. */}
+            <div role="radiogroup" aria-labelledby={`${ids}-plate`} className="flex max-w-xl flex-col">
               {([null, ...PLATE_STYLES] as (PlateStyle | null)[]).map((p) => (
                 <label
                   key={p ?? "theme"}
-                  className="has-[:checked]:ring-ink has-[:focus-visible]:outline-ink flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3 ring-1 ring-staff-sep has-[:checked]:ring-2 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
+                  className="border-staff-sep has-[:focus-visible]:outline-ink flex min-h-12 cursor-pointer items-center gap-3 rounded-md border-b py-1.5 last:border-0 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2"
                 >
                   <input
                     type="radio"
@@ -546,8 +549,15 @@ export function AppearanceForm({
                             : "bg-staff-fill"
                     }`}
                   />
-                  <span className="flex-1 text-name font-semibold">{b(`plates.${p ?? "theme"}`)}</span>
-                  {brand.plate === p && <Check aria-hidden="true" className="size-5" />}
+                  <span className={`flex-1 text-name ${brand.plate === p ? "font-semibold" : "font-medium"}`}>
+                    {b(`plates.${p ?? "theme"}`)}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`grid size-6 shrink-0 place-items-center rounded-full ${brand.plate === p ? "bg-ink text-white" : "ring-staff-field ring-1"}`}
+                  >
+                    {brand.plate === p && <Check className="size-4" />}
+                  </span>
                 </label>
               ))}
             </div>

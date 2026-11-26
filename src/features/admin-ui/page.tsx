@@ -12,9 +12,13 @@ export function AdminPage({
   actions,
   back,
   width = "md",
+  inlineActions = false,
   className,
   children,
 }: {
+  // Keep the actions on the title's line at every width (a compact "More"),
+  // instead of a row of their own under the subtitle below 1280 px.
+  inlineActions?: boolean;
   className?: string;
   back?: { href: string; label: string };
   title: ReactNode;
@@ -38,11 +42,21 @@ export function AdminPage({
       {/* Title and actions side by side only from 1280 px, where the title
           keeps at least 14 characters; below that the actions follow the
           subtitle, so a long word in the title never splits. */}
-      <header className="mb-2 grid grid-cols-[minmax(0,1fr)] print:hidden xl:grid-cols-[minmax(14ch,1fr)_auto] xl:gap-x-8">
+      <header
+        className={clsx(
+          "mb-2 grid print:hidden",
+          inlineActions
+            ? "grid-cols-[minmax(0,1fr)_auto] gap-x-3 xl:gap-x-8"
+            : "grid-cols-[minmax(0,1fr)] xl:grid-cols-[minmax(14ch,1fr)_auto] xl:gap-x-8",
+        )}
+      >
         {back && (
           <Link
             href={back.href}
-            className="text-ink -ml-1 mb-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-name font-semibold xl:col-span-2"
+            className={clsx(
+              "text-ink -ml-1 mb-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-lg pr-2 text-name font-semibold",
+              inlineActions ? "col-span-2" : "xl:col-span-2",
+            )}
           >
             <ChevronLeft aria-hidden="true" className="size-5" />
             {back.label}
@@ -50,15 +64,22 @@ export function AdminPage({
         )}
         <h1 className="page-title m-0 min-w-0 text-large break-words sm:text-figure">{title}</h1>
         {subtitle && (
-          <div className="text-staff-label2 mt-2 max-w-[60ch] text-name leading-normal xl:col-start-1">
+          <div
+            className={clsx(
+              "text-staff-label2 mt-2 max-w-[60ch] text-name leading-normal",
+              inlineActions ? "col-span-2 xl:col-span-1" : "xl:col-start-1",
+            )}
+          >
             {subtitle}
           </div>
         )}
         {actions && (
           <div
             className={clsx(
-              "mt-4 flex flex-wrap items-center gap-2 max-sm:*:flex-1 xl:col-start-2 xl:mt-1 xl:self-start xl:justify-end",
-              back ? "xl:row-start-2" : "xl:row-start-1",
+              inlineActions
+                ? "col-start-2 flex items-center justify-end gap-2 self-center"
+                : "mt-4 flex flex-wrap items-center gap-2 max-sm:*:flex-1 xl:col-start-2 xl:mt-1 xl:self-start xl:justify-end",
+              inlineActions ? (back ? "row-start-2" : "row-start-1") : back ? "xl:row-start-2" : "xl:row-start-1",
             )}
           >
             {actions}
@@ -91,14 +112,16 @@ export function Section({
 }) {
   return (
     <section aria-labelledby={id} data-testid={testId} className="flex min-w-0 flex-col gap-2">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="flex min-w-0 flex-col">
-          <h2 id={id} className={sectionTitle}>
+      {/* The shared group header: the actions sit on the heading's line,
+          centred on it; the hint runs under both at full width. */}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <h2 id={id} className={clsx(sectionTitle, "min-w-0")}>
             {title}
           </h2>
-          {hint && <p className="text-staff-label2 m-0 text-label">{hint}</p>}
+          {actions && <div className="-mx-2 flex shrink-0 flex-wrap items-center gap-1">{actions}</div>}
         </div>
-        {actions}
+        {hint && <p className="text-staff-label2 m-0 max-w-[60ch] text-label">{hint}</p>}
       </div>
       {bare ? (
         children

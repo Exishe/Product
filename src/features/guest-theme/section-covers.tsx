@@ -1,5 +1,6 @@
 "use client";
 
+import { clsx } from "clsx";
 import { Image as ImageIcon, ImagePlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -85,15 +86,74 @@ export function SectionCovers({
       {rows.length === 0 ? (
         <p className="text-staff-label2 m-0">{b("coversEmpty")}</p>
       ) : (
-        <ul
-          className="m-0 grid list-none gap-x-5 gap-y-6 p-0 sm:grid-cols-2 xl:grid-cols-3"
-          data-testid="section-covers"
-        >
+        // One hairline row per section (ADR-093): a small 16:9 thumbnail or an
+        // empty slot, the name, and the action at the right. The large preview
+        // shows only for a cover that exists, so an empty menu is not a wall
+        // of grey placeholders.
+        <ul className="m-0 flex max-w-3xl list-none flex-col p-0" data-testid="section-covers">
           {rows.map((s) => {
             const name = s.name ?? b("untitled");
             return (
-              <li key={s.id} className="flex min-w-0 flex-col gap-2">
-                {s.cover ? (
+              <li key={s.id} className="border-staff-sep flex min-w-0 flex-col gap-3 border-b py-3 first:pt-0 last:border-0">
+                <div className="flex min-h-12 min-w-0 items-center gap-3">
+                  {s.cover ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
+                    <img
+                      src={coverUrl(s.cover)}
+                      alt=""
+                      width={64}
+                      height={36}
+                      loading="lazy"
+                      className="bg-staff-fill block h-9 w-16 shrink-0 rounded-md object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="text-staff-label2 grid h-9 w-16 shrink-0 place-items-center rounded-md border border-dashed border-staff-field"
+                    >
+                      <ImageIcon className="size-4" />
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1 text-name font-semibold [overflow-wrap:anywhere]">{name}</span>
+                  <span className="-mr-2 flex shrink-0 items-center">
+                    <label
+                      className={textAction(
+                        "ink",
+                        clsx(
+                        "has-[:focus-visible]:outline-ink has-[:focus-visible]:underline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
+                        busy !== s.id && "max-sm:w-11 max-sm:justify-center max-sm:px-0",
+                        ),
+                      )}
+                    >
+                      {/* On a phone the name keeps the width: the action is a
+                          44 px icon, named by its file input. */}
+                      <ImagePlus aria-hidden="true" className="max-sm:!size-5" />
+                      <span className={busy === s.id ? undefined : "max-sm:sr-only"} aria-hidden="true">
+                        {busy === s.id ? t("uploading") : s.cover ? b("coverChange") : b("coverChoose")}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        disabled={!ready || busy !== null}
+                        aria-label={`${s.cover ? b("coverChange") : b("coverChoose")}: ${name}`}
+                        onChange={(e) => void pick(s.id, e.target.files?.[0])}
+                      />
+                    </label>
+                    {s.cover && (
+                      <button
+                        type="button"
+                        disabled={!ready || busy !== null}
+                        onClick={() => void remove(s.id)}
+                        className={textAction("danger", "w-11 justify-center px-0")}
+                        aria-label={b("coverRemove", { section: name })}
+                      >
+                        <Trash2 aria-hidden="true" />
+                      </button>
+                    )}
+                  </span>
+                </div>
+                {s.cover && (
                   // eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp
                   <img
                     src={coverUrl(s.cover)}
@@ -101,51 +161,11 @@ export function SectionCovers({
                     width={1200}
                     height={514}
                     loading="lazy"
-                    className="bg-staff-fill block aspect-video h-auto w-full rounded-xl object-cover"
+                    className="bg-staff-fill block aspect-video h-auto w-full max-w-md rounded-xl object-cover sm:ml-[4.75rem]"
                   />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="bg-staff-fill text-staff-label2 grid aspect-video w-full place-items-center rounded-xl"
-                  >
-                    <ImageIcon className="size-7" />
-                  </span>
                 )}
-                <span className="flex min-w-0 flex-col items-start">
-                  <span className="min-w-0 text-label font-semibold [overflow-wrap:anywhere]">{name}</span>
-                  <span className="flex items-center">
-                  <label
-                    className={textAction(
-                      "ink",
-                      "has-[:focus-visible]:outline-ink -ml-2 cursor-pointer underline underline-offset-4 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2",
-                    )}
-                  >
-                    <ImagePlus aria-hidden="true" />
-                    {busy === s.id ? t("uploading") : s.cover ? b("coverChange") : b("coverChoose")}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="sr-only"
-                      disabled={!ready || busy !== null}
-                      aria-label={`${s.cover ? b("coverChange") : b("coverChoose")}: ${name}`}
-                      onChange={(e) => void pick(s.id, e.target.files?.[0])}
-                    />
-                  </label>
-                  {s.cover && (
-                    <button
-                      type="button"
-                      disabled={!ready || busy !== null}
-                      onClick={() => void remove(s.id)}
-                      className={textAction("danger", "ml-1")}
-                      aria-label={b("coverRemove", { section: name })}
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </button>
-                  )}
-                  </span>
-                </span>
                 {failed === s.id && (
-                  <p role="alert" className="text-pomegranate m-0 text-label font-semibold">
+                  <p role="alert" className="text-pomegranate m-0 text-label font-semibold sm:ml-[4.75rem]">
                     {t("uploadFailed")}
                   </p>
                 )}

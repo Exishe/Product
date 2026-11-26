@@ -7,7 +7,7 @@ import { AdminPage, Section, SettingsItem, SettingsList } from "@/features/admin
 import { AlertSettingsForm } from "@/features/alerts/alert-settings";
 import { SoundSettingsForm, type StaffSounds } from "@/features/sounds/sound-settings";
 import { soundOr, DEFAULT_CALL_SOUND, DEFAULT_ORDER_SOUND } from "@/lib/sounds/library";
-import { AttentionPanel } from "@/features/alerts/attention-panel";
+import { AttentionPanel, type AttentionTodo } from "@/features/alerts/attention-panel";
 import { parseAlerts, type AlertSettings, type TableAlert } from "@/features/alerts/model";
 import { VenueControls, type VenueState } from "@/features/availability/venue-controls";
 import { PlanBanner } from "@/features/billing/plan-banner";
@@ -18,6 +18,7 @@ import { settingsFromRow, type RewardSettings } from "@/features/game-rewards/mo
 import { PromoManager } from "@/features/promos/promo-manager";
 import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
+import { textAction } from "@/features/admin-ui/styles";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { formatAmd, formatInteger } from "@/lib/format/money";
@@ -25,7 +26,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Locale } from "@/i18n/routing";
 
-type Todo = { key: string; href: string; text: string };
+type Todo = AttentionTodo;
 
 const kpi =
   "border-staff-sep flex min-w-0 flex-col gap-0.5 sm:border-l sm:px-6 sm:first:border-l-0 sm:first:pl-0";
@@ -222,7 +223,7 @@ export default async function AdminHome() {
         actions={
           <Link
             href="/admin/dashboard"
-            className="text-ink inline-flex min-h-11 items-center gap-0.5 text-label font-semibold underline underline-offset-4"
+            className={textAction("ink")}
           >
             {t("allSales")}
             <ChevronRight aria-hidden="true" className="size-4" />
@@ -263,32 +264,17 @@ export default async function AdminHome() {
         )}
       </Section>
 
-      {todos.length > 0 && (
-        <Section title={t("todo")} id="home-todo" testId="home-todo" bare>
-          <ul className="border-staff-sep m-0 flex list-none flex-col border-t p-0">
-            {todos.map((todo) => (
-              <li key={todo.key} className="border-staff-sep border-b">
-                <Link
-                  href={todo.href}
-                  data-testid={`todo-${todo.key}`}
-                  className="flex min-h-14 items-center gap-3 py-3 text-name"
-                >
-                  <span aria-hidden="true" className="bg-amber-text size-2 shrink-0 rounded-full" />
-                  <span className="min-w-0 flex-1 break-words">{todo.text}</span>
-                  <ChevronRight aria-hidden="true" className="text-staff-label2 size-5 shrink-0" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
       <NextIntlClientProvider>
-        {location && alerts && (
-          <Section title={t("attention")} id="home-attention" testId="home-attention">
-            <AttentionPanel locationId={location.id} initial={alerts} />
-          </Section>
-        )}
+        {/* One attention list (setup to-dos and live problem tables). It is
+            always there, so the owner learns where to look. */}
+        <Section title={t("attention")} id="home-attention" testId="home-attention">
+          <AttentionPanel
+            locationId={location && alerts ? location.id : null}
+            initial={alerts ?? []}
+            todos={todos}
+            allClear={t("allClear")}
+          />
+        </Section>
 
         {location && venue && (
           <Section title={t("ordering")} hint={t("orderingHint")} id="home-ordering" testId="home-ordering">

@@ -2,7 +2,6 @@
 
 import { clsx } from "clsx";
 import {
-  Ban,
   BookOpen,
   Check,
   ChevronDown,
@@ -156,7 +155,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
       draft: d
         ? {
             ...d,
-            priceText: String(d.price),
+            priceText: groupDigits(d.price),
             costText: d.id in data.costs ? String(data.costs[d.id]) : "",
             markReviewed: false,
           }
@@ -570,6 +569,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
               onChange={(e) =>
                 setPanel({ kind: "dish", draft: { ...panel.draft, priceText: e.target.value } })
               }
+              // 1900 reads as "1 900" once the owner leaves the field, like the list.
+              onBlur={() => {
+                const n = parsePriceInput(panel.draft.priceText);
+                if (n !== null) setPanel({ kind: "dish", draft: { ...panel.draft, priceText: groupDigits(n) } });
+              }}
               className={clsx(input, "num max-w-56 text-heading font-semibold")}
             />
           </label>
@@ -815,7 +819,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 {nameFor(g.names, locale)}
               </label>
             ))}
-            <Link href="/admin/menu/options" className={textAction("ink", "-ml-2 underline underline-offset-4")}>
+            <Link href="/admin/menu/options" className={textAction("ink", "-ml-2")}>
               {t("manageOptions")}
             </Link>
           </fieldset>
@@ -980,11 +984,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     aria-current={current ? "true" : undefined}
                     title={name}
                     className={clsx(
-                      "flex min-h-11 min-w-0 flex-1 items-center gap-1.5 rounded-full px-4 text-left text-label font-semibold whitespace-nowrap lg:rounded-xl lg:px-3",
+                      "flex min-h-11 min-w-0 flex-1 items-center gap-1.5 rounded-full px-4 text-left text-label font-semibold whitespace-nowrap lg:rounded-xl lg:px-3 lg:py-2 lg:whitespace-normal",
                       current ? "bg-ink lg:bg-staff-fill lg:text-ink text-white" : "text-ink bg-staff-fill lg:bg-transparent lg:font-medium",
                     )}
                   >
-                    <span className="min-w-0 truncate">{name}</span>
+                    <span className="min-w-0 truncate lg:line-clamp-2 lg:whitespace-normal">{name}</span>
                     {!c.isActive && (
                       <span className="shrink-0 font-normal opacity-80">· {t("sectionOff")}</span>
                     )}
@@ -1028,7 +1032,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 <button
                   type="button"
                   onClick={() => openCategory(category)}
-                  className={textAction("ink", "underline underline-offset-4 max-sm:-ml-2")}
+                  className={textAction("ink", "max-sm:-ml-2")}
                 >
                   <Pencil aria-hidden="true" />
                   {t("editCategory")}
@@ -1102,7 +1106,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
                     >
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span
-                          className="line-clamp-2 text-name leading-snug font-semibold sm:line-clamp-1"
+                          className="line-clamp-2 text-name leading-snug font-semibold"
                           lang={d.names[locale] ? locale : "hy"}
                           title={nameFor(d.names, locale)}
                         >
@@ -1138,20 +1142,22 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         {formatAmd(d.price, locale)}
                       </span>
                     </button>
-                    {/* The one control on the row: today's availability. */}
+                    {/* The one control on the row: today's availability. Off, a
+                        quiet muted text toggle; on, filled red with a check, so
+                        only the dishes that are out stand out in the list. */}
                     <button
                       type="button"
                       aria-pressed={soldOut}
                       disabled={pending}
                       onClick={() => toggleSoldOut(d, !soldOut)}
                       className={clsx(
-                        "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-label font-semibold whitespace-nowrap transition-colors duration-150 motion-reduce:transition-none",
+                        "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-label font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none",
                         soldOut
                           ? "bg-pomegranate text-white"
-                          : "text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)]",
+                          : "text-staff-label2 hover:bg-staff-fill hover:text-ink -mr-1",
                       )}
                     >
-                      {soldOut ? <Check aria-hidden="true" className="size-4" /> : <Ban aria-hidden="true" className="size-4" />}
+                      {soldOut && <Check aria-hidden="true" className="size-4" />}
                       {t("soldOut")}
                     </button>
                   </li>
@@ -1168,7 +1174,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
             className="admin-fade ring-staff-sep shadow-float flex min-w-0 flex-col self-start overflow-hidden rounded-[var(--radius-soft)] bg-white ring-1 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)]"
           >
             <header className="border-staff-sep flex min-h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
-              <h2 className="m-0 min-w-0 flex-1 truncate text-name font-semibold">{panelTitle}</h2>
+              <h2 className="m-0 min-w-0 flex-1 truncate text-heading font-semibold">{panelTitle}</h2>
               <button
                 type="button"
                 onClick={() => setPanel(null)}
@@ -1448,4 +1454,9 @@ function CostField({
       </span>
     </label>
   );
+}
+
+// Thousands split by a no-break space ("1 900"); parsePriceInput reads it back.
+function groupDigits(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
 }

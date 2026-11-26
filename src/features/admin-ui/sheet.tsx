@@ -73,7 +73,7 @@ export function Sheet({
       )}
     >
       <header className="border-staff-sep flex min-h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
-        <h2 id="sheet-title" className="m-0 min-w-0 flex-1 truncate text-[1.0625rem] font-bold">
+        <h2 id="sheet-title" className="m-0 min-w-0 flex-1 truncate text-heading font-semibold">
           {title}
         </h2>
         <button

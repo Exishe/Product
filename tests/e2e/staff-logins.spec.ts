@@ -26,7 +26,7 @@ async function signInWithUsername(browser: Browser, username: string, password: 
 }
 
 const createForm = (page: Page) =>
-  page.locator("form").filter({ has: page.getByRole("heading", { name: "Ավելացնել մուտք" }) });
+  page.locator("form").filter({ has: page.getByRole("heading", { name: "Ավելացնել աշխատակից" }) });
 
 async function createLogin(page: Page, role: "waiter" | "kitchen", ending: string) {
   // The form opens in a sheet from the page's primary button and stays open.

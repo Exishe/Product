@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Sheet } from "./sheet";
-import { button, type ButtonKind } from "./styles";
+import { button, textAction, type ButtonKind } from "./styles";
 
 // A button that opens a form in the shared Sheet (ADR-093): create forms stay
 // out of the page until the owner asks for one. The sheet keeps what the form
@@ -21,7 +21,8 @@ export function SheetButton({
   title: string;
   closeLabel: string;
   icon?: ReactNode;
-  kind?: ButtonKind;
+  // "text": a quiet text action, for a group header next to its heading.
+  kind?: ButtonKind | "text";
   className?: string;
   testId?: string;
   children: ReactNode;
@@ -34,7 +35,7 @@ export function SheetButton({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className={button(kind, className)}
+        className={kind === "text" ? textAction("ink", className) : button(kind, className)}
         data-testid={testId}
       >
         {icon}

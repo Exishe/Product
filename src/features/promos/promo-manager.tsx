@@ -144,7 +144,7 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
                       setConfirmDelete(null);
                       setDraft(draftOf(p));
                     }}
-                    className={textAction("ink", "-ml-2 w-fit underline underline-offset-4")}
+                    className={textAction("ink", "-ml-2 w-fit")}
                   >
                     <Pencil aria-hidden="true" />
                     {t("edit")}

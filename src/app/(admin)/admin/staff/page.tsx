@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { AdminPage, Section } from "@/features/admin-ui/page";
 import { SheetButton } from "@/features/admin-ui/sheet-button";
-import { chip, table, textAction } from "@/features/admin-ui/styles";
+import { chip, textAction } from "@/features/admin-ui/styles";
 import { InviteForm } from "@/features/staff/invite-form";
 import { parseStaffLogins } from "@/features/staff/logins-model";
 import { PairDeviceForm } from "@/features/staff/pair-device-form";
@@ -89,58 +89,40 @@ export default async function StaffPage() {
     );
   };
 
-  // People and devices as a small data table: name and role, status, action.
+  // People and devices as the same hairline rows as the logins above (ADR-093):
+  // who and their role, the status at the right, then the one action.
   const list = (rows: Member[], kind: "people" | "devices") => (
-    <div className={table.wrap}>
-      <table className={table.table}>
-        <thead className={table.head}>
-          <tr>
-            <th scope="col" className={table.th}>
-              {t("colName")}
-            </th>
-            <th scope="col" className={clsx(table.th, "max-sm:hidden")}>
-              {t("colStatus")}
-            </th>
-            <th scope="col" className={clsx(table.th, "w-0 text-right")}>
-              <span className="sr-only">{t("colAction")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((m) => (
-            <tr key={m.id} className={table.row} data-testid="member-row">
-              <td className={table.td}>
-                <span className="flex min-w-0 items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-label font-semibold max-sm:hidden"
-                  >
-                    {kind === "people" ? initials(m.display_name) : <Monitor className="size-5" />}
-                  </span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-name font-semibold break-words">{m.display_name}</span>
-                    <span className="text-staff-label2 text-label">{t(`roles.${m.role}`)}</span>
-                    {/* On phones the status sits under the name; the column needs the width. */}
-                    <span className="mt-1.5 sm:hidden">{status(m)}</span>
-                  </span>
-                </span>
-              </td>
-              <td className={clsx(table.td, "max-sm:hidden")}>{status(m)}</td>
-              <td className={clsx(table.td, "text-right")}>
-                {m.is_active && m.role !== "owner" && (me.role === "owner" || m.kind === "device") && (
-                  <form action={revokeMember}>
-                    <input type="hidden" name="memberId" value={m.id} />
-                    <button type="submit" className={textAction("danger")}>
-                      {t("revoke")}
-                    </button>
-                  </form>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="m-0 flex list-none flex-col p-0">
+      {rows.map((m) => (
+        <li
+          key={m.id}
+          data-testid="member-row"
+          className="border-staff-sep flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b py-3 first:pt-0 last:border-0"
+        >
+          <span
+            aria-hidden="true"
+            className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full text-label font-semibold"
+          >
+            {kind === "people" ? initials(m.display_name) : <Monitor className="size-5" />}
+          </span>
+          <span className="flex min-w-0 flex-1 basis-40 flex-col">
+            <span className="text-name font-semibold break-words">{m.display_name}</span>
+            <span className="text-staff-label2 text-label">{t(`roles.${m.role}`)}</span>
+          </span>
+          <span className="flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 max-sm:w-full max-sm:justify-start max-sm:pl-[3.25rem]">
+            {status(m)}
+            {m.is_active && m.role !== "owner" && (me.role === "owner" || m.kind === "device") && (
+              <form action={revokeMember} className="max-sm:ml-auto">
+                <input type="hidden" name="memberId" value={m.id} />
+                <button type="submit" className={textAction("danger", "-mr-2")}>
+                  {t("revoke")}
+                </button>
+              </form>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 
   const roleLabels = { waiter: t("roles.waiter"), kitchen: t("roles.kitchen") };
@@ -207,7 +189,13 @@ export default async function StaffPage() {
         actions={
           me.role === "owner" && (
             <NextIntlClientProvider>
-              <SheetButton label={t("inviteOpen")} title={t("inviteTitle")} closeLabel={close} icon={<Mail aria-hidden="true" />}>
+              <SheetButton
+                kind="text"
+                label={t("inviteOpen")}
+                title={t("inviteTitle")}
+                closeLabel={close}
+                icon={<Mail aria-hidden="true" />}
+              >
                 <InviteForm baseUrl={baseUrl} />
               </SheetButton>
             </NextIntlClientProvider>
@@ -222,6 +210,7 @@ export default async function StaffPage() {
         actions={
           <NextIntlClientProvider>
             <SheetButton
+              kind="text"
               label={t("pairTitle")}
               title={t("pairTitle")}
               closeLabel={close}

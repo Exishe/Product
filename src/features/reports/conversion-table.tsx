@@ -85,8 +85,38 @@ function Rows({
 }) {
   const head =
     "text-staff-label2 px-2 py-2 text-right text-label font-semibold whitespace-nowrap first:pl-0 last:pr-0";
+  const share = (i: Item) =>
+    i.conversion === null || i.reason.key === "few_views" ? "–" : pct.format(i.conversion);
+  const reason = (i: Item) =>
+    (i.reason.key === "never_ordered" || i.reason.key === "low_share") &&
+    t(`reason.${i.reason.key}`, { views: i.reason.views, orders: i.reason.orders });
   return (
-    <div className="relative overflow-x-auto">
+    <>
+      {/* Phones: one hairline row per dish, the name at full width and the
+          figures in one meta line, so no column is cut mid-word. */}
+      <ul className="num m-0 flex list-none flex-col p-0 sm:hidden" aria-label={caption}>
+        {items.map((i) => (
+          <li key={i.id} className="border-staff-sep flex flex-col gap-0.5 border-t py-3 first:border-t-0 first:pt-0">
+            <span className="flex items-baseline gap-3">
+              <span className="min-w-0 flex-1 text-name font-semibold break-words" lang={dishNameLocale(i.name, locale)}>
+                {dishName(i.name, locale)}
+              </span>
+              <span className="shrink-0 text-name font-semibold" aria-label={`${t("colShare")}: ${share(i)}`}>
+                {share(i)}
+              </span>
+            </span>
+            <span className="text-staff-label2 text-label">
+              {t("metaLine", {
+                views: formatInteger(i.views, locale),
+                adds: formatInteger(i.adds, locale),
+                orders: formatInteger(i.orders, locale),
+              })}
+            </span>
+            {reason(i) && <span className="text-staff-label2 text-label break-words">{reason(i)}</span>}
+          </li>
+        ))}
+      </ul>
+    <div className="relative overflow-x-auto max-sm:hidden">
       <table className="num w-full min-w-[20rem] border-collapse text-label">
         <caption className="sr-only">{caption}</caption>
         <thead>
@@ -118,22 +148,21 @@ function Rows({
                 <span className="break-words" lang={dishNameLocale(i.name, locale)}>
                   {dishName(i.name, locale)}
                 </span>
-                {(i.reason.key === "never_ordered" || i.reason.key === "low_share") && (
+                {reason(i) && (
                   <span className="text-staff-label2 mt-0.5 block text-label font-normal break-words">
-                    {t(`reason.${i.reason.key}`, { views: i.reason.views, orders: i.reason.orders })}
+                    {reason(i)}
                   </span>
                 )}
               </th>
               <td className="px-2 py-2.5 text-right">{formatInteger(i.views, locale)}</td>
               <td className="px-2 py-2.5 text-right">{formatInteger(i.adds, locale)}</td>
               <td className="px-2 py-2.5 text-right">{formatInteger(i.orders, locale)}</td>
-              <td className="py-2.5 pl-2 text-right">
-                {i.conversion === null || i.reason.key === "few_views" ? "–" : pct.format(i.conversion)}
-              </td>
+              <td className="py-2.5 pl-2 text-right">{share(i)}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+    </>
   );
 }

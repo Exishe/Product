@@ -32,6 +32,12 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
   const c = data.compare;
   const hours = chartHours(data.hourly);
   const qrPct = sharePercent(s.qr_orders, s.orders);
+  // "Nothing to compare yet" is said once under the row, not under each figure.
+  const noCompare = [
+    [s.revenue, c.revenue],
+    [s.avg_bill, c.avg_bill],
+    [s.orders, c.orders],
+  ].every(([now, before]) => deltaPercent(now!, before!) === null);
 
   return (
     <div className="flex flex-col gap-12">
@@ -61,13 +67,21 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         <Kpi
           testId="kpi-open-tables"
           label={t("openTables")}
-          value={t("openTablesValue", {
-            count: data.open_tables.count,
-            total: money(data.open_tables.total),
-          })}
-          hint={t("openTablesHint")}
-          small
+          value={formatInteger(data.open_tables.count, locale)}
+          hint={
+            data.open_tables.count > 0
+              ? `${money(data.open_tables.total)} · ${t("openTablesHint")}`
+              : t("openTablesHint")
+          }
         />
+        {noCompare && (
+          <p
+            className="text-staff-label2 m-0 text-label sm:col-span-2 lg:col-span-4"
+            data-testid="kpi-no-compare"
+          >
+            {t("noCompareAll")}
+          </p>
+        )}
       </section>
 
       <div className="grid gap-10 md:grid-cols-2 md:gap-8">
@@ -195,14 +209,12 @@ function Kpi({
   label,
   value,
   hint,
-  small,
   testId,
   children,
 }: {
   label: string;
   value: string;
   hint?: string;
-  small?: boolean;
   testId: string;
   children?: React.ReactNode;
 }) {
@@ -216,7 +228,7 @@ function Kpi({
         data-testid={`${testId}-value`}
         className={clsx(
           "num leading-tight font-bold break-words",
-          small ? "text-headline" : "text-large xl:text-figure xl:tracking-[-0.01em]",
+          "text-large xl:text-figure xl:tracking-[-0.01em]",
         )}
       >
         {value}
@@ -240,7 +252,8 @@ function Delta({
 }) {
   const muted = "text-staff-label2";
   const pct = deltaPercent(now, before);
-  if (pct === null) return <span className={`${muted} text-[0.9375rem]`}>{t("noCompare")}</span>;
+  // No comparison: the row says so once (noCompareAll).
+  if (pct === null) return null;
   // The word (↑ 12 %), an icon and the colour together, never colour alone.
   const [text, tone, Icon] =
     pct > 0

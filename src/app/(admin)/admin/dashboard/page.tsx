@@ -1,11 +1,11 @@
-import { ChartLine, CircleAlert, Download, Grid2x2, Receipt } from "lucide-react";
+import { ChartLine, CircleAlert, Download, Grid2x2, ReceiptText } from "lucide-react";
 import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AdminPage, Notice } from "@/features/admin-ui/page";
+import { MoreMenu } from "@/features/admin-ui/more-menu";
 import { button } from "@/features/admin-ui/styles";
-import { PlanBanner } from "@/features/billing/plan-banner";
 import { parseDashboard } from "@/features/dashboard/model";
 import { businessDate, parseDateInput, resolveRange } from "@/features/dashboard/range";
 import { RangePicker } from "@/features/dashboard/range-picker";
@@ -74,24 +74,40 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </p>
       }
       width="lg"
+      inlineActions
       actions={
         <>
-          <Link href="/admin/reports" className={button("secondary")} data-testid="reports-link">
+          {/* Below 1280 px the three links fold into one «More» on the
+              title's line, so the figures come first on a phone. */}
+          <MoreMenu
+            label={t("more")}
+            compact
+            className="xl:hidden"
+            items={[
+              { href: "/admin/reports", label: t("reports"), icon: <ChartLine aria-hidden="true" /> },
+              { href: "/admin/dashboard/menu", label: t("menuAnalysis"), icon: <Grid2x2 aria-hidden="true" /> },
+              { href: "/admin/export", label: t("export"), icon: <Download aria-hidden="true" /> },
+            ]}
+          />
+          <Link href="/admin/reports" className={button("secondary", "max-xl:hidden")} data-testid="reports-link">
             <ChartLine aria-hidden="true" />
             {t("reports")}
           </Link>
-          <Link href="/admin/dashboard/menu" className={button("secondary")} data-testid="menu-analysis-link">
+          <Link
+            href="/admin/dashboard/menu"
+            className={button("secondary", "max-xl:hidden")}
+            data-testid="menu-analysis-link"
+          >
             <Grid2x2 aria-hidden="true" />
             {t("menuAnalysis")}
           </Link>
-          <Link href="/admin/export" className={button("secondary")}>
+          <Link href="/admin/export" className={button("secondary", "max-xl:hidden")}>
             <Download aria-hidden="true" />
             {t("export")}
           </Link>
         </>
       }
     >
-      {me.role === "owner" && <PlanBanner restaurantId={me.restaurantId} locale={locale} />}
       <RangePicker range={range} today={today} />
       {!data ? (
         <Notice tone="alert" role="alert" icon={<CircleAlert aria-hidden="true" />}>
@@ -99,7 +115,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Notice>
       ) : empty ? (
         <div className="flex flex-col items-center gap-3 py-12 text-center">
-          <Receipt aria-hidden="true" className="text-staff-label2 size-8" />
+          <ReceiptText aria-hidden="true" className="text-staff-label2 size-8" />
           <p data-testid="dashboard-empty" className="text-staff-label2 m-0 text-[1.0625rem]">
             {range.preset === "today" ? t("empty") : t("emptyRange")}
           </p>

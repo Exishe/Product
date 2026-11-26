@@ -13,7 +13,10 @@ const kinds = {
   // not a floating white pill: the 3.4:1 field edge, drawn inside.
   secondary:
     "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
-  tinted: "bg-staff-fill text-ink disabled:bg-staff-fill disabled:text-staff-label2",
+  // One secondary style on the white column: "tinted" now draws the same
+  // outline, so a grey-filled pill never sits next to an outlined one.
+  tinted:
+    "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
   plain: "px-2 text-ink underline underline-offset-4 disabled:text-staff-label2",
@@ -52,10 +55,12 @@ export const alert = {
 export const sectionTitle = "m-0 text-heading font-semibold break-words";
 export const cardTitle = "m-0 text-name font-semibold break-words";
 
-// A quiet text action inside a list row: no fill, no shadow, 44 px tall.
+// A quiet text action: 16 px semibold ink with its icon or chevron, no fill,
+// no shadow, 44 px tall. Underlined only on hover and keyboard focus (an app,
+// not a 2010 web link).
 export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
   clsx(
-    "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[0.9375rem] font-semibold whitespace-nowrap disabled:cursor-not-allowed disabled:text-staff-label2 [&_svg]:size-4 [&_svg]:shrink-0",
+    "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-body font-semibold whitespace-nowrap underline-offset-4 hover:underline focus-visible:underline disabled:cursor-not-allowed disabled:text-staff-label2 disabled:no-underline [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
     tone === "danger" ? "text-pomegranate" : "text-ink",
     extra,
   );
