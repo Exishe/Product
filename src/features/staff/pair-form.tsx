@@ -22,12 +22,13 @@ type Redeemed = {
   station_id: string | null;
 };
 
-// Six 28 px monospace digits, centred in a 64 px field: the padding on the
-// left equals the letter spacing the last digit carries on its right. The
-// faint 000000 placeholder shows what goes in before anything is typed.
+// Six 28 px digits in the page's own sans (tabular figures, weight 500),
+// centred in a 64 px field: the padding on the left equals the letter spacing
+// the last digit carries on its right. The faint 000000 placeholder shows
+// what goes in before anything is typed.
 const codeInput = clsx(
   field,
-  "h-16 pl-[0.35em] text-center font-mono text-[1.75rem]! tabular-nums tracking-[0.35em] placeholder:text-staff-label2/45",
+  "h-16 pl-[0.3em] text-center font-[family-name:var(--font-ui)] text-[1.75rem]! font-medium tabular-nums tracking-[0.3em] placeholder:text-staff-label2/40",
 );
 
 // The device signs in anonymously, then redeems the owner's code (ADR-038).
@@ -84,7 +85,8 @@ export function PairForm() {
         label={t("code")}
         error={badFormat ? t("errors.format") : null}
         onChange={(event) => {
-          // Digits only: a letter or a space never appears in the field.
+          // Digits only: a letter or a space never appears in the field. No
+          // maxLength: a pasted "123 456" is cut to six digits here, not to "123 4".
           setCode(event.currentTarget.value.replace(/\D/g, "").slice(0, 6));
           setBadFormat(false);
         }}
@@ -94,7 +96,6 @@ export function PairForm() {
         inputMode="numeric"
         autoComplete="one-time-code"
         pattern="[0-9]{6}"
-        maxLength={6}
         required
         inputClassName={codeInput}
       />

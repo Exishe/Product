@@ -28,19 +28,20 @@
         "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "Table calls in the waiter app"
+        "alt": "The waiter app's order list, table by table"
       },
       "kitchen": {
         "tab": "Kitchen",
         "title": "Kitchen screen",
         "text": "Tickets arrive in order, and late ones are marked in red.",
-        "alt": "The kitchen screen with new and in-progress tickets"
+        "alt": "The kitchen screen with new and in-progress tickets",
+        "note": "Each café picks its kitchen screen's language: Armenian, Russian or English."
       },
       "admin": {
         "tab": "Admin",
         "title": "Owner admin",
         "text": "Menu, tables, staff and the day's reports.",
-        "alt": "The owner admin with the day's sales and to-dos"
+        "alt": "The menu editor in the owner admin, with dishes, photos and prices"
       }
     },
     "start": {
@@ -57,7 +58,20 @@
         "title": "Print the QR codes",
         "text": "Put them on the tables, and connect the kitchen and waiter devices with a six-digit code."
       },
-      "why": "Armenian done right, and Russian and English too. Nothing to install or buy: it runs on the phones and tablets you have. Alerts come to Telegram."
+      "why": {
+        "hardware": {
+          "lead": "No new hardware",
+          "text": "It runs on the phones and tablets you already have."
+        },
+        "languages": {
+          "lead": "Three languages",
+          "text": "The menu is in Armenian, Russian and English."
+        },
+        "telegram": {
+          "lead": "Telegram alerts",
+          "text": "When a table waits too long, you and your team get a message."
+        }
+      }
     },
     "pricing": {
       "title": "Pricing",
@@ -65,21 +79,24 @@
         "name": "Menu",
         "price": "Free",
         "term": "No time limit",
+        "note": "Guests see the menu but can't order from it.",
         "l1": "QR menu in three languages, with photos",
         "l2": "Import from a photo of your paper menu",
-        "l3": "A sold-out list for the day"
+        "l3": "A sold-out list for the day",
+        "cta": "Start free"
       },
       "service": {
         "name": "Service",
-        "price": "15 000 ֏",
+        "price": "15 000 ֏",
         "per": "a month",
-        "year": "or 150 000 ֏ a year, paid upfront",
-        "includes": "Everything in Menu, plus ordering from the table, the waiter app, the kitchen screen and Telegram alerts.",
-        "l1": "The first month is free",
-        "l2": "No card, no contract",
-        "l3": "In Yerevan we set it up in person, for free"
-      },
-      "founding": "For the first 10 cafés, Service is free during the pilot, then 10 000 ֏ a month for a year."
+        "year": "or 150 000 ֏ a year, paid upfront",
+        "includes": "Everything in Menu, plus:",
+        "l1": "Ordering from the table",
+        "l2": "The waiter app and the kitchen screen",
+        "l3": "Telegram alerts",
+        "offer": "The first month is free. The first 10 cafés pay nothing during the pilot, then 10 000 ֏ a month for a year.",
+        "perks": "No card, no contract. In Yerevan we set it up in person, for free."
+      }
     },
     "footer": {
       "copyright": "© 2026 Pativ · Yerevan",
@@ -91,7 +108,10 @@
   "common": {
     "notFound": "This page doesn't exist.",
     "backHome": "Home",
-    "notFoundHint": "The link may be old or mistyped."
+    "notFoundHint": "The link may be old or mistyped.",
+    "notFoundQr": "If you scanned a QR code at a café, ask the staff for a new one.",
+    "notFoundDemo": "Demo menu",
+    "notFoundSignIn": "Sign in"
   },
   "auth": {
     "login": {
@@ -363,7 +383,8 @@
       "failed": "Couldn't connect. Try again.",
       "format": "Enter 6 digits."
     },
-    "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes."
+    "hint": "The owner makes the code in the admin, under Staff and devices. It works for 10 minutes.",
+    "loginLink": "Sign in with email instead"
   },
   "invite": {
     "title": "Join the team",

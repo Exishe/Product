@@ -10,25 +10,34 @@ import { routing } from "@/i18n/routing";
 const DEMO_MENU = "m/pativ-demo/main";
 
 // The four surfaces in the showcase, each with real screenshots of the
-// current build (public/landing/): a portrait one for phones and a wide one
-// from the md breakpoint. Every wide image has one size and every phone image
-// another, so switching tabs never moves the page. The kitchen board speaks
-// the café's kitchen language (locations.kitchen_locale), so it has one
-// picture; the others have one per page language.
+// current build (public/landing/), one set per page language: a 420x630
+// phone screen for every surface, plus a 720x630 crop for the kitchen and the
+// admin from md up (all at 2x). The kitchen board was shot in the page's
+// language, which a café sets for its kitchen (locations.kitchen_locale); a
+// line under the text says so.
 const SURFACES = ["menu", "waiter", "kitchen", "admin"] as const;
-const PHONE = { width: 780, height: 1040 };
-const WIDE = { width: 1600, height: 1120 };
-const shot = (s: (typeof SURFACES)[number], locale: string) => (s === "kitchen" ? s : `${s}-${locale}`);
+const WIDE_SURFACES: readonly string[] = ["kitchen", "admin"];
+const PHONE = { width: 840, height: 1260 };
+const WIDE = { width: 1440, height: 1260 };
 
-// The hero picture: the live demo menu at 390 px (2x), down to the hairline
-// under its first dish; Armenian and Russian descriptions run one line longer.
-const HERO_HEIGHT: Record<string, number> = { hy: 1422, ru: 1422, en: 1376 };
+// The hero picture: the live demo menu at 390 px (2x), down to just above the
+// hairline that opens the second dish, so it ends on white under the price.
+const HERO = { width: 780, height: 1418 };
 
 const STEPS = ["step1", "step2", "step3"] as const;
+const WHY = ["hardware", "languages", "telegram"] as const;
 
 // One container for the whole page: 1120 px, 16 px gutters on phones, 32 px from md.
 const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 const h2 = "display-face m-0 text-large leading-tight font-normal! md:text-[2rem]";
+// Plan features: regular weight in both columns, a short dash before each line.
+const planList =
+  "text-name m-0 mt-6 flex list-none flex-col gap-2 p-0 leading-normal [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:text-slate [&>li]:before:content-['–']";
+const planColumn = "flex flex-col items-start md:row-span-7 md:grid md:grid-rows-subgrid md:justify-items-start";
+// The plan's terms in one plain sentence under the price.
+const planTerms = "text-name m-0 mt-4 max-w-[44ch] leading-normal text-pretty";
+const outlineButton =
+  "text-ink inline-flex min-h-14 items-center justify-center rounded-full bg-white px-6 text-base font-semibold no-underline shadow-[inset_0_0_0_1px_var(--color-staff-field)]";
 const textLink =
   "text-ink inline-flex min-h-11 items-center text-label font-semibold no-underline underline-offset-4 hover:underline";
 
@@ -68,8 +77,9 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
     title: t(`features.${s}.title`),
     text: t(`features.${s}.text`),
     alt: t(`features.${s}.alt`),
-    phone: { src: `/landing/show-${shot(s, locale)}-phone.webp`, ...PHONE },
-    wide: { src: `/landing/show-${shot(s, locale)}.webp`, ...WIDE },
+    note: s === "kitchen" ? t("features.kitchen.note") : undefined,
+    phone: { src: `/landing/show-${s}-${locale}-phone.webp`, ...PHONE },
+    wide: WIDE_SURFACES.includes(s) ? { src: `/landing/show-${s}-${locale}.webp`, ...WIDE } : undefined,
   }));
 
   // The language links: a nav in the header, a plain group again in the footer.
@@ -172,8 +182,8 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
               <img
                 src={`/landing/hero-menu-${locale}.webp`}
                 alt={t("heroAlt")}
-                width={780}
-                height={HERO_HEIGHT[locale] ?? 1422}
+                width={HERO.width}
+                height={HERO.height}
                 fetchPriority="high"
                 className="block h-auto w-full"
               />
@@ -208,9 +218,17 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 </li>
               ))}
             </ol>
-            <p className="border-hairline m-0 mt-12 max-w-[60ch] border-t pt-8 text-lg leading-normal text-pretty md:mt-16 md:text-xl">
-              {t("start.why")}
-            </p>
+            {/* Why Pativ: three facts under one hairline, a 22 px lead and a 17 px line each. */}
+            <ul className="border-hairline m-0 mt-12 grid list-none gap-6 border-t p-0 pt-8 md:mt-16 md:grid-cols-3 md:gap-12 md:pt-10">
+              {WHY.map((w) => (
+                <li key={w} className="flex flex-col gap-1">
+                  <span className="text-subtitle font-semibold">{t(`start.why.${w}.lead`)}</span>
+                  <span className="text-slate text-name max-w-[34ch] leading-normal text-pretty">
+                    {t(`start.why.${w}.text`)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -219,40 +237,56 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <h2 id="landing-pricing" className={h2}>
               {t("pricing.title")}
             </h2>
-            <div className="mt-8 grid md:mt-12 md:grid-cols-2">
-              <div className="flex flex-col pb-10 md:pr-12 md:pb-0">
+            {/* Two plans side by side, one hairline between them and no boxes. From
+                md the columns share seven subgrid rows (name, price, term, the
+                one-line terms, features, small print, button), so the lists and
+                both buttons line up. */}
+            <div className="mt-8 grid md:mt-12 md:grid-cols-2 md:grid-rows-[repeat(7,auto)]">
+              <div className={`${planColumn} pb-10 md:pr-12 md:pb-0`}>
                 <h3 className="text-heading m-0 font-semibold">{t("pricing.menu.name")}</h3>
                 <p className="text-figure m-0 mt-3 font-semibold tracking-[-0.01em]">
                   {t("pricing.menu.price")}
                 </p>
                 <p className="text-slate text-label m-0 mt-1">{t("pricing.menu.term")}</p>
-                <ul className="text-name m-0 mt-6 flex list-none flex-col gap-2 p-0">
+                <p className={planTerms}>{t("pricing.menu.note")}</p>
+                <ul className={planList}>
                   <li>{t("pricing.menu.l1")}</li>
                   <li>{t("pricing.menu.l2")}</li>
                   <li>{t("pricing.menu.l3")}</li>
                 </ul>
+                <span aria-hidden="true" />
+                <div className="pt-8 md:self-end">
+                  <a href={signupHref} className={outlineButton}>
+                    {t("pricing.menu.cta")}
+                  </a>
+                </div>
               </div>
-              <div className="border-sand-line flex flex-col items-start border-t pt-10 md:border-t-0 md:border-l md:pt-0 md:pl-12">
+              <div
+                className={`${planColumn} border-sand-line border-t pt-10 md:border-t-0 md:border-l md:pt-0 md:pl-12`}
+              >
                 <h3 className="text-heading m-0 font-semibold">{t("pricing.service.name")}</h3>
                 <p className="m-0 mt-3 flex flex-wrap items-baseline gap-x-2">
-                  <span className="num text-figure font-semibold tracking-[-0.01em]">
+                  <span className="num text-figure font-semibold tracking-[-0.01em] whitespace-nowrap">
                     {t("pricing.service.price")}
                   </span>
                   <span className="text-heading font-semibold">{t("pricing.service.per")}</span>
                 </p>
                 <p className="text-slate text-label m-0 mt-1">{t("pricing.service.year")}</p>
-                <p className="text-name m-0 mt-6 max-w-[44ch] leading-normal text-pretty">
-                  {t("pricing.service.includes")}
+                <p className={planTerms}>{t("pricing.service.offer")}</p>
+                <div>
+                  <p className="text-name m-0 mt-6 leading-normal">{t("pricing.service.includes")}</p>
+                  <ul className={`${planList} mt-2!`}>
+                    <li>{t("pricing.service.l1")}</li>
+                    <li>{t("pricing.service.l2")}</li>
+                    <li>{t("pricing.service.l3")}</li>
+                  </ul>
+                </div>
+                <p className="text-slate text-label m-0 mt-4 max-w-[44ch] leading-normal text-pretty">
+                  {t("pricing.service.perks")}
                 </p>
-                <ul className="text-name m-0 mt-4 flex list-none flex-col gap-2 p-0 font-semibold">
-                  <li>{t("pricing.service.l1")}</li>
-                  <li>{t("pricing.service.l2")}</li>
-                  <li>{t("pricing.service.l3")}</li>
-                </ul>
-                <div className="mt-8">{signupButton}</div>
+                <div className="pt-8 md:self-end">{signupButton}</div>
               </div>
             </div>
-            <p className="text-slate text-label m-0 mt-12 max-w-[70ch]">{t("pricing.founding")}</p>
           </div>
         </section>
       </main>
