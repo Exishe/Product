@@ -19,6 +19,9 @@ export type ShowcasePanel = {
   // surfaces stay one phone screen at every width.
   phone: { src: string; width: number; height: number };
   wide?: { src: string; width: number; height: number };
+  // When the picture shows something a visitor can try (the guest menu), it
+  // is a link there, so tapping its buttons is never a dead end.
+  link?: { href: string; label: string };
 };
 
 // The landing page's product showcase (benchmark 2.1): one row of tabs and one
@@ -135,26 +138,28 @@ export function Showcase({
                 p.wide && "md:aspect-[720/688]",
               )}
             >
-              <picture className="contents">
-                {p.wide && (
-                  <source
-                    media="(min-width: 48rem)"
-                    srcSet={p.wide.src}
-                    width={p.wide.width}
-                    height={p.wide.height}
+              <PictureLink link={p.link}>
+                <picture className="contents">
+                  {p.wide && (
+                    <source
+                      media="(min-width: 48rem)"
+                      srcSet={p.wide.src}
+                      width={p.wide.width}
+                      height={p.wide.height}
+                    />
+                  )}
+                  {/* A static webp at 2x; no image runtime on the landing. */}
+                  <img
+                    src={p.phone.src}
+                    width={p.phone.width}
+                    height={p.phone.height}
+                    alt={p.alt}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="shadow-soft-float block h-auto w-full rounded-[20px]"
                   />
-                )}
-                {/* A static webp at 2x; no image runtime on the landing. */}
-                <img
-                  src={p.phone.src}
-                  width={p.phone.width}
-                  height={p.phone.height}
-                  alt={p.alt}
-                  loading={i === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="shadow-soft-float block h-auto w-full rounded-[20px]"
-                />
-              </picture>
+                </picture>
+              </PictureLink>
             </div>
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
@@ -175,5 +180,20 @@ export function Showcase({
         </div>
       ))}
     </div>
+  );
+}
+
+// The picture as a plain link (same frame, a focus ring on its rounded edge),
+// or as it is when the panel has none.
+function PictureLink({ link, children }: { link?: { href: string; label: string }; children: ReactNode }) {
+  if (!link) return children;
+  return (
+    <a
+      href={link.href}
+      aria-label={link.label}
+      className="focus-visible:outline-ink block rounded-[20px] focus-visible:outline-2 focus-visible:outline-offset-4"
+    >
+      {children}
+    </a>
   );
 }

@@ -106,6 +106,8 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
       height: PHONE_HEIGHT[s]?.[locale] ?? PHONE.height,
     },
     wide: WIDE_SURFACES.includes(s) ? { src: `/landing/show-${s}-${locale}.webp`, ...WIDE } : undefined,
+    // The dish sheet looks like live UI, so (as the hero) it opens the demo menu.
+    link: s === "menu" ? { href: demoHref, label: t("ctaDemo") } : undefined,
   }));
 
   // The language links: a nav in the header, a plain group again in the footer.
@@ -278,17 +280,27 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 </li>
               ))}
             </ol>
-            {/* Why Pativ: three facts under one hairline, a 22 px lead and a 17 px line each. */}
-            <ul className="border-hairline m-0 mt-12 grid list-none gap-6 border-t p-0 pt-8 md:mt-16 md:grid-cols-3 md:gap-12 md:pt-10">
-              {WHY.map((w) => (
-                <li key={w} className="flex flex-col gap-1">
-                  <span className="text-subtitle font-semibold">{t(`start.why.${w}.lead`)}</span>
-                  <span className="text-slate text-name max-w-[34ch] leading-normal text-pretty">
-                    {t(`start.why.${w}.text`)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {/* Why Pativ: three facts under one hairline and their own short
+                heading, so on a phone they read as features, not as a fourth
+                step; a 17 px lead and line each, under the 22 px heading. */}
+            <div className="border-hairline mt-12 border-t pt-8 md:mt-16 md:pt-10">
+              <h3 id="landing-why" className="text-subtitle m-0 font-semibold">
+                {t("start.why.title")}
+              </h3>
+              <ul
+                aria-labelledby="landing-why"
+                className="m-0 mt-5 grid list-none gap-6 p-0 md:mt-6 md:grid-cols-3 md:gap-12"
+              >
+                {WHY.map((w) => (
+                  <li key={w} className="flex flex-col gap-1">
+                    <span className="text-name font-semibold">{t(`start.why.${w}.lead`)}</span>
+                    <span className="text-slate text-name max-w-[34ch] leading-normal text-pretty">
+                      {t(`start.why.${w}.text`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 
