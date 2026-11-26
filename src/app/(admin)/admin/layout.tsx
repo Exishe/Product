@@ -60,9 +60,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Staff screens are neutral grey (ADR-054, ADR-055); the guest themes never reach here.
   return (
-    <div className="admin-shell bg-staff-bg text-ink flex min-h-dvh flex-col lg:flex-row print:bg-white">
+    // ADR-093: the "inverted L". The navigation sits flush on the grey; the
+    // content is one white column, so a view reads as one page, not as cards.
+    <div className="admin-shell text-ink flex min-h-dvh flex-col bg-white lg:flex-row lg:bg-staff-bg print:bg-white">
       <AdminNav brand={brand("name")} cafe={restaurant?.name ?? ""} label={t("label")} links={links} />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 bg-white">
         <ToastProvider>{children}</ToastProvider>
       </div>
     </div>

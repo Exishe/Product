@@ -56,7 +56,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                     {item.badge ? (
                       <span
                         data-fly-bump=""
-                        className="num bg-badge text-on-badge absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[0.6875rem] leading-none font-bold"
+                        className="num bg-badge text-on-badge absolute -top-1.5 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-meta leading-none font-bold"
                       >
                         {item.badge}
                       </span>
@@ -66,7 +66,7 @@ export function GuestDock({ items, above }: { items: DockItem[]; above?: ReactNo
                 </>
               );
               const cls =
-                "text-dock-muted hover:text-dock-ink hover:bg-chip/60 aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink after:bg-accent-text relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors duration-150 after:absolute after:bottom-1 after:h-0.5 after:w-0 after:rounded-full after:transition-all after:duration-200 after:content-[''] disabled:opacity-50 hover:after:w-6 focus-visible:after:w-6 sm:flex-row sm:gap-2 sm:text-sm";
+                "text-dock-muted hover:text-dock-ink hover:bg-chip/60 aria-[current=page]:text-dock-ink aria-pressed:text-dock-ink after:bg-accent-text relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-meta font-semibold transition-colors duration-150 after:absolute after:bottom-1 after:h-0.5 after:w-0 after:rounded-full after:transition-all after:duration-200 after:content-[''] disabled:opacity-50 hover:after:w-6 focus-visible:after:w-6 sm:flex-row sm:gap-2 sm:text-body";
               return item.href ? (
                 <a
                   key={item.key}

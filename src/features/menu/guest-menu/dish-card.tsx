@@ -92,7 +92,7 @@ export function DishCard({
 
   const facts = (
     <span
-      className={`text-muted flex flex-wrap items-center gap-1.5 text-[0.8125rem] ${featured ? "" : "justify-center"}`}
+      className={`text-muted flex flex-wrap items-center gap-1.5 text-meta ${featured ? "" : "justify-center"}`}
     >
       {item.soldOut && <span className="text-alert font-semibold">{t("menu.soldOut")}</span>}
       {item.substitution && (
@@ -117,7 +117,7 @@ export function DishCard({
   );
   const price = (
     <span
-      className={`num text-accent-text font-semibold whitespace-nowrap ${featured ? "text-[1.625rem]" : "text-[0.9375rem]"} ${muted}`}
+      className={`num text-accent-text font-semibold whitespace-nowrap ${featured ? "text-[1.625rem]" : "text-name"} ${muted}`}
     >
       {formatAmd(item.price, locale)}
     </span>

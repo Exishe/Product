@@ -129,12 +129,12 @@ export function NotifyReady({
         </>
       )}
       {notes[state] && (
-        <p className="text-muted m-0 text-sm" role="status">
+        <p className="text-muted m-0 text-body" role="status">
           {notes[state]}
         </p>
       )}
       {error && (
-        <p className="text-pomegranate m-0 text-sm" role="alert">
+        <p className="text-pomegranate m-0 text-body" role="alert">
           {t("order.notifyError")}
         </p>
       )}

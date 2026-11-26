@@ -117,8 +117,8 @@ export function DishRow({
           <span
             className={`bg-plate relative block flex-none overflow-hidden ${
               feature
-                ? "md:rounded-guest-sm aspect-[4/3] w-full md:m-1.5 md:mb-0 md:w-[calc(100%-0.75rem)]"
-                : "md:rounded-guest-sm max-md:min-h-[7rem] max-md:w-28 max-md:self-stretch md:m-1.5 md:mb-0 md:aspect-[4/3] md:w-[calc(100%-0.75rem)]"
+                ? "max-md:rounded-guest-md md:rounded-guest-sm aspect-[4/3] w-full md:m-1.5 md:mb-0 md:w-[calc(100%-0.75rem)]"
+                : "max-md:rounded-guest-md md:rounded-guest-sm max-md:min-h-[7rem] max-md:w-28 max-md:self-stretch md:m-1.5 md:mb-0 md:aspect-[4/3] md:w-[calc(100%-0.75rem)]"
             }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
@@ -137,22 +137,22 @@ export function DishRow({
             )}
           </span>
         )}
-        <span className="flex min-w-0 flex-1 flex-col px-3 pt-3 pb-2">
+        <span className={`flex min-w-0 flex-1 flex-col px-3 pt-3 pb-2 max-md:pr-0 ${item.image && !feature ? "" : "max-md:pl-0"}`}>
           {section && (
             <Txt
               value={section}
               locale={locale}
-              className="border-line text-muted rounded-guest-sm mb-1.5 hidden self-start border px-2 py-1 text-[12px] leading-none md:block"
+              className="border-line text-muted rounded-guest-sm mb-1.5 hidden self-start border px-2 py-1 text-meta leading-none md:block"
             />
           )}
           <Txt
             value={item.name}
             locale={locale}
-            className={`min-w-0 text-[16px] leading-[1.3] font-semibold break-words hyphens-auto ${muted}`}
+            className={`min-w-0 text-name leading-[1.3] font-semibold break-words hyphens-auto ${muted}`}
           />
           {sizes.length > 0 && (
             <span
-              className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[14px] ${muted}`}
+              className={`mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-body ${muted}`}
               data-testid="sizes"
             >
               {sizes.map((s) => (
@@ -164,7 +164,7 @@ export function DishRow({
             </span>
           )}
           {item.substitution && (
-            <span className="text-muted mt-1 block text-[12px] font-semibold">
+            <span className="text-muted mt-1 block text-meta font-semibold">
               {t("menu.withSub", { to: item.substitution.to })}
             </span>
           )}
@@ -178,7 +178,7 @@ export function DishRow({
           />
           {item.origin ? (
             // Latin on every page: wine names and regions are not translated.
-            <span className="text-muted mt-1 block text-[14px] leading-[1.45] break-words" lang="en">
+            <span className="text-muted mt-1 block text-body leading-[1.45] break-words" lang="en">
               <span className="block font-semibold">{item.origin.region}</span>
               <span className="block">{item.origin.grape}</span>
             </span>
@@ -187,20 +187,20 @@ export function DishRow({
               <Txt
                 value={item.description}
                 locale={locale}
-                className="text-muted mt-1 line-clamp-2 block text-[14px] leading-[1.45] break-words"
+                className="text-muted mt-1 line-clamp-2 block text-body leading-[1.45] break-words"
               />
             )
           )}
           {warning && (
             <span
-              className={`mt-1 block text-[12px] font-semibold ${warning.strong ? "text-alert" : "text-muted"}`}
+              className={`mt-1 block text-meta font-semibold ${warning.strong ? "text-alert" : "text-muted"}`}
             >
               {warning.text}
             </span>
           )}
           <span className={`mt-auto flex items-center pt-2 ${priceRowClass}`}>
             {sizes.length === 0 && (
-              <span className={`num text-accent-text text-[14px] font-semibold whitespace-nowrap ${muted}`}>
+              <span className={`num text-accent-text text-body font-semibold whitespace-nowrap ${muted}`}>
                 {formatAmd(item.price, locale)}
               </span>
             )}
@@ -236,7 +236,7 @@ export function DishRow({
                 <MinusIcon />
               </button>
               <output
-                className="num w-5 text-center text-[14px] font-semibold"
+                className="num w-5 text-center text-body font-semibold"
                 aria-label={t("sheet.quantity")}
               >
                 {count}
@@ -262,7 +262,7 @@ export function DishRow({
               setCount(1);
               setAdded(true);
             }}
-            className={`${styles.addBtn} rounded-guest-md flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 text-[14px] font-semibold`}
+            className={`${styles.addBtn} rounded-guest-md flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 text-body font-semibold`}
             data-added={added || undefined}
           >
             {added ? <CheckIcon /> : null}

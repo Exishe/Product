@@ -50,7 +50,7 @@ export function AdminNav({
       </div>
       <nav
         aria-label={label}
-        className="bg-staff-bg/90 sticky top-0 z-30 backdrop-blur lg:hidden print:hidden"
+        className="border-staff-sep sticky top-0 z-30 border-b bg-white lg:hidden print:hidden"
       >
         <ul ref={row} className="admin-scroll-row flex gap-2 overflow-x-auto px-3 pt-2 pb-3">
           {links.map((l) => {
@@ -65,7 +65,7 @@ export function AdminNav({
                     "flex min-h-11 items-center gap-2 rounded-full px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap",
                     current
                       ? "bg-ink text-white"
-                      : "text-ink bg-white shadow-[0_6px_16px_-10px_rgb(30_40_60/0.3)]",
+                      : "text-ink bg-staff-fill",
                   )}
                 >
                   <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" />
@@ -78,8 +78,9 @@ export function AdminNav({
       </nav>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-72 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:p-4 print:hidden">
-        <div className="soft-card flex min-h-full flex-col">
+      {/* Flush on the grey page (ADR-093): no card, no shadow. */}
+      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:px-2 print:hidden">
+        <div className="flex min-h-full flex-col">
           <div className="flex flex-col gap-6 px-3 py-6">
             <Link href="/admin" className="flex flex-col rounded-lg px-3 py-1">
               <span className="text-staff-label2 text-[0.8125rem] font-semibold">{brand}</span>

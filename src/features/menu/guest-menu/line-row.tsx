@@ -61,23 +61,23 @@ export function LineRow({
         <Txt
           value={item.name}
           locale={locale}
-          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-[14px]" : "text-[16px]"} ${available ? "" : "text-muted line-through"}`}
+          className={`leading-tight font-semibold break-words hyphens-auto ${dense ? "text-body" : "text-name"} ${available ? "" : "text-muted line-through"}`}
         />
       ) : (
         <span />
       )}
-      <span className="num text-right text-[14px] leading-[1.45] font-semibold whitespace-nowrap">
+      <span className="num text-right text-body leading-[1.45] font-semibold whitespace-nowrap">
         {available ? formatAmd(priced.total, locale) : null}
       </span>
       {detail && item?.description && (
         <Txt
           value={item.description}
           locale={locale}
-          className={`text-soft ${col} text-[14px] leading-[1.45] break-words`}
+          className={`text-soft ${col} text-body leading-[1.45] break-words`}
         />
       )}
       {options.length > 0 && (
-        <span className={`text-muted ${col} text-[14px] leading-[1.45]`}>
+        <span className={`text-muted ${col} text-body leading-[1.45]`}>
           {options.map((m, i) => (
             <span key={m.id}>
               {i > 0 ? ", " : null}
@@ -87,14 +87,14 @@ export function LineRow({
         </span>
       )}
       {line.note && (
-        <span className={`text-muted ${col} text-[14px] leading-[1.45] break-words`}>
+        <span className={`text-muted ${col} text-body leading-[1.45] break-words`}>
           {open}
           {line.note}
           {close}
         </span>
       )}
       {!available && (
-        <span className={`text-alert ${col} text-[12px] font-semibold`} role="status">
+        <span className={`text-alert ${col} text-meta font-semibold`} role="status">
           {t("menu.soldOut")}
         </span>
       )}
@@ -110,7 +110,7 @@ export function LineRow({
             >
               <MinusIcon />
             </button>
-            <output className="num min-w-6 text-center text-[14px] font-semibold">{line.quantity}</output>
+            <output className="num min-w-6 text-center text-body font-semibold">{line.quantity}</output>
             <button
               type="button"
               className={step}
@@ -125,7 +125,7 @@ export function LineRow({
           <button
             type="button"
             disabled={locked}
-            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-[14px] font-semibold"
+            className="rounded-pill border-line-strong bg-surface min-h-11 border px-4 text-body font-semibold"
             onClick={() => onQuantity(line.id, 0)}
           >
             {t("cart.remove", { name })}

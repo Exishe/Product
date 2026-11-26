@@ -91,11 +91,11 @@ export function MenuLoadFailed() {
   return (
     <main className="bg-page mx-auto flex min-h-dvh max-w-[30rem] flex-col justify-center px-6 py-12">
       <h1 className="display-face text-title m-0 text-[1.375rem] leading-[1.2]">{text.title}</h1>
-      <p className="text-muted mt-2 text-[14px] leading-[1.45]">{text.body}</p>
+      <p className="text-muted mt-2 text-body leading-[1.45]">{text.body}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className={`${styles.cta} mt-6 inline-flex min-h-11 items-center justify-center self-start px-5 text-[14px] font-semibold`}
+        className={`${styles.cta} mt-6 inline-flex min-h-11 items-center justify-center self-start px-5 text-body font-semibold`}
       >
         {text.reload}
       </button>

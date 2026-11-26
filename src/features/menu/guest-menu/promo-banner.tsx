@@ -20,13 +20,13 @@ export function PromoBanners({
     <>
       {promos.map((p) => (
         <PromoShell key={p.id} id={p.id} label={label} closeLabel={closeLabel}>
-          <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] leading-[1.45] font-semibold">
+          <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-body leading-[1.45] font-semibold">
             <span lang={p.title.lang !== locale ? p.title.lang : undefined} data-testid="promo-title">
               {p.title.text}
             </span>
             {p.badge && !p.title.text.includes(p.badge) && (
               <span
-                className="bg-surface text-ink rounded-guest-sm px-2 py-1 text-[12px] leading-none font-semibold whitespace-nowrap"
+                className="bg-surface text-ink rounded-guest-sm px-2 py-1 text-meta leading-none font-semibold whitespace-nowrap"
                 data-testid="promo-badge"
               >
                 {p.badge}
@@ -35,7 +35,7 @@ export function PromoBanners({
           </p>
           {p.text && (
             <p
-              className="text-muted m-0 mt-0.5 text-[14px] leading-[1.45]"
+              className="text-muted m-0 mt-0.5 text-body leading-[1.45]"
               lang={p.text.lang !== locale ? p.text.lang : undefined}
             >
               {p.text.text}

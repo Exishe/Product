@@ -66,7 +66,7 @@ export function OrderAgain({
         ))}
       </span>
       <div className="min-w-0 flex-1 basis-48">
-        <h2 id="again-title" className="text-muted text-[14px] font-semibold">
+        <h2 id="again-title" className="text-muted text-body font-semibold">
           {t("again.title")}
         </h2>
         <p className="leading-snug break-words">
@@ -78,7 +78,7 @@ export function OrderAgain({
       <button
         type="button"
         onClick={() => onAdd(lines)}
-        className="rounded-pill text-ink hover:bg-chip min-h-11 flex-none border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-sm font-semibold"
+        className="rounded-pill text-ink hover:bg-chip min-h-11 flex-none border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-body font-semibold"
       >
         {t("again.add")}
       </button>

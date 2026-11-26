@@ -172,7 +172,7 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.625;
 }
 
@@ -393,7 +393,7 @@
   background: var(--guest-chip);
   color: var(--guest-ink);
   padding-inline: 0.625rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5rem;
   font-weight: 600;
 }
@@ -505,14 +505,14 @@
 /* The full name, never an ellipsis: it wraps to a second line, and a very
    long one is set smaller on three. */
 .barName {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   line-height: 1.1;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
 .barName[data-long] {
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   line-height: 1.12;
 }
 

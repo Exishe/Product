@@ -119,7 +119,7 @@ export function DishSheet({
                 className="display-face block text-[1.375rem] leading-[1.2] break-words hyphens-auto"
               />
             </h2>
-            <p className="num text-accent-text mt-1 text-[16px] font-semibold">
+            <p className="num text-accent-text mt-1 text-name font-semibold">
               {formatAmd(item.price, locale)}
             </p>
           </div>
@@ -154,11 +154,11 @@ export function DishSheet({
             value={item.description}
             locale={locale}
             as="p"
-            className="text-muted mt-2 text-[14px] leading-[1.45]"
+            className="text-muted mt-2 text-body leading-[1.45]"
           />
         )}
         {item.kcal !== null && (
-          <p className="num text-muted mt-2 text-[12px]" data-testid="kcal">
+          <p className="num text-muted mt-2 text-meta" data-testid="kcal">
             {formatKcal(item.kcal, (value) => t("menu.kcal", { value }), locale)}
           </p>
         )}
@@ -167,7 +167,7 @@ export function DishSheet({
             allergies to the waiter. Whose data it is goes once, on its own
             line, small. */}
         <div
-          className="bg-chip text-ink rounded-guest-md mt-4 px-3 py-3 text-[14px] leading-[1.45]"
+          className="bg-chip text-ink rounded-guest-md mt-4 px-3 py-3 text-body leading-[1.45]"
           data-testid="allergens"
         >
           {item.allergens.length > 0 ? (
@@ -182,7 +182,7 @@ export function DishSheet({
           ) : (
             <p>{item.allergensConfirmed ? t("diet.sheetNoneDeclared") : t("diet.sheetNone")}</p>
           )}
-          <p className="text-muted mt-1 text-[12px]">{t("diet.venueNote")}</p>
+          <p className="text-muted mt-1 text-meta">{t("diet.venueNote")}</p>
         </div>
 
         {item.groups.map((group) => {
@@ -199,10 +199,10 @@ export function DishSheet({
             .join(", ");
           return (
             <fieldset key={group.id} className="mt-5 min-w-0" data-testid="option-group">
-              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-[16px] font-semibold">
+              <legend className="mb-1 flex w-full items-center justify-between gap-3 text-name font-semibold">
                 {group.name ? <Txt value={group.name} locale={locale} /> : <span />}
                 <span
-                  className={`text-[12px] leading-none ${group.min > 0 ? "bg-chip text-ink rounded-guest-sm px-2 py-1 font-semibold" : "text-muted font-normal"}`}
+                  className={`text-meta leading-none ${group.min > 0 ? "bg-chip text-ink rounded-guest-sm px-2 py-1 font-semibold" : "text-muted font-normal"}`}
                 >
                   {hint}
                 </span>
@@ -212,7 +212,7 @@ export function DishSheet({
                 return (
                   <label
                     key={m.id}
-                    className="border-line flex min-h-11 items-center gap-3 border-b text-[14px] has-disabled:opacity-60"
+                    className="border-line flex min-h-11 items-center gap-3 border-b text-body has-disabled:opacity-60"
                   >
                     <input
                       type={single ? "radio" : "checkbox"}
@@ -225,12 +225,12 @@ export function DishSheet({
                     />
                     <Txt value={m.name} locale={locale} className="min-w-0 flex-1" />
                     {asPrice ? (
-                      <span className="num text-muted text-[14px] whitespace-nowrap">
+                      <span className="num text-muted text-body whitespace-nowrap">
                         {formatAmd(item.price + m.delta, locale)}
                       </span>
                     ) : (
                       m.delta !== 0 && (
-                        <span className="num text-muted text-[14px] whitespace-nowrap">
+                        <span className="num text-muted text-body whitespace-nowrap">
                           {m.delta > 0 ? "+" : "−"}
                           {formatAmd(Math.abs(m.delta), locale)}
                         </span>
@@ -244,7 +244,7 @@ export function DishSheet({
         })}
 
         {canOrder && (
-          <label className="mt-5 grid gap-1.5 text-[16px] font-semibold" htmlFor="dish-note">
+          <label className="mt-5 grid gap-1.5 text-name font-semibold" htmlFor="dish-note">
             {t("sheet.note")}
             <textarea
               id="dish-note"
@@ -256,7 +256,7 @@ export function DishSheet({
               className="rounded-field border-line-strong bg-surface min-h-16 resize-y border px-3 py-2.5 text-base font-normal"
             />
             {note.length >= NOTE_COUNTER_FROM && (
-              <span className="num text-muted justify-self-end text-[12px] font-normal" aria-live="polite">
+              <span className="num text-muted justify-self-end text-meta font-normal" aria-live="polite">
                 {note.length}/{MAX_NOTE}
               </span>
             )}
@@ -273,8 +273,8 @@ export function DishSheet({
           {canOrder ? (
             <div className="flex items-center gap-4">
               <p className="grid flex-none leading-tight">
-                <span className="text-muted text-[12px]">{t("cart.total")}</span>
-                <span className="num text-[16px] font-semibold whitespace-nowrap" data-testid="sheet-total">
+                <span className="text-muted text-meta">{t("cart.total")}</span>
+                <span className="num text-name font-semibold whitespace-nowrap" data-testid="sheet-total">
                   {formatAmd(price, locale)}
                 </span>
               </p>
@@ -286,7 +286,7 @@ export function DishSheet({
                   flyToCart(e.currentTarget, { photo: item.image ? dishPhotoUrl(item.image) : null });
                   onAdd({ modifierIds: selectedIds(item.groups, selection), quantity, note });
                 }}
-                className={`${styles.cta} flex min-h-12 min-w-0 flex-1 items-center justify-center gap-3 px-6 text-[14px] font-semibold`}
+                className={`${styles.cta} flex min-h-12 min-w-0 flex-1 items-center justify-center gap-3 px-6 text-body font-semibold`}
               >
                 {t("sheet.add")}
               </button>

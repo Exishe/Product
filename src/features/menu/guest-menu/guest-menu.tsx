@@ -449,7 +449,7 @@ export function GuestMenu({
         >
           <ShoppingBag size={20} aria-hidden />
           {count > 0 && (
-            <span className="num bg-badge text-on-badge absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-bold">
+            <span className="num bg-badge text-on-badge absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-meta font-bold">
               {count}
             </span>
           )}
@@ -458,7 +458,7 @@ export function GuestMenu({
     </span>
   );
   const railAction =
-    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 border border-line px-3 text-[14px] font-semibold";
+    "rounded-pill text-ink hover:bg-chip aria-pressed:bg-chip inline-flex min-h-11 items-center gap-2 border border-line px-3 text-label font-semibold";
   // The café's name leads to the top of the menu: from the order view it closes it
   // (the cart stays in the browser), on the menu it scrolls up.
   const home = {
@@ -604,7 +604,7 @@ export function GuestMenu({
           aria-pressed={filterCount > 0}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 text-[14px] font-semibold"
+          className="aria-pressed:bg-accent aria-pressed:text-on-accent rounded-pill bg-surface inline-flex min-h-11 flex-none items-center gap-2 border [border-color:var(--guest-line-strong)] px-3.5 text-label font-semibold"
         >
           <ShieldAlert size={15} aria-hidden />
           {filterCount ? t("diet.openCount", { count: filterCount }) : t("diet.open")}
@@ -653,12 +653,12 @@ export function GuestMenu({
               </Suspense>
             )}
             {avoid.length > 0 && (
-              <p className="text-muted pb-1 text-sm" role="status">
+              <p className="text-muted pb-1 text-body" role="status">
                 {t("diet.active", { list: allergenList(avoid) })} {t("diet.tellWaiter")}
               </p>
             )}
             {diet.length > 0 && (
-              <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-sm" role="status">
+              <p className="text-muted flex flex-wrap items-center gap-x-3 pb-1 text-body" role="status">
                 <span>{t("diet.activeTags", { list: diet.map((f) => t(`diet.chip.${f}`)).join(", ") })}</span>
                 <button
                   type="button"
@@ -738,10 +738,10 @@ export function GuestMenu({
                           <h3
                             id={`h-${c.id}`}
                             lang={c.name.lang === locale ? undefined : c.name.lang}
-                            className="text-ink mb-3 flex items-baseline gap-2 text-[16px] leading-[1.25] font-semibold"
+                            className="text-ink mb-3 flex items-baseline gap-2 text-name leading-[1.25] font-semibold"
                           >
                             {c.name.text}
-                            <span className="num text-soft text-[12px] font-normal">{c.items.length}</span>
+                            <span className="num text-soft text-meta font-normal">{c.items.length}</span>
                           </h3>
                         )}
                         {rows(c.items)}

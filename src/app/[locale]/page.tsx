@@ -53,7 +53,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 lang={l}
                 hrefLang={l}
                 aria-current={l === locale ? "page" : undefined}
-                className="text-slate hover:text-ink aria-[current=page]:text-ink grid min-h-11 min-w-11 place-items-center text-[0.875rem] no-underline decoration-2 underline-offset-4 aria-[current=page]:font-semibold aria-[current=page]:underline"
+                className="text-slate hover:text-ink aria-[current=page]:text-ink grid min-h-11 min-w-11 place-items-center text-label no-underline decoration-2 underline-offset-4 aria-[current=page]:font-semibold aria-[current=page]:underline"
               >
                 {guest(`language.${l}`)}
               </a>
@@ -62,7 +62,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
           <span aria-hidden="true" className="bg-sand-line h-5 w-px" />
           <Link
             href="/login"
-            className="text-ink inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-[0.875rem] font-semibold no-underline underline-offset-4 hover:underline"
+            className="text-ink inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-label font-semibold no-underline underline-offset-4 hover:underline"
           >
             {t("signIn")}
           </Link>
@@ -74,22 +74,22 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
           className={`${container} grid gap-12 pt-12 pb-16 md:pt-24 md:pb-24 lg:grid-cols-12 lg:items-center lg:gap-8`}
         >
           <div className="lg:col-span-6">
-            <h1 className="display-face m-0 max-w-[18em] text-[2rem] leading-[1.15] font-normal! text-balance md:text-[2.75rem]">
+            <h1 className="display-face m-0 max-w-[18em] text-[2.5rem] leading-[1.05] font-normal! tracking-[-0.02em] text-balance md:text-[3.5rem] xl:text-[4rem]">
               {t("title")}
             </h1>
-            <p className="text-slate mt-3 mb-0 max-w-[60ch] text-base leading-relaxed text-pretty md:text-lg">
+            <p className="text-slate mt-4 mb-0 max-w-[34ch] text-lg leading-normal text-pretty md:text-xl">
               {t("lead")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a
                 href={`/${locale}/${DEMO_MENU}`}
-                className="bg-ink inline-flex min-h-12 items-center justify-center rounded-full px-5 text-base font-semibold text-white no-underline"
+                className="bg-ink inline-flex min-h-14 items-center justify-center rounded-full px-6 text-base font-semibold text-white no-underline"
               >
                 {t("ctaDemo")}
               </a>
               <Link
                 href="/signup"
-                className="border-staff-field text-ink inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-base font-semibold no-underline"
+                className="border-staff-field text-ink inline-flex min-h-14 items-center justify-center rounded-full border px-6 text-base font-semibold no-underline"
               >
                 {t("ctaSignup")}
               </Link>
@@ -131,7 +131,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                   />
                   <div className="p-4">
                     <h3 className="m-0 text-base leading-snug font-semibold">{t(`features.${s}.title`)}</h3>
-                    <p className="text-slate mt-1 mb-0 text-[0.875rem] leading-normal">
+                    <p className="text-slate mt-1 mb-0 text-body leading-normal">
                       {t(`features.${s}.text`)}
                     </p>
                   </div>
@@ -141,7 +141,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <div className="border-sand-line mt-4 flex flex-col gap-4 rounded-xl border bg-white p-4 md:flex-row md:items-center md:justify-between md:p-6">
               <div>
                 <h3 className="m-0 text-base leading-snug font-semibold">{t("features.admin.title")}</h3>
-                <p className="text-slate mt-1 mb-0 text-[0.875rem] leading-normal">
+                <p className="text-slate mt-1 mb-0 text-body leading-normal">
                   {t("features.admin.text")}
                 </p>
               </div>
@@ -157,7 +157,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
       </main>
 
       <footer
-        className={`${container} text-slate flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-8 text-[0.875rem]`}
+        className={`${container} text-slate flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-8 text-label`}
       >
         <p className="m-0">{t("footer.copyright")}</p>
         <Link

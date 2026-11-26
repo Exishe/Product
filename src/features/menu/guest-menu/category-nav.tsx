@@ -142,7 +142,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                 setOpen(b.key);
               }}
               aria-current={here ? "true" : undefined}
-              className={`${styles.navlink} rounded-guest-md lg:rounded-guest-sm flex min-h-11 flex-none items-center gap-2 border py-1 pr-3.5 pl-1 text-[14px] whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:border-0 lg:px-3.5 ${
+              className={`${styles.navlink} rounded-guest-md lg:rounded-guest-sm flex min-h-11 flex-none items-center gap-2 border py-1 pr-3.5 pl-1 text-label whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 lg:min-h-9 lg:border-0 lg:px-3.5 ${
                 here
                   ? "bg-accent text-on-accent lg:bg-surface lg:text-ink border-transparent font-semibold lg:shadow-[0_1px_2px_rgb(30_28_25/0.08)]"
                   : `bg-surface text-muted hover:text-ink border-line lg:bg-transparent ${isOpen ? "lg:bg-surface/70 lg:text-ink" : "lg:hover:bg-surface/60"}`
@@ -190,7 +190,7 @@ export function CategoryNav({ categories }: { categories: GuestCategory[] }) {
                   className="hover:bg-chip aria-[current=true]:bg-chip aria-[current=true]:text-accent-text rounded-guest-md flex min-h-12 items-center justify-between gap-3 px-3 py-2 font-semibold"
                 >
                   {c.name ? <Txt value={c.name} locale={locale} className="min-w-0 break-words" /> : null}
-                  <span className="num text-muted flex-none text-sm font-normal">{c.items.length}</span>
+                  <span className="num text-muted flex-none text-label font-normal">{c.items.length}</span>
                 </a>
               </li>
             ))}

@@ -51,7 +51,7 @@ export function AllergenFilter({
     onDiet(next);
   };
   const chipClass =
-    "rounded-pill bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-11 items-center gap-1.5 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-[14px] font-semibold aria-pressed:border-transparent";
+    "rounded-pill bg-surface aria-pressed:bg-accent aria-pressed:text-on-accent inline-flex min-h-11 items-center gap-1.5 border [border-color:color-mix(in_srgb,var(--guest-line-strong)_60%,transparent)] px-4 text-label font-semibold aria-pressed:border-transparent";
 
   return (
     <dialog
@@ -77,7 +77,7 @@ export function AllergenFilter({
             <CloseIcon />
           </button>
         </div>
-        <h3 className="mt-5 text-[16px] font-semibold">{t("diet.showOnly")}</h3>
+        <h3 className="mt-5 text-name font-semibold">{t("diet.showOnly")}</h3>
         <ul className="mt-2 flex flex-wrap gap-2" data-testid="diet-chips">
           {DIET_FILTERS.map((f) => {
             const on = shownOnly.includes(f);
@@ -91,11 +91,11 @@ export function AllergenFilter({
             );
           })}
         </ul>
-        <p className="text-muted mt-2 text-[14px] leading-[1.45]">{t("diet.nutsHint")}</p>
-        <h3 id="avoid-heading" className="mt-6 text-[16px] font-semibold">
+        <p className="text-muted mt-2 text-body leading-[1.45]">{t("diet.nutsHint")}</p>
+        <h3 id="avoid-heading" className="mt-6 text-name font-semibold">
           {t("diet.title")}
         </h3>
-        <p className="text-muted mt-1 text-[14px] leading-[1.45]">{t("diet.hint")}</p>
+        <p className="text-muted mt-1 text-body leading-[1.45]">{t("diet.hint")}</p>
         <ul className="mt-3 flex flex-wrap gap-2">
           {ALLERGENS.map((a) => {
             const on = chosen.includes(a);
@@ -109,9 +109,9 @@ export function AllergenFilter({
             );
           })}
         </ul>
-        <div className="bg-chip rounded-guest-md mt-5 px-4 py-3 text-[14px] leading-[1.45]">
+        <div className="bg-chip rounded-guest-md mt-5 px-4 py-3 text-body leading-[1.45]">
           <p>{t("diet.tellWaiter")}</p>
-          <p className="text-muted mt-1 text-[12px]">{t("diet.venueNote")}</p>
+          <p className="text-muted mt-1 text-meta">{t("diet.venueNote")}</p>
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
           <button

@@ -9,8 +9,10 @@ const base =
 
 const kinds = {
   primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
+  // On the white content column (ADR-093) a secondary button is an outline,
+  // not a floating white pill: the 3.4:1 field edge, drawn inside.
   secondary:
-    "bg-white text-ink shadow-[var(--shadow-soft)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
+    "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
   tinted: "bg-staff-fill text-ink disabled:bg-staff-fill disabled:text-staff-label2",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",
   destructive: "bg-pomegranate text-white disabled:bg-staff-fill disabled:text-staff-label2",
@@ -34,7 +36,7 @@ export const iconButton = (extra?: string) =>
 export const field =
   "w-full min-w-0 rounded-xl border border-staff-field bg-white px-3 text-[1.0625rem] text-ink placeholder:text-staff-label2 disabled:bg-staff-fill disabled:text-staff-label2 focus-visible:border-ink focus-visible:outline-2 focus-visible:-outline-offset-1 aria-invalid:border-pomegranate aria-invalid:outline-pomegranate";
 export const input = clsx(field, "h-12");
-export const fieldLabel = "text-[0.9375rem] font-semibold text-staff-label2";
+export const fieldLabel = "text-label font-semibold text-staff-label2";
 
 // A message inside a form (an error from the server, a notice): one shape,
 // 12 px corners like the fields, a 16 px icon on the first line.
@@ -44,11 +46,11 @@ export const alert = {
   notice: "bg-amber-tint text-ink [&_svg]:text-amber-text",
 };
 
-// One heading scale (ADR-055): the page title (h1), a section title above a
-// card (Section, 19 px semibold), and a title inside a card (17 px semibold),
-// so a card never shouts louder than the section it sits in.
-export const sectionTitle = "m-0 text-[1.1875rem] leading-tight font-semibold break-words";
-export const cardTitle = "m-0 text-[1.0625rem] leading-snug font-semibold break-words";
+// One heading scale (ADR-055, on the ADR-093 type scale): the page title (h1),
+// a section title (20 px semibold) and a title inside a group (17 px semibold),
+// so a group never shouts louder than the section it sits in.
+export const sectionTitle = "m-0 text-heading font-semibold break-words";
+export const cardTitle = "m-0 text-name font-semibold break-words";
 
 // A quiet text action inside a list row: no fill, no shadow, 44 px tall.
 export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
@@ -58,8 +60,10 @@ export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
     extra,
   );
 
-// Grouped content on the grey page: white, rounded, no border (iOS inset grouped).
-export const card = "rounded-2xl bg-white p-4 sm:p-5"; // floats on --shadow-soft (globals.css, ADR-056)
+// Grouped content (ADR-093): white like the content column it sits on, with no
+// border and no shadow, so groups read as parts of one page, split by space.
+// On the grey staff screens it is a flat white group.
+export const card = "rounded-2xl bg-white p-4 sm:p-5";
 
 export const chip = {
   base: "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] leading-5 font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0",

@@ -54,10 +54,10 @@ export function GamesCorner({
         <div className="flex items-center gap-3">
           <Gamepad2 size={26} strokeWidth={1.75} className="text-accent-text flex-none" aria-hidden />
           <div>
-            <h3 id="games-title" className="text-[14px] leading-tight font-semibold">
+            <h3 id="games-title" className="text-body leading-tight font-semibold">
               {t("games.title")}
             </h3>
-            <p className="text-muted text-[12px]">{t("games.subtitle")}</p>
+            <p className="text-muted text-meta">{t("games.subtitle")}</p>
           </div>
         </div>
         <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden">
@@ -82,8 +82,8 @@ export function GamesCorner({
                   />
                 </span>
                 <span className="flex items-center justify-between gap-2 p-3">
-                  <span className="min-w-0 text-[13px] leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-                  <span className="rounded-pill bg-add text-on-add flex-none px-3 py-1 text-[12px] font-semibold">
+                  <span className="min-w-0 text-label leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
+                  <span className="rounded-pill bg-add text-on-add flex-none px-3 py-1 text-meta font-semibold">
                     {t("games.play")}
                   </span>
                 </span>
@@ -267,7 +267,7 @@ function GameLayer({
           {/* A quiet line that the kitchen is still on it: the game yields to the real wait. */}
           {waiting && !ready && (
             <span
-              className="text-slip-dim block max-h-[2lh] overflow-hidden text-xs leading-tight text-balance"
+              className="text-slip-dim block max-h-[2lh] overflow-hidden text-meta leading-tight text-balance"
               data-testid="game-cooking"
             >
               <span
@@ -288,7 +288,7 @@ function GameLayer({
         >
           <SpeakerIcon on={sound} />
         </button>
-        <span className="max-w-[7rem] flex-none text-right text-sm leading-tight">
+        <span className="max-w-[7rem] flex-none text-right text-body leading-tight">
           <span className="text-slip-dim block truncate">{t("games.best", { score: best })}</span>
           <span className="num text-apricot-on-dark block text-lg font-semibold" aria-live="off">
             {score}
@@ -344,7 +344,7 @@ function GameLayer({
                 type="button"
                 onClick={() => setSound((on) => !on)}
                 aria-pressed={sound}
-                className="text-slip-dim hover:bg-basalt-3 aria-pressed:text-apricot-on-dark flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold"
+                className="text-slip-dim hover:bg-basalt-3 aria-pressed:text-apricot-on-dark flex min-h-11 items-center gap-2 rounded-full px-4 text-body font-semibold"
                 data-testid="game-sound-intro"
               >
                 <SpeakerIcon on={sound} />

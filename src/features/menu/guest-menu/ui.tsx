@@ -82,7 +82,7 @@ export function Stepper({
       >
         <MinusIcon />
       </button>
-      <output className="num min-w-7 text-center text-[16px] font-semibold" aria-label={labels.quantity}>
+      <output className="num min-w-7 text-center text-name font-semibold" aria-label={labels.quantity}>
         {value}
       </output>
       <button
@@ -109,7 +109,7 @@ export const isBadgeTag = (tag: GuestTag) => BADGE_TAGS.includes(tag);
 export function TagBadge({ label, onPhoto = false }: { label: string; onPhoto?: boolean }) {
   return (
     <span
-      className={`rounded-guest-sm text-ink inline-block px-2 py-1 text-[12px] leading-none font-semibold whitespace-nowrap ${
+      className={`rounded-guest-sm text-ink inline-block px-2 py-1 text-meta leading-none font-semibold whitespace-nowrap ${
         onPhoto ? "bg-surface" : "bg-chip"
       }`}
     >
@@ -129,7 +129,7 @@ export function MetaLine({ parts, className = "" }: { parts: ReactNode[]; classN
   if (shown.length === 0) return null;
   return (
     <span
-      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] leading-[1.4] ${className}`}
+      className={`text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1 text-meta leading-[1.4] ${className}`}
     >
       {shown.map((part, i) => (
         <span key={i} className="contents">
@@ -157,7 +157,7 @@ export function Notice({
     alert: "border-alert bg-alert-tint text-ink",
   };
   return (
-    <p className={`rounded-card border px-4 py-3 text-[14px] leading-[1.45] ${tones[tone]}`}>
+    <p className={`rounded-card border px-4 py-3 text-body leading-[1.45] ${tones[tone]}`}>
       {tone === "info" && <QrCode size={22} strokeWidth={1.75} aria-hidden className="flex-none" />}
       {tone === "info" ? <span>{children}</span> : children}
     </p>

@@ -116,7 +116,7 @@ export function TableChip({ label }: { label: string }) {
   const { t } = useGuestI18n();
   return (
     <span
-      className={`text-ink grid min-h-11 flex-none place-items-center text-[12px] font-semibold whitespace-nowrap ${styles.flip}`}
+      className={`text-ink grid min-h-11 flex-none place-items-center text-meta font-semibold whitespace-nowrap ${styles.flip}`}
       data-testid="table-chip"
     >
       <Flip>
@@ -162,7 +162,7 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
           lang={l}
           hrefLang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-10 place-items-center text-[14px] aria-[current=true]:font-semibold ${styles.flip}`}
+          className={`group text-muted hover:text-ink aria-[current=true]:text-ink grid min-h-11 min-w-11 place-items-center text-label aria-[current=true]:font-semibold ${styles.flip}`}
         >
           <Flip>
             <span className="group-aria-[current=true]:bg-chip rounded-guest-sm px-2 py-1">

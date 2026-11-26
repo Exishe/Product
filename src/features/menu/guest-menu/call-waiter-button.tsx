@@ -76,7 +76,7 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
   }, [current, token, tableId, locale]);
 
   const pill =
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-pill px-4 text-sm font-semibold";
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-pill px-4 text-body font-semibold";
   const hidden = useSyncExternalStore(subscribe, noteIsHidden, () => false);
   if (current === "idle" || (current === "called" && hidden)) return null;
   return (

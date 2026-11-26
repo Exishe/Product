@@ -53,7 +53,7 @@ export function OrderRail({
         {t("cart.title")}
       </h2>
       {summary.lines.length === 0 ? (
-        <p className="text-muted mt-2 text-[14px] leading-[1.45]">{t("panel.empty")}</p>
+        <p className="text-muted mt-2 text-body leading-[1.45]">{t("panel.empty")}</p>
       ) : (
         <>
           <ul className="-mx-4 mt-2 min-h-0 flex-1 overflow-y-auto px-4">
@@ -70,19 +70,19 @@ export function OrderRail({
             ))}
           </ul>
           <div className="border-line flex items-baseline justify-between gap-3 border-t pt-3">
-            <span className="text-muted text-[12px]">{t("cart.total")}</span>
-            <span className="num text-[16px] font-semibold" data-testid="rail-total">
+            <span className="text-muted text-meta">{t("cart.total")}</span>
+            <span className="num text-name font-semibold" data-testid="rail-total">
               {formatAmd(summary.total, locale)}
             </span>
           </div>
-          <p className="text-muted mt-1 mb-3 text-[12px]">{t("cart.payNote")}</p>
+          <p className="text-muted mt-1 mb-3 text-meta">{t("cart.payNote")}</p>
           {send}
           <button
             type="button"
             onClick={onOpen}
             className={
               send
-                ? "text-accent-text mt-1 min-h-11 text-[14px] font-semibold"
+                ? "text-accent-text mt-1 min-h-11 text-body font-semibold"
                 : `${styles.cta} flex min-h-12 w-full items-center justify-center px-5 font-semibold`
             }
           >

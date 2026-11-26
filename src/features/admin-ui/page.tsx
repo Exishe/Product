@@ -24,7 +24,8 @@ export function AdminPage({
   return (
     <main
       className={clsx(
-        "mx-auto flex w-full flex-col gap-6 px-4 pt-6 pb-12 sm:px-6 lg:px-8 lg:pt-10",
+        // Groups are split by 40-48 px of space (ADR-093), not by card edges.
+        "mx-auto flex w-full flex-col gap-10 px-4 pt-6 pb-16 sm:px-6 lg:gap-12 lg:px-8 lg:pt-10",
         { sm: "max-w-2xl", md: "max-w-4xl", lg: "max-w-6xl", xl: "max-w-7xl" }[width],
       )}
     >
@@ -40,7 +41,7 @@ export function AdminPage({
             {back.label}
           </Link>
         )}
-        <h1 className="page-title m-0 text-[2rem] break-words sm:text-[3rem]">{title}</h1>
+        <h1 className="page-title m-0 text-large break-words sm:text-figure">{title}</h1>
         {subtitle && (
           <div className="text-staff-label2 mt-2 max-w-[60ch] text-[1.0625rem] leading-normal md:col-start-1">
             {subtitle}
@@ -62,7 +63,8 @@ export function AdminPage({
   );
 }
 
-// A titled group of content (iOS section header above a white card).
+// A titled group of content: a 20 px heading, a hairline, then the content on
+// the page itself (ADR-093; it was a white card on grey).
 export function Section({
   title,
   hint,
@@ -82,19 +84,21 @@ export function Section({
 }) {
   return (
     <section aria-labelledby={id} data-testid={testId} className="flex min-w-0 flex-col gap-2">
-      <div className="flex flex-wrap items-end justify-between gap-2 px-1">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex min-w-0 flex-col">
           <h2 id={id} className={sectionTitle}>
             {title}
           </h2>
-          {hint && <p className="text-staff-label2 m-0 text-[0.9375rem]">{hint}</p>}
+          {hint && <p className="text-staff-label2 m-0 text-label">{hint}</p>}
         </div>
         {actions}
       </div>
       {bare ? (
         children
       ) : (
-        <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 sm:p-5">{children}</div>
+        // ADR-093: no card. A hairline under the heading opens the group; the
+        // content keeps the page's left edge.
+        <div className="border-staff-sep flex flex-col gap-3 border-t pt-4">{children}</div>
       )}
     </section>
   );
@@ -163,7 +167,7 @@ export function Notice({
       className={clsx(
         "flex items-start gap-3 rounded-[var(--radius-soft)] px-4 py-3 text-[1.0625rem] [&>svg]:mt-0.5 [&>svg]:size-5 [&>svg]:shrink-0",
         {
-          info: "text-ink [&>svg]:text-staff-label2 bg-white shadow-[var(--shadow-soft)]",
+          info: "text-ink [&>svg]:text-staff-label2 bg-staff-bg",
           ok: "bg-tarragon-tint text-ink [&>svg]:text-tarragon",
           wait: "text-ink [&>svg]:text-amber-text bg-amber-tint",
           alert: "bg-pom-tint text-pomegranate",
