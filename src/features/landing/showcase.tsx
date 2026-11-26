@@ -13,7 +13,8 @@ export type ShowcasePanel = {
   points: string[];
   // An optional muted line under the list (the kitchen's language note).
   note?: string;
-  // Every surface has a portrait screenshot (420x688 CSS px at 2x). The
+  // Every surface has a portrait screenshot (420x688 CSS px at 2x, or a
+  // little shorter when its content ends sooner). The
   // kitchen also has a wide one (720x688 at 2x) from md up; the other
   // surfaces stay one phone screen at every width.
   phone: { src: string; width: number; height: number };
@@ -28,8 +29,10 @@ export type ShowcasePanel = {
 // (688 px at xl) and sits on the container's right edge, with the text taking
 // the rest of the row: switching tabs never moves the page, the picture's
 // right edge or the text's left edge. Tabs follow the WAI-ARIA tabs pattern: arrows, Home and End move
-// between them and select at once. On narrow phones the row scrolls sideways
-// (snapping, no scrollbar) rather than squeezing the labels together. A new
+// between them and select at once. Below sm the tabs are a 2x2 grid of 48 px
+// tabs, each on its own hairline (four Armenian labels need 313 of the 328 px
+// at 360, which leaves no gap between them), so no label is cut or hidden
+// off-screen; from sm they sit in one row with 24/32 px gaps. A new
 // panel fades in over 200 ms (off under reduced motion). Hidden panels keep
 // their lazy images unloaded.
 export function Showcase({
@@ -69,17 +72,16 @@ export function Showcase({
 
   return (
     <div className="mt-6 md:mt-8">
-      {/* The hairline is the row's own inset shadow, so the selected tab's
-          underline can sit on it inside a scrolling row. On phones the row
-          runs to the screen edges and its labels start on the 16 px gutter. */}
-      {/* Each tab has an 8 px side pad under a -8 px margin, so the labels keep
-          their 24/32 px gaps and the focus ring has room around the label. */}
-      <div className="-mx-4 shadow-[inset_0_-1px_0_var(--color-sand-line)] md:mx-0">
+      {/* The hairline is an inset shadow (each tab's below sm, the row's from
+          sm), so the selected tab's underline sits on it. From sm each tab has an 8 px side pad under a
+          -8 px margin, so the labels keep their 24/32 px gaps and the focus
+          ring has room around the label. */}
+      <div className="sm:shadow-[inset_0_-1px_0_var(--color-sand-line)]">
         <div
           role="tablist"
           aria-labelledby={labelledBy}
           onKeyDown={onKeyDown}
-          className="flex snap-x snap-mandatory scroll-px-2 [scrollbar-width:none] gap-6 overflow-x-auto px-4 md:-mx-2 md:scroll-px-0 md:gap-8 md:px-2 [&::-webkit-scrollbar]:hidden"
+          className="grid grid-cols-2 gap-x-6 sm:-mx-2 sm:flex sm:gap-6 md:gap-8"
         >
           {panels.map((p, i) => (
             <button
@@ -94,7 +96,7 @@ export function Showcase({
               aria-selected={i === active}
               tabIndex={i === active ? 0 : -1}
               onClick={() => setActive(i)}
-              className="text-slate hover:text-ink aria-selected:text-ink after:bg-ink text-label md:text-name focus-visible:outline-ink relative -mx-2 flex h-12 min-w-11 shrink-0 snap-start items-center justify-center rounded-lg px-2 font-semibold tracking-normal whitespace-nowrap after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 focus-visible:outline-2 focus-visible:-outline-offset-2 aria-selected:after:opacity-100"
+              className="text-slate hover:text-ink aria-selected:text-ink after:bg-ink text-name focus-visible:outline-ink relative flex h-12 min-w-11 shrink-0 items-center justify-start font-semibold tracking-normal whitespace-nowrap shadow-[inset_0_-1px_0_var(--color-sand-line)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 focus-visible:outline-2 focus-visible:-outline-offset-2 aria-selected:after:opacity-100 sm:justify-center sm:rounded-lg sm:px-2 sm:shadow-none sm:after:inset-x-2"
             >
               {p.tab}
             </button>
@@ -111,7 +113,9 @@ export function Showcase({
           hidden={i !== active}
           className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-12"
         >
-          {/* The stage: 45:43 on tablets, the picture filling its height and
+          {/* Every picture is framed like the hero's: a 20 px radius and the
+              same soft shadow, its own background running to the edge.
+              The stage: 45:43 on tablets, the picture filling its height and
               centred. From lg the stage is exactly as wide as its picture (one
               height for all: 612 px at lg, 688 at xl), on the container's
               right edge, so a phone screen leaves its spare width to the
@@ -122,26 +126,36 @@ export function Showcase({
               p.wide ? "lg:w-[40rem] xl:w-[45rem]" : "lg:w-[23.375rem] xl:w-[26.25rem]",
             )}
           >
-            <picture className="contents">
-              {p.wide && (
-                <source
-                  media="(min-width: 48rem)"
-                  srcSet={p.wide.src}
-                  width={p.wide.width}
-                  height={p.wide.height}
-                />
+            {/* A fixed 420:688 slot (720:688 for a wide picture from md), so a
+                picture cut a little shorter than the screen (the admin list)
+                sits at its top and switching tabs never changes the height. */}
+            <div
+              className={clsx(
+                "aspect-[420/688] w-full md:h-full md:w-auto md:max-w-full lg:h-auto lg:w-full",
+                p.wide && "md:aspect-[720/688]",
               )}
-              {/* A static webp at 2x; no image runtime on the landing. */}
-              <img
-                src={p.phone.src}
-                width={p.phone.width}
-                height={p.phone.height}
-                alt={p.alt}
-                loading={i === 0 ? "eager" : "lazy"}
-                decoding="async"
-                className="block h-auto w-full rounded-[20px] md:h-full md:w-auto md:max-w-full lg:h-auto lg:w-full"
-              />
-            </picture>
+            >
+              <picture className="contents">
+                {p.wide && (
+                  <source
+                    media="(min-width: 48rem)"
+                    srcSet={p.wide.src}
+                    width={p.wide.width}
+                    height={p.wide.height}
+                  />
+                )}
+                {/* A static webp at 2x; no image runtime on the landing. */}
+                <img
+                  src={p.phone.src}
+                  width={p.phone.width}
+                  height={p.phone.height}
+                  alt={p.alt}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="shadow-soft-float block h-auto w-full rounded-[20px]"
+                />
+              </picture>
+            </div>
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
             <h3 className="text-subtitle m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>

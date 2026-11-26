@@ -21,6 +21,7 @@ export default async function NotFound() {
       bare
       brand={t("brand.name")}
       title={t("common.notFound")}
+      wideTitle
       subtitle={<p className="m-0">{t("common.notFoundHint")}</p>}
       footer={
         <>

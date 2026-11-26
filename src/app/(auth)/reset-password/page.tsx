@@ -12,15 +12,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Where the reset email's link lands: the browser client reads the link's
-// code into a session, then the owner sets a new password.
+// code into a session, then the owner sets a new password. The form renders
+// the title itself, because an old or used link changes it.
 export default async function ResetPasswordPage() {
   const t = await getTranslations();
   return (
-    <AuthShell
-      brand={t("brand.name")}
-      title={t("auth.reset.title")}
-      subtitle={<p className="m-0">{t("auth.reset.subtitle")}</p>}
-    >
+    <AuthShell bare brand={t("brand.name")}>
       <NextIntlClientProvider>
         <ResetForm />
       </NextIntlClientProvider>

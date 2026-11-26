@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { AuthHeading } from "./auth-heading";
 import { BrandLink } from "./brand";
 import { LocaleSwitch } from "./locale-switch";
 
@@ -10,18 +11,23 @@ import { LocaleSwitch } from "./locale-switch";
 // the same white page (ADR-094: no card around the form). The column starts
 // at a fixed offset, not centred, so the title sits at the same height on
 // every one of these screens and the form stays above a phone keyboard.
-// `bare` is kept for callers; both render the same now.
+// `bare` is kept for callers; both render the same now. A screen whose title
+// depends on client state leaves `title` out and renders `AuthHeading` itself
+// as the first child. `wideTitle` lets a short one-line title (the 404) run
+// past the column on wider screens instead of breaking after its first word.
 export async function AuthShell({
   brand,
   title,
   subtitle,
+  wideTitle,
   footer,
   bare,
   children,
 }: {
   brand: string;
-  title: string;
+  title?: string;
   subtitle?: ReactNode;
+  wideTitle?: boolean;
   footer?: ReactNode;
   bare?: boolean;
   children: ReactNode;
@@ -35,10 +41,7 @@ export async function AuthShell({
         <LocaleSwitch current={locale} label={t("label")} names={names} />
       </header>
       <main className="mx-auto flex w-full max-w-[25rem] flex-col gap-8 px-4 pt-8 pb-16 sm:px-0 sm:pt-[12vh]">
-        <div className="flex flex-col gap-3">
-          <h1 className="font-display text-figure m-0 font-normal text-balance">{title}</h1>
-          {subtitle && <div className="text-staff-label2 text-name text-pretty">{subtitle}</div>}
-        </div>
+        {title && <AuthHeading title={title} subtitle={subtitle} wide={wideTitle} />}
         {bare ? children : <div className="flex flex-col">{children}</div>}
         {footer && <div className="text-staff-label2 text-body flex flex-col">{footer}</div>}
       </main>
