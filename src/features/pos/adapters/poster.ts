@@ -9,12 +9,12 @@ import type { Fetcher, HttpReply, PosCatalog, PosProduct, SendJob, SendResult } 
 // (v3) on 26 Nov 2026, see ADR-093.
 export const POSTER_API = "https://joinposter.com/api";
 /**
- * Poster asks for a phone when no client_id is given (createIncomingOrder);
- * whether an order without one is accepted is not confirmed. The owner can
- * set one in the connection's settings (e.g. the café's own number); we then
- * send skip_phone_validation as well.
+ * Poster refuses an incoming order without a phone when no client_id is given
+ * (error 155 "invalid field: Client phone"), and skip_phone_validation makes it
+ * answer HTTP 500. Both checked against a live Poster account on 26 Nov 2026.
+ * So the owner sets the café's own number once, and every order carries it.
  */
-export const POSTER_PHONE_REQUIRED = false;
+export const POSTER_PHONE_REQUIRED = true;
 
 type PosterProduct = { product_id: number; count: number; modificator_id?: number; modification?: string };
 
@@ -59,7 +59,7 @@ export function buildIncomingOrder(payload: PosPayload, spotId: string, phone?: 
   return {
     spot_id: Number(spotId),
     service_mode: 1, // dine-in
-    ...(phone ? { phone, skip_phone_validation: true } : {}),
+    ...(phone ? { phone } : {}),
     comment: posterComment(payload),
     products: buildPosterProducts(payload),
   };

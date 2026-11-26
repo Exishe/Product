@@ -14,7 +14,7 @@ import type { SendJob } from "./types";
 const job = (over: Partial<SendJob> = {}): SendJob => ({
   id: 3,
   vendor: "poster",
-  settings: { spot_id: "1" },
+  settings: { spot_id: "1", phone: "+37410000000" },
   secret: "687409:4164553abf6a",
   payload: samplePayload(),
   isTest: false,
@@ -44,7 +44,8 @@ describe("Poster request building", () => {
     const body = buildIncomingOrder(samplePayload(), "1");
     expect(body).toMatchObject({ spot_id: 1, service_mode: 1 });
     expect(body).not.toHaveProperty("phone");
-    expect(buildIncomingOrder(samplePayload(), "1", "+37410000000")).toMatchObject({ phone: "+37410000000", skip_phone_validation: true });
+    expect(buildIncomingOrder(samplePayload(), "1", "+37410000000")).toMatchObject({ phone: "+37410000000" });
+    expect(buildIncomingOrder(samplePayload(), "1", "+37410000000")).not.toHaveProperty("skip_phone_validation");
   });
 });
 
@@ -99,7 +100,21 @@ describe("Poster sending", () => {
     expect(await sendPoster(job(), fetcher)).toEqual({ ok: true, externalId: "44" });
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://joinposter.com/api/incomingOrders.createIncomingOrder?token=687409%3A4164553abf6a");
-    expect(JSON.parse(init.body as string)).toMatchObject({ spot_id: 1, products: [{ product_id: 101 }, { product_id: 102 }] });
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      spot_id: 1,
+      phone: "+37410000000",
+      products: [{ product_id: 101 }, { product_id: 102 }],
+    });
+  });
+
+  it("needs the café's phone: Poster refuses an order without one (error 155)", async () => {
+    const fetcher = vi.fn();
+    expect(await sendPoster(job({ settings: { spot_id: "1" } }), fetcher)).toEqual({
+      ok: false,
+      error: "Poster needs a phone",
+      retry: false,
+    });
+    expect(fetcher).not.toHaveBeenCalled();
   });
 
   it("fails with the unmatched dishes, without calling Poster", async () => {
