@@ -116,7 +116,8 @@ export function PromoManager({ initial, timeZone }: { initial: Promo[]; timeZone
       {promos.length === 0 && !draft && <p className="text-staff-label2 m-0 text-name">{t("empty")}</p>}
 
       {promos.length > 0 && (
-        <ul className="border-staff-sep m-0 flex list-none flex-col border-t p-0">
+        // The section's own rule opens the list: no second hairline on top.
+        <ul className="m-0 -mt-3 flex list-none flex-col p-0">
           {promos.map((p) => {
             const live = isLiveNow(p, now);
             const title = titleOf(p);

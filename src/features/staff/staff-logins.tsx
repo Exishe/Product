@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Ban, CircleAlert, CircleCheck, Clock, Copy, KeyRound } from "lucide-react";
+import { Ban, ChefHat, CircleAlert, CircleCheck, Clock, Copy, HandPlatter, KeyRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { button, chip, fieldLabel, input, textAction } from "@/features/admin-ui/styles";
@@ -130,52 +130,62 @@ export function StaffLoginList({
           key={row.memberId}
           data-testid="staff-login-row"
           data-username={row.username}
-          className="border-staff-sep flex min-w-0 flex-col gap-2 border-b py-4 first:pt-0"
+          className="border-staff-sep flex min-w-0 items-start gap-3 border-b py-4 first:pt-0"
         >
-          <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
-            <div className="flex min-w-0 flex-col">
-              <span className="num text-name font-semibold break-all">{row.username}</span>
-              <span className="text-staff-label2 text-label">
-                {roleLabels[row.role]}
-                {row.stationName ? ` · ${row.stationName}` : ""}
-              </span>
+          {/* The same 40 px avatar as the people below, so every name on the
+              page starts on one edge; the role's icon stands in for initials. */}
+          <span
+            aria-hidden="true"
+            className="bg-staff-fill text-ink grid size-10 shrink-0 place-items-center rounded-full"
+          >
+            {row.role === "kitchen" ? <ChefHat className="size-5" /> : <HandPlatter className="size-5" />}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-h-10 min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <div className="flex min-w-0 flex-col">
+                <span className="num text-name font-semibold break-all">{row.username}</span>
+                <span className="text-staff-label2 text-label">
+                  {roleLabels[row.role]}
+                  {row.stationName ? ` · ${row.stationName}` : ""}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {row.isActive ? (
+                  <span className={clsx(chip.base, chip.ok)}>
+                    <CircleCheck aria-hidden="true" />
+                    {t("active")}
+                  </span>
+                ) : (
+                  <span className={clsx(chip.base, chip.alert)}>
+                    <Ban aria-hidden="true" />
+                    {t("off")}
+                  </span>
+                )}
+                {!row.passwordSet && (
+                  <span className={clsx(chip.base, chip.wait)}>
+                    <KeyRound aria-hidden="true" />
+                    {t("needsPassword")}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {row.isActive ? (
-                <span className={clsx(chip.base, chip.ok)}>
-                  <CircleCheck aria-hidden="true" />
-                  {t("active")}
-                </span>
-              ) : (
-                <span className={clsx(chip.base, chip.alert)}>
-                  <Ban aria-hidden="true" />
-                  {t("off")}
-                </span>
-              )}
-              {!row.passwordSet && (
-                <span className={clsx(chip.base, chip.wait)}>
-                  <KeyRound aria-hidden="true" />
-                  {t("needsPassword")}
-                </span>
-              )}
+            <p className="text-staff-label2 num m-0 flex items-center gap-1.5 text-label">
+              <Clock aria-hidden="true" className="size-4 shrink-0" />
+              {row.lastSignIn ? t("lastSignIn", { time: row.lastSignIn }) : t("neverSignedIn")}
+            </p>
+            <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+              <SetPasswordForm row={row} />
+              <form action={setStaffLoginActive}>
+                <input type="hidden" name="memberId" value={row.memberId} />
+                <input type="hidden" name="active" value={row.isActive ? "false" : "true"} />
+                <button
+                  type="submit"
+                  className={row.isActive ? textAction("danger") : button("secondary", "px-4")}
+                >
+                  {row.isActive ? t("switchOff") : t("switchOn")}
+                </button>
+              </form>
             </div>
-          </div>
-          <p className="text-staff-label2 num m-0 flex items-center gap-1.5 text-label">
-            <Clock aria-hidden="true" className="size-4 shrink-0" />
-            {row.lastSignIn ? t("lastSignIn", { time: row.lastSignIn }) : t("neverSignedIn")}
-          </p>
-          <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-            <SetPasswordForm row={row} />
-            <form action={setStaffLoginActive}>
-              <input type="hidden" name="memberId" value={row.memberId} />
-              <input type="hidden" name="active" value={row.isActive ? "false" : "true"} />
-              <button
-                type="submit"
-                className={row.isActive ? textAction("danger") : button("secondary", "px-4")}
-              >
-                {row.isActive ? t("switchOff") : t("switchOn")}
-              </button>
-            </form>
           </div>
         </li>
       ))}
@@ -203,13 +213,32 @@ export function CreateLoginForm({
     <form action={action} className="flex flex-col gap-5">
       {/* The sheet shows the title; the form keeps its own name for screen readers. */}
       <h3 className="sr-only">{t("createTitle")}</h3>
-      <label className="flex flex-col gap-1.5">
-        <span className={fieldLabel}>{t("createRole")}</span>
-        <select name="role" value={role} onChange={(e) => setRole(e.target.value)} className={input}>
-          <option value="waiter">{roleLabels.waiter}</option>
-          <option value="kitchen">{roleLabels.kitchen}</option>
-        </select>
-      </label>
+      {/* Two choices, both on screen: a segmented pair, not a picker. */}
+      <fieldset className="m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0">
+        <legend className={clsx(fieldLabel, "mb-1.5 p-0")}>{t("createRole")}</legend>
+        <div className="bg-staff-fill grid grid-cols-2 gap-1 rounded-full p-1">
+          {(["waiter", "kitchen"] as const).map((r) => (
+            <label
+              key={r}
+              className={clsx(
+                "has-[:focus-visible]:outline-ink flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-3 text-label font-semibold transition-colors duration-150 has-[:focus-visible]:outline-2 motion-reduce:transition-none [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
+                role === r ? "text-ink bg-white shadow-sm" : "text-staff-label2",
+              )}
+            >
+              <input
+                type="radio"
+                name="role"
+                value={r}
+                checked={role === r}
+                onChange={() => setRole(r)}
+                className="sr-only"
+              />
+              {r === "kitchen" ? <ChefHat aria-hidden="true" /> : <HandPlatter aria-hidden="true" />}
+              {roleLabels[r]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       {role === "kitchen" && stations.length > 1 && (
         <label className="flex flex-col gap-1.5">
           <span className={fieldLabel}>{t("createStation")}</span>

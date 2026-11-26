@@ -9,6 +9,7 @@ import { button, textAction, type ButtonKind } from "./styles";
 // showed (a new password, a code) until it is closed.
 export function SheetButton({
   label,
+  shortLabel,
   title,
   closeLabel,
   icon,
@@ -18,6 +19,9 @@ export function SheetButton({
   children,
 }: {
   label: string;
+  // Shown instead of the label below 640 px, so a header action stays on its
+  // heading's line on a phone; the full label remains the accessible name.
+  shortLabel?: string;
   title: string;
   closeLabel: string;
   icon?: ReactNode;
@@ -37,9 +41,17 @@ export function SheetButton({
         onClick={() => setOpen(true)}
         className={kind === "text" ? textAction("ink", className) : button(kind, className)}
         data-testid={testId}
+        aria-label={shortLabel ? label : undefined}
       >
         {icon}
-        {label}
+        {shortLabel ? (
+          <>
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="max-sm:hidden">{label}</span>
+          </>
+        ) : (
+          label
+        )}
       </button>
       {open && (
         <Sheet title={title} closeLabel={closeLabel} onClose={() => setOpen(false)}>

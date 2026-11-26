@@ -1,5 +1,6 @@
 "use client";
 
+import { clsx } from "clsx";
 import { ChevronDown, Lightbulb, Plus, RotateCcw, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
@@ -64,6 +65,11 @@ export function PairingsEditor({
     () => groupByCategory(initialDishes, categories)[0]?.dishes[0]?.id ?? "",
   );
   const [query, setQuery] = useState("");
+  // Sections with a dish still missing its kind start open; the set is fixed
+  // at first render so a section does not snap shut as its last dish is set.
+  const [openGroups] = useState(
+    () => new Set(groupByCategory(initialDishes, categories).filter((g) => g.dishes.some((d) => !d.type)).map((g) => g.category.id)),
+  );
 
   const dishName = (id: string) => nameIn(dishes.find((d) => d.id === id)?.names ?? { hy: "", ru: "", en: "" }, locale);
   const groups = useMemo(() => groupByCategory(dishes, categories), [dishes, categories]);
@@ -175,9 +181,18 @@ export function PairingsEditor({
         id="rec-types"
         testId="rec-types"
         actions={
-          <button type="button" data-testid="rec-suggest" className={textAction("ink")} disabled={pending} onClick={suggest}>
+          <button
+            type="button"
+            data-testid="rec-suggest"
+            className={textAction("ink")}
+            disabled={pending}
+            onClick={suggest}
+            aria-label={t("types.suggest")}
+          >
             <Lightbulb aria-hidden="true" />
-            {t("types.suggest")}
+            {/* A short label on phones keeps the action on the heading's line. */}
+            <span className="sm:hidden">{t("types.suggestShort")}</span>
+            <span className="max-sm:hidden">{t("types.suggest")}</span>
           </button>
         }
       >
@@ -222,33 +237,80 @@ export function PairingsEditor({
             </div>
           </div>
         )}
-        {groups.map((g) => (
-          <div key={g.category.id} className="flex flex-col">
-            <h3 className="text-staff-label2 m-0 pb-1 text-[0.9375rem] font-semibold">{nameIn(g.category.names, locale)}</h3>
-            <ul className="m-0 flex list-none flex-col p-0">
-              {g.dishes.map((d) => (
-                <li key={d.id} className="border-staff-sep flex flex-col gap-1 border-b py-2 last:border-0 sm:flex-row sm:items-center sm:gap-4">
-                  <span className="min-w-0 flex-1 text-[1.0625rem] break-words">{nameIn(d.names, locale)}</span>
-                  <select
-                    aria-label={t("types.dishKind", { dish: nameIn(d.names, locale) })}
-                    data-testid={`rec-type-${d.id}`}
-                    className={`${field} h-11 sm:w-60`}
-                    value={d.type ?? ""}
-                    disabled={pending}
-                    onChange={(e) => changeType(d.id, e.target.value)}
-                  >
-                    <option value="">{t("types.none")}</option>
-                    {ITEM_TYPES.map((k) => (
-                      <option key={k} value={k}>
-                        {kindLabel(k)}
-                      </option>
-                    ))}
-                  </select>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {/* One hairline row per menu section that opens in place: the
+            section's name, its dish count, how many still have no kind. Only
+            the sections with such dishes start open, so a finished menu is a
+            short list, not a wall of pickers. */}
+        <div className="flex flex-col">
+          {groups.map((g) => {
+            const untyped = g.dishes.filter((d) => !d.type).length;
+            return (
+              <details
+                key={g.category.id}
+                open={openGroups.has(g.category.id)}
+                className="group border-staff-sep border-b last:border-0"
+              >
+                <summary
+                  data-testid={`rec-types-group-${g.category.id}`}
+                  className="flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-name font-semibold break-words">{nameIn(g.category.names, locale)}</span>
+                    <span className="text-staff-label2 text-label">
+                      {t("types.dishCount", { count: g.dishes.length })}
+                      {untyped > 0 && (
+                        <>
+                          {" · "}
+                          <span className="text-amber-text font-semibold">{t("types.untyped", { count: untyped })}</span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="text-staff-label2 size-5 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                  />
+                </summary>
+                <ul className="m-0 flex list-none flex-col p-0 pb-2">
+                  {g.dishes.map((d) => (
+                    <li
+                      key={d.id}
+                      className="border-staff-sep flex flex-wrap items-center justify-between gap-x-4 border-t py-1"
+                    >
+                      <span className="min-w-0 flex-1 basis-40 py-2 text-body break-words">{nameIn(d.names, locale)}</span>
+                      {/* The kind reads as the row's value: right-aligned text
+                          and a chevron, sized to its words so none is cut. */}
+                      <span className="relative ml-auto inline-flex max-w-full">
+                        <select
+                          aria-label={t("types.dishKind", { dish: nameIn(d.names, locale) })}
+                          data-testid={`rec-type-${d.id}`}
+                          className={clsx(
+                            "hover:bg-staff-fill focus-visible:outline-ink min-h-11 max-w-full cursor-pointer appearance-none rounded-lg bg-transparent py-2 pr-8 pl-2 text-right text-body font-semibold [field-sizing:content] [text-align-last:right] focus-visible:outline-2 disabled:cursor-not-allowed sm:min-w-60",
+                            d.type ? "text-ink" : "text-amber-text",
+                          )}
+                          value={d.type ?? ""}
+                          disabled={pending}
+                          onChange={(e) => changeType(d.id, e.target.value)}
+                        >
+                          <option value="">{t("types.none")}</option>
+                          {ITEM_TYPES.map((k) => (
+                            <option key={k} value={k}>
+                              {kindLabel(k)}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          aria-hidden="true"
+                          className="text-staff-label2 pointer-events-none absolute top-1/2 right-2 size-[1.125rem] -translate-y-1/2"
+                        />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })}
+        </div>
       </Section>
 
       <Section title={t("pairings.title")} hint={t("pairings.hint", { max: MAX_PAIRINGS })} id="rec-pairings" testId="rec-pairings">
@@ -348,9 +410,11 @@ export function PairingsEditor({
             className={textAction("ink")}
             disabled={pending || !hasCustomRules(rows)}
             onClick={reset}
+            aria-label={t("matrix.reset")}
           >
             <RotateCcw aria-hidden="true" />
-            {t("matrix.reset")}
+            <span className="sm:hidden">{t("matrix.resetShort")}</span>
+            <span className="max-sm:hidden">{t("matrix.reset")}</span>
           </button>
         }
       >

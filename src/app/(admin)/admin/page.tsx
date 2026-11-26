@@ -203,7 +203,8 @@ export default async function AdminHome() {
   const delta = data ? deltaPercent(data.summary.revenue, data.compare.revenue) : null;
   const subtitle = (
     <p className="num m-0">
-      {t("welcome", { name: member.displayName })}
+      {/* The café's name is the title above; the line greets and dates. */}
+      {t("welcome")}
       {location &&
         ` · ${t("date", {
           date: formatDate(new Date(), locale, location.timezone),

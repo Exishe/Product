@@ -192,6 +192,7 @@ export default async function StaffPage() {
               <SheetButton
                 kind="text"
                 label={t("inviteOpen")}
+                shortLabel={t("inviteShort")}
                 title={t("inviteTitle")}
                 closeLabel={close}
                 icon={<Mail aria-hidden="true" />}
@@ -212,6 +213,7 @@ export default async function StaffPage() {
             <SheetButton
               kind="text"
               label={t("pairTitle")}
+              shortLabel={t("pairShort")}
               title={t("pairTitle")}
               closeLabel={close}
               icon={<MonitorSmartphone aria-hidden="true" />}

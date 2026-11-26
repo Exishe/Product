@@ -14,7 +14,7 @@ export type NavLink = { href: string; label: string; icon: NavIcon; also?: reado
 
 // The owner's sections (ADR-055, ADR-093, at most seven). From 1024 px: a
 // sidebar flush on the grey, one line per item, the current one a tinted row.
-// Below: one 56 px bar with the café's name and a Sections button that opens
+// Below: one 56 px bar with the café's name and a Pages button that opens
 // the same list in a sheet, so every section is visible at once on a phone.
 export function AdminNav({
   brand,

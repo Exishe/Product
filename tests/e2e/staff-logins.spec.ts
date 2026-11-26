@@ -32,7 +32,11 @@ async function createLogin(page: Page, role: "waiter" | "kitchen", ending: strin
   // The form opens in a sheet from the page's primary button and stays open.
   if ((await createForm(page).count()) === 0) await page.getByTestId("add-person").click();
   const form = createForm(page);
-  await form.getByLabel("Ում համար").selectOption(role);
+  // The role is a segmented pair of radios; the visible label is what one taps.
+  await form
+    .getByRole("group", { name: "Ում համար" })
+    .getByText(role === "waiter" ? "Մատուցող" : "Խոհանոց", { exact: true })
+    .click();
   await form.getByLabel("Մուտքանուն", { exact: true }).fill(ending);
   await form.getByRole("button", { name: "Ստեղծել մուտք" }).click();
   // The result of an earlier creation stays on screen until this one answers, so wait for this ending.

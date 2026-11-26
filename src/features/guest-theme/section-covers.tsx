@@ -5,7 +5,7 @@ import { Image as ImageIcon, ImagePlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useToast } from "@/features/admin-ui/toast";
-import { textAction } from "@/features/admin-ui/styles";
+import { sectionTitle, textAction } from "@/features/admin-ui/styles";
 import { resizeToWebp } from "@/features/menu/photo";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { saveSectionCover } from "./actions";
@@ -78,7 +78,7 @@ export function SectionCovers({
     // Image slots straight on the page (ADR-093): no card around each section.
     <section className="flex flex-col gap-4" aria-labelledby="covers-title">
       <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
-        <h2 id="covers-title" className="m-0 text-heading font-semibold">
+        <h2 id="covers-title" className={sectionTitle}>
           {b("covers")}
         </h2>
         <p className="text-staff-label2 m-0 text-label">{b("coversHint")}</p>
@@ -90,7 +90,7 @@ export function SectionCovers({
         // empty slot, the name, and the action at the right. The large preview
         // shows only for a cover that exists, so an empty menu is not a wall
         // of grey placeholders.
-        <ul className="m-0 flex max-w-3xl list-none flex-col p-0" data-testid="section-covers">
+        <ul className="m-0 flex list-none flex-col p-0" data-testid="section-covers">
           {rows.map((s) => {
             const name = s.name ?? b("untitled");
             return (

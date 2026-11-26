@@ -112,7 +112,11 @@ export default async function LookPage() {
           }}
           initialBrand={(withBrand.data && parseBrand(withBrand.data.brand)) || EMPTY_BRAND}
         />
-        <SectionCovers restaurantId={me.restaurantId} ready={brandReady} sections={covers} />
+        {/* The covers keep the form's column, so their rows and hairlines end
+            where the colour and plate groups end. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+          <SectionCovers restaurantId={me.restaurantId} ready={brandReady} sections={covers} />
+        </div>
       </NextIntlClientProvider>
     </AdminPage>
   );

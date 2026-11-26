@@ -3,8 +3,10 @@
 import { clsx } from "clsx";
 import {
   BookOpen,
+  Ban,
   Check,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   EyeOff,
   CircleAlert,
@@ -819,8 +821,11 @@ export function MenuEditor({ data }: { data: EditorData }) {
                 {nameFor(g.names, locale)}
               </label>
             ))}
-            <Link href="/admin/menu/options" className={textAction("ink", "-ml-2")}>
-              {t("manageOptions")}
+            {/* A way out to the options page, worded as an action with a
+                chevron so it never reads as a second heading. */}
+            <Link href="/admin/menu/options" className={textAction("ink", "-ml-2 w-fit")}>
+              {t("editOptions")}
+              <ChevronRight aria-hidden="true" />
             </Link>
           </fieldset>
 
@@ -1142,9 +1147,10 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         {formatAmd(d.price, locale)}
                       </span>
                     </button>
-                    {/* The one control on the row: today's availability. Off, a
-                        quiet muted text toggle; on, filled red with a check, so
-                        only the dishes that are out stand out in the list. */}
+                    {/* The one control on the row: today's availability. Off, an
+                        outlined pill with a "no" sign, plainly a button; on,
+                        filled red with a check, so only the dishes that are out
+                        stand out in the list. */}
                     <button
                       type="button"
                       aria-pressed={soldOut}
@@ -1154,10 +1160,14 @@ export function MenuEditor({ data }: { data: EditorData }) {
                         "inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-label font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none",
                         soldOut
                           ? "bg-pomegranate text-white"
-                          : "text-staff-label2 hover:bg-staff-fill hover:text-ink -mr-1",
+                          : "text-ink hover:bg-staff-fill bg-white shadow-[inset_0_0_0_1px_var(--color-staff-field)]",
                       )}
                     >
-                      {soldOut && <Check aria-hidden="true" className="size-4" />}
+                      {soldOut ? (
+                        <Check aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Ban aria-hidden="true" className="text-staff-label2 size-4" />
+                      )}
                       {t("soldOut")}
                     </button>
                   </li>

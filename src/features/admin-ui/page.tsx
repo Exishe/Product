@@ -115,11 +115,13 @@ export function Section({
       {/* The shared group header: the actions sit on the heading's line,
           centred on it; the hint runs under both at full width. */}
       <div className="flex min-w-0 flex-col gap-0.5">
-        <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <h2 id={id} className={clsx(sectionTitle, "min-w-0")}>
+        {/* The actions never drop under the heading: the heading wraps
+            instead, and keeps a 44 px line so both share one centre. */}
+        <div className="flex items-start justify-between gap-x-3">
+          <h2 id={id} className={clsx(sectionTitle, "flex min-h-11 min-w-0 flex-1 items-center")}>
             {title}
           </h2>
-          {actions && <div className="-mx-2 flex shrink-0 flex-wrap items-center gap-1">{actions}</div>}
+          {actions && <div className="-mr-2 flex shrink-0 flex-wrap items-center justify-end gap-1">{actions}</div>}
         </div>
         {hint && <p className="text-staff-label2 m-0 max-w-[60ch] text-label">{hint}</p>}
       </div>

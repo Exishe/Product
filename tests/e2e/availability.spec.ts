@@ -36,7 +36,7 @@ test("the owner pauses ordering and closes the kitchen from the admin home", asy
   await page.getByTestId("control-pause").getByRole("button", { name: "Ընդունվում են" }).click();
 
   const kitchen = page.getByTestId("control-kitchen");
-  await kitchen.getByRole("button", { name: "Փակել խոհանոցն այսօրվա համար" }).click();
+  await kitchen.getByRole("button", { name: "Փակել այսօր" }).click();
   await kitchen.getByRole("button", { name: "Այո, փակել" }).click();
   await expect(kitchen.getByRole("status")).toContainText("Խոհանոցն այսօրվա համար փակ է");
   await kitchen.getByRole("button", { name: "Բացել խոհանոցը" }).click();

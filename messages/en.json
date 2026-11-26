@@ -75,7 +75,7 @@
   },
   "admin": {
     "home": {
-      "welcome": "Welcome, {name}",
+      "welcome": "Welcome",
       "date": "{date}, {time}",
       "today": "Today so far",
       "allSales": "All sales",
@@ -119,13 +119,13 @@
       "kitchenOpen": "The kitchen is taking orders.",
       "closedUntil": "The kitchen is closed for today. Orders open again at {time}.",
       "reopen": "Reopen the kitchen",
-      "closeKitchen": "Close kitchen for today",
       "closeConfirm": "Guests won't be able to order until the next opening. Close the kitchen for today?",
       "closeYes": "Yes, close",
       "failed": "Couldn't save that. Check the connection and try again.",
       "segmentLabel": "Guest orders",
       "segOn": "Taking orders",
-      "segPaused": "Paused"
+      "segPaused": "Paused",
+      "closeToday": "Close for today"
     },
     "promos": {
       "empty": "No promotions yet. Add one, then switch it on when you want guests to see it.",
@@ -283,7 +283,9 @@
     },
     "addPerson": "Add a staff member",
     "inviteOpen": "Invite by email",
-    "close": "Close"
+    "close": "Close",
+    "inviteShort": "Invite",
+    "pairShort": "Connect"
   },
   "staffAccount": {
     "changePassword": "Change password",
@@ -911,7 +913,8 @@
     "soldOutToast": "“{name}”: sold out today.",
     "backToast": "“{name}” is available again.",
     "undo": "Undo",
-    "positionDish": "Place in the section"
+    "positionDish": "Place in the section",
+    "editOptions": "Edit options"
   },
   "print": {
     "button": "Print ticket",
@@ -1460,7 +1463,7 @@
     "platform": "Platform",
     "look": "Guest page look",
     "home": "Home",
-    "open": "Sections",
+    "open": "Pages",
     "close": "Close"
   },
   "billing": {
@@ -1727,7 +1730,6 @@
       "readsWell": "Easy to read",
       "readsPoorly": "Hard to read",
       "themeColor": "now the theme's colour",
-      "byCode": "By code",
       "previewClose": "Close"
     },
     "allSaved": "Saved"
@@ -1750,7 +1752,7 @@
       "none": "No dishes here.",
       "sold": "{qty} sold",
       "perPortion": "{amount} per portion",
-      "more": "And {count} more",
+      "more": "Show {count} more",
       "star": {
         "title": "Ordered often, earn well",
         "action": "Keep them as they are and show them first in the section.",
@@ -1770,7 +1772,8 @@
         "title": "Ordered rarely, earn little",
         "action": "Think about taking them off the menu or reworking them.",
         "name": "Dogs"
-      }
+      },
+      "open": "Menu analysis"
     },
     "heatmap": {
       "title": "When you're busy",
@@ -1828,7 +1831,8 @@
         "few_views": "Too few views to judge yet."
       },
       "fewViewsNote": "“–”: too few views to judge yet.",
-      "metaLine": "{views} views · {adds} added · {orders} ordered"
+      "metaLine": "{views} views · {adds} added · {orders} ordered",
+      "showAll": "Show all ({count})"
     },
     "busy": {
       "title": "Busy hours",
@@ -1909,7 +1913,10 @@
       "proposalsTitle": "Kinds we guessed from your section names. Untick what is wrong.",
       "proposalsEmpty": "Nothing to suggest. Either every dish already has a kind, or the section names are not clear enough.",
       "apply": "Save {count, plural, one {# kind} other {# kinds}}",
-      "applied": "Kinds saved: {count}"
+      "applied": "Kinds saved: {count}",
+      "dishCount": "{count, plural, one {# dish} other {# dishes}}",
+      "untyped": "{count} without a kind",
+      "suggestShort": "Suggest"
     },
     "pairings": {
       "title": "Your own pairings",
@@ -1930,7 +1937,8 @@
       "changed": "Changed",
       "reset": "Reset to defaults",
       "intro": "When a guest adds:",
-      "count": "{count, plural, one {# type} other {# types}}"
+      "count": "{count, plural, one {# type} other {# types}}",
+      "resetShort": "Reset"
     },
     "timeRules": {
       "title": "By time of day",

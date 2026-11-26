@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ChefHat, CirclePause, CirclePlay } from "lucide-react";
+import { CirclePause, CirclePlay } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState, useTransition } from "react";
 import { button, fieldLabel, input, textAction } from "@/features/admin-ui/styles";
@@ -185,19 +185,24 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
       </div>
 
       <div className={row} data-testid="control-kitchen">
-        <p className={statusLine} role="status">
-          <ChefHat
-            aria-hidden="true"
-            className={clsx("mt-0.5 size-5 shrink-0", closedNow ? "text-pomegranate" : "text-tarragon")}
-          />
-          <span>
-            {closedNow && state.closedUntil
-              ? t("closedUntil", { time: time(state.closedUntil) })
-              : t("kitchenOpen")}
-          </span>
-        </p>
-        {closedNow ? (
-          <div>
+        {/* One row like every other row action: the state on the left (a
+            dot, not a second chef's hat) and the one thing to do on the right. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <p className={clsx(statusLine, "min-w-0 flex-1 basis-48")} role="status">
+            <span
+              aria-hidden="true"
+              className={clsx(
+                "mt-[0.45em] size-2.5 shrink-0 rounded-full",
+                closedNow ? "bg-pomegranate" : "bg-tarragon",
+              )}
+            />
+            <span>
+              {closedNow && state.closedUntil
+                ? t("closedUntil", { time: time(state.closedUntil) })
+                : t("kitchenOpen")}
+            </span>
+          </p>
+          {closedNow ? (
             <button
               type="button"
               disabled={pending}
@@ -207,12 +212,24 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
                   () => setState((s) => ({ ...s, closedUntil: null })),
                 )
               }
-              className={button("primary", "w-full sm:w-auto")}
+              className={textAction("ink", "-mr-2")}
             >
               {t("reopen")}
             </button>
-          </div>
-        ) : confirmClose ? (
+          ) : (
+            !confirmClose && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setConfirmClose(true)}
+                className={textAction("ink", "-mr-2")}
+              >
+                {t("closeToday")}
+              </button>
+            )
+          )}
+        </div>
+        {!closedNow && confirmClose && (
           <div className="flex flex-col gap-3">
             <p className="m-0 text-name">{t("closeConfirm")}</p>
             <div className="flex flex-wrap gap-2">
@@ -243,18 +260,6 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
                 {t("cancel")}
               </button>
             </div>
-          </div>
-        ) : (
-          <div>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setConfirmClose(true)}
-              className={textAction("ink", "-ml-2")}
-            >
-              <ChefHat aria-hidden="true" />
-              {t("closeKitchen")}
-            </button>
           </div>
         )}
       </div>

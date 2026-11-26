@@ -41,8 +41,10 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
 
   return (
     <div className="flex flex-col gap-12">
+      {/* Two by two from the narrowest phone, so all four figures are seen at
+          a glance; one row of four from 1024 px. */}
       <section
-        className="border-staff-sep grid grid-cols-1 gap-y-5 border-t pt-5 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4 lg:gap-x-0"
+        className="border-staff-sep grid grid-cols-2 gap-x-4 gap-y-6 border-t pt-5 sm:gap-x-6 lg:grid-cols-4 lg:gap-x-0"
         aria-label={t("title")}
       >
         <Kpi testId="kpi-revenue" label={t("revenue")} value={money(s.revenue)}>
@@ -76,7 +78,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
         />
         {noCompare && (
           <p
-            className="text-staff-label2 m-0 text-label sm:col-span-2 lg:col-span-4"
+            className="text-staff-label2 col-span-2 m-0 text-label lg:col-span-4"
             data-testid="kpi-no-compare"
           >
             {t("noCompareAll")}
@@ -228,7 +230,7 @@ function Kpi({
         data-testid={`${testId}-value`}
         className={clsx(
           "num leading-tight font-bold break-words",
-          "text-large xl:text-figure xl:tracking-[-0.01em]",
+          "text-[1.5rem] sm:text-large xl:text-figure xl:tracking-[-0.01em]",
         )}
       >
         {value}
