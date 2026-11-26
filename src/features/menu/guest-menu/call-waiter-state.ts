@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { requestKey } from "@/features/ordering/pending-request-key";
 
 // "Call the waiter" and "Ask for the bill" on the menu, before or without an
 // order: the Waiter item of the bottom bar opens the two choices just above
@@ -39,6 +40,18 @@ export function set(next: CallState, revertAfterMs?: number) {
   if (revertAfterMs) timer = setTimeout(() => set("idle"), revertAfterMs);
   listeners.forEach((l) => l());
 }
+// The × (or Escape) under the rail's «Waiter» row: whatever shows there goes.
+// A request still unsent is dropped too, so a reload does not send what the
+// guest closed.
+export function dismiss(tableId: string) {
+  if (state === "unsent")
+    try {
+      window.localStorage.removeItem(requestKey(tableId, asked.kind));
+    } catch {
+      // storage blocked: nothing was kept
+    }
+  set("idle");
+}
 export const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
@@ -50,10 +63,13 @@ export function useCallWaiter() {
     () => state,
     () => "idle" as CallState,
   );
+  const hidden = useSyncExternalStore(subscribe, noteIsHidden, () => false);
   // A guest who leaves the page mid-question shouldn't leave it hanging.
   useEffect(() => () => void (state === "confirm" && set("idle")), []);
   return {
     state: current,
+    /** Something shows under the «Waiter» row: the choices or what came of them. */
+    shown: current !== "idle" && !(current === "called" && hidden),
     ask: () =>
       state === "confirm"
         ? set("idle")

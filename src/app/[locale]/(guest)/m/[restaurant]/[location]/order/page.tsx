@@ -8,8 +8,7 @@ import { GuestThemeScope } from "@/features/guest-theme/guest-theme-scope";
 import { guestTheme, themeColor } from "@/features/guest-theme/themes";
 import { getMenuHints, getPublicMenu } from "@/features/menu/guest-menu/load.server";
 import { buildGuestMenu, dishNames, sameNameDetails, wordmarkOf } from "@/features/menu/guest-menu/view-model";
-import { QrCode } from "lucide-react";
-import guestStyles from "@/features/menu/guest-menu/guest.module.css";
+import { OrderEmpty } from "@/features/ordering/order-empty";
 import { GuestHeader } from "@/features/menu/guest-menu/guest-header";
 import { Notice, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import { GuestI18nProvider, type GuestCatalog, type GuestMessages } from "@/features/ordering/guest-i18n-context";
@@ -174,24 +173,16 @@ export default async function OrderStatusPage({
             width="max-w-[48rem] lg:max-w-[1440px]"
             oneRow
           />
-          <main className="mx-auto grid w-full max-w-[48rem] content-start gap-2 px-4 pt-4 pb-10 md:px-8 md:pt-8">
-            {token ? (
-              <Notice tone="alert">{t("menu.badTable")}</Notice>
-            ) : (
-              <>
-                <h1 className="display-face text-headline leading-[1.2]">{t("order.empty")}</h1>
-                <p className="text-muted flex items-start gap-2 text-body">
-                  <QrCode size={20} strokeWidth={1.75} aria-hidden className="mt-0.5 flex-none" />
-                  {t("menu.noTable")}
-                </p>
-              </>
-            )}
-            <a
-              href={menuHref}
-              className={`${guestStyles.cta} mt-4 flex min-h-14 w-full items-center justify-center px-6 text-body font-semibold md:w-auto md:justify-self-start`}
-            >
-              {t("order.toMenu")}
-            </a>
+          <main className="mx-auto w-full max-w-[48rem] flex-1 px-4 pb-10 md:px-8">
+            <OrderEmpty
+              heading="h1"
+              notice={token ? <Notice tone="alert">{t("menu.badTable")}</Notice> : undefined}
+              title={t("order.empty")}
+              sentence={t("order.emptyHint")}
+              qrHint={token ? undefined : t("menu.noTable")}
+              menuHref={menuHref}
+              menuLabel={t("order.toMenu")}
+            />
           </main>
         </GuestI18nProvider>
       )}

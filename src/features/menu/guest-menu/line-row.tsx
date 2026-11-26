@@ -5,11 +5,12 @@ import { MAX_QUANTITY } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import { QtyPill } from "./qty-pill";
-import { Txt, dishPhotoUrl } from "./ui";
+import { Txt, dishPhotoUrl, initial } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
-// narrower cut (`dense`: a smaller photo and name). The name and its price are
+// narrower cut (`dense`: a smaller photo and name). A line without a photo
+// holds its place with the dish's first letter on a quiet tile. The name and its price are
 // one size, and the quantity is the menu's own «− n +» pill (ADR-096).
 export function LineRow({
   priced,
@@ -35,19 +36,19 @@ export function LineRow({
   );
   const [open, close] = locale === "en" ? ["“", "”"] : ["«", "»"];
   const available = status === "ok";
-  // A plate only for a real photo: an empty plate per line tells the guest
-  // nothing, so photoless lines read like a receipt.
+  // Every line keeps the same leading slot, so the names and the steppers of
+  // all lines share one left edge: the dish's photo, or, without one, a quiet
+  // tile on the chip colour with the dish's first letter.
   const photo = item?.image ? dishPhotoUrl(item.image) : null;
-  const col = photo ? "col-start-2" : "col-start-1";
+  const col = "col-start-2";
+  const slot = `rounded-guest-sm row-span-5 block overflow-hidden ${dense ? "size-11" : "size-14"}`;
   return (
     <li
-      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5" : "py-3.5"} ${photo ? (dense ? "grid-cols-[2.75rem_minmax(0,1fr)_auto]" : "grid-cols-[3.5rem_minmax(0,1fr)_auto]") : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      className={`border-line grid gap-x-3 gap-y-0.5 border-b last:border-b-0 ${dense ? "py-2.5 grid-cols-[2.75rem_minmax(0,1fr)_auto]" : "py-3.5 grid-cols-[3.5rem_minmax(0,1fr)_auto]"}`}
       data-testid={dense ? "rail-line" : "cart-line"}
     >
-      {photo && (
-        <span
-          className={`bg-plate rounded-guest-sm row-span-5 block overflow-hidden ${dense ? "size-11" : "size-14"}`}
-        >
+      {photo ? (
+        <span className={`bg-plate ${slot}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- public Storage URL, resized webp */}
           <img
             src={photo}
@@ -56,6 +57,13 @@ export function LineRow({
             height={112}
             className={`size-full object-cover ${available ? "" : "opacity-50 grayscale"}`}
           />
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className={`bg-chip text-muted display-face grid place-items-center leading-none ${dense ? "text-heading" : "text-large"} ${slot}`}
+        >
+          {initial(name, locale)}
         </span>
       )}
       {item ? (

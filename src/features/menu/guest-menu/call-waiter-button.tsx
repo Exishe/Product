@@ -13,6 +13,7 @@ import {
 import {
   askedFor,
   callState,
+  dismiss,
   noteIsHidden,
   set,
   setAsked,
@@ -65,8 +66,9 @@ async function attempt(target: Target) {
 // the waiter knows; with no answer: «not sent yet» and Try again.
 // From 1024 px (`place="rail"`) the same choices and results unfold under the
 // order rail's «Waiter» row the guest clicked, not at the foot of the screen:
-// that row is the title and carries the ×, so this part holds only the
-// choices, indented to the row's words, on the rail's hairlines. Focus moves
+// that row is the title and carries the × (while the choices or a result
+// show), so this part holds only the choices, indented to the row's words,
+// on the rail's hairlines, without icons of their own (the row has the bell). Focus moves
 // to the first choice, and back to the row when the choices close.
 export function CallWaiterPrompt({
   token,
@@ -126,17 +128,23 @@ export function CallWaiterPrompt({
     };
   }, [current, token, tableId, locale]);
 
-  // Escape closes the choices, like any sheet.
+  // Escape closes the choices, like any sheet. In the rail it also clears a
+  // result under the «Waiter» row, as its × does; focus goes back to the row
+  // only from the choices, or when it was on the result itself.
+  const resultShown = rail && current !== "idle" && current !== "confirm" && current !== "sending";
   useEffect(() => {
-    if (current !== "confirm") return;
+    if (current !== "confirm" && !resultShown) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      cancel();
-      onLeave?.();
+      const active = document.activeElement;
+      const inside = !active || active === document.body || !!box.current?.contains(active);
+      if (current === "confirm") cancel();
+      else dismiss(tableId);
+      if (current === "confirm" || inside) onLeave?.();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, cancel, onLeave]);
+  }, [current, resultShown, cancel, onLeave, tableId]);
 
   // In the rail, focus follows the choices: to the first one as they open
   // (to «Card» on the paying step), and back to the «Waiter» row when the
@@ -246,7 +254,9 @@ export function CallWaiterPrompt({
               disabled={current === "sending"}
               onClick={() => send({ kind: "call_waiter", payment: null })}
             >
-              <ConciergeBell size={icon} />
+              {/* In the rail the «Waiter» row above carries the bell: the
+                  choices sit on its words with no icon of their own. */}
+              {!rail && <ConciergeBell size={icon} />}
               <span className="min-w-0 flex-1">{t("order.callWaiter")}</span>
             </button>
             <button
@@ -256,7 +266,7 @@ export function CallWaiterPrompt({
               aria-expanded={false}
               onClick={() => setPaying(true)}
             >
-              <ReceiptText size={icon} />
+              {!rail && <ReceiptText size={icon} />}
               <span className="min-w-0 flex-1">{t("order.askBill")}</span>
               <ChevronRight size={icon - 2} className="text-muted" />
             </button>

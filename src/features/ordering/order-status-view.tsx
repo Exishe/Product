@@ -11,6 +11,7 @@ import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import guestStyles from "@/features/menu/guest-menu/guest.module.css";
+import { OrderEmpty } from "./order-empty";
 import {
   CheckIcon,
   MinusIcon,
@@ -775,16 +776,14 @@ export function OrderStatusView({
     return (
       <main
         data-order-empty=""
-        className={`mx-auto grid w-full ${ORDER_COLUMN} flex-1 content-start gap-2 px-4 pt-8 md:px-8 md:pt-14 ${DOCK_SPACE}`}
+        className={`mx-auto w-full ${ORDER_COLUMN} flex-1 px-4 md:px-8 ${DOCK_SPACE}`}
       >
-        <h2 className="display-face text-headline leading-[1.2]">{t("order.empty")}</h2>
-        <p className="text-muted text-body">{t("order.emptyHint")}</p>
-        <a
-          href={menuHref}
-          className={`${guestStyles.cta} mt-4 flex min-h-14 w-full items-center justify-center px-6 text-body font-semibold md:w-auto md:justify-self-start`}
-        >
-          {t("order.toMenu")}
-        </a>
+        <OrderEmpty
+          title={t("order.empty")}
+          sentence={t("order.emptyHint")}
+          menuHref={menuHref}
+          menuLabel={t("order.toMenu")}
+        />
         <GuestDock
           items={emptyDock}
           above={

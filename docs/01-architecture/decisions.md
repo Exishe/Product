@@ -1234,6 +1234,10 @@ ADR-style records, short on purpose. All are Proposed until Gate 1. Each one nam
   - **Cart (all widths)**: the cart uses the status page's column (`ORDER_COLUMN`, 48rem) and its bar (`ORDER_BAR`, one row on 1440 px from 1024 px), so on a tablet the café's name, the title, the lines, the total and the button start on one edge, as on the status page. Both constants moved to `ui.tsx`.
   - **Section list (≥ 1024 px)**: a group of one section keeps its break from the group above, now drawn as a hairline on the words' edge in the middle of the gap.
 - Consequences: `CallWaiterPrompt` gained `place` and `onLeave`; the rail's waiter row is wrapped with its choices (`data-testid="call-waiter-rail"` stays on the row); `icons.tsx` gained `ChevronDown`; `guest.module.css` gained `.unfold`.
+- Follow-up (26 Nov, second review of pass 6):
+  - **One leading slot per order line**: every line in the order view (56 px) and the desktop rail (44 px) keeps a leading slot: the dish's photo, or a quiet tile on the chip colour with the dish's first letter in the display face (`initial()` in `ui.tsx`), so names and steppers of all lines share one left edge. The cart bar's stack uses the same idea: a photo-less dish is a disc with its first letter, not «×N»; «N ուտեստ» is the bar's only count.
+  - **Waiter row in the rail**: the × stays on the row while anything shows under it (the choices, «Մատուցողը կանչված է», «Դեռ չի ուղարկվել։», a failure); the × and Escape clear it and the chevron returns (`dismiss()` in `call-waiter-state.ts`). Closing «not sent yet» also drops the stored request, so a reload does not send what the guest closed. The indented choices lose their own icons (the row carries the bell); the bottom panel keeps them.
+  - **Order page empty state** (`order-empty.tsx`, shared by the no-table page and the status view): on the 48rem column, a third of the way down the screen; a 32/40 px serif title, the plain sentence `order.emptyHint`, the QR hint (no table only) as a 48 px row on hairlines with its icon, and «Բացել ճաշացանկը» as the cart's 56 px action. No new messages.
 
 ## ADR-093: Accepted orders go into the café's own POS
 

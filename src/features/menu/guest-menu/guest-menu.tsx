@@ -36,7 +36,7 @@ import type { SubInfo } from "@/features/ordering/substitutions-parse";
 import { NO_HINTS, type MenuHints } from "./hints";
 import { loadAvoid, matchAllergens, saveAvoid, type Allergen } from "./allergens";
 import { matchesDiet, type DietFilter } from "./diet-filter";
-import { useCallWaiter } from "./call-waiter-state";
+import { dismiss as dismissWaiter, useCallWaiter } from "./call-waiter-state";
 import { CategoryNav, sectionId } from "./category-nav";
 import { SectionList } from "./section-list";
 import { DishRow } from "./dish-row";
@@ -606,6 +606,7 @@ export function GuestMenu({
   // The waiter's choices and what came of them: above the bar on a phone and
   // tablet; from 1024 px under the rail's «Waiter» row, where the guest clicked.
   const showWaiter = canOrder && table.kind === "ok" && (askedBefore || leftUnsent);
+  const waiterShown = showWaiter && waiter.shown;
   const waiterPrompt = (place: "dock" | "rail") =>
     showWaiter && (
       <Suspense fallback={null}>
@@ -939,8 +940,9 @@ export function GuestMenu({
                         <>
                           {canOrder && (
                             // The row opens its choices right under itself
-                            // (CallWaiterPrompt place="rail"); while they are
-                            // open its chevron gives way to a ×.
+                            // (CallWaiterPrompt place="rail"); while anything
+                            // shows there (the choices, «called», «not sent
+                            // yet») its chevron gives way to a × that clears it.
                             <div className="border-line border-b last:border-b-0">
                               <div className="flex items-center gap-1">
                                 <button
@@ -954,13 +956,13 @@ export function GuestMenu({
                                 >
                                   <ConciergeBell size={20} aria-hidden />
                                   <span className="flex-1">{t("nav.waiter")}</span>
-                                  {!waiterOpen && <ChevronDown size={18} aria-hidden className="text-muted" />}
+                                  {!waiterShown && <ChevronDown size={18} aria-hidden className="text-muted" />}
                                 </button>
-                                {waiterOpen && (
+                                {waiterShown && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
-                                      waiter.cancel();
+                                      dismissWaiter(table.id);
                                       // From a key: back to the row (it replaces the ×).
                                       if (e.detail === 0) backToWaiterRow();
                                     }}

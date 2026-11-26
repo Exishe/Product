@@ -56,6 +56,12 @@ export const CloseIcon = () => <X {...ICON} />;
 export const CheckIcon = () => <Check size={16} strokeWidth={3} aria-hidden />;
 export const BellIcon = () => <BellRing size={20} strokeWidth={2} aria-hidden />;
 
+/** The dish's first letter, for a line or a plate without a photo. */
+export function initial(name: string, locale: string): string {
+  const first = Array.from(name.trim())[0] ?? "";
+  return first.toLocaleUpperCase(locale);
+}
+
 // Public URL of a dish photo in the menu-images bucket (public read). Reads
 // the inlined env value directly: publicEnv() would pull zod into the guest
 // bundle, which has a tight size budget.

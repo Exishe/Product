@@ -4,14 +4,15 @@ import type { CartSummary } from "@/features/ordering/cart";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
 import styles from "./guest.module.css";
-import { Plate, dishPhotoUrl } from "./ui";
+import { Plate, dishPhotoUrl, initial } from "./ui";
 import type { GuestItem } from "./view-model";
 
 // The main action on the menu: "View order", with the chosen dishes' plates,
 // the count and the total, 56 px tall. On phones and tablets it sits inside
 // the bottom panel, right on the tabs (guest-dock.tsx); a desktop has the
-// order rail instead (order-rail.tsx). A line without a photo shows its
-// count («×2») on a plain disc instead of an empty plate. It appears when the
+// order rail instead (order-rail.tsx). A line without a photo gets a plain
+// disc with the dish's first letter, as in the order list (line-row.tsx); the
+// only count is «N dishes» beside them. It appears when the
 // first dish goes in, with one sweep of light round its edge (.ready), then
 // rests plain.
 export function CartBar({
@@ -53,9 +54,9 @@ export function CartBar({
           ) : (
             <span
               key={line.id}
-              className="num bg-chip text-ink grid size-9 place-items-center rounded-full text-meta font-bold ring-2 ring-[var(--guest-add)]"
+              className="bg-chip text-muted display-face grid size-9 place-items-center rounded-full text-name leading-none ring-2 ring-[var(--guest-add)]"
             >
-              ×{line.quantity}
+              {initial(item.name.text, locale)}
             </span>
           ),
         )}

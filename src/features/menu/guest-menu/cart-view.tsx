@@ -14,8 +14,8 @@ import type { GuestItem } from "./view-model";
 // 16 px edge, no box around the lines. The status page's column (ORDER_COLUMN),
 // and the bar above sits on the same column (guest-menu.tsx), so the café's
 // name, the title, the lines and the button share one left edge. A 44 px back and the 28 px title on one
-// row; the lines on hairlines, each the same grid (a 56 px photo column only
-// when the dish has a photo); the total at 24 px; the usual wait and how
+// row; the lines on hairlines, each the same grid (a 56 px leading slot: the
+// photo, or the first letter on a tile); the total at 24 px; the usual wait and how
 // paying works as two quiet lines; then the one action, «Send to the kitchen
 // · total», 56 px. The bottom tabs stay (guest-menu.tsx).
 export function CartView({
