@@ -47,7 +47,7 @@ export async function PlanBanner({ restaurantId, locale }: { restaurantId: strin
       role={urgent ? "status" : undefined}
       data-testid="plan-banner"
       data-plan={state.kind}
-      // A quiet line on the page while the free month runs (ADR-093); a tinted
+      // A quiet line on the page while the free month runs (ADR-094); a tinted
       // block only when the owner must act.
       className={
         urgent

@@ -151,7 +151,7 @@ function TableRow({ floor, table, grouped }: { floor: Floor; table: FloorTable; 
       data-table-label={table.label}
     >
       {mode === "view" ? (
-        // One row per table (ADR-093): what it is, then Edit and Print. A new
+        // One row per table (ADR-094): what it is, then Edit and Print. A new
         // code, which retires the printed one, sits in the editor only.
         <div className="flex min-h-12 items-center gap-3">
           <span

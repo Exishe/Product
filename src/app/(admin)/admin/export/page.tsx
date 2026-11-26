@@ -18,7 +18,7 @@ export default async function ExportPage() {
       title={t("title")}
       subtitle={<p className="m-0">{t("intro")}</p>}
     >
-      {/* Hairline rows (ADR-093). From 640 px the download sits at the
+      {/* Hairline rows (ADR-094). From 640 px the download sits at the
           right; on a phone it is a text action under the description, so the
           text keeps the full width. */}
       <ul className="border-staff-sep m-0 flex list-none flex-col border-t p-0">

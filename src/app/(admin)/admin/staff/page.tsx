@@ -89,7 +89,7 @@ export default async function StaffPage() {
     );
   };
 
-  // People and devices as the same hairline rows as the logins above (ADR-093):
+  // People and devices as the same hairline rows as the logins above (ADR-094):
   // who and their role, the status at the right, then the one action.
   const list = (rows: Member[], kind: "people" | "devices") => (
     <ul className="m-0 flex list-none flex-col p-0">
@@ -140,7 +140,7 @@ export default async function StaffPage() {
   }));
 
   const close = t("close");
-  // One page, three lists with the same rows (ADR-093): the logins the
+  // One page, three lists with the same rows (ADR-094): the logins the
   // screens use, the people with their own account, the paired devices. Each
   // create form opens in a sheet; the common one (a new waiter or kitchen
   // login) is the page's one primary button.

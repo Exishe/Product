@@ -10,7 +10,7 @@ import type { GuestItem } from "./view-model";
 
 // One line of the order: the order view's, and the desktop rail's in a
 // narrower cut (`dense`: a smaller photo and name). The name and its price are
-// one size, and the quantity is the menu's own «− n +» pill (ADR-095).
+// one size, and the quantity is the menu's own «− n +» pill (ADR-096).
 export function LineRow({
   priced,
   item,

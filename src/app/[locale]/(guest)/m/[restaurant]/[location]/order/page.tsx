@@ -158,7 +158,7 @@ export default async function OrderStatusPage({
       ) : (
         // No table (or a dead QR code): the café's bar with its languages, one
         // headline, one sentence and one 56 px button back to the menu
-        // (benchmark §2.3; ADR-095: no second back link above it).
+        // (benchmark §2.3; ADR-096: no second back link above it).
         <GuestI18nProvider locale={locale} messages={(await getMessages()).guest as GuestMessages}>
           <GuestHeader
             compact

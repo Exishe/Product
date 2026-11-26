@@ -13,7 +13,7 @@ import type { Connection } from "@/features/kitchen/connection";
 export const btn = {
   base: "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[1.0625rem] leading-tight font-semibold disabled:cursor-not-allowed [&_svg]:size-5 [&_svg]:shrink-0",
   primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
-  // White with an inside hairline: flat, like every group (ADR-093).
+  // White with an inside hairline: flat, like every group (ADR-094).
   secondary:
     "bg-white text-ink ring-1 ring-staff-field/50 ring-inset disabled:bg-staff-fill disabled:text-staff-label2 disabled:ring-0",
   danger: "bg-pom-tint text-pomegranate disabled:bg-staff-fill disabled:text-staff-label2",

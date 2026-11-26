@@ -146,7 +146,7 @@ test.describe("sales dashboard", () => {
       return;
     }
     const kpis = page.getByTestId(/^kpi-[a-z-]+$/);
-    // Revenue leads (ADR-093 admin pass); the average bill follows.
+    // Revenue leads (ADR-094 admin pass); the average bill follows.
     await expect(kpis.first()).toHaveAttribute("data-testid", "kpi-revenue");
     await expect(page.getByTestId("kpi-avg-bill-value")).toHaveText(/^\d{1,3}([ \u00a0]\d{3})*[ \u00a0]֏$/);
     await expect(page.getByTestId("kpi-revenue-value")).toHaveText(/֏$/);

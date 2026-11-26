@@ -20,7 +20,7 @@ type T = Awaited<ReturnType<typeof getTranslations<"dashboard">>>;
 
 // Owners ask for these first (screens.md, 13): revenue, average bill, orders,
 // then the best and the weakest dishes. Everything else follows. The figures
-// sit flat on the page, split by hairlines (ADR-093): no filled card.
+// sit flat on the page, split by hairlines (ADR-094): no filled card.
 export async function SalesDashboard({ data, locale }: { data: Dashboard; locale: Locale }) {
   const t = await getTranslations("dashboard");
   const money = (n: number) => formatAmd(n, locale);
@@ -189,7 +189,7 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
   );
 }
 
-// A group on the page (ADR-093): a 20 px heading and a hairline, no box.
+// A group on the page (ADR-094): a 20 px heading and a hairline, no box.
 function Card({ children, testId }: { children: React.ReactNode; testId?: string }) {
   return (
     <section data-testid={testId} className={group}>

@@ -13,7 +13,7 @@ import type { GuestCategory } from "./view-model";
 // a phone has the group chips and their dropdown in the bar. It sticks level
 // with the first heading of the dishes (`stick`), and a list taller than the
 // screen scrolls inside its column with a soft fade at its foot. On the page,
-// not in a box (ADR-095), its words on the column's own edge. The section on
+// not in a box (ADR-096), its words on the column's own edge. The section on
 // screen is marked (the phone's scroll-spy): in the ink, semibold, on the chip
 // tint, with aria-current, and the list turns inside its column to keep it in
 // view.

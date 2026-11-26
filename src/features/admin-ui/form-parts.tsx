@@ -5,7 +5,7 @@ import { CircleAlert, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { alert, button, field, fieldLabel, iconButton, input } from "./styles";
 
-// Sign-in, sign-up and pairing fields (ADR-093, benchmark rule 13): 52 px
+// Sign-in, sign-up and pairing fields (ADR-094, benchmark rule 13): 52 px
 // tall, 17 px text, white on the white page with the 3.4:1 edge.
 export const authInput = clsx(field, "h-13");
 

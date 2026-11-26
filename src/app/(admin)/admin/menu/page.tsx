@@ -8,7 +8,7 @@ import { MenuEditor } from "@/features/menu/menu-editor";
 import { OutIngredientSetting } from "@/features/menu/out-ingredient-setting";
 import { requireMember } from "@/lib/auth/require-member";
 
-// The sections and dishes come first (ADR-093). The rarely used pages sit
+// The sections and dishes come first (ADR-094). The rarely used pages sit
 // behind "More", and the café-wide, set-once rule for a dish whose ingredient
 // ran out is a closed setting at the bottom, where a stray tap can't change it.
 export default async function MenuPage() {

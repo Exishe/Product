@@ -66,14 +66,14 @@ export function useCurrentSection(categories: GuestCategory[]): [string | null, 
   return [current, go];
 }
 
-// The section tabs in the sticky band (ADR-093 area pass, benchmark §2.1):
+// The section tabs in the sticky band (ADR-094 area pass, benchmark §2.1):
 // every section of the menu in one row of 16 px text tabs, 48 px tall, with a
 // 3 px line under the current one that glides to the next as the page
 // scrolls (scroll-spy) and the row turning to keep the whole of it in view. One tap jumps
 // to a section. Where the menu has groups (Food, Desserts, Drinks, Wine) each
 // run of tabs starts with the group's name, small, muted and regular, set
 // off from its tabs by a short vertical hairline, so it never reads as a tab
-// or as the current one (ADR-095); a tap on it jumps to the group's first
+// or as the current one (ADR-096); a tap on it jumps to the group's first
 // section, and it carries aria-current while the page is in that group. A
 // group whose only section carries its name is one tab. The
 // row fades at its right edge when it scrolls sideways. From 1024 px the

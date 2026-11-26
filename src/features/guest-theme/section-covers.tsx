@@ -75,7 +75,7 @@ export function SectionCovers({
   }
 
   return (
-    // Image slots straight on the page (ADR-093): no card around each section.
+    // Image slots straight on the page (ADR-094): no card around each section.
     <section className="flex flex-col gap-4" aria-labelledby="covers-title">
       <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
         <h2 id="covers-title" className={sectionTitle}>
@@ -86,7 +86,7 @@ export function SectionCovers({
       {rows.length === 0 ? (
         <p className="text-staff-label2 m-0">{b("coversEmpty")}</p>
       ) : (
-        // One hairline row per section (ADR-093): a small 16:9 thumbnail or an
+        // One hairline row per section (ADR-094): a small 16:9 thumbnail or an
         // empty slot, the name, and the action at the right. The large preview
         // shows only for a cover that exists, so an empty menu is not a wall
         // of grey placeholders.

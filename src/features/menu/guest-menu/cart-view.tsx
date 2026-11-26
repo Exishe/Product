@@ -10,7 +10,7 @@ import { LineRow } from "./line-row";
 import { BackIcon } from "./ui";
 import type { GuestItem } from "./view-model";
 
-// "Your order" (ADR-093 area pass, benchmark §2.3): everything on the page's
+// "Your order" (ADR-094 area pass, benchmark §2.3): everything on the page's
 // 16 px edge, no box around the lines. A 44 px back and the 28 px title on one
 // row; the lines on hairlines, each the same grid (a 56 px photo column only
 // when the dish has a photo); the total at 24 px; the usual wait and how

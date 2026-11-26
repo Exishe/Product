@@ -143,7 +143,7 @@ async function load(db: Db, guestSessionId: string): Promise<Data | null> {
   };
 }
 
-// The progress bar (ADR-093 area pass, benchmark §2.3: Uber Eats): four
+// The progress bar (ADR-094 area pass, benchmark §2.3: Uber Eats): four
 // segments, 4 px tall and 4 px apart (received and accepted share the first),
 // under the 28 px headline that names the state. Done segments fill from the left one after
 // another (ms apart) on first view; the current one breathes while the
@@ -344,7 +344,7 @@ function OrderCard({
     ) : null;
   if (part === "status")
     return (
-      // One status block on the page's edge (ADR-093 area pass): the state at
+      // One status block on the page's edge (ADR-094 area pass): the state at
       // 28 px, when it was sent, the progress bar and the wait. No box.
       <section aria-label={t("order.title", { number: order.number })} data-status={status} className="grid gap-1">
         {status !== "rejected" && status !== "cancelled" && (
@@ -948,7 +948,7 @@ export function OrderStatusView({
   );
 
   return (
-    // One centred column at every width (ADR-095, ADR-096): the state, its
+    // One centred column at every width (ADR-096, ADR-097): the state, its
     // bar and the wait first, then the order and the waiter, then the showcase
     // and the games, all on the column the café's bar above uses too, so every
     // hairline is the column's width and nothing hangs at the screen's edge.

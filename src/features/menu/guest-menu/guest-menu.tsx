@@ -103,7 +103,7 @@ const CART_HASH = "#cart";
 // and as wide as the menu bar (menu-bar.tsx, 1440 px), so they line up. From
 // 1024 px it holds three columns that start on one line under the band: the
 // section list, the dishes (the notices and promos at their top) and the order
-// rail. From 1280 px the dishes run three across (ADR-095).
+// rail. From 1280 px the dishes run three across (ADR-096).
 const COLUMN = "mx-auto w-full max-w-[1440px] px-4 md:px-8";
 const THREE_UP = MENU_GRID;
 /** Where the desktop's side columns stick: just under the sticky band, level with the first heading. */
@@ -601,7 +601,7 @@ export function GuestMenu({
   );
   // A phone shows "goes well with" for one add per visit: the add whose idea
   // showed first (kept for the tab's session). After that the bottom panel is
-  // the cart bar and the tabs only, about 130 px (ADR-095).
+  // the cart bar and the tabs only, about 130 px (ADR-096).
   const phoneIdea = (autoHide: boolean) =>
     !autoHide || ideaShownOn === null || ideaShownOn === suggest?.n;
   const suggestions = (autoHide: boolean) =>
@@ -807,7 +807,7 @@ export function GuestMenu({
               // One compact page: the four clusters (food, desserts, drinks, wine) one
               // after another, each with its sections and their dishes. No cover
               // photos and no lead card: every dish has the same shape, so the
-              // first screen shows names, prices and "+" (ADR-095).
+              // first screen shows names, prices and "+" (ADR-096).
               (() => {
                 const clusters = groupSections(shown);
                 // The pictured dishes come first, then the dishes without a photo;

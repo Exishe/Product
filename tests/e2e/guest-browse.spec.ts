@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 import { demoTable } from "./guest-helpers";
 import { ownerEmail, ownerPassword } from "./helpers";
 
-// Round 2 of the guest menu (ADR-093 area pass): the bar keeps the café's name
+// Round 2 of the guest menu (ADR-094 area pass): the bar keeps the café's name
 // whole and only the search and section tabs stay on top, any section is one
 // tap away, the − / + buttons stand out from the page, and a desktop has an
 // order rail instead of the phone's bar.
@@ -102,7 +102,7 @@ test.describe("guest menu: browsing and ordering at the demo café", () => {
     await tab.click();
     await expect(page.getByRole("heading", { level: 3, name: /^Ըմպելիքներ/ })).toBeInViewport();
     // The tab and the group the page is in are marked; the group's name stays
-    // quiet (regular, muted), so it never reads as the current tab (ADR-095).
+    // quiet (regular, muted), so it never reads as the current tab (ADR-096).
     await expect(tab).toHaveAttribute("aria-current", "true");
     await expect(drinks).toHaveAttribute("aria-current", "true");
     await expect(drinks).toHaveCSS("font-weight", "400");
@@ -253,7 +253,7 @@ test.describe("guest menu at a café with a brand and a long menu", () => {
     const first = page.locator("main section").first();
     // The section starts with its title, straight followed by its dishes. The
     // title (22 px) stands above the dish names (17 px), so a section start
-    // reads at a glance (ADR-095).
+    // reads at a glance (ADR-096).
     await expect(first.locator(":scope > h3")).toBeVisible();
     expect(
       await first.locator(":scope > h3").evaluate((h) => parseFloat(getComputedStyle(h).fontSize)),

@@ -83,7 +83,7 @@ export function GamesCorner({
         aria-labelledby="games-title"
         data-testid="games"
       >
-        {/* The page's one section heading (ADR-097), no icon; the line under it at 15 px. */}
+        {/* The page's one section heading (ADR-098), no icon; the line under it at 15 px. */}
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 id="games-title" className={SECTION_TITLE}>

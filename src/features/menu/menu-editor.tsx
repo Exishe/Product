@@ -1242,7 +1242,7 @@ export function MenuEditor({ data }: { data: EditorData }) {
   );
 }
 
-// A group of the dish or section form (ADR-093): a heading and a hairline on
+// A group of the dish or section form (ADR-094): a heading and a hairline on
 // the sheet's one surface, 32 px from the next group. No card.
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (

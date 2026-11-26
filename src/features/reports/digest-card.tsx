@@ -5,7 +5,7 @@ import type { WeeklyDigest } from "./model";
 // on Monday (ADR-074), so it can be read without Telegram. The text comes from
 // the database in the viewer's language; it is shown as plain text.
 // The Telegram message opens with a pictograph; the admin shows no emoji
-// (ADR-093), so it is dropped from the start of the text and of each line.
+// (ADR-094), so it is dropped from the start of the text and of each line.
 export function plainText(text: string): string {
   return text.replace(/^[ \t]*(?:\p{Extended_Pictographic}\uFE0F?[ \t]*)+/gmu, "");
 }

@@ -9,7 +9,7 @@ import styles from "./guest.module.css";
 import { MetaLine, isBadgeTag, orderTags, MinusIcon, PlusIcon, TagChip, Txt, dishPhotoUrl } from "./ui";
 import { sizesOf, type GuestItem } from "./view-model";
 
-// One dish (ADR-093 area pass, ADR-095). On a phone a row on the page: the
+// One dish (ADR-094 area pass, ADR-096). On a phone a row on the page: the
 // name, sizes, one quiet meta line (portion and tags), two lines of
 // description and the price on the left, a fixed 104 px square photo on the
 // right. From 768 px a pictured dish stands in the grid with its photo across
@@ -19,7 +19,7 @@ import { sizesOf, type GuestItem } from "./view-model";
 // no tall card stands beside short ones. Every dish has the same shape: no
 // larger "lead" card.
 //
-// The add control has one place (ADR-095): with a photo it sits inside the
+// The add control has one place (ADR-096): with a photo it sits inside the
 // photo's bottom-right corner, 4 px in, ringed in the page colour; without a
 // photo it sits at the right end of the price line, or of the first size's
 // line when the dish has two or three prices. It is one shape everywhere: a

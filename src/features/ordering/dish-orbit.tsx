@@ -27,12 +27,12 @@ export type OrbitDish = {
 // itself every few seconds while it is on screen, and an arrow, a dot, a
 // thumbnail or a swipe jumps. The original is driven by gsap and the page
 // scroll; this one is plain Web Animations (no library, nothing pinned), and
-// under reduced motion the dish just changes. ADR-093 area pass: no ranking
+// under reduced motion the dish just changes. ADR-094 area pass: no ranking
 // eyebrow and no decorative swoosh; the dish reads name, price, description,
 // then one outline «Add · price» (a filled button would compete with the
 // page's one primary); in the stacked layout (the order page's column, a
 // phone) a «‹ 1 / 9 ›» counter with two 44 px arrows sits on the heading's
-// row instead of the dots (ADR-097), so the dish itself has one control.
+// row instead of the dots (ADR-098), so the dish itself has one control.
 const SWING = 50; // degrees a plate travels round the orbit's pivot
 const ORBIT = { x: 299, y: -450, r: 650, w: 118 }; // the band's circle, in canvas px
 const REST = [

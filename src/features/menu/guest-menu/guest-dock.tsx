@@ -22,13 +22,13 @@ export type DockItem = {
   expanded?: boolean;
 };
 
-// The bottom of the guest pages (ADR-093 area pass): one full-bleed panel in
+// The bottom of the guest pages (ADR-094 area pass): one full-bleed panel in
 // the page colour, a hairline and a soft lift on top, reaching down past the
 // home indicator, so no dish ever shows below or around it. What belongs
 // with the bar sits inside the same panel, above the tabs: the cart bar on
 // the menu, the waiter's choices, a "goes well with" idea, the notes about a
 // request. One raised object, one shadow. Every item is at least 56 px tall;
-// three items carry 15 px labels, four items 13 px. The current item (ADR-095)
+// three items carry 15 px labels, four items 13 px. The current item (ADR-096)
 // has its label in the ink and a 56 × 32 px tint behind its icon, nothing
 // under the text (an underline would cut through Armenian descenders).
 // While the waiter's choices are open, only the Waiter item looks current.

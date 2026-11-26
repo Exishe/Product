@@ -1,6 +1,6 @@
 # Component benchmark: Pativ against the best of its kind
 
-Date: 26 Nov 2026. Merges the guest-side study (QR menu, order at table) and the staff-side study (waiter, kitchen, admin, auth, landing). Measured with Playwright at 390x844 and 1440x900 (`getComputedStyle`), from App Store screenshot sets and from help-centre pages where the product sits behind a login. Numbers marked "≈" were read off video frames. Decision record: ADR-093 in `docs/01-architecture/decisions.md`.
+Date: 26 Nov 2026. Merges the guest-side study (QR menu, order at table) and the staff-side study (waiter, kitchen, admin, auth, landing). Measured with Playwright at 390x844 and 1440x900 (`getComputedStyle`), from App Store screenshot sets and from help-centre pages where the product sits behind a login. Numbers marked "≈" were read off video frames. Decision record: ADR-094 in `docs/01-architecture/decisions.md`.
 
 ## 1. Platforms studied
 
@@ -21,7 +21,7 @@ Sources by name/URL: wolt.com, toasttab.com (doc.toasttab.com platform guide, su
 
 ## 2. Component analysis
 
-"Now" is Pativ before ADR-093. "Target" is what beats the best competitor. "F" marks what the shared foundation (tokens, shared primitives) already delivers; the rest belongs to the area passes.
+"Now" is Pativ before ADR-094. "Target" is what beats the best competitor. "F" marks what the shared foundation (tokens, shared primitives) already delivers; the rest belongs to the area passes.
 
 ### 2.1 Guest: finding things
 
@@ -94,7 +94,7 @@ Sources by name/URL: wolt.com, toasttab.com (doc.toasttab.com platform guide, su
 | Tabular figures, `2 900 ֏` | Mixed number formats |
 | Real product and a named café as proof | Feature-card grids, invented stats |
 
-## 5. Measured effect of the foundation (ADR-093)
+## 5. Measured effect of the foundation (ADR-094)
 
 Pativ Demo menu at 390x844, first load, visible elements:
 

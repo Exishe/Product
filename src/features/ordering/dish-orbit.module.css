@@ -1,5 +1,5 @@
 /* Dish orbit (dish-orbit.tsx). One 960 x 520 design canvas scaled to the card's
-   width; in the order page's 44rem column and on a phone (card under 768 px, ADR-096) the same pieces stack in one column. */
+   width; in the order page's 44rem column and on a phone (card under 768 px, ADR-097) the same pieces stack in one column. */
 .root {
   position: relative;
   width: 100%;
@@ -25,7 +25,7 @@
   transform-origin: 0 0;
 }
 
-/* The swoosh behind the plate is gone (ADR-093 area pass: no decoration); its
+/* The swoosh behind the plate is gone (ADR-094 area pass: no decoration); its
    tween in dish-orbit.tsx keeps running on a hidden path. */
 .arc {
   display: none;
@@ -334,7 +334,7 @@
   white-space: nowrap;
 }
 
-/* A phone (ADR-095, ADR-097): laid out like a dish row: the name, the price,
+/* A phone (ADR-096, ADR-098): laid out like a dish row: the name, the price,
    two lines of description and the outline «Add · price» on the left, the
    plate (no drop shadow) on the right; the «‹ n / 9 ›» counter is on the
    heading's row above. One control row. No canvas. */

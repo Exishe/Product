@@ -79,7 +79,7 @@ export function VenueControls({ initial, timeZone }: { initial: VenueState; time
   return (
     <div className="flex flex-col gap-4" data-testid="venue-controls">
       <div className={row} data-testid="control-pause">
-        {/* One segmented switch (ADR-093): taking orders or paused. Paused
+        {/* One segmented switch (ADR-094): taking orders or paused. Paused
             first asks for how long; taking orders again resumes at once. The
             switch is the state, so the only line with it is the one under it:
             until when, or what guests can do now. */}

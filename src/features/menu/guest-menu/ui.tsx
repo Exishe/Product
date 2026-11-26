@@ -105,10 +105,10 @@ export function Stepper({
   );
 }
 
-// Tags (owner, Nov 2026: no pill badges everywhere; ADR-093 area pass: one
+// Tags (owner, Nov 2026: no pill badges everywhere; ADR-094 area pass: one
 // treatment). Every tag is a word in the dish's meta line, joined with « · ».
 // The two that single a dish out, «Սիրված» and the chef's pick, lead the line
-// as a label (ADR-096): capitalised, in the accent colour, at the meta's own
+// as a label (ADR-097): capitalised, in the accent colour, at the meta's own
 // size and weight, after a small mark (a heart, a chef's hat), so they never
 // read as a second line of the dish's name. No box, no pill, no corner label
 // clipped on a narrow photo. The same on a row, a card and the sheet.

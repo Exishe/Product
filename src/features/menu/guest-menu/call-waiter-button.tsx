@@ -56,7 +56,7 @@ async function attempt(target: Target) {
   }
 }
 
-// The Waiter item's choices (ADR-093 area pass), inside the bottom panel just
+// The Waiter item's choices (ADR-094 area pass), inside the bottom panel just
 // above the bar, not a card over the menu: two 56 px rows, «Call the waiter»
 // (sent at once: opening the choices was the first tap) and «Ask for the
 // bill», which asks card or cash first, the same request and choice the
@@ -164,7 +164,7 @@ export function CallWaiterPrompt({ token, tableId }: { token: string; tableId: s
           </div>
         ) : (
           <div role="group" aria-labelledby="waiter-title">
-            {/* A title and a way to close, like any sheet (ADR-095). */}
+            {/* A title and a way to close, like any sheet (ADR-096). */}
             <div className="flex min-h-11 items-center justify-between gap-2">
               <p id="waiter-title" className="m-0 px-1 font-semibold">
                 {t("nav.waiter")}

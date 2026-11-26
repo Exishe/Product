@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Sheet } from "./sheet";
 import { button, textAction, type ButtonKind } from "./styles";
 
-// A button that opens a form in the shared Sheet (ADR-093): create forms stay
+// A button that opens a form in the shared Sheet (ADR-094): create forms stay
 // out of the page until the owner asks for one. The sheet keeps what the form
 // showed (a new password, a code) until it is closed.
 export function SheetButton({

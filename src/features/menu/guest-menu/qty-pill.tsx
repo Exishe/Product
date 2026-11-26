@@ -3,7 +3,7 @@
 import styles from "./guest.module.css";
 import { MinusIcon, PlusIcon } from "./ui";
 
-// The one quantity control of the guest pages (ADR-095): a filled 44 px pill,
+// The one quantity control of the guest pages (ADR-096): a filled 44 px pill,
 // «− n +», the same on a dish row, in the order view and in the desktop
 // rail and in the dish sheet's footer. A dish row starts it as a round "+"
 // that widens into this pill (dish-row.tsx); the order lines and the sheet

@@ -7,7 +7,7 @@ import { LocaleSwitch } from "./locale-switch";
 // Sign-in, sign-up, device pairing, "create your café" (ADR-055) and the 404:
 // the landing page's 64 px header (the lockup, a link home, and the language
 // switch), then a title, one helper line and the form in one 400 px column on
-// the same white page (ADR-093: no card around the form). The column starts
+// the same white page (ADR-094: no card around the form). The column starts
 // at a fixed offset, not centred, so the title sits at the same height on
 // every one of these screens and the form stays above a phone keyboard.
 // `bare` is kept for callers; both render the same now.

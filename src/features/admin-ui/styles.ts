@@ -9,7 +9,7 @@ const base =
 
 const kinds = {
   primary: "bg-ink text-white disabled:bg-staff-fill disabled:text-staff-label2",
-  // On the white content column (ADR-093) a secondary button is an outline,
+  // On the white content column (ADR-094) a secondary button is an outline,
   // not a floating white pill: the 3.4:1 field edge, drawn inside.
   secondary:
     "bg-white text-ink shadow-[inset_0_0_0_1px_var(--color-staff-field)] disabled:bg-staff-fill disabled:text-staff-label2 disabled:shadow-none",
@@ -49,7 +49,7 @@ export const alert = {
   notice: "bg-amber-tint text-ink [&_svg]:text-amber-text",
 };
 
-// One heading scale (ADR-055, on the ADR-093 type scale): the page title (h1),
+// One heading scale (ADR-055, on the ADR-094 type scale): the page title (h1),
 // a section title (20 px semibold) and a title inside a group (17 px semibold),
 // so a group never shouts louder than the section it sits in.
 export const sectionTitle = "m-0 text-heading font-semibold break-words";
@@ -65,7 +65,7 @@ export const textAction = (tone: "ink" | "danger" = "ink", extra?: string) =>
     extra,
   );
 
-// Grouped content (ADR-093): no box at all. The group sits on the white
+// Grouped content (ADR-094): no box at all. The group sits on the white
 // column with the page's left edge, split from the next one by space.
 export const card = "flex flex-col gap-4";
 

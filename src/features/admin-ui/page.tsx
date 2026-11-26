@@ -30,7 +30,7 @@ export function AdminPage({
   return (
     <main
       className={clsx(
-        // Groups are split by 40-48 px of space (ADR-093), not by card edges.
+        // Groups are split by 40-48 px of space (ADR-094), not by card edges.
         // From 1024 px the column is anchored to the sidebar (h1 always at
         // 240 + 40 px), so the title never jumps between pages; the width
         // is only a cap on the right.
@@ -92,7 +92,7 @@ export function AdminPage({
 }
 
 // A titled group of content: a 20 px heading, a hairline, then the content on
-// the page itself (ADR-093; it was a white card on grey).
+// the page itself (ADR-094; it was a white card on grey).
 export function Section({
   title,
   hint,
@@ -128,7 +128,7 @@ export function Section({
       {bare ? (
         children
       ) : (
-        // ADR-093: no card. A hairline under the heading opens the group; the
+        // ADR-094: no card. A hairline under the heading opens the group; the
         // content keeps the page's left edge.
         <div className="border-staff-sep flex flex-col gap-3 border-t pt-4">{children}</div>
       )}

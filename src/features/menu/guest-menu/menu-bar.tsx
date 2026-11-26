@@ -4,14 +4,14 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { BrandMark, GuestBar, type HomeLink, type LanguageLink } from "./guest-header";
 
 /**
- * The menu's three desktop columns (ADR-095): the section list, the dishes and
+ * The menu's three desktop columns (ADR-096): the section list, the dishes and
  * the order rail. The band uses it too, so the search sits over the dishes and
  * all three columns start on one line under it.
  */
 export const MENU_GRID =
   "lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_19rem] lg:gap-x-8 xl:grid-cols-[13rem_minmax(0,1fr)_21rem] xl:gap-x-10";
 
-// The menu's top (ADR-093 area pass, benchmark §2.1). The guest bar (the café,
+// The menu's top (ADR-094 area pass, benchmark §2.1). The guest bar (the café,
 // the languages, then the table or why there is none) sits on the page and
 // scrolls away; only the band under it stays: the search pill and one row of
 // section tabs, about 104 px on a phone, a sixth of the screen instead of a

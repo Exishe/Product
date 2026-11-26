@@ -797,7 +797,7 @@
 }
 
 /* Language items in the bar: on a mouse the label turns over like a card
-   (rotateX); plain CSS, so no animation library. No glow behind it (ADR-093:
+   (rotateX); plain CSS, so no animation library. No glow behind it (ADR-094:
    nothing that stays lit on a touch screen); touch screens and "reduce motion"
    get the colour only, no turning. */
 .flip {

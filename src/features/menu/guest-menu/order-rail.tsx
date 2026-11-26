@@ -13,7 +13,7 @@ import type { GuestItem } from "./view-model";
 // dish as a line (name, what tells it apart, price, − n +), the total, and
 // the send area itself, so a desktop guest orders without leaving the menu.
 // One primary action, «Send to the kitchen · total»; the full order view is
-// a quiet link beside the title. On the page, not in a box (ADR-095). Under the total a "goes well with" idea
+// a quiet link beside the title. On the page, not in a box (ADR-096). Under the total a "goes well with" idea
 // when there is one. Below it the two things the phone keeps on its bottom
 // bar, as plain 48 px rows on hairlines: the waiter and «Track your order». A dish added on a desktop flies here (fly.ts)
 // and the heading bounces as it lands. Its own file: fetched only where the

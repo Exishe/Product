@@ -98,7 +98,7 @@ function Group({
   children: ReactNode;
 }) {
   return (
-    // A group on the page (ADR-093): heading, hint, a hairline, then the content.
+    // A group on the page (ADR-094): heading, hint, a hairline, then the content.
     <section className="flex min-w-0 flex-col gap-4" aria-labelledby={id}>
       <div className="border-staff-sep flex flex-col gap-1 border-b pb-3">
         <h2 id={id} className={sectionTitle}>
@@ -577,7 +577,7 @@ export function AppearanceForm({
           </Group>
 
           <Group id={`${ids}-plate`} title={b("plate")} hint={b("plateHint")}>
-            {/* A radio list on hairlines (ADR-093), not a grid of boxes. */}
+            {/* A radio list on hairlines (ADR-094), not a grid of boxes. */}
             <div role="radiogroup" aria-labelledby={`${ids}-plate`} className="flex flex-col">
               {([null, ...PLATE_STYLES] as (PlateStyle | null)[]).map((p) => (
                 <label

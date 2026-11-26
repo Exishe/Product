@@ -16,14 +16,14 @@ import {
 import { CloseIcon, Plate, PlusIcon, Txt, dishPhotoUrl } from "./ui";
 import type { GuestItem } from "./view-model";
 
-// "Goes well with" (ADR-077 data, ADR-080 screen; ADR-093 area pass). Loaded
+// "Goes well with" (ADR-077 data, ADR-080 screen; ADR-094 area pass). Loaded
 // on the first dish added, never at first paint. One idea at a time, as one
 // 64 px row inside the bottom panel right above the cart bar (no card, no
 // shadow of its own): a 40 px plate, the name and price at 16 px, a 44 px «+»
 // and a 44 px ×. On a phone it leaves by itself after 6 seconds or 200 px of
 // scrolling, so it never sits over the menu; the next idea shows after one is
 // added or declined. A phone shows ideas for one add per visit only (the menu
-// asks with `onShown`, ADR-095), so the bottom panel stays the cart bar and the
+// asks with `onShown`, ADR-096), so the bottom panel stays the cart bar and the
 // tabs. On a desktop it sits in the order rail under the total.
 export type SuggestTrigger = {
   /** The dish just added. */

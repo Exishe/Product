@@ -27,7 +27,7 @@ const NOTE_COUNTER_FROM = 160;
 // The item sheet: options with their rules, a note for the kitchen, quantity
 // and an add button with the live price. A native <dialog> gives focus
 // trapping, Escape and an inert page behind it. A bottom sheet on a phone, a
-// centred dialog from 768 px. ADR-093 area pass (benchmark §2.2): the price
+// centred dialog from 768 px. ADR-094 area pass (benchmark §2.2): the price
 // under the 24 px title follows the chosen size; options are 52 px rows with
 // 22 px controls; the allergens are plain text on the sheet, not a box; and
 // everything a thumb needs is in the sticky footer: − n + on the left and
@@ -93,7 +93,7 @@ export function DishSheet({
     >
       <div className="max-h-[90dvh] overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-0 md:max-h-[88dvh] md:px-6">
         {/* A big photo across the top with a round × floating on it; without a photo
-            the × sits at the end of the name's row (ADR-095), no empty band. */}
+            the × sits at the end of the name's row (ADR-096), no empty band. */}
         {(() => {
           const close = (
             <button

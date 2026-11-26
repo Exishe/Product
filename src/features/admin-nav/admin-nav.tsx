@@ -12,7 +12,7 @@ import { NAV_ICONS, type NavIcon } from "./nav-icons";
 // `also`: other pages this item stands for (Sales covers Reports and Export).
 export type NavLink = { href: string; label: string; icon: NavIcon; also?: readonly string[] };
 
-// The owner's sections (ADR-055, ADR-093, at most seven). From 1024 px: a
+// The owner's sections (ADR-055, ADR-094, at most seven). From 1024 px: a
 // sidebar flush on the grey, one line per item, the current one a tinted row.
 // Below: one 56 px bar with the café's name and a Pages button that opens
 // the same list in a sheet, so every section is visible at once on a phone.
@@ -68,7 +68,7 @@ export function AdminNav({
         </Sheet>
       )}
 
-      {/* Desktop sidebar: flush on the grey page (ADR-093), no card, no shadow. */}
+      {/* Desktop sidebar: flush on the grey page (ADR-094), no card, no shadow. */}
       <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-60 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:px-3 print:hidden">
         <div className="flex flex-col gap-6 py-6">
           <Link href="/admin" className="flex min-w-0 flex-col rounded-lg px-3 py-1">

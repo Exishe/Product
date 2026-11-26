@@ -171,7 +171,7 @@ export function LanguageNav({ languages }: { languages: readonly LanguageLink[] 
   );
 }
 
-// The guest bar (ADR-093 area pass), the same on the menu, the order view and
+// The guest bar (ADR-094 area pass), the same on the menu, the order view and
 // the status page: one row with the café (its wordmark or name, given room
 // first) and the languages, then one quiet meta row: the table, or what the
 // guest needs to know without one, with the demo's colour switch and the
