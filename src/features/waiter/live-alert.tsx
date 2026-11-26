@@ -102,7 +102,10 @@ export function WaiterAlert({
     setShown((cur) => ({ id: Date.now(), events: mergeEvents(fresh, cur?.events ?? []) }));
     play(audio.current, fresh[0]?.kind === "call" ? "urgent" : "plain");
     try {
-      navigator.vibrate?.(fresh[0]?.kind === "call" ? [180, 90, 180, 90, 180] : [180, 90, 180]);
+      // Before the first tap on a fresh page the browser refuses to buzz and
+      // logs an error, so it is not asked until it can.
+      if (navigator.userActivation?.hasBeenActive !== false)
+        navigator.vibrate?.(fresh[0]?.kind === "call" ? [180, 90, 180, 90, 180] : [180, 90, 180]);
     } catch {
       // Not every browser can buzz.
     }

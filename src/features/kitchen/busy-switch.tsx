@@ -102,15 +102,15 @@ export function BusySwitch({
         </span>
         <div
           style={{ top: anchor.top, right: anchor.right }}
-          className="shadow-float absolute flex max-h-[calc(100dvh-5rem)] w-[min(28rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-[1.25rem] border border-(--kds-frame) bg-white"
+          className="shadow-float absolute flex max-h-[calc(100dvh-5rem)] w-[min(30rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-[1.25rem] border border-(--kds-frame) bg-white"
         >
-          <div className="flex items-start justify-between gap-4 border-b border-(--kds-frame) px-6 py-4">
-            <div>
-              <h2 id="busy-title" className="text-2xl font-semibold [text-wrap:balance]">
-                {t("title")}
-              </h2>
-              <p className="text-slip-dim mt-1 text-[1.0625rem] leading-snug">{t("hint")}</p>
-            </div>
+          {/* The close sits on the title's row only; the explanation runs the
+              card's full width under both, so the title keeps one line and
+              the hint reads as a paragraph, not a squeezed column. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-(--kds-frame) px-6 py-4">
+            <h2 id="busy-title" className="m-0 text-2xl leading-tight font-semibold [text-wrap:balance]">
+              {t("title")}
+            </h2>
             <button
               type="button"
               aria-label={t("close")}
@@ -120,6 +120,9 @@ export function BusySwitch({
             >
               <X aria-hidden="true" className="size-6" />
             </button>
+            <p className="text-staff-label2 col-span-2 m-0 text-lg leading-snug [text-wrap:pretty]">
+              {t("hint")}
+            </p>
           </div>
           <div className="grid min-h-0 content-start gap-4 overflow-y-auto px-6 pt-0 pb-6">
             {on && busy.until && (

@@ -603,11 +603,13 @@ function App(p: WaiterAppProps) {
           )}
         >
           <main className="grid min-h-0 auto-rows-max grid-cols-[minmax(0,1fr)] content-start gap-4 overflow-y-auto px-4 pt-3 pb-6 lg:col-start-2 lg:row-start-1 lg:px-6">
-            {/* The tab bar names the section; on a phone the title is for
-                screen readers only. How many tables need someone is read out,
+            {/* The section title. On a phone's floor the area tabs lead and the
+                title is for screen readers only; Orders and Calls show it on
+                every width, so their list starts under a name, not under a
+                stray hairline. How many tables need someone is read out,
                 not drawn: the call bar, the tiles and the tab counts show it,
                 and a second number on screen only competed with the bar's. */}
-            <div className="max-md:sr-only">
+            <div className={clsx(tab === "tables" && "max-md:sr-only")}>
               <h1 className="m-0 text-[1.375rem] leading-tight font-semibold">{tabTitle}</h1>
               <p data-testid="need" className="sr-only">
                 {need > 0 ? t("need", { count: need }) : t("allServed")}
@@ -704,6 +706,7 @@ function App(p: WaiterAppProps) {
               role={p.role}
               headingRef={panelHeading}
               onBack={closeTable}
+              backLabel={tabTitle}
               onAction={act}
               onOpenPad={() => setSheet({ kind: "pad", tableId: table.id })}
               onSettle={(sessionId) => openSettle(table.id, sessionId)}

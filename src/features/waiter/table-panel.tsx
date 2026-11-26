@@ -57,8 +57,10 @@ export type PanelProps = {
   /** The POS send of each order, when the café's POS is connected (ADR-093). */
   posSends?: Record<string, WaiterPosSend>;
   onPosRetry?: (id: number) => Promise<{ ok: boolean }>;
-  /** Back to the map on phones (the panel is a pushed screen there). */
+  /** Back to the list the table was opened from, on phones (the panel is a pushed screen there). */
   onBack: () => void;
+  /** The name of that list («Սեղաններ», «Պատվերներ» or «Կանչեր»), so the back button says where it goes. */
+  backLabel: string;
   headingRef: RefObject<HTMLHeadingElement | null>;
   now: number;
   timeZone: string;
@@ -84,7 +86,7 @@ export function TablePanel({ headingRef, ...p }: PanelProps) {
         className="text-ink -ml-2 inline-flex min-h-12 items-center gap-1 justify-self-start rounded-xl px-2 text-[1.0625rem] font-semibold md:hidden"
       >
         <ChevronLeft aria-hidden="true" className="size-6" />
-        {t("tabs.tables")}
+        {p.backLabel}
       </button>
       <h2
         ref={headingRef}
