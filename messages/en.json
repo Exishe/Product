@@ -1180,7 +1180,7 @@
         "duplicate": "Someone at your table already ordered the same dishes. Your waiter will confirm.",
         "accepted": "Accepted. The kitchen will start on it soon.",
         "cooking": "The kitchen is cooking it now.",
-        "ready": "Ready. Your waiter is bringing it.",
+        "ready": "Your waiter is bringing your order.",
         "served": "Enjoy your meal.",
         "paid": "Thank you."
       },
@@ -1358,6 +1358,7 @@
       "noThanks": "No thanks",
       "reason": {
         "pairs_with_dish": "Goes well with {name}",
+        "pairs_with_dish_short": "With {name}",
         "often_together": "Often ordered together",
         "time_rule": "A good pick right now",
         "generic": "Goes well with your order"

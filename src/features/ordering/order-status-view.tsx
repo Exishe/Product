@@ -3,7 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, type Ref, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { warmMotion } from "@/features/guest-theme/motion/motion";
 import motionStyles from "@/features/guest-theme/motion/motion.module.css";
 import { useReveal } from "@/features/guest-theme/motion/reveal";
@@ -11,7 +11,7 @@ import { sparkFrom } from "@/features/guest-theme/motion/spark";
 import { waitState, type WaitRange } from "@/features/menu/guest-menu/hints";
 import { localized } from "@/features/menu/guest-menu/view-model";
 import guestStyles from "@/features/menu/guest-menu/guest.module.css";
-import { CheckIcon, MinusIcon, Notice, PlusIcon, STEP, Txt } from "@/features/menu/guest-menu/ui";
+import { CheckIcon, MinusIcon, Notice, PlusIcon, SECTION_TITLE, STEP, Txt } from "@/features/menu/guest-menu/ui";
 import { DishOrbit, type OrbitDish } from "./dish-orbit";
 import type { Locale } from "@/i18n/routing";
 import { formatTime } from "@/lib/format/date";
@@ -37,7 +37,7 @@ import {
 import type { Dishes } from "./cant-make";
 import { GamesCorner } from "@/features/games/games-corner";
 import { DOCK_SPACE, DOCK_SPACE_TALL, GuestDock, type DockItem } from "@/features/menu/guest-menu/guest-dock";
-import { ChevronRight, ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
+import { Check, ChevronRight, ConciergeBell, Gamepad2, ReceiptText, RotateCcw, UtensilsCrossed } from "lucide-react";
 import { useCallWaiter } from "@/features/menu/guest-menu/call-waiter-state";
 import {
   displayStatus,
@@ -278,12 +278,16 @@ function RecommendedCard({
   return (
     // Part of the page, not a card on it: the page colour, the menu's heading style.
     <section aria-labelledby="rec-title">
-      <h2 id="rec-title" className="text-heading font-semibold">
-        {t("order.recommended")}
-      </h2>
-      <div className="pt-2">
-        <DishOrbit dishes={list} menuHref={menuHref} onAdd={onAdd} />
-      </div>
+      <DishOrbit
+        dishes={list}
+        menuHref={menuHref}
+        onAdd={onAdd}
+        heading={
+          <h2 id="rec-title" className={`${SECTION_TITLE} min-w-0`}>
+            {t("order.recommended")}
+          </h2>
+        }
+      />
     </section>
   );
 }
@@ -296,9 +300,12 @@ function OrderCard({
   details,
   onRepeat,
   cantMake,
+  readyMark,
 }: {
   order: Order;
   latest: boolean;
+  /** The ready check before the headline: it slides in, and the spark bursts from it. */
+  readyMark?: Ref<HTMLSpanElement>;
   /** The newest order is shown in two places: its status on the right, its lines on the left. */
   part?: "all" | "lines" | "status";
   details?: Record<string, string>;
@@ -336,9 +343,23 @@ function OrderCard({
       // 28 px, when it was sent, the progress bar and the wait. No box.
       <section aria-label={t("order.title", { number: order.number })} data-status={status} className="grid gap-1">
         {status !== "rejected" && status !== "cancelled" && (
-          <h2 className="display-face text-large leading-[1.15] font-semibold" data-testid="order-phase">
-            {t(`order.steps.${status}`)}
-          </h2>
+          <div className="flex items-center gap-3">
+            {status === "ready" && (
+              // Decoration: the headline beside it says it. No filled box: the
+              // check alone slides in, the spark bursts from it.
+              <span
+                ref={readyMark}
+                aria-hidden="true"
+                data-testid="ready-banner"
+                className={`bg-accent text-on-accent grid size-9 flex-none place-items-center rounded-full ${motionStyles.banner}`}
+              >
+                <Check size={20} strokeWidth={3} aria-hidden />
+              </span>
+            )}
+            <h2 className="display-face text-large leading-[1.15] font-semibold" data-testid="order-phase">
+              {t(`order.steps.${status}`)}
+            </h2>
+          </div>
         )}
         <p className="text-muted text-label">
           {t("order.title", { number: order.number })} ·{" "}
@@ -357,7 +378,8 @@ function OrderCard({
       data-status={status}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <Title className={`display-face leading-[1.2] ${latest ? "text-heading" : "text-name"}`}>
+        {/* «Ձեր պատվերը» is a section heading; an earlier round is a row: «Պատվեր 41» at 17 px. */}
+        <Title className={latest ? SECTION_TITLE : "text-name font-semibold"}>
           {latest ? t("cart.title") : t("order.title", { number: order.number })}
         </Title>
         {!latest && (
@@ -586,12 +608,12 @@ export function OrderStatusView({
     });
   }, [choosing]);
 
-  // "Ready": a banner slides in, and if it became ready while the guest
-  // watched, a big spark bursts from it.
+  // "Ready": a check slides in before the headline, and if it became ready
+  // while the guest watched, a big spark bursts from it.
   const top = data?.orders[0];
   const topStatus = top ? displayStatus(top) : null;
   const seen = useRef<DisplayStatus | null>(null);
-  const banner = useRef<HTMLDivElement>(null);
+  const banner = useRef<HTMLSpanElement>(null);
   useEffect(() => warmMotion(), []);
   useEffect(() => {
     const was = seen.current;
@@ -927,20 +949,6 @@ export function OrderStatusView({
       data-order-page=""
       className={`mx-auto w-full ${ORDER_COLUMN} flex-1 px-4 pt-5 md:px-8 md:pt-8 ${notes.length > 0 ? DOCK_SPACE_TALL : DOCK_SPACE}`}
     >
-      {latestStatus === "ready" && (
-        // Decoration: the status itself is announced below and shown in the tracker.
-        <div
-          ref={banner}
-          aria-hidden="true"
-          data-testid="ready-banner"
-          className={`bg-accent text-on-accent rounded-card mb-5 flex max-w-[44rem] items-center gap-3 px-5 py-4 ${motionStyles.banner}`}
-        >
-          <span className="bg-on-accent text-accent grid size-9 flex-none place-items-center rounded-full">
-            <CheckIcon />
-          </span>
-          <span className="display-face text-[1.125rem] leading-none">{t("order.steps.ready")}</span>
-        </div>
-      )}
       <div className="grid max-w-[44rem] gap-6 lg:gap-8">
         <div className="order-2 min-w-0">
           {latest && (
@@ -1076,7 +1084,7 @@ export function OrderStatusView({
 
           {earlier.length > 0 && (
             <section className="mt-8 grid gap-4" aria-labelledby="earlier-orders">
-              <h2 id="earlier-orders" className="text-name font-semibold">
+              <h2 id="earlier-orders" className={SECTION_TITLE}>
                 {t("order.earlier")}
               </h2>
               {earlier.map((o) => (
@@ -1100,7 +1108,7 @@ export function OrderStatusView({
           className="order-1 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5"
           aria-label={t("order.status")}
         >
-          {latest && <OrderCard order={latest} latest part="status" wait={wait} />}
+          {latest && <OrderCard order={latest} latest part="status" wait={wait} readyMark={banner} />}
         </aside>
       </div>
       <div className="border-line mt-10 border-t pt-6">

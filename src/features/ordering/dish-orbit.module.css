@@ -154,7 +154,30 @@
   line-height: 1.45;
 }
 
-/* «‹ 1 / 9 ›» on a phone (the dots are for the wide canvas only). */
+/* The heading's row: the section's title, and in the stacked layout the
+   «‹ 1 / 9 ›» counter on its right (the dots are for the wide canvas only). */
+.top {
+  display: flex;
+  min-height: 44px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 12px;
+}
+
+.count {
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+/* A 360 px phone: the heading keeps its one line; the arrows stay, the
+   «2 / 9» goes (screen readers hear the position from the live line). */
+@container (max-width: 349px) {
+  .count {
+    display: none;
+  }
+}
+
 .counter {
   display: none;
 }
@@ -162,7 +185,12 @@
 .step {
   display: grid;
   width: 44px;
+  min-width: 44px;
   height: 44px;
+  min-height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  padding: 0;
   place-items: center;
   border: 1px solid var(--guest-line-strong);
   border-radius: 999px;
@@ -305,10 +333,10 @@
   white-space: nowrap;
 }
 
-/* A phone (ADR-095): laid out like a dish row on the page's left edge, under
-   260 px: the name, the price and two lines of description on the left, the
-   plate (no drop shadow) on the right, then the outline «Add · price» and the
-   «‹ n / 9 ›» counter under it, both on the left edge. No canvas. */
+/* A phone (ADR-095, ADR-097): laid out like a dish row: the name, the price,
+   two lines of description and the outline «Add · price» on the left, the
+   plate (no drop shadow) on the right; the «‹ n / 9 ›» counter is on the
+   heading's row above. One control row. No canvas. */
 @container (max-width: 767px) {
   .scaler {
     aspect-ratio: auto;
@@ -320,10 +348,10 @@
     width: 100%;
     height: auto;
     grid-template-columns: minmax(0, 1fr) 104px;
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto 1fr;
     column-gap: 12px;
     align-items: start;
-    padding: 4px 0 0;
+    padding: 8px 0 0;
     transform: none;
   }
 
@@ -339,6 +367,7 @@
     left: auto;
     grid-column: 2;
     grid-row: 1 / span 3;
+    align-self: start;
     width: 104px;
     height: 104px;
   }
@@ -430,19 +459,17 @@
     position: relative;
     top: auto;
     left: auto;
-    grid-column: 1 / -1;
-    grid-row: 4;
+    grid-column: 1;
+    grid-row: 3;
+    align-self: end;
     margin-top: 12px;
   }
 
   .counter {
     display: flex;
-    grid-column: 1 / -1;
-    grid-row: 5;
-    justify-self: start;
+    flex: none;
     align-items: center;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 0;
     color: var(--guest-muted);
     font-size: 15px;
     font-weight: 600;

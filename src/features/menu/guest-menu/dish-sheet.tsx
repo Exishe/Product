@@ -298,6 +298,7 @@ export function DishSheet({
                 value={quantity}
                 min={1}
                 max={MAX_QUANTITY}
+                size="lg"
                 valueLabel={t("sheet.quantity")}
                 decreaseLabel={t("sheet.decrease")}
                 increaseLabel={t("sheet.increase")}

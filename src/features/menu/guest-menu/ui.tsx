@@ -34,6 +34,13 @@ export function scriptLang(text: string): Locale | undefined {
 
 // Icons are Lucide (ISC licence), imported one by one so only these ship.
 const ICON = { size: 22, strokeWidth: 2, "aria-hidden": true } as const;
+/**
+ * The one section heading of the guest pages' long pages (the status page's
+ * «Ձեր պատվերը», «Նախորդ պատվերները», «Կարող եք ավելացնել», «Խաղեր սպասելիս»):
+ * 20 px in the display face.
+ */
+export const SECTION_TITLE = "display-face text-heading leading-[1.2]";
+
 export const PlusIcon = () => <Plus {...ICON} />;
 export const MinusIcon = () => <Minus {...ICON} />;
 export const BackIcon = () => <ChevronLeft {...ICON} />;

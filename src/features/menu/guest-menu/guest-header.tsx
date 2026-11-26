@@ -184,6 +184,7 @@ export function GuestBar({
   languages,
   tools,
   width = "max-w-[1240px]",
+  oneRow = false,
 }: {
   brand: ReactNode;
   tableLabel: string | null;
@@ -193,16 +194,26 @@ export function GuestBar({
   /** Buttons on the right of the meta row (order more; the cart from 1024 px). */
   tools?: ReactNode;
   width?: string;
+  /**
+   * From 1024 px the two rows become one (the menu): the café and its table
+   * on the left, the colour switch, the tools and the languages on the right.
+   */
+  oneRow?: boolean;
 }) {
+  const lg = (cls: string) => (oneRow ? cls : "");
   return (
-    <div className={`mx-auto w-full ${width} min-w-0 px-4 md:px-8`}>
-      <div className="flex min-h-14 flex-wrap items-center gap-x-3 pt-1">
-        <div className="flex min-w-[min(9.5rem,45vw)] flex-1 items-center">{brand}</div>
-        <div className="ml-auto flex max-w-full flex-none flex-wrap items-center justify-end">
+    <div className={`mx-auto w-full ${width} min-w-0 px-4 md:px-8 ${lg("lg:flex lg:min-h-16 lg:items-center lg:gap-x-5 lg:pt-2")}`}>
+      <div className={`flex min-h-14 flex-wrap items-center gap-x-3 pt-1 ${lg("lg:contents")}`}>
+        <div className={`flex min-w-[min(9.5rem,45vw)] flex-1 items-center ${lg("lg:min-w-0 lg:flex-initial")}`}>
+          {brand}
+        </div>
+        <div
+          className={`ml-auto flex max-w-full flex-none flex-wrap items-center justify-end ${lg("lg:order-last lg:ml-0")}`}
+        >
           <LanguageNav languages={languages} />
         </div>
       </div>
-      <div className="guest-meta flex min-h-11 flex-wrap items-center gap-x-2 pb-1">
+      <div className={`guest-meta flex min-h-11 flex-wrap items-center gap-x-2 pb-1 ${lg("lg:contents")}`}>
         {tableLabel ? <TableChip label={tableLabel} /> : note}
         {/* The note takes the free room itself (it wraps beside the switch). */}
         {(tableLabel || !note) && <span aria-hidden="true" className="flex-1" />}

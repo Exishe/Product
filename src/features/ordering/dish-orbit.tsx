@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Plate, dishPhotoUrl } from "@/features/menu/guest-menu/ui";
 import type { Locale } from "@/i18n/routing";
 import { formatAmd } from "@/lib/format/money";
@@ -30,8 +30,9 @@ export type OrbitDish = {
 // under reduced motion the dish just changes. ADR-093 area pass: no ranking
 // eyebrow and no decorative swoosh; the dish reads name, price, description,
 // then one outline «Add · price» (a filled button would compete with the
-// page's one primary); on a phone a «1 / 9» counter between two 44 px arrows
-// replaces the dots.
+// page's one primary); in the stacked layout (the order page's column, a
+// phone) a «‹ 1 / 9 ›» counter with two 44 px arrows sits on the heading's
+// row instead of the dots (ADR-097), so the dish itself has one control.
 const SWING = 50; // degrees a plate travels round the orbit's pivot
 const ORBIT = { x: 299, y: -450, r: 650, w: 118 }; // the band's circle, in canvas px
 const REST = [
@@ -81,9 +82,12 @@ export function DishOrbit({
   dishes,
   menuHref,
   onAdd,
+  heading,
 }: {
   dishes: OrbitDish[];
   menuHref: string;
+  /** The section's heading; the stacked layout puts the counter on its row. */
+  heading?: ReactNode;
   /** Puts a dish without required choices in this table's cart and opens it on the menu. */
   onAdd?: (itemId: string) => void;
 }) {
@@ -268,23 +272,25 @@ export function DishOrbit({
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - s.y) * 1.4) go(index + (dx < 0 ? 1 : -1));
       }}
     >
+      <div className={styles.top}>
+        {heading}
+        <div className={styles.counter}>
+          <button type="button" className={styles.step} aria-label={t("order.recPrev")} onClick={() => go(index - 1)}>
+            <ChevronLeft size={20} aria-hidden />
+          </button>
+          <span className={`num ${styles.count}`} aria-hidden="true">
+            {index + 1} / {n}
+          </span>
+          <button type="button" className={styles.step} aria-label={t("order.recNext")} onClick={() => go(index + 1)}>
+            <ChevronRight size={20} aria-hidden />
+          </button>
+        </div>
+      </div>
       <div className={styles.scaler}>
         <div className={styles.canvas}>
           <svg className={styles.arc} viewBox="0 0 960 520" aria-hidden="true">
             <path ref={arcEl} d={arcPath(REST[0]![0]!, REST[0]![1]!)} />
           </svg>
-
-          <div className={styles.counter}>
-            <button type="button" className={styles.step} aria-label={t("order.recPrev")} onClick={() => go(index - 1)}>
-              <ChevronLeft size={20} aria-hidden />
-            </button>
-            <span className="num" aria-hidden="true">
-              {index + 1} / {n}
-            </span>
-            <button type="button" className={styles.step} aria-label={t("order.recNext")} onClick={() => go(index + 1)}>
-              <ChevronRight size={20} aria-hidden />
-            </button>
-          </div>
 
           <div className={styles.pager} role="tablist" aria-label={t("order.recommended")}>
             {dishes.map((d, i) => (

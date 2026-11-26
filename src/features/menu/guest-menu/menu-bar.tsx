@@ -78,6 +78,7 @@ export function MenuBar({
           languages={languages}
           tools={tools}
           width="max-w-[1440px]"
+          oneRow
         />
       </header>
       <div ref={sentinel} aria-hidden="true" className="h-px" />
@@ -89,7 +90,7 @@ export function MenuBar({
         className="sticky top-0 z-20 -mt-px border-b border-transparent bg-[var(--guest-band)] transition-[border-color] duration-200 data-[stuck]:border-[var(--guest-line)]"
       >
         <div className={`mx-auto w-full max-w-[1440px] px-4 pt-1 md:px-8 lg:py-3 ${MENU_GRID}`}>
-          <div className="w-full lg:col-start-2 lg:max-w-[40rem]">{search}</div>
+          <div className="w-full lg:col-start-2">{search}</div>
           <div className="w-full min-w-0 lg:hidden">{nav}</div>
         </div>
       </div>

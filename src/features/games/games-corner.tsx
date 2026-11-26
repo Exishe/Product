@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConciergeBell, Gamepad2 } from "lucide-react";
+import { ConciergeBell } from "lucide-react";
 import dynamic from "next/dynamic";
+import { SECTION_TITLE } from "@/features/menu/guest-menu/ui";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { applyBrand, bestScore, createSfx, saveBest, type Game, type GameApi } from "./engine";
 import type { RewardCtx } from "./reward-client";
@@ -51,18 +52,16 @@ export function GamesCorner({
         aria-labelledby="games-title"
         data-testid="games"
       >
-        <div className="flex items-center gap-3">
-          <Gamepad2 size={26} strokeWidth={1.75} className="text-accent-text flex-none" aria-hidden />
-          <div>
-            <h3 id="games-title" className="text-body leading-tight font-semibold">
-              {t("games.title")}
-            </h3>
-            <p className="text-muted text-meta">{t("games.subtitle")}</p>
-          </div>
-        </div>
-        <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden">
+        {/* The page's one section heading (ADR-097), no icon; the line under it at 15 px. */}
+        <h2 id="games-title" className={SECTION_TITLE}>
+          {t("games.title")}
+        </h2>
+        <p className="text-muted text-label mt-0.5">{t("games.subtitle")}</p>
+        {/* A strip that runs on past the column: the right edge fades, as the
+            menu's tab row does, so the cut reads as "more this way". */}
+        <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%-2.5rem),transparent)] md:mx-0 md:scroll-px-0 md:px-0 [&::-webkit-scrollbar]:hidden">
           {GAMES.map((g) => (
-            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[12.5rem]">
+            <li key={g.id} className="w-[min(72%,17rem)] flex-none snap-start md:w-[13.5rem]">
               <button
                 type="button"
                 onClick={() => setOpen(g.id)}
@@ -81,9 +80,10 @@ export function GamesCorner({
                     className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </span>
-                <span className="flex items-center justify-between gap-2 p-3">
-                  <span className="min-w-0 text-label leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
-                  <span className="rounded-pill bg-add text-on-add flex-none px-3 py-1 text-meta font-semibold">
+                {/* The name on its own line, «Play» under it: the whole card is the button. */}
+                <span className="grid justify-items-start gap-2 p-3">
+                  <span className="max-w-full text-label leading-tight font-semibold">{t(`games.${g.id}.name`)}</span>
+                  <span className="rounded-pill bg-add text-on-add px-3 py-1 text-meta font-semibold">
                     {t("games.play")}
                   </span>
                 </span>

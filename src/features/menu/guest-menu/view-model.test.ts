@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeForSearch } from "@/lib/format/search";
-import { buildGuestMenu, dishNames, localized, type PublicMenu } from "./view-model";
+import { buildGuestMenu, dishNames, localized, searchRank, type GuestItem, type PublicMenu } from "./view-model";
 
 const item = (
   over: Partial<PublicMenu["menu"]["items"][string]> = {},
@@ -127,6 +127,27 @@ describe("buildGuestMenu", () => {
       expect(dish.search.includes(normalizeForSearch(q)), q).toBe(true);
     }
     expect(dish.search.includes(normalizeForSearch("tolma"))).toBe(false);
+  });
+
+  it("finds a dish by its description after the names: «սուրճ» finds the espresso", () => {
+    const m = menu(
+      {
+        e: item({
+          name: { hy: "Էսպրեսո", ru: "Эспрессо", en: "Espresso" },
+          description: { hy: "Կարճ ու թունդ, թարմ աղացած սուրճից", en: "Short and strong, from freshly ground coffee" },
+        }),
+        c: item({ name: { hy: "Սուրճ հայկական", en: "Armenian coffee" } }),
+        t: item({ name: { hy: "Թեյ" }, description: { hy: "Սև թեյ" } }),
+      },
+      [{ id: "1", item_ids: ["e", "c", "t"] }],
+    );
+    const [espresso, armenian, tea] = buildGuestMenu(m, "hy").categories[0]!.items as [GuestItem, GuestItem, GuestItem];
+    const q = normalizeForSearch("սուրճ");
+    expect(searchRank(espresso, q)).toBe(1);
+    expect(searchRank(armenian, q)).toBe(0);
+    expect(searchRank(tea, q)).toBeNull();
+    expect(searchRank(espresso, normalizeForSearch("coffee"))).toBe(1);
+    expect(searchRank(espresso, normalizeForSearch("эспрессо"))).toBe(0);
   });
 
   it("reads the café's look, and wears Evening until the database says otherwise", () => {

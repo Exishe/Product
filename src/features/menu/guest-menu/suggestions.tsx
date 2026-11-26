@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "@/features/analytics/track";
 import { useGuestI18n } from "@/features/ordering/guest-i18n-context";
 import { formatAmd } from "@/lib/format/money";
@@ -162,9 +162,10 @@ export function Suggestions({
         <li key={item.id} data-testid="suggestion" data-dish={item.id} className="flex min-h-14 items-center gap-3">
           {item.image && <Plate src={dishPhotoUrl(item.image)} size={40} className="size-10 flex-none" />}
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="text-muted truncate text-meta" data-testid="suggestion-reason">
-              {t(reason.key, reason.vars)}
-            </span>
+            <ReasonLine
+              long={t(reason.key, reason.vars)}
+              short={reason.key === "suggest.reason.pairs_with_dish" ? t(`${reason.key}_short`, reason.vars) : null}
+            />
             <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-body">
               <Txt value={item.name} locale={locale} className="min-w-0 font-semibold break-words" />
               <span className="num text-accent-text flex-none font-semibold">{formatAmd(item.price, locale)}</span>
@@ -197,5 +198,36 @@ export function Suggestions({
         </li>
       </ul>
     </section>
+  );
+}
+
+// The reason in one line. When «Լավ զուգակցվում է՝ «Օմլետ»» doesn't fit (a
+// 360 px phone), the short form «Լավ զույգ՝ «Օմլետ»» takes its place, so the
+// dish it pairs with, the part that matters, is what stays on screen.
+function ReasonLine({ long, short }: { long: string; short: string | null }) {
+  const box = useRef<HTMLSpanElement>(null);
+  const probe = useRef<HTMLSpanElement>(null);
+  const [fits, setFits] = useState(true);
+  useLayoutEffect(() => {
+    const el = box.current;
+    const p = probe.current;
+    if (!el || !p) return;
+    const check = () => setFits(p.offsetWidth <= el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [long, short]);
+  return (
+    <span ref={box} className="text-muted relative flex min-w-0 text-meta">
+      <span className="min-w-0 truncate" data-testid="suggestion-reason">
+        {short !== null && !fits ? short : long}
+      </span>
+      {short !== null && (
+        <span ref={probe} aria-hidden="true" className="invisible absolute top-0 left-0 whitespace-nowrap">
+          {long}
+        </span>
+      )}
+    </span>
   );
 }

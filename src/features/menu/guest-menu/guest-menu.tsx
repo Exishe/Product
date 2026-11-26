@@ -47,7 +47,7 @@ import { CartBar } from "./order-panel";
 import { initialSelection, selectedIds } from "./selection";
 import type { SubAsk } from "./subs-dialog";
 import { CloseIcon, Notice, dishPhotoUrl } from "./ui";
-import { sameNamed, type GuestItem, type GuestMenuData } from "./view-model";
+import { sameNamed, searchRank, type GuestItem, type GuestMenuData } from "./view-model";
 
 export type TableState =
   { kind: "ok"; id: string; label: string; token: string } | { kind: "none" } | { kind: "invalid" };
@@ -245,7 +245,8 @@ export function GuestMenu({
     () => false,
   );
 
-  // Dishes by name in any script; a section's own name («սպիտակ գինի»,
+  // Dishes by name in any script, then by description («սուրճ» finds the
+  // espresso); a section's own name («սպիտակ գինի»,
   // "white wine") brings the whole section. Results stay under their section
   // titles, so a found wine says which list it is on. While searching,
   // sections show without their cover photos.
@@ -263,7 +264,16 @@ export function GuestMenu({
           .map((c) =>
             c.search.includes(q)
               ? { ...c, cover: null }
-              : { ...c, cover: null, items: c.items.filter((i) => i.search.includes(q)) },
+              : {
+                  ...c,
+                  cover: null,
+                  // Names first, then dishes found by their description.
+                  items: c.items
+                    .map((i) => [i, searchRank(i, q)] as const)
+                    .filter((x): x is readonly [GuestItem, 0 | 1] => x[1] !== null)
+                    .sort((a, b) => a[1] - b[1])
+                    .map(([i]) => i),
+                },
           )
           .filter((c) => c.items.length)
       : base;
@@ -645,9 +655,11 @@ export function GuestMenu({
 
   // One 48 px filled pill (benchmark §2.1: Wolt): the magnifier, the field at
   // 16 px, its own clear ×, and the filters as a 44 px icon inside the right
-  // end, with a dot while one is on. No border box, one focus ring.
+  // end, with a dot while one is on. No border box. While the guest types,
+  // the pill turns to the page colour inside a 1.5 px ink line (no outer
+  // ring); the buttons inside keep the usual keyboard ring.
   const searchRow = (
-    <div className="bg-chip relative flex min-h-12 min-w-[min(100%,14rem)] items-center rounded-full focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--guest-accent-text)]">
+    <div className="group/search bg-chip focus-within:bg-page relative flex min-h-12 min-w-[min(100%,14rem)] items-center rounded-full transition-[background-color,box-shadow] duration-150 focus-within:shadow-[inset_0_0_0_1.5px_var(--color-ink)]">
       <label className="sr-only" htmlFor="menu-search">
         {t("menu.search")}
       </label>
@@ -688,13 +700,13 @@ export function GuestMenu({
           title={t("diet.open")}
           onClick={() => setChoosingAvoid(true)}
           data-testid="allergy-filter"
-          className="text-ink hover:bg-page relative mr-0.5 grid size-11 flex-none place-items-center rounded-full"
+          className="text-ink hover:bg-page group-focus-within/search:hover:bg-chip relative mr-0.5 grid size-11 flex-none place-items-center rounded-full"
         >
           <SlidersHorizontal size={20} />
           {filterCount > 0 && (
             <span
               aria-hidden="true"
-              className="bg-badge absolute top-2 right-2 size-2.5 rounded-full ring-2 ring-[var(--guest-chip)]"
+              className="bg-badge absolute top-2 right-2 size-2.5 rounded-full ring-2 ring-[var(--guest-chip)] group-focus-within/search:ring-[var(--guest-page)]"
             />
           )}
         </button>

@@ -520,6 +520,16 @@
   line-height: 1.12;
 }
 
+/* A desktop has the room: the name at 24 px, the long one at 20. */
+@media (min-width: 1024px) {
+  .barName {
+    font-size: 1.5rem;
+  }
+  .barName[data-long] {
+    font-size: 1.25rem;
+  }
+}
+
 /* The large wordmark shares its row with the controls from 768 px, so the
    band stays low (5rem instead of globals.css's 7rem). */
 @media (min-width: 768px) {
@@ -1020,6 +1030,39 @@
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
+}
+
+/* The sheet's footer: one 56 px line with the add button beside it. */
+/* 48 x 56 steps on the narrowest phones, so the price on the button keeps its
+   room; 56 x 56 from 400 px. */
+.addCtl[data-size="lg"] {
+  width: 8rem;
+  height: 3.5rem;
+  box-shadow: none;
+}
+
+.addCtl[data-size="lg"] .addStep {
+  width: 3rem;
+  height: 3.5rem;
+}
+
+@media (min-width: 400px) {
+  .addCtl[data-size="lg"] {
+    width: 9.5rem;
+  }
+
+  .addCtl[data-size="lg"] .addStep {
+    width: 3.5rem;
+  }
+}
+
+.addCtl[data-size="lg"] .addStep svg {
+  width: 20px;
+  height: 20px;
+}
+
+.addCtl[data-size="lg"] .addCount {
+  font-size: 1.0625rem;
 }
 
 /* How many of a dish with required choices are in the order, on its "+". */
