@@ -104,7 +104,9 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
 
       {/* 1. Which POS */}
       <Section title={t("vendorTitle")} id="pos-vendor">
-        <label className="flex flex-col gap-1.5">
+        {/* A choice of six names needs no full-width field: the picker and
+            its hint keep a form's width. */}
+        <label className="flex max-w-md flex-col gap-1.5">
           <span className={fieldLabel}>{t("vendorLabel")}</span>
           <select
             className={input}
@@ -119,7 +121,7 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
             ))}
           </select>
         </label>
-        <p className="text-staff-label2 m-0 text-[0.9375rem]">{t(`vendorHints.${vendor}`)}</p>
+        <p className="text-staff-label2 m-0 max-w-md text-[0.9375rem]">{t(`vendorHints.${vendor}`)}</p>
         {vendor === "webhook" && (
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t("url")}</span>
@@ -327,14 +329,21 @@ export function PosSettingsPanel({ data }: { data: PosAdminData }) {
         <Section title={t("activeTitle")} id="pos-active">
           {/* The state and, while on, its quiet red "Turn off" on one line
               (as on Staff); then the group's actions. */}
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <p className="m-0 flex items-center gap-2 text-[1.0625rem] font-semibold" data-testid="pos-active-state">
-              <span className={clsx(chip.base, conn.isActive ? chip.ok : chip.plain)}>{conn.isActive ? t("activeOn") : t("activeOff")}</span>
+          <div className="flex min-w-0 flex-nowrap items-center justify-between gap-x-3">
+            <p className="m-0 flex min-w-0 items-center gap-2 text-[1.0625rem] font-semibold" data-testid="pos-active-state">
+              {/* The chip gives way (it truncates, the full words in its
+                  title) so "Turn off" never drops under it. */}
+              <span
+                className={clsx(chip.base, conn.isActive ? chip.ok : chip.plain, "max-w-full min-w-0")}
+                title={conn.isActive ? t("activeOn") : t("activeOff")}
+              >
+                <span className="truncate">{conn.isActive ? t("activeOn") : t("activeOff")}</span>
+              </span>
             </p>
             {conn.isActive && (
               <button
                 type="button"
-                className={textAction("danger", "-mr-2")}
+                className={textAction("danger", "-mr-2 shrink-0")}
                 disabled={pending}
                 onClick={() => run(() => setPosActive(conn.id, false))}
               >

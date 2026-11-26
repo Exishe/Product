@@ -50,7 +50,7 @@ export default async function TelegramPage() {
     <AdminPage title={t("title")} subtitle={<p className="m-0">{t("intro")}</p>}>
       <NextIntlClientProvider>
         <TelegramConnect botReady={botReady} botUsername={env.TELEGRAM_BOT_USERNAME ?? null} />
-        <Section title={t("chats")} id="chats-title" bare>
+        <Section title={t("chats")} id="chats-title">
           {chats.length === 0 ? (
             <p className="text-staff-label2 m-0 text-name" data-testid="no-chats">
               {t("noChats")}
@@ -63,14 +63,16 @@ export default async function TelegramPage() {
             </ul>
           )}
         </Section>
-        <PushSubscribe vapidPublicKey={env.VAPID_PUBLIC_KEY ?? null} />
-        {mine.length > 0 && (
-          <ul className="border-staff-sep -mt-6 m-0 flex list-none flex-col border-t p-0">
-            {mine.map((c) => (
-              <ChannelCard key={c.id} channel={c} />
-            ))}
-          </ul>
-        )}
+        {/* This person's devices sit inside their section, under its switch. */}
+        <PushSubscribe vapidPublicKey={env.VAPID_PUBLIC_KEY ?? null}>
+          {mine.length > 0 && (
+            <ul className="border-staff-sep m-0 flex list-none flex-col border-t p-0">
+              {mine.map((c) => (
+                <ChannelCard key={c.id} channel={c} />
+              ))}
+            </ul>
+          )}
+        </PushSubscribe>
       </NextIntlClientProvider>
     </AdminPage>
   );

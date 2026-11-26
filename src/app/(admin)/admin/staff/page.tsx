@@ -90,14 +90,16 @@ export default async function StaffPage() {
   };
 
   // People and devices as the same hairline rows as the logins above (ADR-094):
-  // who and their role, the status at the right, then the one action.
+  // the avatar, then one line with who and their role on the left and the
+  // status (and its one action) on the right. The status group wraps under
+  // the name only when the two really do not fit, at every width alike.
   const list = (rows: Member[], kind: "people" | "devices") => (
     <ul className="m-0 flex list-none flex-col p-0">
       {rows.map((m) => (
         <li
           key={m.id}
           data-testid="member-row"
-          className="border-staff-sep flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b py-3 first:pt-0 last:border-0"
+          className="border-staff-sep flex min-h-16 min-w-0 items-start gap-3 border-b py-3 first:pt-0 last:border-0"
         >
           <span
             aria-hidden="true"
@@ -105,20 +107,22 @@ export default async function StaffPage() {
           >
             {kind === "people" ? initials(m.display_name) : <Monitor className="size-5" />}
           </span>
-          <span className="flex min-w-0 flex-1 basis-40 flex-col">
-            <span className="text-name font-semibold break-words">{m.display_name}</span>
-            <span className="text-staff-label2 text-label">{t(`roles.${m.role}`)}</span>
-          </span>
-          <span className="flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 max-sm:w-full max-sm:justify-start max-sm:pl-[3.25rem]">
-            {status(m)}
-            {m.is_active && m.role !== "owner" && (me.role === "owner" || m.kind === "device") && (
-              <form action={revokeMember} className="max-sm:ml-auto">
-                <input type="hidden" name="memberId" value={m.id} />
-                <button type="submit" className={textAction("danger", "-mr-2")}>
-                  {t("revoke")}
-                </button>
-              </form>
-            )}
+          <span className="flex min-h-10 min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <span className="flex min-w-0 flex-col">
+              <span className="text-name font-semibold break-words">{m.display_name}</span>
+              <span className="text-staff-label2 text-label">{t(`roles.${m.role}`)}</span>
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {status(m)}
+              {m.is_active && m.role !== "owner" && (me.role === "owner" || m.kind === "device") && (
+                <form action={revokeMember}>
+                  <input type="hidden" name="memberId" value={m.id} />
+                  <button type="submit" className={textAction("danger", "-mr-2")}>
+                    {t("revoke")}
+                  </button>
+                </form>
+              )}
+            </span>
           </span>
         </li>
       ))}

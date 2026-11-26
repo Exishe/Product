@@ -1102,8 +1102,9 @@ export function MenuEditor({ data }: { data: EditorData }) {
             </p>
           )}
           {shownDishes.length > 0 && (
-            // On a phone the row's toggle is a bare sign: say once what it means.
-            <p className="text-staff-label2 m-0 text-label sm:hidden">
+            // Unpressed, the row's toggle is a bare sign at every width: say
+            // once what it means.
+            <p className="text-staff-label2 m-0 text-label">
               {t.rich("soldOutHint", {
                 icon: () => <Ban role="img" aria-label={t("soldOut")} className="mx-0.5 inline size-4 align-[-0.2em]" />,
               })}
@@ -1187,15 +1188,16 @@ export function MenuEditor({ data }: { data: EditorData }) {
                           )}
                         </span>
                       </span>
-                      {/* From 640 px the toggle says "Not today" itself, so the
-                          price column carries only the price. */}
+                      {/* From 640 px a pressed toggle says "Not today" itself,
+                          so the price column carries only the price. */}
                       <span className="num hidden shrink-0 text-name font-semibold sm:block">{formatAmd(d.price, locale)}</span>
                     </button>
-                    {/* The one control on the row: today's availability. From
-                        640 px a 44 px outlined pill that says "Not today" next
-                        to its sign, so it reads as a switch to press, never as
-                        the dish's status; on a phone the sign alone (explained
-                        once above the list). Pressed, it turns red. */}
+                    {/* The one control on the row: today's availability.
+                        Unpressed it is a 44 px ghost sign at every width
+                        (explained once above the list), so no available dish
+                        carries the words "Not today". Pressed, from 640 px it
+                        becomes a red pill that says so; on a phone a red sign,
+                        with the words in red under the price. */}
                     <button
                       type="button"
                       aria-pressed={soldOut}
@@ -1204,16 +1206,18 @@ export function MenuEditor({ data }: { data: EditorData }) {
                       disabled={pending}
                       onClick={() => toggleSoldOut(d, !soldOut)}
                       className={clsx(
-                        "inline-flex size-11 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full text-label font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none sm:h-11 sm:w-auto sm:pr-3.5 sm:pl-2.5",
+                        "inline-flex size-11 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full text-label font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed motion-reduce:transition-none",
                         soldOut
-                          ? "bg-pomegranate text-white"
-                          : "text-staff-label2 hover:bg-staff-fill hover:text-ink sm:shadow-[inset_0_0_0_1px_var(--color-staff-sep)]",
+                          ? "bg-pomegranate text-white sm:w-auto sm:pr-3.5 sm:pl-2.5"
+                          : "text-staff-label2 hover:bg-staff-fill hover:text-ink",
                       )}
                     >
-                      <Ban aria-hidden="true" className="size-[1.375rem] shrink-0 sm:size-5" />
-                      <span aria-hidden="true" className="hidden sm:inline">
-                        {t("soldOut")}
-                      </span>
+                      <Ban aria-hidden="true" className={clsx("size-[1.375rem] shrink-0", soldOut && "sm:size-5")} />
+                      {soldOut && (
+                        <span aria-hidden="true" className="hidden sm:inline">
+                          {t("soldOut")}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

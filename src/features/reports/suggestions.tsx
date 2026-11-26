@@ -9,11 +9,12 @@ import type { Upsell } from "./model";
 export async function Suggestions({ data, locale }: { data: Upsell; locale: Locale }) {
   const t = await getTranslations("reports.upsell");
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
-  const stats: [string, string, string?][] = [
+  // Three figures with short labels, three across at every width: how often
+  // shown, the share accepted (with the count), and what they sold.
+  const rate = data.accept_rate ?? (data.shown > 0 ? data.accepted / data.shown : 0);
+  const stats: [string, string][] = [
     [t("shown"), formatInteger(data.shown, locale)],
-    [t("accepted"), formatInteger(data.accepted, locale)],
-    [t("rate"), data.accept_rate === null ? "–" : pct.format(data.accept_rate), t("rateHint")],
-    [t("orders"), formatInteger(data.orders_with_suggestion, locale)],
+    [t("acceptedCount", { count: formatInteger(data.accepted, locale) }), pct.format(rate)],
     [t("revenue"), formatAmd(data.revenue, locale)],
   ];
   return (
@@ -32,22 +33,27 @@ export async function Suggestions({ data, locale }: { data: Upsell; locale: Loca
         <p className="text-staff-label2 m-0 text-[1.0625rem]">{t("empty")}</p>
       ) : (
         <>
-          {/* Figures first, labels under them: a label that wraps to two or
-              three lines can no longer push its figure off the row's line. */}
-          <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-0">
-            {stats.map(([label, value, hint]) => (
-              <div
-                key={label}
-                className="border-staff-sep flex min-w-0 flex-col-reverse justify-end gap-1 lg:border-l lg:px-5 lg:first:border-l-0 lg:first:pl-0"
-              >
-                <dt className="text-staff-label2 text-label leading-snug font-semibold">
-                  {label}
-                  {hint && <span className="block font-normal">{hint}</span>}
-                </dt>
-                <dd className="num m-0 text-large leading-tight font-bold break-words">{value}</dd>
-              </div>
-            ))}
-          </dl>
+          {data.accepted === 0 ? (
+            // Four zeros say less than one sentence: shown N times, nobody
+            // has taken one yet.
+            <p className="num text-ink m-0 text-body" data-testid="upsell-none-accepted">
+              {t("noneAccepted", { shown: data.shown })}
+            </p>
+          ) : (
+            // Figures first, labels under them, split by hairlines: three
+            // across on a phone too, so no tile is left alone on a row.
+            <dl className="m-0 grid max-w-[40rem] grid-cols-3">
+              {stats.map(([label, value]) => (
+                <div
+                  key={label}
+                  className="border-staff-sep flex min-w-0 flex-col-reverse justify-end gap-1 border-l px-3 first:border-l-0 first:pl-0 sm:px-5"
+                >
+                  <dt className="text-staff-label2 text-label leading-snug font-semibold">{label}</dt>
+                  <dd className="num m-0 text-heading leading-tight font-bold break-words sm:text-large">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           <p className="text-staff-label2 m-0 max-w-prose text-label">{t("note")}</p>
           {data.pairs.length > 0 && (
             <div className="flex flex-col gap-1">

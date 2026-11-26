@@ -2,8 +2,9 @@
 
 import { BellOff, BellRing, CircleCheck, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Section } from "@/features/admin-ui/page";
 import { button } from "@/features/admin-ui/styles";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { deletePushSubscription, isPushSubscribed, savePushSubscription } from "./actions";
 import {
   currentSubscription,
@@ -25,7 +26,14 @@ async function detect(vapidPublicKey: string | null): Promise<Status> {
   return "off";
 }
 
-export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | null }) {
+export function PushSubscribe({
+  vapidPublicKey,
+  children,
+}: {
+  vapidPublicKey: string | null;
+  /** This person's subscribed devices, listed under the switch. */
+  children?: ReactNode;
+}) {
   const t = useTranslations("push");
   const [status, setStatus] = useState<Status>("loading");
   const [busy, setBusy] = useState(false);
@@ -87,15 +95,8 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
   };
 
   return (
-    <section
-      className="flex flex-col gap-4"
-      aria-labelledby="push-title"
-      data-testid="push-section"
-    >
-      <h2 id="push-title" className="border-staff-sep m-0 flex items-center gap-2 border-b pb-3 text-heading font-semibold">
-        {t("title")}
-      </h2>
-      <p className="text-staff-label2 m-0">{t("hint")}</p>
+    // The shared group header (heading, hint, hairline), as on every admin page.
+    <Section title={t("title")} hint={t("hint")} id="push-title" testId="push-section">
       {note[status] && (
         // A plain status line with an icon, not a grey box under the heading.
         <p role="status" className="text-ink m-0 flex items-start gap-2" data-testid="push-status">
@@ -130,6 +131,7 @@ export function PushSubscribe({ vapidPublicKey }: { vapidPublicKey: string | nul
           {t("error")}
         </p>
       )}
-    </section>
+      {children}
+    </Section>
   );
 }
