@@ -226,7 +226,10 @@ export default async function StaffPage() {
         {devices.length > 0 ? (
           list(devices, "devices")
         ) : (
-          <p className="text-staff-label2 m-0 text-name">{t("noDevices")}</p>
+          // Once a waiter or kitchen login is in use a device is optional, not missing.
+          <p className="text-staff-label2 m-0 max-w-prose text-name">
+            {logins.some((l) => l.isActive && l.lastSignInAt) ? t("noDevicesOptional") : t("noDevices")}
+          </p>
         )}
       </Section>
     </AdminPage>

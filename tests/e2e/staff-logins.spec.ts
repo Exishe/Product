@@ -94,7 +94,7 @@ test("an owner creates a waiter and a kitchen login; each signs in by username; 
 
   // A new password set by the owner works, and the old one stops working.
   const row = (name: string) => list.locator(`[data-username="${name}"]`);
-  await row(kitchen.username).getByText("Նշել նոր գաղտնաբառ").click();
+  await row(kitchen.username).getByText("Նոր գաղտնաբառ", { exact: true }).click();
   await row(kitchen.username).getByRole("button", { name: "Նշել գաղտնաբառը" }).click();
   const fresh = (await row(kitchen.username).getByTestId("staff-password").textContent())?.trim() ?? "";
   expect(fresh).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);

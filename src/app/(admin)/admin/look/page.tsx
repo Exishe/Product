@@ -5,6 +5,9 @@ import { button } from "@/features/admin-ui/styles";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppearanceForm } from "@/features/guest-theme/appearance-form";
 import { EMPTY_BRAND, parseBrand } from "@/features/guest-theme/brand";
+import type { PreviewDish } from "@/features/guest-theme/brand-preview";
+import { formatAmd } from "@/lib/format/money";
+import type { Locale } from "@/i18n/routing";
 import { SectionCovers, type CoverSection } from "@/features/guest-theme/section-covers";
 import { guestTheme } from "@/features/guest-theme/themes";
 import { requireMember } from "@/lib/auth/require-member";
@@ -17,7 +20,7 @@ const NAME_ORDER = ["hy", "ru", "en"];
 export default async function LookPage() {
   const me = await requireMember(["owner", "manager"]);
   const supabase = await createClient();
-  const [withBrand, location, sections, t, locale] = await Promise.all([
+  const [withBrand, location, sections, t, locale, dishes] = await Promise.all([
     supabase
       .from("restaurants")
       .select("name, slug, brand_color, logo_path, guest_theme, brand")
@@ -39,6 +42,16 @@ export default async function LookPage() {
       .order("sort"),
     getTranslations("look"),
     getLocale(),
+    // Two of the café's own dishes with photos, so the preview shows its food
+    // on the chosen plates instead of placeholder letters (read only).
+    supabase
+      .from("items")
+      .select("price, image_path, item_translations(locale, name)")
+      .eq("restaurant_id", me.restaurantId)
+      .eq("is_active", true)
+      .not("image_path", "is", null)
+      .order("sort")
+      .limit(2),
   ]);
   // Before migration 20261119100000_brand_profile there is no brand column,
   // and before 20261117120000_guest_theme no theme either.
@@ -67,6 +80,13 @@ export default async function LookPage() {
     const names = c.category_translations ?? [];
     const pick = [locale, ...NAME_ORDER].map((l) => names.find((n) => n.locale === l)?.name).find(Boolean);
     return { id: c.id, name: pick ?? null, cover: c.image_path };
+  });
+  const sample: PreviewDish[] = (dishes.data ?? []).flatMap((d) => {
+    const names = d.item_translations ?? [];
+    const name = [locale, ...NAME_ORDER].map((l) => names.find((n) => n.locale === l)?.name).find(Boolean);
+    return name && Number.isInteger(d.price) && d.price >= 0
+      ? [{ name, price: formatAmd(d.price, locale as Locale), image: d.image_path }]
+      : [];
   });
 
   return (
@@ -105,6 +125,7 @@ export default async function LookPage() {
           brandReady={brandReady}
           cafeName={row?.name ?? ""}
           cover={covers.find((c) => c.cover)?.cover ?? null}
+          sample={sample}
           initial={{
             theme: guestTheme(row && "guest_theme" in row ? row.guest_theme : null),
             brandColor: row?.brand_color ?? null,

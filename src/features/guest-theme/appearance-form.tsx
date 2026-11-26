@@ -24,7 +24,7 @@ import {
   type BrandFont,
   type PlateStyle,
 } from "./brand";
-import { BrandPreview } from "./brand-preview";
+import { BrandPreview, type PreviewDish } from "./brand-preview";
 import { RECOMMENDED_THEME, THEME_CHOICES, THEME_FACTS, contrast, type GuestTheme } from "./themes";
 
 const logoUrl = (path: string) =>
@@ -145,6 +145,7 @@ export function AppearanceForm({
   brandReady,
   cafeName,
   cover,
+  sample,
   initial,
   initialBrand,
 }: {
@@ -155,6 +156,8 @@ export function AppearanceForm({
   cafeName: string;
   /** A section cover for the preview, if the café has one. */
   cover: string | null;
+  /** The café's first dishes with photos, so the preview shows its own food. */
+  sample?: PreviewDish[];
   initial: AppearanceInput;
   initialBrand: Brand;
 }) {
@@ -277,7 +280,7 @@ export function AppearanceForm({
           </option>
         ))}
       </select>
-      {hint && <span className="text-staff-label2 text-meta">{hint}</span>}
+      {hint && <span className="text-staff-label2 text-label">{hint}</span>}
     </label>
   );
 
@@ -629,6 +632,7 @@ export function AppearanceForm({
             cafeName={cafeName}
             logo={logo}
             cover={cover}
+            sample={sample}
           />
         </aside>
       </div>
@@ -675,6 +679,7 @@ export function AppearanceForm({
             cafeName={cafeName}
             logo={logo}
             cover={cover}
+            sample={sample}
           />
         </Sheet>
       )}

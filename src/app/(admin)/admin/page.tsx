@@ -19,6 +19,7 @@ import { PromoManager } from "@/features/promos/promo-manager";
 import { promoFromRow, type Promo } from "@/features/promos/model";
 import { menuHasChanges } from "@/features/menu/publish-state";
 import { textAction } from "@/features/admin-ui/styles";
+import { parseStaffLogins } from "@/features/staff/logins-model";
 import { requireMember } from "@/lib/auth/require-member";
 import { formatDate, formatTime } from "@/lib/format/date";
 import { formatAmd, formatInteger } from "@/lib/format/money";
@@ -194,28 +195,41 @@ export default async function AdminHome() {
   )
     todos.push({ key: "publish", href: "/admin/menu", text: t("unpublished") });
   if ((tables.count ?? 0) === 0) todos.push({ key: "tables", href: "/admin/tables", text: t("noTables") });
-  if ((devices.count ?? 0) === 0) todos.push({ key: "devices", href: "/admin/staff", text: t("noDevices") });
+  // Staff screens come in two ways: a paired device, or a waiter or kitchen
+  // login (ADR-067). Only when neither has ever been used is there something to do.
+  if ((devices.count ?? 0) === 0) {
+    const logins = location
+      ? await supabase.schema("api").rpc("list_staff_logins", { p_location_id: location.id })
+      : null;
+    const signedIn =
+      !!logins && !logins.error && parseStaffLogins(logins.data).some((l) => l.isActive && l.lastSignInAt);
+    if (!signedIn) todos.push({ key: "devices", href: "/admin/staff", text: t("noDevices") });
+  }
   if ((noPhoto.count ?? 0) > 0)
     todos.push({ key: "photos", href: "/admin/menu", text: t("noPhotos", { count: noPhoto.count ?? 0 }) });
   if ((stops.count ?? 0) > 0)
     todos.push({ key: "stops", href: "/admin/menu", text: t("stopList", { count: stops.count ?? 0 }) });
 
   const delta = data ? deltaPercent(data.summary.revenue, data.compare.revenue) : null;
+  // The plan line belongs to the greeting: right under it, not a group of its
+  // own 48 px further down (it is a tinted block only when the owner must act).
   const subtitle = (
-    <p className="num m-0">
-      {/* The café's name is the title above; the line greets and dates. */}
-      {t("welcome")}
-      {location &&
-        ` · ${t("date", {
-          date: formatDate(new Date(), locale, location.timezone),
-          time: formatTime(new Date(), location.timezone),
-        })}`}
-    </p>
+    <div className="flex flex-col gap-3">
+      <p className="num m-0">
+        {/* The café's name is the title above; the line greets and dates. */}
+        {t("welcome")}
+        {location &&
+          ` · ${t("date", {
+            date: formatDate(new Date(), locale, location.timezone),
+            time: formatTime(new Date(), location.timezone),
+          })}`}
+      </p>
+      {member.role === "owner" && <PlanBanner restaurantId={rid} locale={locale} />}
+    </div>
   );
 
   return (
     <AdminPage title={restaurant?.name} subtitle={subtitle} width="md">
-      {member.role === "owner" && <PlanBanner restaurantId={rid} locale={locale} />}
 
       <Section
         title={t("today")}
@@ -237,7 +251,9 @@ export default async function AdminHome() {
           <dl className="num m-0 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 sm:gap-x-0">
             <div className={clsx(kpi, "col-span-2 sm:col-span-1")}>
               <dt className={kpiLabel}>{d("revenue")}</dt>
-              <dd className={clsx(kpiFigure, "xl:text-figure")} data-testid="home-revenue">
+              {/* Revenue leads the page: 40 px on a phone, where it has the
+                  row to itself, and from 1280 px. */}
+              <dd className="text-figure sm:text-large xl:text-figure m-0 leading-tight font-bold" data-testid="home-revenue">
                 {formatAmd(data.summary.revenue, locale)}
               </dd>
               <dd className="text-staff-label2 m-0 text-label">

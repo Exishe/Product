@@ -12,6 +12,10 @@ export function plainText(text: string): string {
 
 export async function DigestCard({ digest }: { digest: WeeklyDigest }) {
   const t = await getTranslations("reports.digest");
+  // The first line names the week ("Weekly summary: 16.11–22.11"): a small
+  // heading, so the body reads under it instead of as one block.
+  const [head, ...rest] = plainText(digest.text).trim().split("\n");
+  const body = rest.join("\n").trim();
   return (
     <section
       aria-labelledby="digest-title"
@@ -24,9 +28,10 @@ export async function DigestCard({ digest }: { digest: WeeklyDigest }) {
         </h2>
         <p className="text-staff-label2 m-0 max-w-prose text-label">{t("hint")}</p>
       </div>
-      <p className="m-0 max-w-prose text-name leading-relaxed break-words whitespace-pre-line">
-        {plainText(digest.text)}
-      </p>
+      <div className="flex max-w-prose flex-col gap-1.5">
+        <h3 className="m-0 text-name font-semibold break-words">{head}</h3>
+        {body && <p className="m-0 text-name leading-relaxed break-words whitespace-pre-line">{body}</p>}
+      </div>
     </section>
   );
 }

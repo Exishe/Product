@@ -98,7 +98,23 @@ function errorText(t: ReturnType<typeof useTranslations<"tables">>, result: Tabl
       : t("error");
 }
 
-function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
+// The tables by area, in the areas' order; tables without one come last. A café
+// that uses no areas gets one unnamed group (a plain list).
+function groupByArea(
+  floor: Floor,
+  noArea: string,
+): { id: string | null; name: string | null; tables: FloorTable[] }[] {
+  const used = floor.areas.filter((a) => floor.tables.some((x) => x.areaId === a.id));
+  if (used.length === 0) return [{ id: null, name: null, tables: floor.tables }];
+  const known = new Set(used.map((a) => a.id));
+  const rest = floor.tables.filter((x) => !x.areaId || !known.has(x.areaId));
+  return [
+    ...used.map((a) => ({ id: a.id, name: a.name, tables: floor.tables.filter((x) => x.areaId === a.id) })),
+    ...(rest.length ? [{ id: null, name: noArea, tables: rest }] : []),
+  ];
+}
+
+function TableRow({ floor, table, grouped }: { floor: Floor; table: FloorTable; grouped: boolean }) {
   const t = useTranslations("tables");
   const [mode, setMode] = useState<"view" | "edit" | "confirm">("view");
   const [draft, setDraft] = useState({
@@ -150,7 +166,7 @@ function TableRow({ floor, table }: { floor: Floor; table: FloorTable }) {
             </span>
             <span className="text-staff-label2 text-label">
               {t("seatsCount", { count: table.seats })}
-              {area ? ` · ${area}` : null}
+              {area && !grouped ? ` · ${area}` : null}
             </span>
           </span>
           <button
@@ -302,11 +318,29 @@ export function TablesEditor({ floor }: { floor: Floor }) {
           {t("empty")}
         </p>
       ) : (
-        <ul className="border-staff-sep m-0 list-none border-t p-0">
-          {floor.tables.map((table) => (
-            <TableRow key={table.id} floor={floor} table={table} />
-          ))}
-        </ul>
+        // Grouped under their area («Դահլիճ», «Տեռաս») when the café uses
+        // areas, so a row says only the table and its seats.
+        groupByArea(floor, t("noArea")).map((group) => (
+          <section
+            key={group.id ?? "none"}
+            aria-labelledby={group.name ? `area-${group.id ?? "none"}` : undefined}
+            className="flex flex-col"
+          >
+            {group.name && (
+              <h2
+                id={`area-${group.id ?? "none"}`}
+                className="text-staff-label2 m-0 pb-2 text-label font-semibold"
+              >
+                {group.name}
+              </h2>
+            )}
+            <ul className="border-staff-sep m-0 list-none border-t p-0">
+              {group.tables.map((table) => (
+                <TableRow key={table.id} floor={floor} table={table} grouped={!!group.name} />
+              ))}
+            </ul>
+          </section>
+        ))
       )}
 
       {adding ? (

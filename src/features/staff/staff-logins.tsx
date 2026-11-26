@@ -73,7 +73,8 @@ function SetPasswordForm({ row }: { row: StaffLoginRow }) {
   const t = useTranslations("staff.logins");
   const [state, action, pending] = useActionState(setStaffPassword, initialPassword);
   return (
-    <details className="group min-w-0" data-testid="set-password">
+    // Closed it is one text action beside «Switch off»; open, the form takes the row.
+    <details className="group min-w-0 open:basis-full" data-testid="set-password">
       <summary
         className={textAction("ink", "-ml-2 w-fit cursor-pointer list-none [&::-webkit-details-marker]:hidden")}
       >
