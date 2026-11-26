@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { FadeScroll } from "@/features/admin-ui/fade-scroll";
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { heatGrid, heatLevel, type Heatmap } from "./insights-model";
@@ -55,7 +56,8 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
                 })}
               </li>
             )}
-            {grid.quietest && (
+            {/* A quietest hour of "about 0" says nothing: then it is left out. */}
+            {grid.quietest && fmt.format(grid.quietest.avg) !== fmt.format(0) && (
               <li className="text-staff-label2">
                 {t("quietest", {
                   ...span(grid.quietest.dow, grid.quietest.hour),
@@ -64,7 +66,9 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
               </li>
             )}
           </ul>
-          <div className="relative -mx-1 overflow-x-auto px-1 pb-1">
+          {/* On a phone the grid scrolls sideways; the right edge fades while
+              more hours are hidden there. */}
+          <FadeScroll className="relative -mx-1 overflow-x-auto px-1 pb-1">
             <table className="num w-full border-separate border-spacing-[3px] text-meta">
               <caption className="sr-only">{t("hint", { weeks: map.weeks })}</caption>
               <thead>
@@ -109,7 +113,7 @@ export async function SalesHeatmap({ map, locale }: { map: Heatmap; locale: Loca
                 ))}
               </tbody>
             </table>
-          </div>
+          </FadeScroll>
           <div aria-hidden="true" className="text-staff-label2 flex items-center gap-1.5 text-meta">
             {t("less")}
             {LEVEL.map((c) => (

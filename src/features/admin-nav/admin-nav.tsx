@@ -132,7 +132,8 @@ function NavList({
                   aria-hidden="true"
                   className={clsx("size-5 shrink-0", current ? "text-ink" : "text-staff-label2")}
                 />
-                <span className="min-w-0 flex-1 truncate">{l.label}</span>
+                {/* A long label wraps to a second line rather than losing its end. */}
+                <span className="line-clamp-2 min-w-0 flex-1 py-1 leading-snug break-words">{l.label}</span>
                 {current && size === "sheet" && <Check aria-hidden="true" className="text-ink size-5 shrink-0" />}
               </Link>
             </li>

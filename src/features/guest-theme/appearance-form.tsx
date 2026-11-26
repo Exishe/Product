@@ -336,7 +336,7 @@ export function AppearanceForm({
                   {t(`themes.${id}.name`)}
                 </span>
                 {id === RECOMMENDED_THEME && (
-                  <span className="bg-staff-fill text-ink max-w-full rounded-xl px-2 py-0.5 text-meta leading-snug font-semibold">
+                  <span className="bg-staff-fill text-ink max-w-full rounded-full px-2 py-0.5 text-meta leading-snug font-semibold whitespace-nowrap">
                     {t("recommended")}
                   </span>
                 )}
@@ -344,8 +344,14 @@ export function AppearanceForm({
             </label>
           ))}
         </div>
-        <p className="text-staff-label2 m-0 mt-1 text-label" aria-live="polite">
-          {t(`themes.${theme}.hint`)}
+        {/* The description names its theme, so it never reads as the
+            caption of the first miniature. */}
+        <p className="text-staff-label2 m-0 mt-1 max-w-[60ch] text-label" aria-live="polite">
+          {t.rich("themeLine", {
+            name: t(`themes.${theme}.name`),
+            hint: t(`themes.${theme}.hint`),
+            b: (chunks) => <span className="text-ink font-semibold">{chunks}</span>,
+          })}
         </p>
       </fieldset>
 
@@ -662,7 +668,7 @@ export function AppearanceForm({
           the bottom with Save once something changed (else "Saved"), and on
           phones and tablets the preview one tap away (from 1024 px it sits
           next to the form). Section covers save on their own above it. */}
-      <div className="border-staff-sep sticky bottom-0 z-10 -mx-4 -mb-16 flex min-h-[4.5rem] items-center gap-3 border-t bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
+      <div className="border-staff-sep sticky bottom-0 z-10 -mx-4 -mb-16 flex min-h-[4.5rem] items-center gap-3 border-t bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
         <button
           type="button"
           onClick={() => setPreviewOpen(true)}

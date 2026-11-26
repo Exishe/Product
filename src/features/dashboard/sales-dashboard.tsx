@@ -155,7 +155,9 @@ export async function SalesDashboard({ data, locale }: { data: Dashboard; locale
                   <span
                     className={`num text-[0.9375rem] ${k.over_limit > 0 ? "text-pomegranate font-semibold" : "text-staff-label2"}`}
                   >
-                    {t("kitchenOver", { over: k.over_limit, tickets: k.tickets })}
+                    {k.over_limit > 0
+                      ? t("kitchenOver", { over: k.over_limit, tickets: k.tickets })
+                      : t("kitchenNoneOver")}
                   </span>
                 </li>
               ))}
@@ -302,9 +304,12 @@ function DishList({
               <span className="font-semibold break-words" lang={dishNameLocale(d.name, locale)}>
                 {dishName(d.name, locale)}
               </span>
-              <span className="num text-staff-label2 text-[0.9375rem]">{t("sold", { count: d.qty })}</span>
+              {/* A dish nobody ordered says so once, not "0 pcs · 0 ֏". */}
+              <span className="num text-staff-label2 text-[0.9375rem]">
+                {d.qty > 0 ? t("sold", { count: d.qty }) : t("notOrdered")}
+              </span>
             </span>
-            <span className="num shrink-0 text-right font-semibold">{formatAmd(d.revenue, locale)}</span>
+            {d.qty > 0 && <span className="num shrink-0 text-right font-semibold">{formatAmd(d.revenue, locale)}</span>}
           </li>
         ))}
       </ol>
