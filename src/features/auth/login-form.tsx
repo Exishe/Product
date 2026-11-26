@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useActionState, useState, type FormEvent } from "react";
 import {
   FormError,
@@ -66,6 +67,15 @@ export function LoginForm({ next }: { next?: string }) {
         autoComplete="current-password"
         required
       />
+      {/* Right under the field it is about, before the button. */}
+      <p className="-mt-2 mb-0">
+        <Link
+          href="/forgot-password"
+          className="text-ink text-label inline-flex min-h-11 items-center rounded-full font-semibold underline underline-offset-4"
+        >
+          {t("login.forgotLink")}
+        </Link>
+      </p>
       {state.error && <FormError>{t(state.error === "busy" ? "login.busy" : "login.error")}</FormError>}
       <SubmitButton
         pending={pending}

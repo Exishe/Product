@@ -22,26 +22,38 @@
         "tab": "Menu",
         "title": "QR menu",
         "text": "A menu with photos in three languages. Guests order from their own phone.",
-        "alt": "A section of the guest menu with a dish photo"
+        "alt": "A section of the guest menu with a dish photo",
+        "p1": "Guests switch between Armenian, Russian and English at the top.",
+        "p2": "A dish that ran out today is marked, so nobody orders it.",
+        "p3": "Guests can call the waiter or ask for the bill from their phone."
       },
       "waiter": {
         "tab": "Waiter",
         "title": "Waiter app",
         "text": "New orders, calls and bill requests, table by table.",
-        "alt": "The waiter app's order list, table by table"
+        "alt": "The waiter app's order list, table by table",
+        "p1": "Each row shows what the table needs and how long it has waited.",
+        "p2": "One tap accepts an order and sends it to the kitchen.",
+        "p3": "Calls and bill requests ring, so nobody waves for long."
       },
       "kitchen": {
         "tab": "Kitchen",
         "title": "Kitchen screen",
-        "text": "Tickets arrive in order, and late ones are marked in red.",
+        "text": "Tickets arrive in order and turn red after 12 minutes.",
         "alt": "The kitchen screen with new and in-progress tickets",
-        "note": "Each café picks its kitchen screen's language: Armenian, Russian or English."
+        "note": "Each café picks its kitchen screen's language: Armenian, Russian or English.",
+        "p1": "One tap moves a ticket on: New, Cooking, Ready.",
+        "p2": "The table that has waited longest is always shown at the top.",
+        "p3": "The cook can mark a dish as sold out, and guests can no longer order it."
       },
       "admin": {
         "tab": "Admin",
         "title": "Owner admin",
         "text": "Menu, tables, staff and the day's reports.",
-        "alt": "The menu editor in the owner admin, with dishes, photos and prices"
+        "alt": "A dish open in the owner admin's menu editor, with its name and description in three languages",
+        "p1": "Each dish has its name and description in Armenian, Russian and English.",
+        "p2": "Change a price or a photo, then publish the menu when it's ready.",
+        "p3": "Tables with their QR codes, staff logins and the day's sales are here too."
       }
     },
     "start": {
@@ -103,6 +115,10 @@
       "demo": "Demo menu",
       "pair": "Connect a device",
       "nav": "Links"
+    },
+    "proof": {
+      "text": "Every screen on this page is a screenshot of the working product, not a mock-up.",
+      "link": "Try it as a guest"
     }
   },
   "common": {
@@ -125,7 +141,8 @@
       "noAccount": "No account?",
       "signupLink": "Sign up",
       "subtitle": "For owners and staff",
-      "pairLink": "Connect a device with a code"
+      "pairLink": "Connect a device with a code",
+      "forgotLink": "Forgot your password?"
     },
     "signup": {
       "title": "Sign up",
@@ -143,7 +160,32 @@
     },
     "required": "Fill in this field.",
     "emailFormat": "Check the email address.",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "forgot": {
+      "title": "Forgot your password?",
+      "staffTitle": "Waiter or kitchen login",
+      "staffText": "Ask the café owner. They set a new password in the admin, under Staff and devices.",
+      "ownerTitle": "Owner account",
+      "ownerText": "Enter your email, and we'll send a link to set a new password.",
+      "email": "Email",
+      "submit": "Send the link",
+      "pending": "Sending…",
+      "sent": "If an account uses {email}, the link is on its way. Check your inbox, and the spam folder too.",
+      "error": "Couldn't send the link. Wait a minute and try again.",
+      "back": "Back to sign-in"
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Use at least 8 characters.",
+      "password": "New password",
+      "again": "Repeat the password",
+      "submit": "Save and sign in",
+      "pending": "Saving…",
+      "checking": "Checking the link…",
+      "expired": "This link has expired or was already used.",
+      "newLink": "Get a new link",
+      "error": "Couldn't save the password. Try again."
+    }
   },
   "admin": {
     "home": {

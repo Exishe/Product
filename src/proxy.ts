@@ -23,6 +23,8 @@ export const config = {
     "/login",
     "/signup",
     "/pair",
+    "/forgot-password",
+    "/reset-password",
     "/invite/:path*",
   ],
 };

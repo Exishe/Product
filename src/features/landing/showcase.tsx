@@ -8,21 +8,24 @@ export type ShowcasePanel = {
   title: string;
   text: string;
   alt: string;
-  // An optional muted line under the text (the kitchen's language note).
+  // Two or three short lines on what the picture shows, as a dash list.
+  points: string[];
+  // An optional muted line under the list (the kitchen's language note).
   note?: string;
-  // Every surface has a portrait screenshot (420x630 CSS px at 2x). The
-  // kitchen and the admin also have a wide one (720x630 at 2x) from md up;
-  // the guest menu and the waiter app stay one phone screen at every width.
+  // Every surface has a portrait screenshot (420x688 CSS px at 2x). The
+  // kitchen also has a wide one (720x688 at 2x) from md up; the other
+  // surfaces stay one phone screen at every width.
   phone: { src: string; width: number; height: number };
   wide?: { src: string; width: number; height: number };
 };
 
 // The landing page's product showcase (benchmark 2.1): one row of tabs and one
 // screenshot straight on the band, instead of a grid of boxed cards. One
-// subject per tab, shown close to 1:1 from md up so the text in it reads at
-// 14 px or more: a phone screen, or a 720 px crop of the kitchen or admin.
-// Every picture sits in a stage of one height, so switching tabs never moves
-// the page. Tabs follow the WAI-ARIA tabs pattern: arrows, Home and End move
+// subject per tab, shown at 1:1 from lg up so the text in it reads at 14 px
+// or more: a phone screen, or a 720 px crop of the kitchen board. Every
+// picture sits in a 45:43 stage (720x688 at xl) and, from lg, on the stage's
+// right edge, which is the container's: switching tabs never moves the page
+// or the picture's right edge. Tabs follow the WAI-ARIA tabs pattern: arrows, Home and End move
 // between them and select at once. On narrow phones the row scrolls sideways
 // (snapping, no scrollbar) rather than squeezing the labels together. A new
 // panel fades in over 200 ms (off under reduced motion). Hidden panels keep
@@ -67,30 +70,34 @@ export function Showcase({
       {/* The hairline is the row's own inset shadow, so the selected tab's
           underline can sit on it inside a scrolling row. On phones the row
           runs to the screen edges and its labels start on the 16 px gutter. */}
-      <div
-        role="tablist"
-        aria-labelledby={labelledBy}
-        onKeyDown={onKeyDown}
-        className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-6 overflow-x-auto px-4 shadow-[inset_0_-1px_0_var(--color-sand-line)] [scrollbar-width:none] md:mx-0 md:gap-8 md:px-0 [&::-webkit-scrollbar]:hidden"
-      >
-        {panels.map((p, i) => (
-          <button
-            key={p.id}
-            ref={(el) => {
-              tabs.current[i] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`${base}-tab-${p.id}`}
-            aria-controls={`${base}-panel-${p.id}`}
-            aria-selected={i === active}
-            tabIndex={i === active ? 0 : -1}
-            onClick={() => setActive(i)}
-            className="text-slate hover:text-ink aria-selected:text-ink after:bg-ink text-label md:text-name relative flex h-12 min-w-11 shrink-0 snap-start items-center justify-center px-0 font-semibold tracking-normal whitespace-nowrap after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 aria-selected:after:opacity-100"
-          >
-            {p.tab}
-          </button>
-        ))}
+      {/* Each tab has an 8 px side pad under a -8 px margin, so the labels keep
+          their 24/32 px gaps and the focus ring has room around the label. */}
+      <div className="-mx-4 shadow-[inset_0_-1px_0_var(--color-sand-line)] md:mx-0">
+        <div
+          role="tablist"
+          aria-labelledby={labelledBy}
+          onKeyDown={onKeyDown}
+          className="flex snap-x snap-mandatory scroll-px-2 [scrollbar-width:none] gap-6 overflow-x-auto px-4 md:-mx-2 md:scroll-px-0 md:gap-8 md:px-2 [&::-webkit-scrollbar]:hidden"
+        >
+          {panels.map((p, i) => (
+            <button
+              key={p.id}
+              ref={(el) => {
+                tabs.current[i] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`${base}-tab-${p.id}`}
+              aria-controls={`${base}-panel-${p.id}`}
+              aria-selected={i === active}
+              tabIndex={i === active ? 0 : -1}
+              onClick={() => setActive(i)}
+              className="text-slate hover:text-ink aria-selected:text-ink after:bg-ink text-label md:text-name focus-visible:outline-ink relative -mx-2 flex h-12 min-w-11 shrink-0 snap-start items-center justify-center rounded-lg px-2 font-semibold tracking-normal whitespace-nowrap after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 focus-visible:outline-2 focus-visible:-outline-offset-2 aria-selected:after:opacity-100"
+            >
+              {p.tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {panels.map((p, i) => (
@@ -102,8 +109,9 @@ export function Showcase({
           hidden={i !== active}
           className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_40rem] lg:items-start lg:gap-12 xl:grid-cols-[minmax(0,1fr)_45rem]"
         >
-          {/* The stage: 8:7 from md, the picture filling its height. */}
-          <div className="md:flex md:aspect-[8/7] md:justify-center lg:order-2">
+          {/* The stage: 45:43 from md (720x688 at xl), the picture filling its
+              height; centred on tablets, on the right edge from lg. */}
+          <div className="md:flex md:aspect-[45/43] md:justify-center lg:order-2 lg:justify-end">
             <picture className="contents">
               {p.wide && (
                 <source
@@ -128,10 +136,17 @@ export function Showcase({
           <div className="flex flex-col items-start gap-3 lg:order-1">
             <h3 className="text-subtitle m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>
             <p className="text-slate text-name m-0 max-w-[34ch] leading-normal text-pretty">{p.text}</p>
+            <ul className="text-name [&>li]:before:text-slate m-0 mt-2 flex max-w-[36ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
+              {p.points.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
             {p.note && (
-              <p className="text-slate text-label m-0 max-w-[34ch] leading-normal text-pretty">{p.note}</p>
+              <p className="text-slate text-label m-0 mt-1 max-w-[36ch] leading-normal text-pretty">
+                {p.note}
+              </p>
             )}
-            <div className="mt-3">{action}</div>
+            <div className="mt-4">{action}</div>
           </div>
         </div>
       ))}

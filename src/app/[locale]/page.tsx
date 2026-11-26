@@ -10,15 +10,16 @@ import { routing } from "@/i18n/routing";
 const DEMO_MENU = "m/pativ-demo/main";
 
 // The four surfaces in the showcase, each with real screenshots of the
-// current build (public/landing/), one set per page language: a 420x630
-// phone screen for every surface, plus a 720x630 crop for the kitchen and the
-// admin from md up (all at 2x). The kitchen board was shot in the page's
-// language, which a café sets for its kitchen (locations.kitchen_locale); a
-// line under the text says so.
+// current build (public/landing/), one set per page language: a 420x688
+// phone screen for every surface, plus a 720x688 crop of the kitchen board
+// from md up (all at 2x, so 1:1 in the 720x688 stage at xl). The kitchen
+// board was shot in the page's language, which a café sets for its kitchen
+// (locations.kitchen_locale); a line under the text says so.
 const SURFACES = ["menu", "waiter", "kitchen", "admin"] as const;
-const WIDE_SURFACES: readonly string[] = ["kitchen", "admin"];
-const PHONE = { width: 840, height: 1260 };
-const WIDE = { width: 1440, height: 1260 };
+const WIDE_SURFACES: readonly string[] = ["kitchen"];
+const POINTS = ["p1", "p2", "p3"] as const;
+const PHONE = { width: 840, height: 1376 };
+const WIDE = { width: 1440, height: 1376 };
 
 // The hero picture: the live demo menu at 390 px (2x), down to just above the
 // hairline that opens the second dish, so it ends on white under the price.
@@ -33,9 +34,13 @@ const h2 = "display-face m-0 text-large leading-tight font-normal! md:text-[2rem
 // Plan features: regular weight in both columns, a short dash before each line.
 const planList =
   "text-name m-0 mt-6 flex list-none flex-col gap-2 p-0 leading-normal [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:text-slate [&>li]:before:content-['–']";
-const planColumn = "flex flex-col items-start md:row-span-7 md:grid md:grid-rows-subgrid md:justify-items-start";
+// From md the two plans share four subgrid rows (name, price, term, button),
+// so both 56 px buttons sit on one line right under the price; what follows
+// (the terms and the list) flows on its own in the fifth row, top-aligned.
+const planColumn =
+  "flex flex-col items-start md:row-span-5 md:grid md:grid-rows-subgrid md:content-start md:justify-items-start";
 // The plan's terms in one plain sentence under the price.
-const planTerms = "text-name m-0 mt-4 max-w-[44ch] leading-normal text-pretty";
+const planTerms = "text-name m-0 mt-8 max-w-[44ch] leading-normal text-pretty";
 const outlineButton =
   "text-ink inline-flex min-h-14 items-center justify-center rounded-full bg-white px-6 text-base font-semibold no-underline shadow-[inset_0_0_0_1px_var(--color-staff-field)]";
 const textLink =
@@ -76,6 +81,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
     tab: t(`features.${s}.tab`),
     title: t(`features.${s}.title`),
     text: t(`features.${s}.text`),
+    points: POINTS.map((k) => t(`features.${s}.${k}`)),
     alt: t(`features.${s}.alt`),
     note: s === "kitchen" ? t("features.kitchen.note") : undefined,
     phone: { src: `/landing/show-${s}-${locale}-phone.webp`, ...PHONE },
@@ -197,6 +203,17 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
               {t("features.title")}
             </h2>
             <Showcase labelledBy="landing-features" panels={panels} action={signupButton} />
+            {/* Proof, as one plain line under a hairline: the pictures are the
+                working product, and the demo menu is one tap away. */}
+            <p className="border-sand-line text-name m-0 mt-12 flex flex-col items-start gap-x-4 gap-y-1 border-t pt-6 leading-normal text-pretty sm:flex-row sm:flex-wrap sm:items-center md:mt-16">
+              <span>{t("proof.text")}</span>
+              <a
+                href={demoHref}
+                className="text-ink text-name inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+              >
+                {t("proof.link")}
+              </a>
+            </p>
           </div>
         </section>
 
@@ -237,28 +254,26 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <h2 id="landing-pricing" className={h2}>
               {t("pricing.title")}
             </h2>
-            {/* Two plans side by side, one hairline between them and no boxes. From
-                md the columns share seven subgrid rows (name, price, term, the
-                one-line terms, features, small print, button), so the lists and
-                both buttons line up. */}
-            <div className="mt-8 grid md:mt-12 md:grid-cols-2 md:grid-rows-[repeat(7,auto)]">
+            {/* Two plans side by side, one hairline between them and no boxes. */}
+            <div className="mt-8 grid md:mt-12 md:grid-cols-2 md:grid-rows-[repeat(5,auto)]">
               <div className={`${planColumn} pb-10 md:pr-12 md:pb-0`}>
                 <h3 className="text-heading m-0 font-semibold">{t("pricing.menu.name")}</h3>
                 <p className="text-figure m-0 mt-3 font-semibold tracking-[-0.01em]">
                   {t("pricing.menu.price")}
                 </p>
                 <p className="text-slate text-label m-0 mt-1">{t("pricing.menu.term")}</p>
-                <p className={planTerms}>{t("pricing.menu.note")}</p>
-                <ul className={planList}>
-                  <li>{t("pricing.menu.l1")}</li>
-                  <li>{t("pricing.menu.l2")}</li>
-                  <li>{t("pricing.menu.l3")}</li>
-                </ul>
-                <span aria-hidden="true" />
-                <div className="pt-8 md:self-end">
+                <div className="pt-6">
                   <a href={signupHref} className={outlineButton}>
                     {t("pricing.menu.cta")}
                   </a>
+                </div>
+                <div>
+                  <p className={planTerms}>{t("pricing.menu.note")}</p>
+                  <ul className={planList}>
+                    <li>{t("pricing.menu.l1")}</li>
+                    <li>{t("pricing.menu.l2")}</li>
+                    <li>{t("pricing.menu.l3")}</li>
+                  </ul>
                 </div>
               </div>
               <div
@@ -272,19 +287,19 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                   <span className="text-heading font-semibold">{t("pricing.service.per")}</span>
                 </p>
                 <p className="text-slate text-label m-0 mt-1">{t("pricing.service.year")}</p>
-                <p className={planTerms}>{t("pricing.service.offer")}</p>
+                <div className="pt-6">{signupButton}</div>
                 <div>
+                  <p className={planTerms}>{t("pricing.service.offer")}</p>
                   <p className="text-name m-0 mt-6 leading-normal">{t("pricing.service.includes")}</p>
                   <ul className={`${planList} mt-2!`}>
                     <li>{t("pricing.service.l1")}</li>
                     <li>{t("pricing.service.l2")}</li>
                     <li>{t("pricing.service.l3")}</li>
                   </ul>
+                  <p className="text-slate text-label m-0 mt-6 max-w-[44ch] leading-normal text-pretty">
+                    {t("pricing.service.perks")}
+                  </p>
                 </div>
-                <p className="text-slate text-label m-0 mt-4 max-w-[44ch] leading-normal text-pretty">
-                  {t("pricing.service.perks")}
-                </p>
-                <div className="pt-8 md:self-end">{signupButton}</div>
               </div>
             </div>
           </div>
