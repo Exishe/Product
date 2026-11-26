@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 export type ChannelStatus = "connecting" | "subscribed" | "down";
 
-export type LocationEvent = "order" | "ticket" | "service_request" | "table" | "location";
+export type LocationEvent = "order" | "ticket" | "service_request" | "table" | "location" | "pos";
 export type LocationMessage = { event: LocationEvent; payload: Record<string, unknown> };
 
 // Staff screens listen to the private Broadcast channel loc:<location_id>

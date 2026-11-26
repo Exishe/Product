@@ -888,6 +888,15 @@
       "ready": "Ready",
       "call": "Calling",
       "bill": "Bill"
+    },
+    "pos": {
+      "sent": "Sent to the POS",
+      "sending": "Sending to the POS…",
+      "failed": "Didn't reach the POS",
+      "skipped": "Not sent to the POS",
+      "retry": "Send again",
+      "retryFailed": "Couldn't send it again. Try again in a moment.",
+      "changeInPos": "Change it in the POS too."
     }
   },
   "menu": {
@@ -1620,7 +1629,8 @@
     "look": "Guest page look",
     "home": "Home",
     "open": "Pages",
-    "close": "Close"
+    "close": "Close",
+    "pos": "POS connection"
   },
   "billing": {
     "planName": {
@@ -2197,6 +2207,104 @@
       "failed": "Couldn't save. Please try again.",
       "note": "Each screen plays its sound after the staff member taps “Sound on” once.",
       "loudName": "{name} (loud)"
+    }
+  },
+  "pos": {
+    "title": "POS connection",
+    "intro": "If the café already runs a POS, Pativ sends every accepted order into it. Waiters don't type orders twice, and the POS prints the kitchen ticket, the bill and the fiscal receipt as it does today.",
+    "notInV1": "Changes after sending (cancelled dishes, \"can't make\") are not sent to the POS: change them there too. Pativ sends no payments or fiscal data.",
+    "vendorTitle": "System",
+    "vendorLabel": "Your POS",
+    "vendors": {
+      "test": "Test POS",
+      "webhook": "Webhook (another system)",
+      "iiko": "iiko",
+      "syrve": "Syrve",
+      "poster": "Poster"
+    },
+    "vendorHints": {
+      "test": "Sends nothing out. Orders show up below under \"Recent sends\". Good for trying it out.",
+      "webhook": "Mersoft, Norksys, 1C-based systems or any other POS. Each order is POSTed as JSON to your address, signed with a key.",
+      "iiko": "iiko Cloud API (api-ru.iiko.services). Create the API key in iikoWeb.",
+      "syrve": "iiko's international edition (api-eu.syrve.live). Create the API key in Syrve App.",
+      "poster": "Find the personal API token in Poster's settings. Orders arrive as online orders."
+    },
+    "url": "Webhook address (https)",
+    "baseUrl": "Server address (optional)",
+    "baseUrlHint": "Default: {url}",
+    "phone": "Phone for Poster orders (optional)",
+    "phoneHint": "If Poster refuses orders without a phone, enter the café's number.",
+    "save": "Save",
+    "saved": "Saved.",
+    "secretTitle": "Key",
+    "secretLabel": {
+      "webhook": "Signing secret",
+      "iiko": "API key (apiLogin)",
+      "syrve": "API key (apiLogin)",
+      "poster": "API token"
+    },
+    "secretSaved": "Key saved",
+    "secretMissing": "No key saved yet",
+    "secretHint": "The key is kept in a secure vault and never shown again. To change it, enter a new one.",
+    "secretPlaceholder": "Paste the key",
+    "saveSecret": "Save key",
+    "checkTitle": "Connection",
+    "check": "Check connection",
+    "checkOk": "The connection works.",
+    "organization": "Organization",
+    "terminalGroup": "Terminal group",
+    "spot": "Spot",
+    "choose": "Choose",
+    "saveChoice": "Save choice",
+    "menuTitle": "Dish matching",
+    "menuHint": "Load the POS menu. Dishes with matching names are matched automatically; pick the rest from the list.",
+    "loadMenu": "Load POS menu",
+    "notMatched": "{count, plural, one {# dish not matched} other {# dishes not matched}}",
+    "notMatchedHint": "Orders with these dishes won't reach the POS, and the waiter will see why.",
+    "allMatched": "Every dish is matched.",
+    "dish": "Dish in Pativ",
+    "posProduct": "Product in the POS",
+    "none": "— Not chosen —",
+    "auto": "matched automatically",
+    "options": "Options",
+    "tablesTitle": "Tables",
+    "table": "Table {label}",
+    "saveMatches": "Save matching",
+    "matchesSaved": "Matching saved.",
+    "activeTitle": "Sending",
+    "activeOn": "Accepted orders go to the POS",
+    "activeOff": "Off: orders don't go to the POS",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "sendTest": "Send test order",
+    "testQueued": "The test order is queued. The result shows below.",
+    "recentTitle": "Recent sends",
+    "recentEmpty": "Nothing sent yet.",
+    "refresh": "Refresh",
+    "order": "Order {number}",
+    "testOrder": "Test {number}",
+    "tableShort": "table {label}",
+    "externalId": "In the POS: {id}",
+    "showPayload": "Show the data sent",
+    "retry": "Send again",
+    "status": {
+      "pending": "Queued",
+      "sending": "Sending",
+      "sent": "Sent",
+      "failed": "Failed",
+      "dead": "Failed (no tries left)",
+      "skipped": "Not sent (was off)"
+    },
+    "errors": {
+      "failed": "That didn't work. Try again.",
+      "forbidden": "Only the owner and managers can do this.",
+      "invalid_url": "The address must be https and must not lead into an internal network.",
+      "invalid_secret": "The key must be at least 8 characters, with no spaces.",
+      "no_secret": "Save the key first.",
+      "no_url": "Save the webhook address first.",
+      "not_configured": "Check the connection first and choose where orders go.",
+      "rate_limited": "Too often. Try again in a minute.",
+      "vendor": "The POS didn't answer or refused: {detail}"
     }
   }
 }

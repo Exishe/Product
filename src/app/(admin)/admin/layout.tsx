@@ -45,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     getTranslations("adminNav"),
     getTranslations("brand"),
   ]);
-  // At most seven one-line items (ADR-094). Reports and Export are reached
+  // Eight one-line items (ADR-094, plus the POS connection). Reports and Export are reached
   // from Sales, Import from the menu page.
   const links: NavLink[] = [
     { href: "/admin", label: t("home"), icon: "home" },
@@ -55,6 +55,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/staff", label: t("staff"), icon: "staff" },
     { href: "/admin/look", label: t("look"), icon: "look" },
     { href: "/admin/telegram", label: t("telegram"), icon: "telegram" },
+    { href: "/admin/pos", label: t("pos"), icon: "pos" },
     ...(admin ? [{ href: "/platform", label: t("platform"), icon: "platform" as const }] : []),
   ];
 
