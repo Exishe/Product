@@ -25,6 +25,15 @@ export function alertEvents(tables: readonly FloorTable[]): AlertEvent[] {
     for (const o of [...t.orders, ...(t.waiting?.orders ?? [])]) {
       if (o.pending) continue;
       if (o.status === "placed") out.push({ ...base, key: `new:${o.id}`, kind: "new" });
+      // A guest's order the café accepted by itself never was «placed» here:
+      // it still tells the waiter, once (same key, so an order they accepted
+      // themselves does not ring again). Their own orders do not ring.
+      if (
+        o.status === "accepted" &&
+        o.source !== "waiter" &&
+        o.tickets.some((k) => k.status === "new" || k.status === "cooking")
+      )
+        out.push({ ...base, key: `new:${o.id}`, kind: "new" });
       if (o.status === "accepted")
         for (const k of o.tickets)
           if (k.status === "ready") out.push({ ...base, key: `ready:${k.id}`, kind: "ready" });

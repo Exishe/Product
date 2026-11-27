@@ -323,10 +323,20 @@ const readySince = (orders: readonly WaiterOrder[]) =>
 
 // The Orders and Calls tabs (ADR-054): one row per table and kind of request,
 // the longest-waiting first. Only a different view of the floor; nothing new.
-export type InboxRow = { table: FloorTable; kind: "new" | "ready" | "call" | "bill"; minutes: number };
+// «cooking»: an accepted order the kitchen is still making (also one the café
+// accepts automatically, which never asked the waiter): listed after what needs
+// the waiter, so the Orders tab shows every order in the house.
+export type InboxRow = {
+  table: FloorTable;
+  kind: "new" | "ready" | "cooking" | "call" | "bill";
+  minutes: number;
+};
+
+const inKitchen = (k: WaiterTicket) => k.status === "new" || k.status === "cooking";
 
 export function inbox(tables: readonly FloorTable[], now: number): { orders: InboxRow[]; calls: InboxRow[] } {
   const orders: InboxRow[] = [];
+  const cooking_: InboxRow[] = [];
   const calls: InboxRow[] = [];
   const since = (at: number) => Math.max(0, Math.floor((now - at) / 60_000));
   for (const table of tables) {
@@ -337,11 +347,21 @@ export function inbox(tables: readonly FloorTable[], now: number): { orders: Inb
       (o) => o.status === "accepted" && o.tickets.some((k) => k.status === "ready"),
     );
     if (ready.length > 0) orders.push({ table, kind: "ready", minutes: since(readySince(ready)) });
+    const cooking = table.orders.filter((o) => o.status === "accepted" && o.tickets.some(inKitchen));
+    if (cooking.length > 0)
+      cooking_.push({
+        table,
+        kind: "cooking",
+        minutes: since(Math.min(...cooking.map((o) => o.acceptedAt ?? o.placedAt))),
+      });
     if (table.call) calls.push({ table, kind: "call", minutes: table.call.minutes });
     if (table.bill) calls.push({ table, kind: "bill", minutes: table.bill.minutes });
   }
   const oldestFirst = (a: InboxRow, b: InboxRow) => b.minutes - a.minutes;
-  return { orders: orders.sort(oldestFirst), calls: calls.sort(oldestFirst) };
+  return {
+    orders: [...orders.sort(oldestFirst), ...cooking_.sort(oldestFirst)],
+    calls: calls.sort(oldestFirst),
+  };
 }
 
 // The one obvious thing to do for a row of the Orders or Calls tab, without
@@ -374,6 +394,8 @@ export function quickAction(row: InboxRow): QuickAction | null {
         ? { kind: "accept", actions: [{ kind: "accept", orderId: only.id }] }
         : null;
     }
+    case "cooking":
+      return null;
     case "bill":
       return table.sessionId && closeBlocker(table) === null && !table.waiting
         ? { kind: "settle", sessionId: table.sessionId }

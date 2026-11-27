@@ -6,6 +6,7 @@ import {
   closeBlocker,
   inbox,
   needCount,
+  quickAction,
   settlement,
   tableOfAction,
   tileAge,
@@ -671,7 +672,9 @@ describe("what happened at the table", () => {
     const t1 = { ...byId(floor, "t1"), call: null };
     const ready = { ...t1, state: "ready" as const };
     expect(tileAge(ready, T0)).toEqual({ kind: "wait", minutes: 4 });
-    expect(inbox([ready], T0).orders).toEqual([expect.objectContaining({ kind: "ready", minutes: 4 })]);
+    expect(inbox([ready], T0).orders.filter((r) => r.kind !== "cooking")).toEqual([
+      expect.objectContaining({ kind: "ready", minutes: 4 }),
+    ]);
     expect(tileAge(byId(floor, "t1"), T0)).toEqual({ kind: "wait", minutes: 2 }); // calling wins
   });
 
@@ -741,5 +744,61 @@ describe("taps waiting in the outbox", () => {
         preview: { lines: [], total: 0 },
       }),
     ).toBe("10");
+  });
+});
+
+describe("orders still in the kitchen on the Orders tab", () => {
+  const ticket = (status: "new" | "cooking" | "ready" | "served") => ({
+    id: "k-" + status,
+    stationId: "s",
+    stationName: null,
+    status,
+    readyAt: null,
+    servedAt: null,
+  });
+  const accepted = (id: string, statuses: ("new" | "cooking" | "ready" | "served")[], placedMin: number) => ({
+    id,
+    number: 1,
+    source: "qr" as const,
+    status: "accepted" as const,
+    placedAt: T0 + placedMin * 60_000,
+    acceptedAt: null,
+    note: null,
+    total: 0,
+    rejectReason: null,
+    duplicate: false,
+    lines: [],
+    tickets: statuses.map(ticket),
+    pending: false,
+  });
+  const tableWith = (id: string, orders: ReturnType<typeof accepted>[]) => ({
+    id,
+    label: id,
+    areaId: null,
+    shape: "square" as const,
+    pos: null,
+    state: "busy" as const,
+    sessionId: "s-" + id,
+    openedAt: T0,
+    openMinutes: 0,
+    orders,
+    waiting: null,
+    call: null,
+    bill: null,
+    total: 0,
+  });
+
+  it("lists an auto-accepted order the kitchen is making, after what needs the waiter, with no quick action", () => {
+    const tables = [
+      tableWith("1", [accepted("a", ["cooking"], -3)]),
+      tableWith("2", [accepted("b", ["ready"], -9)]),
+      tableWith("3", [accepted("c", ["served"], -30)]),
+    ];
+    const { orders } = inbox(tables, T0);
+    expect(orders.map((r) => [r.table.id, r.kind, r.minutes])).toEqual([
+      ["2", "ready", 9],
+      ["1", "cooking", 3],
+    ]);
+    expect(quickAction(orders[1]!)).toBeNull();
   });
 });

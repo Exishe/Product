@@ -616,6 +616,7 @@
       "busy": "Seated",
       "new": "New order",
       "ready": "Ready",
+      "cooking": "In the kitchen",
       "call": "Calling",
       "bill": "Bill",
       "billCard": "Bill: card",
@@ -2319,5 +2320,12 @@
       "rate_limited": "Too often. Try again in a minute.",
       "vendor": "The POS didn't answer or refused: {detail}"
     }
+  },
+  "staffSession": {
+    "otherTitle": "Another account signed in on this browser",
+    "otherBody": "Someone signed in as «{account}» in another tab, which replaced this screen's sign-in: a browser keeps one sign-in at a time. Sign in here again, or open this screen on its own device or browser (for example a private window).",
+    "signedOutTitle": "You were signed out",
+    "signedOutBody": "Someone signed out in another tab. Sign in again to keep this screen working.",
+    "signIn": "Sign in again"
   }
 }

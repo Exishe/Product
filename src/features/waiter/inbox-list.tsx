@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ChevronRight, CircleAlert, CircleCheck, Clock } from "lucide-react";
+import { ChefHat, ChevronRight, CircleAlert, CircleCheck, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { STATE_BADGE, StateIcon } from "./floor-map";
 import { quickAction, type InboxRow, type WaiterAction } from "./floor-model";
@@ -64,8 +64,12 @@ export function InboxList({
             ? t(row.table.bill.payment === "card" ? "state.billCard" : "state.billCash")
             : t(`state.${row.kind}`);
         const quick = quickAction(row);
-        // A guest waving or a plate going cold can't wait like a bill can.
-        const overdue = row.minutes >= (row.kind === "call" || row.kind === "ready" ? OVERDUE_FAST : OVERDUE_SLOW);
+        // A guest waving or a plate going cold can't wait like a bill can. An
+        // order still in the kitchen is the kitchen's wait, not the waiter's.
+        const cooking = row.kind === "cooking";
+        const overdue =
+          !cooking &&
+          row.minutes >= (row.kind === "call" || row.kind === "ready" ? OVERDUE_FAST : OVERDUE_SLOW);
         const TimeIcon = overdue ? CircleAlert : Clock;
         const quickText = quick ? t(QUICK_LABEL[quick.kind]) : "";
         const run = () => {
@@ -92,10 +96,18 @@ export function InboxList({
                 aria-hidden="true"
                 className={clsx(
                   "grid size-10 shrink-0 place-items-center rounded-full",
-                  STATE_BADGE[row.kind],
+                  cooking ? STATE_BADGE.busy : STATE_BADGE[row.kind as Exclude<InboxRow["kind"], "cooking">],
                 )}
               >
-                <StateIcon state={row.kind} payment={row.table.bill?.payment} className="size-5" />
+                {cooking ? (
+                  <ChefHat aria-hidden="true" className="size-5" />
+                ) : (
+                  <StateIcon
+                    state={row.kind as Exclude<InboxRow["kind"], "cooking">}
+                    payment={row.table.bill?.payment}
+                    className="size-5"
+                  />
+                )}
               </span>
               <span className="grid min-w-0 flex-1">
                 <span className="text-[1.0625rem] leading-snug font-semibold [overflow-wrap:anywhere]">
@@ -105,7 +117,10 @@ export function InboxList({
                   <span>{label}</span>
                   <span
                     data-overdue={overdue || undefined}
-                    className={clsx("num inline-flex items-center gap-1", overdue && "text-pomegranate font-bold")}
+                    className={clsx(
+                      "num inline-flex items-center gap-1",
+                      overdue && "text-pomegranate font-bold",
+                    )}
                   >
                     <TimeIcon aria-hidden="true" className="size-3.5 shrink-0" />
                     {row.minutes > 0 ? t("inbox.ago", { minutes: row.minutes }) : t("inbox.now")}

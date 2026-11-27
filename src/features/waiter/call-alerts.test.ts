@@ -13,8 +13,20 @@ import {
 } from "./call-alerts";
 import type { FloorTable } from "./floor-model";
 
-const call = (id: string, at = 1000, label = "5"): AlertRequest => ({ id, kind: "call", tableId: `t${id}`, label, at });
-const bill = (id: string, at = 1000, label = "6"): AlertRequest => ({ id, kind: "bill", tableId: `t${id}`, label, at });
+const call = (id: string, at = 1000, label = "5"): AlertRequest => ({
+  id,
+  kind: "call",
+  tableId: `t${id}`,
+  label,
+  at,
+});
+const bill = (id: string, at = 1000, label = "6"): AlertRequest => ({
+  id,
+  kind: "bill",
+  tableId: `t${id}`,
+  label,
+  at,
+});
 const EMPTY: AlertState = {};
 
 describe("openRequests", () => {

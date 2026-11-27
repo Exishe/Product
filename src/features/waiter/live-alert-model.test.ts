@@ -94,4 +94,25 @@ describe("waiter live alerts", () => {
     expect(mergeEvents(fresh, shown).map((e) => e.key)).toEqual(["ready:k9"]);
     expect(mergeEvents(fresh, []).map((e) => e.key)).toEqual(["ready:k9"]);
   });
+
+  it("rings once for a guest's order the café accepted by itself, not for the waiter's own or one already ready", () => {
+    const cookingTicket = {
+      id: "k9",
+      stationId: "s",
+      stationName: null,
+      status: "cooking" as const,
+      readyAt: null,
+      servedAt: null,
+    };
+    const auto = { ...order("o7", "accepted"), tickets: [cookingTicket] };
+    const own = { ...order("o8", "accepted"), source: "waiter" as const, tickets: [cookingTicket] };
+    const keys = alertEvents([table("e", { orders: [auto, own, order("o9", "accepted", ["k10"])] })]).map(
+      (e) => e.key,
+    );
+    expect(keys).toContain("new:o7");
+    expect(keys).not.toContain("new:o8");
+    expect(keys).not.toContain("new:o9");
+    // Accepted by the waiter after it was «placed»: the same key, so it doesn't ring twice.
+    expect(freshEvents(alertEvents([table("e", { orders: [auto] })]), new Set(["new:o7"]))).toEqual([]);
+  });
 });

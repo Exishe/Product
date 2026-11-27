@@ -685,7 +685,7 @@ function App(p: WaiterAppProps) {
             onPick={setTab}
             items={[
               { key: "tables", icon: LayoutGrid, badge: 0 },
-              { key: "orders", icon: ClipboardList, badge: lists.orders.length },
+              { key: "orders", icon: ClipboardList, badge: lists.orders.filter((r) => r.kind !== "cooking").length },
               { key: "calls", icon: BellRing, badge: lists.calls.length },
             ]}
           />
