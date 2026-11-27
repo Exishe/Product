@@ -56,7 +56,14 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "landing" });
   const title = t("metaTitle");
   const description = t("metaDescription");
-  return { title, description, openGraph: { title, description, type: "website", locale } };
+  // The picture a shared link shows (public/og/, 1200x630, one per language).
+  const images = [{ url: `/og/landing-${locale}.jpg`, width: 1200, height: 630, alt: title }];
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", locale, images },
+    twitter: { card: "summary_large_image", title, description, images },
+  };
 }
 
 export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AuthShell } from "@/features/admin-ui/auth-shell";
 import { LoginForm } from "@/features/auth/login-form";
@@ -9,7 +9,16 @@ export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
-  return { title: `${t("auth.login.title")} · ${t("brand.name")}` };
+  const title = `${t("auth.login.title")} · ${t("brand.name")}`;
+  const description = t("auth.login.subtitle");
+  // A shared sign-in link (kitchen and waiter logins) shows the staff screens.
+  const images = [{ url: `/og/staff-${await getLocale()}.jpg`, width: 1200, height: 630, alt: title }];
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", images },
+    twitter: { card: "summary_large_image", title, description, images },
+  };
 }
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {

@@ -25,9 +25,20 @@ type Search = Promise<{ t?: string | string[] }>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { restaurant, location } = await params;
+  const { locale, restaurant, location } = await params;
   const menu = await getPublicMenu(restaurant, location).catch(() => null);
-  return { title: menu?.restaurant.name ?? "Pativ" };
+  const title = menu?.restaurant.name ?? "Pativ";
+  // The demo café's shared link (and its table QR, which redirects here)
+  // shows a picture of its menu; a real café's link shows only its name.
+  if (!isDemoCafe(restaurant) || !hasLocale(routing.locales, locale)) return { title };
+  const description = (await getTranslations({ locale, namespace: "landing" }))("features.menu.text");
+  const images = [{ url: `/og/menu-${locale}.jpg`, width: 1200, height: 630, alt: title }];
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", locale, images },
+    twitter: { card: "summary_large_image", title, description, images },
+  };
 }
 
 // The browser bar wears the café's page colour.

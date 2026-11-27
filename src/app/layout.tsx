@@ -4,6 +4,8 @@ import { fontVariables } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Share previews (og:image) need absolute URLs; production is the default.
+  metadataBase: new URL(process.env.APP_BASE_URL ?? "https://pativ.vercel.app"),
   title: "Pativ",
   description: "Pativ",
 };
