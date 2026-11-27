@@ -93,6 +93,13 @@
      6.7:1 on white). */
   --color-sand: #f5f0e8;
   --color-sand-line: #e4dccd;
+  /* The landing page is blue and white (the owner, 27 Nov): the demo menu's
+     blue (white on it 6.7:1, 6.7:1 as text on white), a pale blue band
+     instead of the sand (ink 17.6:1, slate 6.2:1) and its hairline. */
+  --color-pativ-blue: #1d4ed8;
+  --color-pativ-blue-deep: #1e40af;
+  --color-pativ-tint: #f2f6fd;
+  --color-pativ-line: #d9e2f3;
   --color-slate: #575c63;
 }
 

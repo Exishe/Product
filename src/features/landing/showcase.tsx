@@ -79,7 +79,7 @@ export function Showcase({
           sm), so the selected tab's underline sits on it. From sm each tab has an 8 px side pad under a
           -8 px margin, so the labels keep their 24/32 px gaps and the focus
           ring has room around the label. */}
-      <div className="sm:shadow-[inset_0_-1px_0_var(--color-sand-line)]">
+      <div className="sm:shadow-[inset_0_-1px_0_var(--color-pativ-line)]">
         <div
           role="tablist"
           aria-labelledby={labelledBy}
@@ -99,7 +99,7 @@ export function Showcase({
               aria-selected={i === active}
               tabIndex={i === active ? 0 : -1}
               onClick={() => setActive(i)}
-              className="text-slate hover:text-ink aria-selected:text-ink after:bg-ink text-name focus-visible:outline-ink relative flex h-12 min-w-11 shrink-0 items-center justify-start font-semibold tracking-normal whitespace-nowrap shadow-[inset_0_-1px_0_var(--color-sand-line)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 focus-visible:outline-2 focus-visible:-outline-offset-2 aria-selected:after:opacity-100 sm:justify-center sm:rounded-lg sm:px-2 sm:shadow-none sm:after:inset-x-2"
+              className="text-slate hover:text-ink aria-selected:text-ink after:bg-pativ-blue text-label focus-visible:outline-ink relative flex h-12 min-w-11 shrink-0 items-center justify-start font-semibold tracking-normal whitespace-nowrap shadow-[inset_0_-1px_0_var(--color-pativ-line)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:opacity-0 focus-visible:outline-2 focus-visible:-outline-offset-2 aria-selected:after:opacity-100 sm:justify-center sm:rounded-lg sm:px-2 sm:shadow-none sm:after:inset-x-2"
             >
               {p.tab}
             </button>
@@ -163,9 +163,9 @@ export function Showcase({
             </div>
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
-            <h3 className="text-subtitle m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>
-            <p className="text-slate text-name m-0 max-w-[40ch] leading-normal text-pretty">{p.text}</p>
-            <ul className="text-name [&>li]:before:text-slate m-0 mt-2 flex max-w-[40ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
+            <h3 className="text-heading m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>
+            <p className="text-slate text-label m-0 max-w-[44ch] leading-normal text-pretty">{p.text}</p>
+            <ul className="text-label [&>li]:before:text-slate m-0 mt-2 flex max-w-[40ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
               {p.points.map((point) => (
                 <li key={point}>{point}</li>
               ))}
