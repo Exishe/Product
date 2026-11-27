@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { FileSpreadsheet, Send, Smartphone, WifiOff } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BrandLink, localeOption } from "@/features/admin-ui/brand";
 import { LandingEffects } from "@/features/landing/landing-effects";
@@ -18,16 +18,12 @@ const DEMO_MENU = "m/pativ-demo/main";
 // from md up (all at 2x, so 1:1 in the 720x688 stage at xl). The kitchen
 // board was shot in the page's language, which a café sets for its kitchen
 // (locations.kitchen_locale); a line under the text says so.
-const SURFACES = ["menu", "waiter", "kitchen", "admin"] as const;
+// The admin screen is left out (the owner, 27 Nov): its buttons looked
+// tappable on a picture that isn't.
+const SURFACES = ["menu", "waiter", "kitchen"] as const;
 const WIDE_SURFACES: readonly string[] = ["kitchen"];
 const POINTS = ["p1", "p2", "p3"] as const;
 const PHONE = { width: 840, height: 1376 };
-// The admin list ends 24 px under its last whole dish row, so its picture is
-// a little shorter than the screen, by locale; it sits at the top of the same
-// 420x688 slot, so the panel keeps its height.
-const PHONE_HEIGHT: Partial<Record<(typeof SURFACES)[number], Record<string, number>>> = {
-  admin: { hy: 1272, ru: 1310, en: 1348 },
-};
 const WIDE = { width: 1440, height: 1376 };
 
 // The hero picture: one phone screen of the live demo menu (blue palette,
@@ -38,20 +34,11 @@ const STEPS = ["step1", "step2", "step3"] as const;
 // Three facts the hero doesn't already say: the offline queue, the CSV export
 // and the Telegram alerts.
 const WHY = ["offline", "export", "telegram"] as const;
+const WHY_ICON = { offline: WifiOff, export: FileSpreadsheet, telegram: Send } as const;
 
 // One container for the whole page: 1120 px, 16 px gutters on phones, 32 px from md.
 const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 const h2 = "m-0 text-[1.375rem] leading-tight font-semibold tracking-[-0.01em] md:text-[1.625rem]";
-// Plan features: regular weight in both columns, a short dash before each line.
-const planList =
-  "text-label m-0 mt-6 flex list-none flex-col gap-2 p-0 leading-normal [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:text-slate [&>li]:before:content-['–']";
-// From md the two plans share four subgrid rows (name, price, term, button),
-// so both 56 px buttons sit on one line right under the price; what follows
-// (the terms and the list) flows on its own in the fifth row, top-aligned.
-const planColumn =
-  "flex flex-col items-start md:row-span-5 md:grid md:grid-rows-subgrid md:content-start md:justify-items-start";
-// The plan's terms in one plain sentence under the price.
-const planTerms = "text-label m-0 mt-6 max-w-[44ch] leading-normal text-pretty";
 const outlineButton =
   "text-ink inline-flex min-h-12 items-center justify-center rounded-full bg-white px-5 text-label font-semibold no-underline shadow-[inset_0_0_0_1px_var(--color-pativ-line)] hover:shadow-[inset_0_0_0_1px_var(--color-pativ-blue)]";
 const textLink =
@@ -90,7 +77,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   // From lg the hero carries a QR code of the demo menu, so an owner reading
   // on a laptop can try the guest side on their own phone.
   const demoQr = qrPath(new URL(demoHref, parseServerEnv(process.env).APP_BASE_URL).toString());
-  const bold = (chunks: ReactNode) => <strong className="font-semibold">{chunks}</strong>;
 
   const panels: ShowcasePanel[] = SURFACES.map((s) => ({
     id: s,
@@ -103,7 +89,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
     phone: {
       src: `/landing/show-${s}-${locale}-phone.webp`,
       ...PHONE,
-      height: PHONE_HEIGHT[s]?.[locale] ?? PHONE.height,
     },
     wide: WIDE_SURFACES.includes(s) ? { src: `/landing/show-${s}-${locale}.webp`, ...WIDE } : undefined,
     // The dish sheet looks like live UI, so (as the hero) it opens the demo menu.
@@ -155,12 +140,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
         <div className={`${container} flex h-16 items-center justify-between gap-2`}>
           <BrandLink href={`/${locale}`} name={brand("name")} />
           <div className="flex items-center gap-1 sm:gap-2">
-            <a
-              href="#pricing"
-              className="text-ink text-label hidden min-h-11 items-center px-2 font-semibold no-underline underline-offset-4 hover:underline sm:inline-flex"
-            >
-              {t("nav.pricing")}
-            </a>
             <div className="flex items-center max-sm:group-data-cta:hidden">
               {languages("nav")}
               <span aria-hidden="true" className="bg-hairline mx-1 h-5 w-px" />
@@ -186,13 +165,10 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
           className={`${container} grid gap-10 pt-8 pb-14 md:pt-14 md:pb-20 lg:grid-cols-12 lg:items-center lg:gap-8 lg:pt-16`}
         >
           <div className="lg:col-span-6">
-            <h1 className="m-0 max-w-[20em] text-[1.875rem] leading-[1.15] font-semibold tracking-[-0.015em] text-balance md:text-[2.25rem] xl:text-[2.5rem]">
+            <h1 className="m-0 max-w-[18em] text-[1.625rem] leading-[1.2] font-semibold tracking-[-0.01em] text-balance md:text-[1.875rem] xl:text-[2rem]">
               {t("title")}
             </h1>
-            <p className="text-slate mt-4 mb-0 max-w-[40ch] text-base leading-normal text-pretty md:mt-5 md:text-[1.0625rem]">
-              {t("lead")}
-            </p>
-            <div id="landing-hero-cta" className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-8">
+            <div id="landing-hero-cta" className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-8">
               <a
                 href={demoHref}
                 className="bg-pativ-blue hover:bg-pativ-blue-deep inline-flex min-h-12 items-center justify-center rounded-full px-5 text-label font-semibold text-white no-underline"
@@ -206,7 +182,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
                 {t("ctaSignup")}
               </a>
             </div>
-            <p className="text-slate text-label m-0 mt-4">{t("trial")}</p>
             {/* Laptops only: a phone can't scan its own screen. */}
             <div className="mt-10 hidden items-center gap-5 lg:flex">
               <svg
@@ -247,18 +222,19 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <h2 id="landing-features" className={h2}>
               {t("features.title")}
             </h2>
-            <Showcase labelledBy="landing-features" panels={panels} action={signupButton} />
-            {/* Proof, as one plain line under a hairline: the pictures are the
-                working product, and the demo menu is one tap away. */}
-            <p className="border-pativ-line text-label m-0 mt-12 flex flex-col items-start gap-x-4 gap-y-1 border-t pt-6 leading-normal text-pretty sm:flex-row sm:flex-wrap sm:items-center md:mt-16">
-              <span>{t("proof.text")}</span>
+            {/* What the pictures are and what to do with them, before the
+                tabs: the demo café's menu opens on the reader's own phone. */}
+            <div className="mt-6 flex flex-col items-start gap-4 rounded-[20px] bg-white p-5 shadow-[inset_0_0_0_1px_var(--color-pativ-line)] sm:flex-row sm:items-center sm:justify-between md:mt-8 md:px-6">
+              <p className="text-ink text-label m-0 leading-normal text-pretty">{t("proof.text")}</p>
               <a
                 href={demoHref}
-                className="text-pativ-blue text-label inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+                className="bg-pativ-blue hover:bg-pativ-blue-deep text-label inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full px-5 font-semibold text-white no-underline"
               >
+                <Smartphone size={18} aria-hidden />
                 {t("proof.link")}
               </a>
-            </p>
+            </div>
+            <Showcase labelledBy="landing-features" panels={panels} action={signupButton} />
           </div>
         </section>
 
@@ -267,115 +243,67 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             <h2 id="landing-start" className={h2}>
               {t("start.title")}
             </h2>
-            <ol className="m-0 mt-8 grid list-none gap-10 p-0 md:mt-12 md:grid-cols-3 md:gap-12">
+            {/* Three cards, each with a small drawing of what the step looks
+                like: the sign-up form, a paper menu turning into dish rows,
+                the QR on the table. */}
+            <ol className="m-0 mt-8 grid list-none gap-4 p-0 md:mt-10 md:grid-cols-3 md:gap-5">
               {STEPS.map((s, i) => (
-                <li key={s} className="flex flex-col">
-                  <span aria-hidden="true" className="num bg-pativ-tint text-pativ-blue flex size-9 items-center justify-center rounded-full text-label font-semibold">
-                    {i + 1}
-                  </span>
-                  <h3 className="text-name m-0 mt-4 font-semibold">{t(`start.${s}.title`)}</h3>
-                  <p className="text-slate text-label m-0 mt-2 max-w-[36ch] leading-normal text-pretty">
-                    {t(`start.${s}.text`)}
-                  </p>
+                <li
+                  key={s}
+                  className="flex flex-col overflow-hidden rounded-[24px] bg-white shadow-[inset_0_0_0_1px_var(--color-pativ-line)]"
+                >
+                  <div aria-hidden="true" className="bg-pativ-tint flex h-40 items-center justify-center">
+                    {i === 0 && <StepSignup />}
+                    {i === 1 && <StepMenu />}
+                    {i === 2 && <StepQr d={demoQr.d} size={demoQr.size} />}
+                  </div>
+                  <div className="flex flex-1 flex-col p-5 md:p-6">
+                    <span className="num text-pativ-blue text-label font-semibold">{i + 1}</span>
+                    <h3 className="text-name m-0 mt-1 font-semibold">{t(`start.${s}.title`)}</h3>
+                    <p className="text-slate text-label m-0 mt-2 leading-normal text-pretty">
+                      {t(`start.${s}.text`)}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ol>
-            {/* Why Pativ: three facts under one hairline and their own short
-                heading, so on a phone they read as features, not as a fourth
-                step; a 17 px lead and line each, under the 22 px heading. */}
-            <div className="border-hairline mt-12 border-t pt-8 md:mt-16 md:pt-10">
+            {/* What else comes with it: one deep-blue panel, three columns with
+                an icon each, so it reads apart from the steps above. */}
+            <div className="mt-10 rounded-[28px] bg-[#1e3a8a] p-6 text-white md:mt-14 md:p-10">
               <h3 id="landing-why" className="text-name m-0 font-semibold">
                 {t("start.why.title")}
               </h3>
               <ul
                 aria-labelledby="landing-why"
-                className="m-0 mt-5 grid list-none gap-6 p-0 md:mt-6 md:grid-cols-3 md:gap-12"
+                className="m-0 mt-6 grid list-none gap-6 p-0 md:grid-cols-3 md:gap-10"
               >
-                {WHY.map((w) => (
-                  <li key={w} className="flex flex-col gap-1">
-                    <span className="text-label font-semibold">{t(`start.why.${w}.lead`)}</span>
-                    <span className="text-slate text-label max-w-[36ch] leading-normal text-pretty">
-                      {t(`start.why.${w}.text`)}
-                    </span>
-                  </li>
-                ))}
+                {WHY.map((w) => {
+                  const Icon = WHY_ICON[w];
+                  return (
+                    <li key={w} className="flex flex-col gap-2">
+                      <span className="flex size-10 items-center justify-center rounded-full bg-white/12">
+                        <Icon size={20} aria-hidden />
+                      </span>
+                      <span className="text-label mt-1 font-semibold">{t(`start.why.${w}.lead`)}</span>
+                      <span className="text-label leading-normal text-pretty text-white/80">
+                        {t(`start.why.${w}.text`)}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
         </section>
 
-        <section id="pricing" aria-labelledby="landing-pricing" className="bg-pativ-tint scroll-mt-16">
-          <div className={`${container} py-14 md:py-20`}>
-            <h2 id="landing-pricing" className={h2}>
-              {t("pricing.title")}
-            </h2>
-            {/* Two plans side by side, one hairline between them and no boxes. */}
-            <div className="mt-8 grid md:mt-12 md:grid-cols-2 md:grid-rows-[repeat(5,auto)]">
-              <div className={`${planColumn} pb-10 md:pr-12 md:pb-0`}>
-                <h3 className="text-name m-0 font-semibold">{t("pricing.menu.name")}</h3>
-                <p className="m-0 mt-2 text-[1.75rem] leading-tight font-semibold tracking-[-0.01em]">
-                  {t("pricing.menu.price")}
-                </p>
-                <p className="text-slate text-label m-0 mt-1">{t("pricing.menu.term")}</p>
-                <div className="pt-6">
-                  <a href={signupHref} className={outlineButton}>
-                    {t("pricing.menu.cta")}
-                  </a>
-                </div>
-                <div>
-                  <p className={planTerms}>{t("pricing.menu.note")}</p>
-                  <ul className={planList}>
-                    <li>{t("pricing.menu.l1")}</li>
-                    <li>{t("pricing.menu.l2")}</li>
-                    <li>{t("pricing.menu.l3")}</li>
-                  </ul>
-                </div>
-              </div>
-              <div
-                className={`${planColumn} border-pativ-line border-t pt-10 md:border-t-0 md:border-l md:pt-0 md:pl-12`}
-              >
-                <h3 className="text-name m-0 font-semibold">{t("pricing.service.name")}</h3>
-                <p className="m-0 mt-2 flex flex-wrap items-baseline gap-x-2">
-                  <span className="num text-[1.75rem] leading-tight font-semibold tracking-[-0.01em] whitespace-nowrap">
-                    {t("pricing.service.price")}
-                  </span>
-                  <span className="text-name font-semibold">{t("pricing.service.per")}</span>
-                </p>
-                <p className="text-slate text-label m-0 mt-1">{t("pricing.service.year")}</p>
-                <div className="pt-6">{signupButton}</div>
-                <div>
-                  {/* The two offers as two short lines, each with its own lead. */}
-                  <div className="mt-6 flex max-w-[44ch] flex-col gap-2">
-                    <p className="text-label m-0 leading-normal text-pretty">
-                      {t.rich("pricing.service.offer", { b: bold })}
-                    </p>
-                    <p className="text-label m-0 leading-normal text-pretty">
-                      {t.rich("pricing.service.founding", { b: bold })}
-                    </p>
-                  </div>
-                  <p className="text-label m-0 mt-6 leading-normal">{t("pricing.service.includes")}</p>
-                  <ul className={`${planList} mt-2!`}>
-                    <li>{t("pricing.service.l1")}</li>
-                    <li>{t("pricing.service.l2")}</li>
-                    <li>{t("pricing.service.l3")}</li>
-                  </ul>
-                  <p className="text-slate text-label m-0 mt-6 max-w-[44ch] leading-normal text-pretty">
-                    {t("pricing.service.perks")}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="border-hairline border-t">
         <div className={`${container} flex flex-col gap-4 py-8 md:py-10`}>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <BrandLink href={`/${locale}`} name={brand("name")} />
-            {/* Below sm the five links are a 2-column grid of 44 px rows, left
-                aligned (the fifth, alone on its row, takes both columns so it
-                never wraps); from sm one inline row. */}
+            {/* Below sm the four links are a 2-column grid of 44 px rows, left
+                aligned; from sm one inline row. */}
             <nav
               aria-label={t("footer.nav")}
               className="-mx-2 grid grid-cols-2 gap-x-4 sm:flex sm:flex-wrap sm:gap-x-0"
@@ -383,16 +311,13 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
               <a href={demoHref} className={`${textLink} px-2`}>
                 {t("footer.demo")}
               </a>
-              <a href="#pricing" className={`${textLink} px-2`}>
-                {t("nav.pricing")}
-              </a>
               <a href={signupHref} className={`${textLink} px-2`}>
                 {t("ctaSignup")}
               </a>
               <a href={loginHref} className={`${textLink} px-2`}>
                 {t("signIn")}
               </a>
-              <a href={pairHref} className={`${textLink} col-span-2 px-2`}>
+              <a href={pairHref} className={`${textLink} px-2`}>
                 {t("footer.pair")}
               </a>
             </nav>
@@ -403,6 +328,57 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// The step drawings: plain shapes in the page's blue and white, no words.
+function StepSignup() {
+  return (
+    <div className="flex w-40 flex-col gap-2 rounded-[14px] bg-white p-3 shadow-[0_8px_20px_-10px_rgb(29_78_216/0.35)]">
+      <span className="bg-pativ-line h-2 w-16 rounded-full" />
+      <span className="h-7 rounded-lg shadow-[inset_0_0_0_1px_var(--color-pativ-line)]" />
+      <span className="h-7 rounded-lg shadow-[inset_0_0_0_1px_var(--color-pativ-line)]" />
+      <span className="bg-pativ-blue h-7 rounded-full" />
+    </div>
+  );
+}
+
+function StepMenu() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-24 w-[4.5rem] -rotate-6 flex-col gap-1.5 rounded-md bg-[#fffdf7] p-2.5 shadow-[0_6px_16px_-8px_rgb(15_23_42/0.4)]">
+        {[10, 8, 12, 7, 11, 9].map((w, k) => (
+          <span key={k} className="h-1 rounded-full bg-slate-300" style={{ width: `${w * 4}px` }} />
+        ))}
+      </div>
+      <svg width="28" height="12" viewBox="0 0 28 12" className="text-pativ-blue">
+        <path d="M0 6h24m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <div className="flex w-24 flex-col gap-1.5 rounded-[12px] bg-white p-2 shadow-[0_8px_20px_-10px_rgb(29_78_216/0.35)]">
+        {[0, 1, 2].map((k) => (
+          <div key={k} className="flex items-center gap-1.5">
+            <span className="bg-pativ-line size-5 shrink-0 rounded-md" />
+            <span className="flex flex-1 flex-col gap-1">
+              <span className="h-1 w-full rounded-full bg-slate-300" />
+              <span className="bg-pativ-blue h-1 w-5 rounded-full" />
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepQr({ d, size }: { d: string; size: number }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="rounded-[14px] bg-white p-3 shadow-[0_8px_20px_-10px_rgb(29_78_216/0.35)]">
+        <svg viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges" className="text-ink size-20">
+          <path fill="currentColor" d={d} />
+        </svg>
+      </div>
+      <span className="bg-pativ-line mt-1 h-2 w-28 rounded-full" />
     </div>
   );
 }
