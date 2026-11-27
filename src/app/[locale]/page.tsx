@@ -162,9 +162,9 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
         {/* Hero: the headline and one phone screen of the real menu, whole and
             on white. The picture opens the live demo. */}
         <section
-          className={`${container} grid gap-10 pt-8 pb-14 md:pt-14 md:pb-20 lg:grid-cols-12 lg:items-center lg:gap-8 lg:pt-16`}
+          className={`${container} grid gap-10 pt-6 pb-14 md:pt-10 md:pb-20 lg:grid-cols-12 lg:items-start lg:gap-8 lg:pt-10`}
         >
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-6 lg:pt-6">
             <h1 className="m-0 max-w-[18em] text-[1.625rem] leading-[1.2] font-semibold tracking-[-0.01em] text-balance md:text-[1.875rem] xl:text-[2rem]">
               {t("title")}
             </h1>
@@ -225,7 +225,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
             {/* What the pictures are and what to do with them, before the
                 tabs: the demo café's menu opens on the reader's own phone. */}
             <div className="mt-6 flex flex-col items-start gap-4 rounded-[20px] bg-white p-5 shadow-[inset_0_0_0_1px_var(--color-pativ-line)] sm:flex-row sm:items-center sm:justify-between md:mt-8 md:px-6">
-              <p className="text-ink text-label m-0 leading-normal text-pretty">{t("proof.text")}</p>
+              <p className="text-ink text-name m-0 leading-normal text-pretty">{t("proof.text")}</p>
               <a
                 href={demoHref}
                 className="bg-pativ-blue hover:bg-pativ-blue-deep text-label inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full px-5 font-semibold text-white no-underline"

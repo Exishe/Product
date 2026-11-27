@@ -114,7 +114,7 @@ export function Showcase({
           id={`${base}-panel-${p.id}`}
           aria-labelledby={`${base}-tab-${p.id}`}
           hidden={i !== active}
-          className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-12"
+          className="motion-safe:animate-in motion-safe:fade-in mt-8 grid gap-6 motion-safe:duration-200 md:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10"
         >
           {/* Every picture is framed like the hero's: a 20 px radius and the
               same soft shadow, its own background running to the edge.
@@ -164,14 +164,14 @@ export function Showcase({
           </div>
           <div className="flex flex-col items-start gap-3 lg:order-1">
             <h3 className="text-heading m-0 font-semibold text-balance lg:-mt-1">{p.title}</h3>
-            <p className="text-slate text-label m-0 max-w-[44ch] leading-normal text-pretty">{p.text}</p>
-            <ul className="text-label [&>li]:before:text-slate m-0 mt-2 flex max-w-[40ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
+            <p className="text-slate text-label m-0 max-w-[60ch] leading-normal text-pretty">{p.text}</p>
+            <ul className="text-label [&>li]:before:text-slate m-0 mt-2 flex max-w-[60ch] list-none flex-col gap-2 p-0 leading-normal text-pretty [&>li]:relative [&>li]:pl-5 [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:content-['–']">
               {p.points.map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>
             {p.note && (
-              <p className="text-slate text-label m-0 mt-1 max-w-[40ch] leading-normal text-pretty">
+              <p className="text-slate text-label m-0 mt-1 max-w-[60ch] leading-normal text-pretty">
                 {p.note}
               </p>
             )}
